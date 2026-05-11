@@ -1,0 +1,320 @@
+version: '3.8'
+
+services:
+  # MongoDB
+  mongodb:
+    image: mongo:7
+    container_name: rez-intelligence-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - rez-network
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: rez-intelligence-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - rez-network
+
+  # Phase 1: Wedge Services
+  rez-reorder-engine:
+    build:
+      context: ./REZ-reorder-engine
+      dockerfile: Dockerfile
+    container_name: rez-reorder-engine
+    restart: unless-stopped
+    ports:
+      - "4040:4040"
+    environment:
+      - NODE_ENV=development
+      - PORT=4040
+      - MONGODB_URI=mongodb://mongodb:27017/rez_reorder
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=dev-token-change-in-prod
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - rez-network
+
+  rez-taste-profile:
+    build:
+      context: ./REZ-taste-profile
+      dockerfile: Dockerfile
+    container_name: rez-taste-profile
+    restart: unless-stopped
+    ports:
+      - "4041:4041"
+    environment:
+      - NODE_ENV=development
+      - PORT=4041
+      - MONGODB_URI=mongodb://mongodb:27017/rez_taste
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=dev-token-change-in-prod
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - rez-network
+
+  rez-demand-forecast:
+    build:
+      context: ./REZ-demand-forecast
+      dockerfile: Dockerfile
+    container_name: rez-demand-forecast
+    restart: unless-stopped
+    ports:
+      - "4042:4042"
+    environment:
+      - NODE_ENV=development
+      - PORT=4042
+      - MONGODB_URI=mongodb://mongodb:27017/rez_demand
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=dev-token-change-in-prod
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - rez-network
+
+  rez-price-predictor:
+    build:
+      context: ./REZ-price-predictor
+      dockerfile: Dockerfile
+    container_name: rez-price-predictor
+    restart: unless-stopped
+    ports:
+      - "4043:4043"
+    environment:
+      - NODE_ENV=development
+      - PORT=4043
+      - MONGODB_URI=mongodb://mongodb:27017/rez_pricing
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=dev-token-change-in-prod
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - rez-network
+
+  # Phase 2: Data Network
+  rez-identity-graph:
+    build:
+      context: ./REZ-identity-graph
+      dockerfile: Dockerfile
+    container_name: rez-identity-graph
+    restart: unless-stopped
+    ports:
+      - "4050:4050"
+    environment:
+      - NODE_ENV=development
+      - PORT=4050
+      - MONGODB_URI=mongodb://mongodb:27017/rez_identity
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=dev-token-change-in-prod
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - rez-network
+
+  rez-memory-engine:
+    build:
+      context: ./REZ-memory-engine
+      dockerfile: Dockerfile
+    container_name: rez-memory-engine
+    restart: unless-stopped
+    ports:
+      - "4051:4051"
+    environment:
+      - NODE_ENV=development
+      - PORT=4051
+      - MONGODB_URI=mongodb://mongodb:27017/rez_memory
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=dev-token-change-in-prod
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - rez-network
+
+  rez-ai-router:
+    build:
+      context: ./REZ-ai-router
+      dockerfile: Dockerfile
+    container_name: rez-ai-router
+    restart: unless-stopped
+    ports:
+      - "4052:4052"
+    environment:
+      - NODE_ENV=development
+      - PORT=4052
+      - MONGODB_URI=mongodb://mongodb:27017/rez_ai_router
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=dev-token-change-in-prod
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - rez-network
+
+  # Phase 3: Intelligence Moat
+  rez-knowledge-graph:
+    build:
+      context: ./REZ-knowledge-graph
+      dockerfile: Dockerfile
+    container_name: rez-knowledge-graph
+    restart: unless-stopped
+    ports:
+      - "4060:4060"
+    environment:
+      - NODE_ENV=development
+      - PORT=4060
+      - MONGODB_URI=mongodb://mongodb:27017/rez_knowledge
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=dev-token-change-in-prod
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - rez-network
+
+  rez-merchant-brain:
+    build:
+      context: ./REZ-merchant-brain
+      dockerfile: Dockerfile
+    container_name: rez-merchant-brain
+    restart: unless-stopped
+    ports:
+      - "4061:4061"
+    environment:
+      - NODE_ENV=development
+      - PORT=4061
+      - MONGODB_URI=mongodb://mongodb:27017/rez_merchant_brain
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=dev-token-change-in-prod
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - rez-network
+
+  rez-autonomous-agents:
+    build:
+      context: ./REZ-autonomous-agents
+      dockerfile: Dockerfile
+    container_name: rez-autonomous-agents
+    restart: unless-stopped
+    ports:
+      - "4062:4062"
+    environment:
+      - NODE_ENV=development
+      - PORT=4062
+      - MONGODB_URI=mongodb://mongodb:27017/rez_agents
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=dev-token-change-in-prod
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - rez-network
+
+  # Phase 4: Ecosystem
+  rez-payments-brain:
+    build:
+      context: ./REZ-payments-brain
+      dockerfile: Dockerfile
+    container_name: rez-payments-brain
+    restart: unless-stopped
+    ports:
+      - "4070:4070"
+    environment:
+      - NODE_ENV=development
+      - PORT=4070
+      - MONGODB_URI=mongodb://mongodb:27017/rez_payments_brain
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=dev-token-change-in-prod
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - rez-network
+
+  rez-inventory-sync:
+    build:
+      context: ./REZ-inventory-sync
+      dockerfile: Dockerfile
+    container_name: rez-inventory-sync
+    restart: unless-stopped
+    ports:
+      - "4071:4071"
+    environment:
+      - NODE_ENV=development
+      - PORT=4071
+      - MONGODB_URI=mongodb://mongodb:27017/rez_inventory
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=dev-token-change-in-prod
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - rez-network
+
+  rez-creator-network:
+    build:
+      context: ./REZ-creator-network
+      dockerfile: Dockerfile
+    container_name: rez-creator-network
+    restart: unless-stopped
+    ports:
+      - "4072:4072"
+    environment:
+      - NODE_ENV=development
+      - PORT=4072
+      - MONGODB_URI=mongodb://mongodb:27017/rez_creator
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=dev-token-change-in-prod
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - rez-network
+
+  rez-merchant-os:
+    build:
+      context: ./REZ-merchant-os
+      dockerfile: Dockerfile
+    container_name: rez-merchant-os
+    restart: unless-stopped
+    ports:
+      - "4073:4073"
+    environment:
+      - NODE_ENV=development
+      - PORT=4073
+      - MONGODB_URI=mongodb://mongodb:27017/rez_merchant_os
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=dev-token-change-in-prod
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - rez-network
+
+networks:
+  rez-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  redis_data:
