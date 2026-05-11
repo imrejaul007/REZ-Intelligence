@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>REZ Intelligence - Live Demo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui; background: #0a0a0f; color: #fff; min-height: 100vh; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+    h1 { font-size: 28px; margin-bottom: 10px; color: #00d4ff; }
+    .subtitle { color: #888; margin-bottom: 30px; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+
+    .card {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      border-radius: 16px;
+      padding: 24px;
+      border: 1px solid rgba(0, 212, 255, 0.1);
+    }
+
+    .card h2 { font-size: 18px; margin-bottom: 16px; color: #00d4ff; }
+    .card p { color: #aaa; font-size: 14px; line-height: 1.6; }
+
+    .metric { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .metric:last-child { border-bottom: none; }
+    .metric-label { color: #888; }
+    .metric-value { font-weight: 600; color: #00d4ff; }
+
+    .status-ok { color: #4caf50; }
+    .status-warn { color: #ff9800; }
+    .status-err { color: #f44336; }
+
+    .btn {
+      background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+      color: #000;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 16px;
+      width: 100%;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .log {
+      background: #000;
+      border-radius: 8px;
+      padding: 16px;
+      height: 300px;
+      overflow-y: auto;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 12px;
+      line-height: 1.8;
+    }
+    .log-entry { color: #888; }
+    .log-entry.ok { color: #4caf50; }
+    .log-entry.err { color: #f44336; }
+    .log-entry.info { color: #00d4ff; }
+
+    .flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 20px;
+      background: rgba(0, 212, 255, 0.05);
+      border-radius: 12px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    .flow-step {
+      background: rgba(0, 212, 255, 0.1);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+    }
+    .flow-arrow { color: #00d4ff; font-size: 18px; }
+
+    .agent {
+      display: inline-block;
+      background: rgba(76, 175, 80, 0.2);
+      color: #4caf50;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      margin: 2px;
+    }
+    .agent.running { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>REZ Intelligence Platform</h1>
+    <p class="subtitle">AI-powered commerce intelligence - THE MOAT</p>
+
+    <div class="flow">
+      <span class="flow-step">QR Scan</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-step">Event</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-step">Identity</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-step">Intelligence</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-step">Recommendation</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-step">Conversion</span>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>System Status</h2>
+        <div class="metric">
+          <span class="metric-label">Integration SDK</span>
+          <span class="metric-value status-ok" id="sdk-status">Checking...</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Identity Bridge</span>
+          <span class="metric-value status-ok" id="identity-status">Checking...</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Event Bus</span>
+          <span class="metric-value status-ok" id="events-status">Checking...</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Recommendations</span>
+          <span class="metric-value status-ok" id="recs-status">Checking...</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Feedback Collector</span>
+          <span class="metric-value status-ok" id="feedback-status">Checking...</span>
+        </div>
+        <button class="btn" onclick="checkHealth()">Refresh Status</button>
+      </div>
+
+      <div class="card">
+        <h2>Quick Stats</h2>
+        <div class="metric">
+          <span class="metric-label">Total Services</span>
+          <span class="metric-value">60+</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">AI Agents</span>
+          <span class="metric-value">30</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">App Connectors</span>
+          <span class="metric-value">5</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Events Today</span>
+          <span class="metric-value" id="events-today">-</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Conversions Today</span>
+          <span class="metric-value" id="conversions-today">-</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Active Agents</h2>
+        <div id="agents">
+          <span class="agent running">DemandSignalAgent</span>
+          <span class="agent running">ScarcityAgent</span>
+          <span class="agent running">ReorderPredictorAgent</span>
+          <span class="agent running">PersonalizationAgent</span>
+          <span class="agent running">ChurnRiskAgent</span>
+          <span class="agent running">LTVPredictorAgent</span>
+          <span class="agent running">UrgencyTriggerAgent</span>
+          <span class="agent running">TrendDetectorAgent</span>
+        </div>
+        <p style="margin-top: 16px; color: #888; font-size: 14px;">
+          30 agents continuously running across commerce and user intelligence
+        </p>
+      </div>
+
+      <div class="card">
+        <h2>Connected Apps</h2>
+        <div class="metric">
+          <span class="metric-label">Hotel-OTA</span>
+          <span class="metric-value status-ok">✓ Connected</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Rendez</span>
+          <span class="metric-value status-ok">✓ Connected</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">AdBazaar</span>
+          <span class="metric-value status-ok">✓ Connected</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Consumer App</span>
+          <span class="metric-value status-ok">✓ Connected</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">do-app</span>
+          <span class="metric-value status-ok">✓ Connected</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
+      <h2>Live Event Log</h2>
+      <div class="log" id="log">
+        <div class="log-entry info">[System] Demo initialized - Waiting for events...</div>
+      </div>
+      <button class="btn" onclick="simulateEvent()">Simulate Event</button>
+    </div>
+
+    <div style="text-align: center; margin-top: 40px; color: #666;">
+      <p>REZ Intelligence Platform v1.0</p>
+      <p style="font-size: 12px; margin-top: 8px;">
+        Run ./start.sh to launch all services
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const API = 'http://localhost:4091';
+
+    function log(msg, type = 'info') {
+      const logDiv = document.getElementById('log');
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logDiv.appendChild(entry);
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    async function checkHealth() {
+      log('Checking service health...');
+
+      const endpoints = [
+        { id: 'sdk-status', name: 'Integration SDK' },
+        { id: 'identity-status', name: 'Identity Bridge' },
+        { id: 'events-status', name: 'Event Bus' },
+        { id: 'recs-status', name: 'Recommendations' },
+        { id: 'feedback-status', name: 'Feedback Collector' }
+      ];
+
+      for (const ep of endpoints) {
+        const el = document.getElementById(ep.id);
+        try {
+          const res = await fetch(`${API}/health`);
+          if (res.ok) {
+            el.textContent = '✓ Online';
+            el.className = 'metric-value status-ok';
+          } else {
+            el.textContent = '✗ Error';
+            el.className = 'metric-value status-err';
+          }
+        } catch {
+          el.textContent = '✗ Offline';
+          el.className = 'metric-value status-err';
+        }
+      }
+
+      log('Health check complete');
+    }
+
+    async function simulateEvent() {
+      log('Simulating QR scan event...');
+
+      try {
+        // Resolve identity
+        const resolveRes = await fetch(`${API}/resolve`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: '+919876543210',
+            sourceApp: 'demo',
+            sourceUserId: 'demo_user_1'
+          })
+        });
+
+        const identity = await resolveRes.json();
+        log(`Identity resolved: ${identity.unifiedId}`, 'ok');
+
+        // Track event
+        await fetch(`${API}/api/events/track`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            eventType: 'qr_scan',
+            userId: identity.unifiedId,
+            appId: 'demo',
+            properties: { merchantId: 'merchant_demo_1' }
+          })
+        });
+        log('Event tracked: qr_scan', 'ok');
+
+        // Get recommendation
+        const recRes = await fetch(`${API}/api/recommendations/${identity.unifiedId}?types=reorder&limit=3`);
+        const recs = await recRes.json();
+        log(`Recommendations: ${recs.recommendations?.length || 0} items`, 'ok');
+
+        // Track conversion
+        await fetch(`${API}/api/feedback/conversion`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nudgeId: 'nudge_demo_1',
+            userId: identity.unifiedId,
+            appId: 'demo',
+            converted: true,
+            orderId: 'ord_demo_1',
+            amount: 500
+          })
+        });
+        log('Conversion tracked!', 'ok');
+
+      } catch (err) {
+        log(`Error: ${err.message}`, 'err');
+      }
+    }
+
+    // Initial health check
+    setTimeout(checkHealth, 1000);
+
+    // Simulate events every 30 seconds
+    setInterval(simulateEvent, 30000);
+  </script>
+</body>
+</html>

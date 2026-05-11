@@ -1,228 +1,213 @@
-# REZ-Intelligence
+# REZ Intelligence Platform
 
-**Company:** REZ-Intelligence  
-**Purpose:** AI/ML Services - THE MOAT of the REZ ecosystem  
-**GitHub:** https://github.com/imrejaul007/REZ-Intelligence
+**THE MOAT** - AI-powered commerce intelligence for the REZ ecosystem.
 
 ---
 
 ## Overview
 
-REZ Intelligence is an AI-powered commerce operating system that provides:
-
-- **Repeat Commerce Intelligence** - Reorder prediction, taste profiling, demand forecasting
-- **Data Network** - Unified identity, persistent memory, AI routing
-- **Intelligence Moat** - Knowledge graphs, merchant brain, autonomous agents
-- **Ecosystem** - Payments, inventory, creator network, merchant OS
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ PHASE 4: ECOSYSTEM │ Phases 1-4 │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ │
-│ ┌─────────────────────────────────────────────────────────────────────┐ │
-│ │ REZ-merchant-os (4073) │ REZ-creator-network (4072) │ │
-│ │ Merchant SaaS Dashboard │ Creator Intelligence │ │
-│ │ AI Insights │ Campaign Matching │ │
-│ └─────────────────────────────────────────────────────────────────────┘ │
-│ ┌─────────────────────────────────────────────────────────────────────┐ │
-│ │ REZ-payments-brain (4070) │ REZ-inventory-sync (4071) │ │
-│ │ Fraud Detection │ Inventory Predictions │ │
-│ │ Payment Optimization │ POS Sync │ │
-│ └─────────────────────────────────────────────────────────────────────┘ │
-│ │
-│ ┌─────────────────────────────────────────────────────────────────────┐ │
-│ │ PHASE 3: INTELLIGENCE MOAT │ │
-│ │ │ │
-│ │ REZ-knowledge-graph (4060) │ REZ-merchant-brain (4061) │ │
-│ │ Semantic Entities │ Merchant Forecasting │ │
-│ │ │ │
-│ │ REZ-autonomous-agents (4062) │ │
-│ │ 8 AI Agents │ │
-│ └─────────────────────────────────────────────────────────────────────┘ │
-│ │
-│ ┌─────────────────────────────────────────────────────────────────────┐ │
-│ │ PHASE 2: DATA NETWORK │ │
-│ │ │ │
-│ │ REZ-identity-graph (4050) │ REZ-memory-engine (4051) │ │
-│ │ Unified Identity │ AI Memory │ │
-│ │ │ │
-│ │ REZ-ai-router (4052) │ │
-│ │ Multi-Provider AI │ │
-│ └─────────────────────────────────────────────────────────────────────┘ │
-│ │
-│ ┌─────────────────────────────────────────────────────────────────────┐ │
-│ │ PHASE 1: WEDGE (Repeat Commerce) │ │
-│ │ │ │
-│ │ REZ-reorder-engine (4040) │ REZ-taste-profile (4041) │ │
-│ │ Cross-category Reorders │ Consumer Preferences │ │
-│ │ │ │
-│ │ REZ-demand-forecast (4042) │ REZ-price-predictor (4043) │ │
-│ │ Demand Prediction │ Dynamic Pricing │ │
-│ └─────────────────────────────────────────────────────────────────────┘ │
-│ │
-│ ┌─────────────────────────────────────────────────────────────────────┐ │
-│ │ SHARED INFRASTRUCTURE │ │
-│ │ │ │
-│ │ shared/logger.js │ Shared Winston logging │ │
-│ │ shared/errorHandler.js │ Error classes + middleware │ │
-│ │ shared/schemas.js │ Zod validation schemas │ │
-│ │ shared/circuitBreaker.js │ Resilience pattern │ │
-│ │ shared/rateLimiter.js │ Rate limiting │ │
-│ │ shared/securityMiddleware.js │ Helmet, SSRF, sanitization │ │
-│ └─────────────────────────────────────────────────────────────────────┘ │
-│ │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+REZ Intelligence provides:
+- **Repeat Commerce Intelligence** - Reorder predictions, taste profiling
+- **Cross-App Identity** - Unified user profiles across all apps
+- **Autonomous Agents** - 30 AI agents continuously learning
+- **Real-time Personalization** - Recommendations for every user
+- **Conversion Attribution** - Track nudge ROI
 
 ---
 
-## Services (47 Total)
+## Services (60+)
 
-### Phase 1: Repeat Commerce Wedge
-| Port | Service | Description |
-|------|---------|-------------|
-| 4040 | REZ-reorder-engine | Predict & trigger reorders |
-| 4041 | REZ-taste-profile | Consumer preference intelligence |
-| 4042 | REZ-demand-forecast | Merchant demand prediction |
-| 4043 | REZ-price-predictor | Dynamic pricing optimization |
+### Infrastructure
+| Port | Service | Purpose |
+|------|---------|---------|
+| 4091 | Integration SDK | Unified SDK for all apps |
+| 4092 | Identity Bridge | Cross-app user identity |
+| 4008 | Event Platform | Event publishing |
+| 4031 | Event Bus | Event distribution |
 
-### Phase 2: Data Network
-| Port | Service | Description |
-|------|---------|-------------|
-| 4050 | REZ-identity-graph | Unified user identity |
-| 4051 | REZ-memory-engine | Persistent AI memory |
-| 4052 | REZ-ai-router | Multi-provider AI routing |
+### Intelligence (Phase 1-4)
+| Port | Service | Purpose |
+|------|---------|---------|
+| 4040 | Reorder Engine | Predict reorders |
+| 4041 | Taste Profile | User preferences |
+| 4050 | Identity Graph | Unified identity |
+| 4062 | Autonomous Agents | 30 AI agents |
 
-### Phase 3: Intelligence Moat
-| Port | Service | Description |
-|------|---------|-------------|
-| 4060 | REZ-knowledge-graph | Semantic entity relationships |
-| 4061 | REZ-merchant-brain | Merchant intelligence |
-| 4062 | REZ-autonomous-agents | 8 autonomous AI agents |
+### Integration
+| Port | Service | Purpose |
+|------|---------|---------|
+| 4085 | Feedback Collector | Conversion tracking |
+| 4090 | Unified Recommendations | All recommendations |
+| 4093 | Notification Router | Push/SMS/Email |
+| 4094 | Realtime Gateway | WebSocket events |
 
-### Phase 4: Ecosystem
-| Port | Service | Description |
-|------|---------|-------------|
-| 4070 | REZ-payments-brain | Fraud detection & payment optimization |
-| 4071 | REZ-inventory-sync | Real-time inventory sync |
-| 4072 | REZ-creator-network | Creator/influencer intelligence |
-| 4073 | REZ-merchant-os | Merchant SaaS dashboard |
-
-### Existing Services
-| Service | Description |
-|---------|-------------|
-| REZ-action-engine | Decision execution layer |
-| REZ-attribution-system | Marketing attribution |
-| REZ-creative-engine | Ad copy generation |
-| REZ-personalization-engine | User DNA profiles |
-| REZ-recommendation-engine | Multi-strategy recommendations |
-| REZ-targeting-engine | Ad targeting |
-| rez-intent-graph | Intent knowledge graph |
-| REZ-support-copilot | Support AI copilot |
-| REZ-cdp-service | Customer Data Platform |
-| REZ-insights-service | AI-generated insights |
-| REZ-event-platform | Event publishing |
-| REZ-event-bus | Event bus |
-| REZ-audit-logging | Audit logging |
-| REZ-observability-system | Logging, metrics, traces |
+### Operations
+| Port | Service | Purpose |
+|------|---------|---------|
+| 4095 | Health Monitor | Service monitoring |
+| 4100 | Validation Dashboard | KPI tracking |
+| 4101 | Flywheel MVP | Demo loop |
 
 ---
 
 ## Quick Start
 
-### Docker Compose (Recommended)
 ```bash
 # Start all services
-docker-compose up -d
+./start.sh
 
-# View logs
-docker-compose logs -f rez-reorder-engine
+# Check status
+./start.sh status
 
-# Stop all services
-docker-compose down
+# Health check
+curl http://localhost:4095/health/all
 ```
 
-### Individual Service
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ ALL APPS │
+│ Hotel-OTA │ Rendez │ AdBazaar │ Consumer │ Merchant │
+└─────────────────────────────────────────────────────────────────┘
+ │
+ ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ REZ-INTEGRATION-SDK │
+│ One SDK for all │
+└─────────────────────────────────────────────────────────────────┘
+ │
+ ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ DATA FLOW │
+│ │
+│ Events ──► Identity ──► Intelligence ──► Recommendations │
+│ │ │ │ │
+│ │ │ └─► Feedback ──► Analytics │ │
+│ │ └─────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+ │
+ ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ OUTPUT │
+│ │
+│ Notifications ──► Users ──► Conversions │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## App Connectors
+
+### Hotel-OTA
+```javascript
+const { REZHotelConnector } = require('./services/REZConnector');
+const rez = new REZHotelConnector();
+await rez.init(user);
+await rez.trackBookingConfirmed(booking);
+```
+
+### Rendez
+```javascript
+const { REZRendezConnector } = require('./services/REZConnector');
+const rez = new REZRendezConnector();
+await rez.init(user);
+await rez.trackMatch(match);
+```
+
+### AdBazaar
+```javascript
+const { REZAdBazaarConnector } = require('./services/REZConnector');
+const rez = new REZAdBazaarConnector();
+await rez.init(merchant);
+await rez.trackAdImpression(impression);
+```
+
+---
+
+## 30 Autonomous Agents
+
+### Commerce (15)
+1. DemandSignalAgent - Aggregate demand
+2. ScarcityAgent - Supply/demand ratios
+3. PriceElasticityAgent - Price sensitivity
+4. ReorderPredictorAgent - Reorder probability
+5. TasteEvolutionAgent - Preference changes
+6. ChurnRiskAgent - Churn prediction
+7. LTVPredictorAgent - Lifetime value
+8. InventoryAlertAgent - Low stock
+9. DemandForecastAgent - 7-day prediction
+10. CompetitorMonitorAgent - Price tracking
+11. TrendDetectorAgent - Trend detection
+12. PriceOptimizerAgent - Optimal pricing
+13. OfferMatcherAgent - Offer matching
+14. CrossSellAgent - Cross-sell products
+15. UrgencyTriggerAgent - Urgency signals
+
+### User (15)
+1. PersonalizationAgent - User profiles
+2. SegmentClassifierAgent - User segments
+3. RecommendationQualityAgent - Rec quality
+4. EngagementScoreAgent - Engagement
+5. SessionAnalyzerAgent - Session analysis
+6. SearchIntentAgent - Search intent
+7. BrowsePatternAgent - Browse tracking
+8. PurchasePredictorAgent - Purchase intent
+9. AbandonmentDetectorAgent - Cart abandonment
+10. RetentionTriggerAgent - Retention offers
+11. WinBackAgent - Win-back candidates
+12. ReferralPotentialAgent - Referral scoring
+13. SurveyTriggerAgent - NPS timing
+14. FeedbackAnalyzerAgent - Feedback analysis
+15. NPSPredictorAgent - NPS prediction
+
+---
+
+## Data Flow
+
+```
+QR Scan ──► Event ──► Identity ──► Intelligence
+ │ │ │ │
+ │ │ └─► Memory ──► Copilot │ │
+ │ └─────────────────────────────┘ │
+ └─► Reorder Engine ──► Nudge ──► Conversion
+```
+
+---
+
+## Deploy
+
+### Local
 ```bash
-cd REZ-reorder-engine
-npm install
-npm start
+./start.sh start
 ```
 
----
-
-## Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `MONGODB_URI` | MongoDB connection string | Yes |
-| `REDIS_URL` | Redis connection string | Yes |
-| `INTERNAL_SERVICE_TOKEN` | Service-to-service auth | Yes |
-| `ANTHROPIC_API_KEY` | Claude API key | For AI Router |
-| `OPENAI_API_KEY` | OpenAI API key | For AI Router |
-| `PORT` | Service port | No (default varies) |
+### Render
+Each service has `render.yaml` - connect GitHub repo.
 
 ---
 
-## API Authentication
+## Documentation
 
-All endpoints (except `/health` and `/ready`) require:
-```
-X-Internal-Token: your-internal-token
-```
-
----
-
-## The 8 Autonomous Agents
-
-| Agent | Schedule | Purpose |
-|-------|----------|---------|
-| DemandSignalAgent | Every 5 min | Aggregate demand |
-| ScarcityAgent | Every 1 min | Supply/demand ratios |
-| PersonalizationAgent | Event-driven | User profiling |
-| AttributionAgent | Event-driven | Multi-touch attribution |
-| AdaptiveScoringAgent | Hourly | ML retraining |
-| FeedbackLoopAgent | Event-driven | Drift detection |
-| NetworkEffectAgent | Daily | Collaborative filtering |
-| RevenueAttributionAgent | Every 15 min | GMV tracking |
+- [Integration Guide](docs/INTEGRATION.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [API Reference](docs/API.md)
+- [Deployment](docs/DEPLOYMENT.md)
+- [Flywheel](docs/FLYWHEEL.md)
 
 ---
 
-## The Compounding Moat
+## Stats
 
-```
-Every QR Scan ──► Event ──► DemandSignal Agent ──► Insight
- │
-Every Order ──► Taste Profile ──► Personalization ──► Better Recs
- │
-Every Payment ──► Identity Graph ──► Unified User ──► Cross-app Intelligence
- │
-Every Interaction ──► Memory ──► AI Copilot ──► Personalized Responses
-```
+- **60+ Services**
+- **30 AI Agents**
+- **125K+ Lines of Code**
+- **8 App Connectors**
 
 ---
 
-## Dependencies
+## Support
 
-- RABTUL-Technologies (Data, Events)
-- OpenAI, Anthropic, Google AI
-- MongoDB Atlas
-- Redis
-- Pinecone (Vector database)
-
----
-
-## Deployment
-
-- **Render:** All services deployable via render.yaml
-- **Docker:** docker-compose.yml for local development
-- **AWS:** ML training infrastructure
-
----
-
-## Last Updated
-
-May 12, 2026
+For issues, contact the REZ Intelligence team.

@@ -1,0 +1,134 @@
+# REZ API Gateway Configuration
+app:
+  host: "0.0.0.0"
+  port: 4000
+  env: "development"
+
+# Rate limiting configuration
+rateLimit:
+  windowMs: 60000  # 1 minute window
+  maxRequests: 100  # Max requests per window per API key
+  maxRequestsPerUser: 1000  # Max requests per window per user ID
+  skipFailedRequests: false
+  keyGenerator: "apiKey"  # or "userId"
+
+# Services configuration
+services:
+  - name: identity-bridge
+    url: http://localhost:4092
+    timeout: 30000
+    retryAttempts: 3
+    retryDelay: 1000
+    healthCheck:
+      enabled: true
+      interval: 30000
+      path: /health
+
+  - name: unified-recs
+    url: http://localhost:4090
+    timeout: 30000
+    retryAttempts: 3
+    retryDelay: 1000
+    healthCheck:
+      enabled: true
+      interval: 30000
+      path: /health
+
+  - name: feedback-collector
+    url: http://localhost:4085
+    timeout: 30000
+    retryAttempts: 3
+    retryDelay: 1000
+    healthCheck:
+      enabled: true
+      interval: 30000
+      path: /health
+
+  - name: notification-router
+    url: http://localhost:4093
+    timeout: 30000
+    retryAttempts: 3
+    retryDelay: 1000
+    healthCheck:
+      enabled: true
+      interval: 30000
+      path: /health
+
+  - name: event-platform
+    url: http://localhost:4008
+    timeout: 30000
+    retryAttempts: 3
+    retryDelay: 1000
+    healthCheck:
+      enabled: true
+      interval: 30000
+      path: /health
+
+# Authentication configuration
+auth:
+  enabled: true
+  apiKeysHeader: "x-api-key"
+  internalTokenHeader: "x-internal-token"
+  validApiKeys:
+    - key: "rez-prod-key-001"
+      appId: "hotel-ota"
+      permissions: ["read", "write"]
+      rateLimit: 200  # Override default rate limit
+    - key: "rez-prod-key-002"
+      appId: "adbazaar"
+      permissions: ["read", "write"]
+      rateLimit: 150
+    - key: "rez-dev-key-001"
+      appId: "development"
+      permissions: ["read"]
+      rateLimit: 50
+  internalServiceTokens:
+    payment-service: "int-token-payment-svc-abc123"
+    auth-service: "int-token-auth-svc-def456"
+    wallet-service: "int-token-wallet-svc-ghi789"
+
+# Logging configuration
+logging:
+  level: "info"  # debug, info, warn, error
+  format: "json"  # json, simple
+  includeTimestamp: true
+  includeRequestId: true
+  includeUserId: true
+  redactFields: ["password", "apiKey", "token", "authorization"]
+
+# CORS configuration
+cors:
+  enabled: true
+  origins:
+    - "https://rez.example.com"
+    - "https://admin.rez.example.com"
+    - "http://localhost:3000"
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+  allowedHeaders: ["Content-Type", "Authorization", "X-API-Key", "X-Request-ID", "X-User-ID"]
+  exposedHeaders: ["X-RateLimit-Remaining", "X-RateLimit-Reset"]
+  credentials: true
+  maxAge: 86400
+
+# Circuit breaker configuration
+circuitBreaker:
+  enabled: true
+  timeout: 60000  # Time to wait for a response
+  errorThresholdPercentage: 50  # % of failures before opening circuit
+  resetTimeout: 30000  # Time to wait before attempting to close circuit
+  volumeThreshold: 10  # Minimum number of requests before evaluating
+
+# Request/Response configuration
+request:
+  maxBodySize: "10mb"
+  timeout: 30000
+  trustProxy: true
+
+response:
+  compressionEnabled: true
+  compressionThreshold: 1024
+
+# Aggregation settings (for response aggregation)
+aggregation:
+  maxConcurrentRequests: 5
+  timeout: 25000
+  parallel: true
