@@ -20,8 +20,8 @@ app.use(cors({
   },
   credentials: true,
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Request logging
 app.use(intentLoggingMiddleware);
@@ -108,6 +108,14 @@ app.get('/intent/triggers', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
+  // Handle payload too large
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({
+      success: false,
+      error: 'Payload too large',
+      message: 'Request body exceeds the 1MB limit'
+    });
+  }
   console.error('Error:', err);
   res.status(err.status || 500).json({
     success: false,

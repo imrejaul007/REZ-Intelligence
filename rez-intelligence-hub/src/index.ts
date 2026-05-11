@@ -118,7 +118,6 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-app.get('/health', (req: Request, res: Response) => res.json({ status: 'healthy' });
 
 // Validation schemas for params
 const userIdParams = z.object({
@@ -282,22 +281,75 @@ app.get('/api/agents/status', (req: Request, res: Response) => {
   });
 });
 
-// Health check endpoint
-app.get('/health', (req: Request, res: Response) => {
-  res.json({
-    status: 'healthy',
+// Health check endpoint with comprehensive checks
+app.get('/health', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+
+  // Memory usage
+  const memUsage = process.memoryUsage();
+  const heapUsedMB = Math.round(memUsage.heapUsed / 1024 / 1024);
+  const heapTotalMB = Math.round(memUsage.heapTotal / 1024 / 1024);
+  const rssMB = Math.round(memUsage.rss / 1024 / 1024);
+
+  // MongoDB connection state
+  const mongoStates = {
+    0: 'disconnected',
+    1: 'connected',
+    2: 'connecting',
+    3: 'disconnecting',
+  };
+  const mongoState = mongoStates[mongoose.connection.readyState as keyof typeof mongoStates] || 'unknown';
+
+  // Check Redis if available
+  let redisStatus = 'not_configured';
+  try {
+    if (process.env.REDIS_URL) {
+      const { default: redis } = await import('ioredis');
+      const redisClient = new redis(process.env.REDIS_URL, { lazyConnect: true, connectTimeout: 2000 });
+      await redisClient.ping();
+      redisStatus = 'connected';
+      await redisClient.quit();
+    }
+  } catch {
+    redisStatus = 'unavailable';
+  }
+
+  // Determine overall status
+  const isHealthy = mongoState === 'connected';
+  const responseTime = Date.now() - startTime;
+
+  res.status(isHealthy ? 200 : 503).json({
+    status: isHealthy ? 'healthy' : 'unhealthy',
     service: 'rez-intelligence-hub',
     version: '2.0.0',
     port: PORT,
-    voice: 'enabled',
     timestamp: new Date().toISOString(),
+    uptime: Math.round(process.uptime()),
+    responseTimeMs: responseTime,
+    voice: 'enabled',
+    dependencies: {
+      mongodb: {
+        status: mongoState,
+        healthy: mongoState === 'connected',
+      },
+      redis: {
+        status: redisStatus,
+        healthy: redisStatus === 'connected',
+      },
+    },
+    memory: {
+      heapUsed: `${heapUsedMB}MB`,
+      heapTotal: `${heapTotalMB}MB`,
+      rss: `${rssMB}MB`,
+      heapUsagePercent: Math.round((memUsage.heapUsed / memUsage.heapTotal) * 100),
+    },
     features: [
       'user_profiles',
       'finance_intelligence',
       'user_intelligence',
       'intent_graph_integration',
       'voice_ai',
-      'autonomous_agents'
+      'autonomous_agents',
     ],
   });
 });

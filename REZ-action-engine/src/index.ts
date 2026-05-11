@@ -39,16 +39,35 @@ const app: Application = express();
 // Middleware
 app.use(helmet());
 // CORS - restrict to known origins
-const allowedOrigins = (process.env.CORS_ORIGINS || 'https://rez.money,https://admin.rez.money,https://merchant.rez.money').split(',');
+// Security: In production, CORS_ORIGINS must be explicitly set. No fallback allowed.
+const corsOriginsEnv = process.env.CORS_ORIGINS;
+if (!corsOriginsEnv) {
+  if (process.env.NODE_ENV === 'production') {
+    logger.error('CORS configuration error: CORS_ORIGINS environment variable is required in production. ' +
+      'Set CORS_ORIGINS to a comma-separated list of allowed origins (e.g., CORS_ORIGINS=https://rez.money,https://admin.rez.money). ' +
+      'This prevents unauthorized cross-origin requests.');
+    process.exit(1);
+  }
+  // Development: Allow localhost for local testing
+  // Remove this fallback once all developers have CORS_ORIGINS configured
+  logger.warn('CORS_ORIGINS not set. Allowing localhost origins for development only. ' +
+    'Set CORS_ORIGINS for production deployments.');
+}
+const allowedOrigins = corsOriginsEnv
+  ? corsOriginsEnv.split(',')
+  : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:8080'];
+
 app.use(cors({
   origin: (origin, cb) => {
     if (!origin || allowedOrigins.includes(origin)) cb(null, true);
-    else cb(new Error('CORS blocked'));
+    else cb(new Error(`CORS blocked: origin '${origin}' is not allowed`));
   },
   credentials: true,
 }));
 app.use(compression());
-app.use(express.json());
+// Request body size limits to prevent DoS attacks
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Request logging
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -358,6 +377,15 @@ app.use((req: Request, res: Response) => {
 
 // Error handler
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  // Handle payload too large
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({
+      success: false,
+      error: 'Payload too large',
+      message: 'Request body exceeds the 1MB limit'
+    });
+  }
+
   logger.error('Unhandled error', {
     error: err.message,
     stack: err.stack,
