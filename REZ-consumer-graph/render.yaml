@@ -1,0 +1,53 @@
+# Render Blueprint for REZ Consumer Graph
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: rez-consumer-graph
+    env: node
+    region: oregon
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      - fromGroup: rez-consumer-graph-secrets
+      - fromGroup: rez-neo4j-secrets
+      - fromGroup: rez-redis-secrets
+
+# Environment variable groups
+envVarGroups:
+  - name: rez-consumer-graph-secrets
+    envVars:
+      - key: API_KEY
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+
+  - name: rez-neo4j-secrets
+    envVars:
+      - key: NEO4J_URI
+        sync: false
+      - key: NEO4J_USER
+        sync: false
+      - key: NEO4J_PASSWORD
+        sync: false
+
+  - name: rez-redis-secrets
+    envVars:
+      - key: REDIS_HOST
+        sync: false
+      - key: REDIS_PORT
+        value: "6379"
+      - key: REDIS_PASSWORD
+        sync: false
+
+# Addons
+addons:
+  - name: rez-consumer-graph-redis
+    plan: starter
+    type: redis

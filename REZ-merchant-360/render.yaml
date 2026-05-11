@@ -1,0 +1,97 @@
+# Render Blueprint for REZ Merchant 360 Service
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: rez-merchant-360
+    env: node
+    region: oregon
+    plan: standard
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: LOG_LEVEL
+        value: info
+      - key: MATCH_THRESHOLD
+        value: 0.85
+      - key: SYNC_INTERVAL_MS
+        value: 60000
+      - key: SYNC_RETRY_ATTEMPTS
+        value: 3
+      - key: SYNC_BATCH_SIZE
+        value: 100
+      # Service URLs (internal)
+      - key: FINANCE_SERVICE_URL
+        fromService:
+          name: rez-finance-service
+          envVarKey: RENDER_INTERNAL_URL
+      - key: CATALOG_SERVICE_URL
+        fromService:
+          name: rez-catalog-service
+          envVarKey: RENDER_INTERNAL_URL
+      - key: INVENTORY_SERVICE_URL
+        fromService:
+          name: rez-inventory-service
+          envVarKey: RENDER_INTERNAL_URL
+      - key: CRM_SERVICE_URL
+        fromService:
+          name: rez-crm-service
+          envVarKey: RENDER_INTERNAL_URL
+      - key: LOYALTY_SERVICE_URL
+        fromService:
+          name: rez-loyalty-service
+          envVarKey: RENDER_INTERNAL_URL
+      - key: STAFF_SERVICE_URL
+        fromService:
+          name: rez-staff-service
+          envVarKey: RENDER_INTERNAL_URL
+      - key: COMPLIANCE_SERVICE_URL
+        fromService:
+          name: rez-compliance-service
+          envVarKey: RENDER_INTERNAL_URL
+      - key: ANALYTICS_SERVICE_URL
+        fromService:
+          name: rez-analytics-service
+          envVarKey: RENDER_INTERNAL_URL
+      - key: MEMORY_SERVICE_URL
+        fromService:
+          name: rez-memory-service
+          envVarKey: RENDER_INTERNAL_URL
+      # AgentDB
+      - key: AGENTDB_HOST
+        value: agentdb.boxes.local
+      - key: AGENTDB_PORT
+        value: "8080"
+      - key: AGENTDB_DATABASE
+        value: merchant_360
+
+# Background Worker for Sync Operations
+  - type: worker
+    name: rez-merchant-360-sync-worker
+    env: node
+    region: oregon
+    plan: standard
+    buildCommand: npm install && npm run build
+    startCommand: node dist/sync-worker.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      - fromService:
+          name: rez-merchant-360
+          envVarKey: REDIS_URL
+      - fromService:
+          name: rez-merchant-360
+          envVarKey: AGENTDB_HOST
+      - fromService:
+          name: rez-merchant-360
+          envVarKey: AGENTDB_PORT
+      - fromService:
+          name: rez-merchant-360
+          envVarKey: AGENTDB_DATABASE

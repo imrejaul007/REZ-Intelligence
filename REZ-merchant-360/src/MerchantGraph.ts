@@ -221,7 +221,7 @@ export class MerchantGraph {
     }
 
     // Medium confidence - suggest merge
-    const mergeSuggestions = this.generateMergeSuggestions(merchant, topMatch.merchant);
+    const mergeSuggestions = this.generateMergeSuggestions(merchant, topMatch.merchant) || [];
 
     return {
       resolved: true,

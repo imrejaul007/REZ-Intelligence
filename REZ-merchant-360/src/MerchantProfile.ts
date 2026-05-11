@@ -331,3 +331,17 @@ export function createMerchantProfile(data: Partial<Merchant360> & { merchant_id
 export function validateMerchantProfile(data: unknown): Merchant360 {
   return MerchantProfileSchema.parse(data);
 }
+
+// ============================================
+// ADDITIONAL TYPES
+// ============================================
+
+export type Vertical = 'restaurant' | 'hotel' | 'salon' | 'fitness' | 'retail' | 'grocery' | 'pharmacy';
+
+export interface Supplier {
+  supplier_id: string;
+  name: string;
+  lead_time_days: number;
+  moq: number;
+  cost_per_unit: number;
+}
