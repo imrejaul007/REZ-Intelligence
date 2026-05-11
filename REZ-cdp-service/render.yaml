@@ -1,0 +1,46 @@
+# Render Blueprint for REZ CDP Service
+# Customer Data Platform - Unified customer profiles, identity resolution, and segmentation
+
+services:
+  - type: web
+    name: rez-cdp-service
+    env: node
+    region: oregon
+    plan: starter
+
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+
+    healthCheckPath: /health
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: LOG_LEVEL
+        value: info
+      - key: NPM_CONFIG_PRODUCTION
+        value: "false"
+
+    scaling:
+      minInstances: 1
+      maxInstances: 3
+      targetMemoryPercent: 70
+      targetCPUPercent: 80
+
+    headers:
+      - path: /*
+        name: Security Headers
+        value: |
+          X-Content-Type-Options: nosniff
+          X-Frame-Options: DENY
+          X-XSS-Protection: 1; mode=block
+          Referrer-Policy: strict-origin-when-cross-origin
+
+# Environment Groups
+# Add these in Render Dashboard > Environment Groups
+#
+# CDP_SERVICE_SECRET: Random secret for service authentication
+# CDP_DATABASE_URL: PostgreSQL connection string (when adding persistence)
+# CDP_REDIS_URL: Redis connection string (when adding caching)
