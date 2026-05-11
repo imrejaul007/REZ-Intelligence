@@ -1,0 +1,27 @@
+{
+  "name": "@rez/consumer-loop",
+  "version": "1.0.0",
+  "description": "ReZ Consumer Loop Service - Demonstrates the QR Scan → Order → Reorder flywheel",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "demo": "node src/demo.js"
+  },
+  "keywords": [
+    "rez",
+    "consumer",
+    "flywheel",
+    "reorder",
+    "personalization"
+  ],
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "uuid": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

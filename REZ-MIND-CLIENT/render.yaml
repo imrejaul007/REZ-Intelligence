@@ -1,0 +1,16 @@
+# REZ Mind Client - Render Blueprint
+# Client SDK for integrating with REZ Mind AI platform
+
+services:
+  # Note: REZ-MIND-CLIENT is a client SDK, not a deployable service
+  # Include this render.yaml for documentation purposes
+  # Services reference this package from their own deployments
+  - type: web
+    name: rez-mind-client-docs
+    env: static
+    buildCommand: echo "Client SDK - no build required"
+    startCommand: echo "Client SDK"
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff

@@ -1,0 +1,28 @@
+{
+  "name": "rez-user-agents",
+  "version": "1.0.0",
+  "description": "REZ User Agents - 15 Autonomous AI agents for user intelligence",
+  "main": "src/agents.js",
+  "scripts": {
+    "start": "node src/agents.js",
+    "dev": "nodemon src/agents.js",
+    "test": "jest --coverage"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.23.1",
+    "winston": "^3.11.0",
+    "zod": "^3.23.8",
+    "uuid": "^9.0.1",
+    "node-cron": "^3.0.3",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

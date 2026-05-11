@@ -1,0 +1,50 @@
+{
+  "name": "@rez/intelligence-platform",
+  "version": "1.0.0",
+  "description": "REZ Intelligence Platform - AI-powered commerce intelligence",
+  "private": true,
+  "workspaces": [
+    "REZ-reorder-engine",
+    "REZ-taste-profile",
+    "REZ-demand-forecast",
+    "REZ-price-predictor",
+    "REZ-identity-graph",
+    "REZ-memory-engine",
+    "REZ-ai-router",
+    "REZ-knowledge-graph",
+    "REZ-merchant-brain",
+    "REZ-autonomous-agents",
+    "REZ-payments-brain",
+    "REZ-inventory-sync",
+    "REZ-creator-network",
+    "REZ-merchant-os"
+  ],
+  "scripts": {
+    "install:all": "npm install && npm run install --workspaces",
+    "dev:reorder": "npm run dev --workspace=REZ-reorder-engine",
+    "dev:taste": "npm run dev --workspace=REZ-taste-profile",
+    "dev:demand": "npm run dev --workspace=REZ-demand-forecast",
+    "dev:price": "npm run dev --workspace=REZ-price-predictor",
+    "dev:identity": "npm run dev --workspace=REZ-identity-graph",
+    "dev:memory": "npm run dev --workspace=REZ-memory-engine",
+    "dev:ai-router": "npm run dev --workspace=REZ-ai-router",
+    "dev:knowledge": "npm run dev --workspace=REZ-knowledge-graph",
+    "dev:merchant-brain": "npm run dev --workspace=REZ-merchant-brain",
+    "dev:agents": "npm run dev --workspace=REZ-autonomous-agents",
+    "dev:payments": "npm run dev --workspace=REZ-payments-brain",
+    "dev:inventory": "npm run dev --workspace=REZ-inventory-sync",
+    "dev:creator": "npm run dev --workspace=REZ-creator-network",
+    "dev:merchant-os": "npm run dev --workspace=REZ-merchant-os",
+    "dev:all": "npm run dev --workspaces",
+    "build:all": "npm run build --workspaces",
+    "start:all": "npm run start --workspaces",
+    "clean": "rm -rf */dist */node_modules .next .turbo"
+  },
+  "devDependencies": {
+    "docker-compose": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
