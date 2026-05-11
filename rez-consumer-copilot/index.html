@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>REZ Consumer Copilot</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f1419;
+      color: #e7e9ea;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #2f3336;
+    }
+    .header h1 { font-size: 1.8rem; color: #1d9bf0; }
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #00ba7c;
+    }
+
+    .user-input {
+      background: #16181c;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 1px solid #2f3336;
+    }
+    .user-input h3 { margin-bottom: 15px; color: #71767b; font-size: 0.9rem; text-transform: uppercase; }
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+    input {
+      flex: 1;
+      padding: 12px 16px;
+      background: #2f3336;
+      border: 1px solid #536471;
+      border-radius: 8px;
+      color: #e7e9ea;
+      font-size: 1rem;
+    }
+    input:focus { outline: none; border-color: #1d9bf0; }
+    button {
+      padding: 12px 24px;
+      background: #1d9bf0;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: #1a8cd8; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .card {
+      background: #16181c;
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid #2f3336;
+    }
+    .card h3 { font-size: 0.8rem; color: #71767b; margin-bottom: 8px; text-transform: uppercase; }
+    .card .value { font-size: 2.2rem; font-weight: 700; }
+    .card .sub { font-size: 0.85rem; color: #71767b; margin-top: 5px; }
+
+    .section {
+      background: #16181c;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 1px solid #2f3336;
+    }
+    .section h2 { font-size: 1.1rem; margin-bottom: 15px; color: #e7e9ea; }
+
+    .profile-card {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+    .profile-item {
+      background: #2f3336;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .profile-item .label { font-size: 0.75rem; color: #71767b; text-transform: uppercase; }
+    .profile-item .value { font-size: 1.1rem; font-weight: 600; margin-top: 5px; }
+
+    .segments {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .segment {
+      padding: 4px 12px;
+      background: #1d9bf033;
+      color: #1d9bf0;
+      border-radius: 20px;
+      font-size: 0.85rem;
+    }
+
+    .recommendations {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 15px;
+    }
+    .rec-item {
+      background: #2f3336;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 3px solid #1d9bf0;
+    }
+    .rec-item .title { font-weight: 600; margin-bottom: 5px; }
+    .rec-item .reason { font-size: 0.85rem; color: #71767b; }
+    .rec-item .score { font-size: 0.75rem; color: #00ba7c; margin-top: 8px; }
+
+    .intent-card {
+      background: linear-gradient(135deg, #1d9bf033, #00ba7c33);
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .intent-card .label { color: #71767b; font-size: 0.85rem; text-transform: uppercase; }
+    .intent-card .intent { font-size: 1.5rem; font-weight: 700; color: #1d9bf0; margin-top: 10px; }
+    .intent-card .confidence { color: #00ba7c; font-size: 0.9rem; margin-top: 5px; }
+
+    .actions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+    }
+    .action-btn {
+      padding: 15px;
+      background: #2f3336;
+      border: 1px solid #536471;
+      border-radius: 8px;
+      color: #e7e9ea;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .action-btn:hover {
+      background: #1d9bf0;
+      border-color: #1d9bf0;
+    }
+    .action-btn .icon { font-size: 1.5rem; margin-bottom: 5px; }
+    .action-btn .label { font-size: 0.85rem; }
+
+    .timeline {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .timeline-item {
+      display: flex;
+      gap: 15px;
+      padding: 15px 0;
+      border-bottom: 1px solid #2f3336;
+    }
+    .timeline-item:last-child { border-bottom: none; }
+    .timeline-icon {
+      width: 40px;
+      height: 40px;
+      background: #2f3336;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .timeline-content .time { font-size: 0.75rem; color: #71767b; }
+    .timeline-content .action { font-weight: 600; margin: 5px 0; }
+    .timeline-content .detail { font-size: 0.85rem; color: #71767b; }
+
+    .loading { text-align: center; padding: 40px; color: #71767b; }
+    .error { background: #f4212e33; padding: 15px; border-radius: 8px; color: #f4212e; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>REZ Consumer Copilot</h1>
+      <div class="status">
+        <div class="status-dot"></div>
+        <span>Connected to ReZ Mind</span>
+      </div>
+    </div>
+
+    <div class="user-input">
+      <h3>Enter User ID</h3>
+      <div class="input-row">
+        <input type="text" id="userId" placeholder="e.g., user_12345" value="user_demo_001">
+        <button onclick="loadUserProfile()">Load Profile</button>
+      </div>
+    </div>
+
+    <div id="loading" class="loading" style="display:none;">Loading user intelligence...</div>
+    <div id="error" class="error" style="display:none;"></div>
+
+    <div id="dashboard" style="display:none;">
+      <div class="intent-card">
+        <div class="label">Current Intent</div>
+        <div class="intent" id="currentIntent">Loading...</div>
+        <div class="confidence" id="intentConfidence">Confidence: --</div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h3>Lifetime Value</h3>
+          <div class="value" id="ltv">--</div>
+          <div class="sub">Total spent</div>
+        </div>
+        <div class="card">
+          <h3>Engagement</h3>
+          <div class="value" id="engagement">--</div>
+          <div class="sub">Activity score</div>
+        </div>
+        <div class="card">
+          <h3>Churn Risk</h3>
+          <div class="value" id="churnRisk">--</div>
+          <div class="sub">Likelihood to churn</div>
+        </div>
+        <div class="card">
+          <h3>Purchase Prob</h3>
+          <div class="value" id="purchaseProb">--</div>
+          <div class="sub">Next order likelihood</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>User Profile</h2>
+        <div class="profile-card">
+          <div class="profile-item">
+            <div class="label">Food Preferences</div>
+            <div class="value" id="foodPrefs">--</div>
+          </div>
+          <div class="profile-item">
+            <div class="label">Price Range</div>
+            <div class="value" id="priceRange">--</div>
+          </div>
+          <div class="profile-item">
+            <div class="label">Time Pattern</div>
+            <div class="value" id="timePattern">--</div>
+          </div>
+          <div class="profile-item">
+            <div class="label">Avg Spend</div>
+            <div class="value" id="avgSpend">--</div>
+          </div>
+        </div>
+        <div class="segments" id="segments"></div>
+      </div>
+
+      <div class="section">
+        <h2>Personalized Recommendations</h2>
+        <div id="recommendations" class="recommendations"></div>
+      </div>
+
+      <div class="section">
+        <h2>Quick Actions</h2>
+        <div class="actions-grid">
+          <div class="action-btn" onclick="sendEvent('search', 'biryani')">
+            <div class="icon">🔍</div>
+            <div class="label">Search Food</div>
+          </div>
+          <div class="action-btn" onclick="sendEvent('view', 'popular')">
+            <div class="icon">👀</div>
+            <div class="label">Browse Popular</div>
+          </div>
+          <div class="action-btn" onclick="sendEvent('order', 'reorder')">
+            <div class="icon">📦</div>
+            <div class="label">Reorder</div>
+          </div>
+          <div class="action-btn" onclick="sendEvent('book', 'service')">
+            <div class="icon">📅</div>
+            <div class="label">Book Service</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Recent Activity</h2>
+        <div class="timeline" id="timeline">
+          <div class="loading">No recent activity</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const EVENT_PLATFORM = 'http://localhost:4008';
+    const USER_INTELLIGENCE = 'http://localhost:3004';
+
+    let currentUserId = '';
+
+    async function loadUserProfile() {
+      const userId = document.getElementById('userId').value.trim();
+      if (!userId) return;
+
+      currentUserId = userId;
+
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('error').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'none';
+
+      try {
+        const response = await fetch(`${USER_INTELLIGENCE}/user/${userId}/profile`);
+        const data = await response.json();
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+
+        updateDashboard(data.profile || getMockData());
+
+      } catch (error) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        updateDashboard(getMockData());
+      }
+    }
+
+    function getMockData() {
+      return {
+        preferences: {
+          food: ['biryani', 'pizza', 'burger'],
+          categories: ['spa', 'salon'],
+          price_range: 'medium',
+          time_pattern: 'evening'
+        },
+        behavior: {
+          avg_spend: 450,
+          frequency: 'weekly'
+        },
+        intent: {
+          current: 'looking_for_dinner',
+          confidence: 0.78
+        },
+        segments: ['foodies', 'deal_seekers'],
+        scores: {
+          ltv: 12500,
+          churn_risk: 0.2,
+          engagement: 0.85,
+          purchase_probability: 0.65
+        }
+      };
+    }
+
+    function updateDashboard(data) {
+      document.getElementById('currentIntent').textContent = data.intent?.current || 'browsing';
+      document.getElementById('intentConfidence').textContent = `Confidence: ${((data.intent?.confidence || 0) * 100).toFixed(0)}%`;
+
+      document.getElementById('ltv').textContent = '₹' + (data.scores?.ltv || 0).toLocaleString();
+      document.getElementById('engagement').textContent = ((data.scores?.engagement || 0) * 100).toFixed(0) + '%';
+      document.getElementById('churnRisk').textContent = ((data.scores?.churn_risk || 0) * 100).toFixed(0) + '%';
+      document.getElementById('purchaseProb').textContent = ((data.scores?.purchase_probability || 0) * 100).toFixed(0) + '%';
+
+      document.getElementById('foodPrefs').textContent = (data.preferences?.food || []).slice(0, 3).join(', ');
+      document.getElementById('priceRange').textContent = data.preferences?.price_range || 'medium';
+      document.getElementById('timePattern').textContent = data.preferences?.time_pattern || 'evening';
+      document.getElementById('avgSpend').textContent = '₹' + (data.behavior?.avg_spend || 0);
+
+      const segmentsEl = document.getElementById('segments');
+      segmentsEl.innerHTML = (data.segments || []).map(s =>
+        `<span class="segment">${s}</span>`
+      ).join('');
+
+      const recsEl = document.getElementById('recommendations');
+      recsEl.innerHTML = generateRecommendations(data);
+
+      const timelineEl = document.getElementById('timeline');
+      timelineEl.innerHTML = generateTimeline();
+    }
+
+    function generateRecommendations(data) {
+      const recs = [];
+
+      if (data.segments?.includes('foodies')) {
+        recs.push({ title: '🔥 Trending Biryani', reason: 'Based on your food preferences', score: 0.92 });
+      }
+      if (data.segments?.includes('deal_seekers')) {
+        recs.push({ title: '💰 20% Off This Week', reason: 'Best deal in your area', score: 0.88 });
+      }
+      if (data.preferences?.time_pattern === 'evening') {
+        recs.push({ title: '🌆 Evening Specials', reason: 'Popular during your order time', score: 0.85 });
+      }
+      recs.push({ title: '⭐ Highly Rated Nearby', reason: '4.5+ rated restaurants', score: 0.82 });
+      recs.push({ title: '🚀 Fast Delivery', reason: '30 min or less', score: 0.78 });
+
+      return recs.map(r => `
+        <div class="rec-item">
+          <div class="title">${r.title}</div>
+          <div class="reason">${r.reason}</div>
+          <div class="score">Match: ${(r.score * 100).toFixed(0)}%</div>
+        </div>
+      `).join('');
+    }
+
+    function generateTimeline() {
+      return [
+        { icon: '🍽️', action: 'Order placed', detail: 'Chicken Biryani from Food Court', time: '2 hours ago' },
+        { icon: '🔍', action: 'Searched', detail: '"best biryani near me"', time: '3 hours ago' },
+        { icon: '👀', action: 'Viewed', detail: 'Spice Garden Menu', time: '4 hours ago' },
+        { icon: '⭐', action: 'Review submitted', detail: '5 stars for last order', time: 'Yesterday' },
+        { icon: '📦', action: 'Order completed', detail: '₹580 from Pizza Hub', time: '2 days ago' },
+      ].map(item => `
+        <div class="timeline-item">
+          <div class="timeline-icon">${item.icon}</div>
+          <div class="timeline-content">
+            <div class="time">${item.time}</div>
+            <div class="action">${item.action}</div>
+            <div class="detail">${item.detail}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function sendEvent(type, detail) {
+      const endpoint = {
+        'search': '/webhook/consumer/search',
+        'view': '/webhook/consumer/view',
+        'order': '/webhook/consumer/order'
+      }[type] || '/webhook/consumer/search';
+
+      const data = {
+        user_id: currentUserId,
+        query: detail || type,
+        source: 'consumer_copilot_demo'
+      };
+
+      if (type === 'search') {
+        data.query = detail;
+        data.results_count = Math.floor(Math.random() * 20) + 5;
+      }
+
+      try {
+        const response = await fetch(`${EVENT_PLATFORM}${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        alert(`Event sent! Correlation ID: ${result.correlation_id}`);
+        loadUserProfile();
+
+      } catch (error) {
+        alert('Event sent (demo mode)');
+        console.log('Event data:', data);
+      }
+    }
+
+    window.onload = () => {
+      loadUserProfile();
+    };
+  </script>
+</body>
+</html>

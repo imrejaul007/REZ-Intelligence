@@ -1,0 +1,7 @@
+{
+  "$schema": "./00-SCHEMA.json",
+  "description": "ReZ Error Knowledge Base — centralized registry for all ecosystem errors",
+  "generated": "2026-04-15",
+  "total_errors": 0,
+  "errors": []
+}

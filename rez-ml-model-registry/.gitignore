@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.js.map
+*.d.ts
+
+# Environment files - NEVER COMMIT THESE
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# TypeScript
+*.tsbuildinfo
+
+# Test coverage
+coverage/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Secrets and credentials
+*.pem
+*.key
+credentials.json
+secrets.json
+
+# ML Model Registry specific
+*.model
+*.h5
+*.pb
+*.pkl
+*.joblib
+./models/
+./checkpoints/
+./artifacts/
+./registry/

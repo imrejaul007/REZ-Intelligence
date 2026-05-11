@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: rez-reconciliation-service
+    env: node
+    region: oregon
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: RECONCILIATION_CRON_SCHEDULE
+        value: "0 2 * * *"
+      - key: LOG_LEVEL
+        value: info

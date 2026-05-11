@@ -1,0 +1,56 @@
+# render.yaml — ReZ Error Intelligence Service
+# Central error knowledge base for the entire REZ ecosystem
+#
+# NOTE: This service currently operates as a GitHub-based error tracking system.
+# A package.json and Node.js entry point are required for web deployment.
+#
+# Deploy: render blueprint create (CLI) or push to GitHub + link on Render dashboard
+#
+# REQUIRED — set in Render dashboard > Service > Environment:
+#   MONGODB_URI              — MongoDB Atlas cluster (for future error DB)
+#   REDIS_URL                — Redis instance (for future caching)
+#   INTERNAL_SERVICE_TOKENS_JSON — JSON array of service tokens
+#
+# TODO: Add package.json with entry point before deploying as web service
+
+services:
+  - type: web
+    name: rez-error-intelligence
+    env: node
+    region: singapore
+    plan: free
+    nodeVersion: '20'
+    # TODO: Uncomment when package.json is added
+    # buildCommand: npm install && npm run build
+    # startCommand: node dist/index.js
+    buildCommand: echo "No build required for error intelligence docs"
+    startCommand: echo "Error intelligence runs as GitHub-based error tracking"
+    healthCheckPath: /health
+    healthCheckInterval: 30
+    healthCheckThreshold: 3
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: '4011'
+      - key: MONGODB_URI
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: INTERNAL_SERVICE_TOKENS_JSON
+        sync: false
+      # AI Configuration (for future error analysis integration)
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      # Error Intelligence Configuration
+      - key: ERROR_TYPES
+        value: 'BUILD,DEPLOY,RUNTIME,CI,SECURITY'
+      - key: ERROR_SEVERITY_LEVELS
+        value: 'CRITICAL,HIGH,MEDIUM,LOW'
+      # GitHub Integration
+      - key: GITHUB_REPO
+        value: rez-error-intelligence
+      - key: GITHUB_ORG
+        sync: false

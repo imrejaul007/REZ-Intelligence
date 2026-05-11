@@ -1,0 +1,23 @@
+{
+  "version": "v1.0.1778250484725",
+  "trainedAt": "2026-05-08T14:28:04.725Z",
+  "features": [
+    "recency",
+    "frequency",
+    "fulfillmentRate",
+    "checkoutRate",
+    "cartAddRate"
+  ],
+  "weights": {
+    "recency": 0.4,
+    "frequency": 0.25,
+    "fulfillmentRate": 0.2,
+    "checkoutRate": 0.1,
+    "cartAddRate": 0.05
+  },
+  "thresholds": {
+    "low": 0.3,
+    "medium": 0.6,
+    "high": 1
+  }
+}

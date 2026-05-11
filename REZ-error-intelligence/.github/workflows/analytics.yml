@@ -1,0 +1,48 @@
+name: Error Analytics
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Every Monday at 9am
+  workflow_dispatch:
+
+jobs:
+  analytics:
+    name: Generate Analytics
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate analytics
+        run: |
+          echo "## Error Analytics Report" > analytics.md
+          echo "**Generated:** $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> analytics.md
+          echo "" >> analytics.md
+
+          # Count open vs closed
+          echo "### Issue Summary" >> analytics.md
+          echo "| Label | Count |" >> analytics.md
+          echo "|-------|-------|" >> analytics.md
+          echo "| deploy-error (open) | TBD |" >> analytics.md
+          echo "| runtime-error (open) | TBD |" >> analytics.md
+          echo "| security-error (open) | TBD |" >> analytics.md
+          echo "" >> analytics.md
+
+          echo "### Most Failing Services (Last 30 days)" >> analytics.md
+          echo "| Service | Error Count |" >> analytics.md
+          echo "|---------|------------|" >> analytics.md
+
+          # Placeholder — actual data comes from GitHub API
+          echo "| TBD | TBD |" >> analytics.md
+
+          echo "### Prevention Coverage" >> analytics.md
+          echo "Automated prevention tracking coming soon." >> analytics.md
+
+      - name: Upload analytics
+        uses: actions/upload-artifact@v4
+        with:
+          name: analytics-report
+          path: analytics.md
+
+      - name: Post to PR summary
+        run: cat analytics.md >> $GITHUB_STEP_SUMMARY

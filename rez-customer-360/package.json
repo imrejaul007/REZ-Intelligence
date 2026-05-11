@@ -1,0 +1,27 @@
+{
+  "name": "rez-customer-360",
+  "version": "1.0.0",
+  "description": "Customer 360 view module with unified profiles, interaction history, lifetime value, and preferences",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint src --ext .ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "customer",
+    "360",
+    "crm",
+    "lifetime-value",
+    "unified-profile",
+    "customer-intelligence"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0"
+  }
+}

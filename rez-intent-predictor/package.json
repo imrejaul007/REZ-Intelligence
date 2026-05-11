@@ -1,0 +1,18 @@
+{
+  "name": "rez-intent-predictor",
+  "version": "1.0.0",
+  "description": "Real-time user intent prediction service for ReZ platform",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "build": "echo skip"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "uuid": "^9.0.0"
+  }
+}

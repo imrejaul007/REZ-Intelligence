@@ -1,0 +1,110 @@
+name: "\U0001F6A7 Deployment Error"
+description: Report a build, deployment, or runtime error
+title: "[DEPLOY ERROR][SERVICE] <description>"
+labels: ["deploy-error"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Deployment Error
+
+        Every deployment error MUST have a prevention action before closing.
+
+  - type: dropdown
+    id: error-type
+    attributes:
+      label: Error Type
+      options:
+        - Build Failure
+        - Deployment Failure
+        - Runtime Crash
+        - CI Pipeline Failure
+        - Security Violation
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - Production
+        - Staging
+        - CI
+        - Local
+    validations:
+      required: true
+
+  - type: dropdown
+    id: repo
+    attributes:
+      label: Repository
+      options:
+        - rez-app-consumer
+        - rez-merchant
+        - rezadmin
+        - rez-web-menu
+        - rez-now
+        - rez-backend-master
+        - rez-api-gateway
+        - rez-auth-service
+        - rez-wallet-service
+        - rez-payment-service
+        - rez-order-service
+        - rez-merchant-service
+        - rez-catalog-service
+        - rez-search-service
+        - rez-gamification-service
+        - rez-karma-service
+        - rez-ads-service
+        - rez-marketing-service
+        - rez-devops-config
+        - rez-error-intelligence
+        - rez-contracts
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: commit
+    attributes:
+      label: Commit SHA
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs
+      placeholder: |
+        ```
+        [paste error logs]
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+    id: root-cause
+    attributes:
+      label: Root Cause
+      placeholder: Why did this happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: fix
+    attributes:
+      label: Fix Applied
+      placeholder: What was done to fix it?
+    validations:
+      required: true
+
+  - type: textarea
+    id: prevention
+    attributes:
+      label: Prevention Actions
+      placeholder: |
+        1. Add CI check: ...
+        2. Add test case: ...
+        3. Add ENV validation: ...
+        4. Add architectural constraint: ...
+    validations:
+      required: true

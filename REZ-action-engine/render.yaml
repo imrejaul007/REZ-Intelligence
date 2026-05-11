@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: rez-action-engine
+    env: node
+    region: mumbai
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: FEEDBACK_SERVICE_URL
+        value: https://rez-feedback-service.onrender.com

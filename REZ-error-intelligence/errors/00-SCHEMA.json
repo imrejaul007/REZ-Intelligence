@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ReZ Error Knowledge Base Entry",
+  "description": "Schema for documenting build, deployment, and runtime errors across the REZ ecosystem",
+  "type": "object",
+  "required": ["error_id", "type", "title", "repo", "root_cause", "fix", "prevention", "commit_id", "date", "status"],
+  "properties": {
+    "error_id": {
+      "type": "string",
+      "description": "Unique identifier: ERR-{TYPE}-{NNN}"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["build", "deploy", "runtime", "ci", "security"]
+    },
+    "subtype": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "repo": {
+      "type": "string",
+      "description": "Source repository"
+    },
+    "service": {
+      "type": "string",
+      "description": "Affected service or 'multiple'"
+    },
+    "environment": {
+      "type": "string",
+      "enum": ["production", "staging", "ci", "local"]
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["critical", "high", "medium", "low"]
+    },
+    "root_cause": {
+      "type": "string"
+    },
+    "fix": {
+      "type": "string"
+    },
+    "prevention": {
+      "type": "object",
+      "properties": {
+        "ci_rule_added": { "type": "string" },
+        "test_added": { "type": "string" },
+        "validation_added": { "type": "string" },
+        "architectural_constraint": { "type": "string" },
+        "runbook_entry": { "type": "string" },
+        "other": { "type": "string" }
+      }
+    },
+    "commit_id": {
+      "type": "string"
+    },
+    "pr_number": {
+      "type": "integer"
+    },
+    "issue_number": {
+      "type": "integer"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "recurrence_count": {
+      "type": "integer",
+      "default": 1
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "logs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "resolved", "monitoring"]
+    }
+  }
+}

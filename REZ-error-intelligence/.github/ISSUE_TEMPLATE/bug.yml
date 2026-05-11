@@ -1,0 +1,97 @@
+name: "\U0001F41E Bug Report"
+description: Report a bug across REZ ecosystem
+title: "[BUG][SERVICE] <description>"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Bug Report
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      placeholder: Describe the bug
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Result
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Result
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+
+  - type: dropdown
+    id: repo
+    attributes:
+      label: Repository
+      options:
+        - rez-app-consumer
+        - rez-merchant
+        - rezadmin
+        - rez-web-menu
+        - rez-now
+        - rez-backend-master
+        - rez-api-gateway
+        - rez-auth-service
+        - rez-wallet-service
+        - rez-payment-service
+        - rez-order-service
+        - rez-merchant-service
+        - rez-catalog-service
+        - rez-search-service
+        - rez-gamification-service
+        - rez-karma-service
+        - rez-ads-service
+        - rez-marketing-service
+        - rez-shared
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: root-cause
+    attributes:
+      label: Root Cause
+      placeholder: Why did this happen?
+
+  - type: textarea
+    id: prevention
+    attributes:
+      label: Prevention Actions
+      placeholder: |
+        1. Add test case: ...
+        2. Add CI validation: ...
+        3. Add architectural constraint: ...

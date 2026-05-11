@@ -1,0 +1,81 @@
+name: "\U0001F510 Security Issue"
+description: Report a security vulnerability
+title: "[SECURITY][SERVICE] <description>"
+labels: ["security", "confidential"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Security Issue
+
+        **CONFIDENTIAL**: Do not share details publicly until resolved.
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Security Severity
+      options:
+        - Critical (RCE, auth bypass, data exfiltration)
+        - High (SQL injection, XSS, CSRF)
+        - Medium (information disclosure, weak crypto)
+        - Low (best practice violation)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Vulnerability Type
+      options:
+        - Injection (SQL, NoSQL, Command)
+        - Authentication Bypass
+        - Authorization Flaw
+        - Sensitive Data Exposure
+        - XSS
+        - CSRF
+        - SSRF
+        - Authentication Weakness
+        - Cryptographic Failure
+        - Configuration Issue
+        - Dependency Vulnerability
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: repo
+    attributes:
+      label: Affected Repository
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      placeholder: Describe the vulnerability
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Potential Impact
+      placeholder: What could an attacker achieve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: fix
+    attributes:
+      label: Fix Applied
+    validations:
+      required: true
+
+  - type: textarea
+    id: prevention
+    attributes:
+      label: Prevention
+      placeholder: How will this be prevented?
+    validations:
+      required: true

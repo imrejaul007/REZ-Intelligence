@@ -1,0 +1,1368 @@
+openapi: 3.0.0
+info:
+  title: REZ Event Platform API
+  version: 1.0.0
+  description: |
+    Event ingestion and processing platform for REZ ecosystem.
+    This service receives webhook events from various REZ services and
+    forwards them to the Action Engine for processing.
+  contact:
+    name: REZ Team
+    email: support@rez.io
+  license:
+    name: MIT
+
+servers:
+  - url: https://rez-event-platform.onrender.com
+    description: Production
+  - url: http://localhost:4008
+    description: Local Development
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Merchant
+    description: Merchant App webhook events
+  - name: Consumer
+    description: Consumer App webhook events
+  - name: Auth
+    description: Authentication webhook events
+  - name: Wallet
+    description: Wallet transaction webhook events
+  - name: Catalog
+    description: Catalog/menu webhook events
+  - name: Gamification
+    description: Points and loyalty webhook events
+  - name: Support
+    description: Customer support webhook events
+  - name: Chat
+    description: Chat/messaging webhook events
+
+paths:
+  # ============================================================
+  # Health & Status Endpoints
+  # ============================================================
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Returns the health status of the service including MongoDB connection and Action Engine URL
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: healthy
+                service: rez-event-platform
+                mongodb: connected
+                actionEngine: http://localhost:4009
+                timestamp: "2026-05-01T12:00:00.000Z"
+
+  /ready:
+    get:
+      tags:
+        - Health
+      summary: Readiness check
+      description: Returns whether the service is ready to accept requests
+      operationId: getReady
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadyResponse'
+        '503':
+          description: Service is not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadyResponse'
+
+  /live:
+    get:
+      tags:
+        - Health
+      summary: Liveness check
+      description: Simple liveness probe endpoint
+      operationId: getLive
+      responses:
+        '200':
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alive:
+                    type: boolean
+                    example: true
+
+  /stats:
+    get:
+      tags:
+        - Health
+      summary: Event statistics
+      description: Returns statistics about stored events
+      operationId: getStats
+      responses:
+        '200':
+          description: Event statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatsResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /webhook/status:
+    get:
+      tags:
+        - Health
+      summary: Webhook status
+      description: Returns status of all available webhooks
+      operationId: getWebhookStatus
+      responses:
+        '200':
+          description: Webhook status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookStatusResponse'
+
+  # ============================================================
+  # Generic Event Publishing
+  # ============================================================
+
+  /events/{type}:
+    post:
+      tags:
+        - Health
+      summary: Publish generic event
+      description: Publish a generic event with any type to the event bus
+      operationId: publishEvent
+      parameters:
+        - name: type
+          in: path
+          required: true
+          description: Event type
+          schema:
+            type: string
+            example: custom.event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenericEvent'
+      responses:
+        '200':
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventAcceptedResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================
+  # Merchant App Webhooks
+  # ============================================================
+
+  /webhook/merchant/inventory:
+    post:
+      tags:
+        - Merchant
+      summary: Merchant inventory event
+      description: |
+        Triggered when merchant inventory falls below threshold.
+        Used for stock monitoring and reordering automation.
+      operationId: merchantInventoryWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MerchantInventoryEvent'
+            example:
+              merchant_id: "merchant_123"
+              item_id: "item_456"
+              item_name: "Premium Burger"
+              current_stock: 5
+              threshold: 10
+              avg_daily_sales: 20
+              recent_orders: 45
+              source: "merchant_app"
+      responses:
+        '200':
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAcceptedResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /webhook/merchant/order:
+    post:
+      tags:
+        - Merchant
+      summary: Merchant order completed
+      description: |
+        Triggered when a merchant completes an order.
+        Used for analytics and merchant dashboard updates.
+      operationId: merchantOrderWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MerchantOrderEvent'
+            example:
+              merchant_id: "merchant_123"
+              order_id: "order_789"
+              items:
+                - item_id: "item_1"
+                  name: "Burger"
+                  quantity: 2
+                  price: 10.99
+              total_amount: 21.98
+              customer_id: "customer_456"
+              payment_method: "wallet"
+              source: "merchant_app"
+      responses:
+        '200':
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAcceptedResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /webhook/merchant/payment:
+    post:
+      tags:
+        - Merchant
+      summary: Merchant payment success
+      description: |
+        Triggered when a merchant receives payment.
+        Used for payment reconciliation and merchant earnings.
+      operationId: merchantPaymentWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MerchantPaymentEvent'
+            example:
+              merchant_id: "merchant_123"
+              transaction_id: "txn_abc123"
+              amount: 150.00
+              status: "success"
+              source: "merchant_app"
+      responses:
+        '200':
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAcceptedResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================
+  # Consumer App Webhooks
+  # ============================================================
+
+  /webhook/consumer/order:
+    post:
+      tags:
+        - Consumer
+      summary: Consumer order placed
+      description: |
+        Triggered when a consumer places an order.
+        Used for order tracking and consumer history.
+      operationId: consumerOrderWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsumerOrderEvent'
+            example:
+              user_id: "user_123"
+              order_id: "order_789"
+              items:
+                - item_id: "item_1"
+                  name: "Pizza"
+                  quantity: 1
+                  price: 15.99
+              total_amount: 15.99
+              merchant_id: "merchant_456"
+              source: "consumer_app"
+      responses:
+        '200':
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAcceptedResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /webhook/consumer/search:
+    post:
+      tags:
+        - Consumer
+      summary: Consumer search query
+      description: |
+        Triggered when a consumer performs a search.
+        Used for intent tracking and search analytics.
+      operationId: consumerSearchWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsumerSearchEvent'
+            example:
+              user_id: "user_123"
+              query: "best pizza near me"
+              results_count: 25
+              clicked_item: "item_456"
+              source: "consumer_app"
+      responses:
+        '200':
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAcceptedResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /webhook/consumer/view:
+    post:
+      tags:
+        - Consumer
+      summary: Consumer item view
+      description: |
+        Triggered when a consumer views an item.
+        Used for engagement tracking and recommendations.
+      operationId: consumerViewWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsumerViewEvent'
+            example:
+              user_id: "user_123"
+              item_id: "item_456"
+              item_name: "Margherita Pizza"
+              merchant_id: "merchant_789"
+              duration_seconds: 30
+              source: "consumer_app"
+      responses:
+        '200':
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAcceptedResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================
+  # Auth Webhooks
+  # ============================================================
+
+  /webhook/auth/signup:
+    post:
+      tags:
+        - Auth
+      summary: User signup
+      description: |
+        Triggered when a new user registers.
+        Used for onboarding workflows and user analytics.
+      operationId: authSignupWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthSignupEvent'
+            example:
+              user_id: "user_123"
+              method: "email"
+              source: "auth_service"
+      responses:
+        '200':
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAcceptedResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /webhook/auth/login:
+    post:
+      tags:
+        - Auth
+      summary: User login
+      description: |
+        Triggered when a user attempts to log in.
+        Used for security monitoring and session management.
+      operationId: authLoginWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthLoginEvent'
+            example:
+              user_id: "user_123"
+              method: "password"
+              success: true
+              source: "auth_service"
+      responses:
+        '200':
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAcceptedResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /webhook/auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: User logout
+      description: |
+        Triggered when a user logs out.
+        Used for session cleanup and analytics.
+      operationId: authLogoutWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthLogoutEvent'
+            example:
+              user_id: "user_123"
+              source: "auth_service"
+      responses:
+        '200':
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAcceptedResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================
+  # Wallet Webhooks
+  # ============================================================
+
+  /webhook/wallet/topup:
+    post:
+      tags:
+        - Wallet
+      summary: Wallet top-up
+      description: |
+        Triggered when a user adds funds to their wallet.
+        Used for balance tracking and payment processing.
+      operationId: walletTopupWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalletTopupEvent'
+            example:
+              user_id: "user_123"
+              amount: 100.00
+              payment_method: "credit_card"
+              balance_after: 250.00
+              transaction_id: "txn_abc123"
+              source: "wallet_service"
+      responses:
+        '200':
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAcceptedResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /webhook/wallet/withdraw:
+    post:
+      tags:
+        - Wallet
+      summary: Wallet withdrawal
+      description: |
+        Triggered when a user withdraws funds from their wallet.
+        Used for transaction processing and compliance.
+      operationId: walletWithdrawWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalletWithdrawEvent'
+            example:
+              user_id: "user_123"
+              amount: 50.00
+              status: "pending"
+              transaction_id: "txn_def456"
+              source: "wallet_service"
+      responses:
+        '200':
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAcceptedResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================
+  # Catalog Webhooks
+  # ============================================================
+
+  /webhook/catalog/view:
+    post:
+      tags:
+        - Catalog
+      summary: Catalog item view
+      description: |
+        Triggered when a user views a catalog/menu item.
+        Used for menu analytics and popularity tracking.
+      operationId: catalogViewWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogViewEvent'
+            example:
+              user_id: "user_123"
+              merchant_id: "merchant_456"
+              item_id: "item_789"
+              item_name: "Chicken Wings"
+              category: "Appetizers"
+              source: "catalog_service"
+      responses:
+        '200':
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAcceptedResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================
+  # Gamification Webhooks
+  # ============================================================
+
+  /webhook/gamification/earn:
+    post:
+      tags:
+        - Gamification
+      summary: Points earned
+      description: |
+        Triggered when a user earns loyalty points.
+        Used for rewards tracking and engagement.
+      operationId: gamificationEarnWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GamificationEarnEvent'
+            example:
+              user_id: "user_123"
+              points: 100
+              reason: "order_completed"
+              source: "gamification_service"
+      responses:
+        '200':
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAcceptedResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /webhook/gamification/redeem:
+    post:
+      tags:
+        - Gamification
+      summary: Points redeemed
+      description: |
+        Triggered when a user redeems loyalty points for rewards.
+        Used for reward fulfillment and analytics.
+      operationId: gamificationRedeemWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GamificationRedeemEvent'
+            example:
+              user_id: "user_123"
+              points: 500
+              reward_id: "reward_456"
+              source: "gamification_service"
+      responses:
+        '200':
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAcceptedResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================
+  # Support Webhooks
+  # ============================================================
+
+  /webhook/support/ticket:
+    post:
+      tags:
+        - Support
+      summary: Support ticket created
+      description: |
+        Triggered when a user creates a support ticket.
+        Used for ticket routing and customer service.
+      operationId: supportTicketWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupportTicketEvent'
+            example:
+              ticket_id: "ticket_123"
+              user_id: "user_456"
+              category: "order_issue"
+              priority: "high"
+              source: "support_service"
+      responses:
+        '200':
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAcceptedResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================
+  # Chat Webhooks
+  # ============================================================
+
+  /webhook/chat/message:
+    post:
+      tags:
+        - Chat
+      summary: Chat message sent
+      description: |
+        Triggered when a chat message is sent.
+        Used for conversation tracking and support.
+      operationId: chatMessageWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatMessageEvent'
+            example:
+              message_id: "msg_123"
+              conversation_id: "conv_456"
+              sender_id: "user_789"
+              sender_type: "user"
+              content: "Hello, I need help with my order"
+              context: "order_inquiry"
+              source: "chat_service"
+      responses:
+        '200':
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAcceptedResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+# ============================================================
+# Components
+# ============================================================
+
+components:
+  schemas:
+    # Common Schemas
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+      required:
+        - error
+
+    WebhookAcceptedResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        correlation_id:
+          type: string
+          description: Unique correlation ID for the event
+          example: "merchant_123_1714567890123"
+        event_id:
+          type: string
+          description: MongoDB document ID
+          example: "65f1234567890abcdef12345"
+      required:
+        - success
+        - correlation_id
+        - event_id
+
+    EventAcceptedResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        eventId:
+          type: string
+          description: MongoDB document ID
+        correlationId:
+          type: string
+          description: Unique correlation ID
+        duplicate:
+          type: boolean
+          description: Whether this was a duplicate event
+          default: false
+
+    # Health Schemas
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+        service:
+          type: string
+          example: rez-event-platform
+        mongodb:
+          type: string
+          enum: [connected, disconnected]
+        actionEngine:
+          type: string
+          description: Action Engine URL
+        timestamp:
+          type: string
+          format: date-time
+
+    ReadyResponse:
+      type: object
+      properties:
+        ready:
+          type: boolean
+
+    StatsResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of events
+        byType:
+          type: array
+          items:
+            type: object
+            properties:
+              _id:
+                type: string
+                description: Event type
+              count:
+                type: integer
+                description: Count of events with this type
+
+    WebhookStatusResponse:
+      type: object
+      properties:
+        service:
+          type: string
+        version:
+          type: string
+        webhooks:
+          type: object
+          properties:
+            merchant:
+              type: object
+              additionalProperties:
+                type: string
+            consumer:
+              type: object
+              additionalProperties:
+                type: string
+            auth:
+              type: object
+              additionalProperties:
+                type: string
+            wallet:
+              type: object
+              additionalProperties:
+                type: string
+            catalog:
+              type: object
+              additionalProperties:
+                type: string
+            gamification:
+              type: object
+              additionalProperties:
+                type: string
+            support:
+              type: object
+              additionalProperties:
+                type: string
+            chat:
+              type: object
+              additionalProperties:
+                type: string
+        action_engine_url:
+          type: string
+
+    # Generic Event Schema
+    GenericEvent:
+      type: object
+      properties:
+        correlation_id:
+          type: string
+          description: Unique identifier for event deduplication
+        source:
+          type: string
+          description: Source service identifier
+        data:
+          type: object
+          description: Event payload data
+      required:
+        - correlation_id
+
+    # Merchant Event Schemas
+    MerchantInventoryEvent:
+      type: object
+      required:
+        - merchant_id
+        - item_id
+      properties:
+        merchant_id:
+          type: string
+          description: Merchant unique identifier
+          example: "merchant_123"
+        item_id:
+          type: string
+          description: Item unique identifier
+          example: "item_456"
+        item_name:
+          type: string
+          description: Name of the item
+          example: "Premium Burger"
+        current_stock:
+          type: integer
+          description: Current stock quantity
+          example: 5
+        threshold:
+          type: integer
+          description: Low stock threshold
+          example: 10
+        avg_daily_sales:
+          type: number
+          description: Average daily sales for the item
+          example: 20
+        recent_orders:
+          type: integer
+          description: Orders in last 3 days
+          example: 45
+        source:
+          type: string
+          description: Source service identifier
+          example: "merchant_app"
+
+    MerchantOrderEvent:
+      type: object
+      required:
+        - merchant_id
+        - order_id
+      properties:
+        merchant_id:
+          type: string
+          example: "merchant_123"
+        order_id:
+          type: string
+          example: "order_789"
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              item_id:
+                type: string
+              name:
+                type: string
+              quantity:
+                type: integer
+              price:
+                type: number
+        total_amount:
+          type: number
+          example: 21.98
+        customer_id:
+          type: string
+          example: "customer_456"
+        payment_method:
+          type: string
+          enum: [wallet, card, cash, bank_transfer]
+          example: "wallet"
+        source:
+          type: string
+          example: "merchant_app"
+
+    MerchantPaymentEvent:
+      type: object
+      required:
+        - merchant_id
+        - transaction_id
+        - amount
+      properties:
+        merchant_id:
+          type: string
+          example: "merchant_123"
+        transaction_id:
+          type: string
+          example: "txn_abc123"
+        amount:
+          type: number
+          example: 150.00
+        status:
+          type: string
+          enum: [success, pending, failed]
+          example: "success"
+        source:
+          type: string
+          example: "merchant_app"
+
+    # Consumer Event Schemas
+    ConsumerOrderEvent:
+      type: object
+      required:
+        - user_id
+        - order_id
+      properties:
+        user_id:
+          type: string
+          example: "user_123"
+        order_id:
+          type: string
+          example: "order_789"
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              item_id:
+                type: string
+              name:
+                type: string
+              quantity:
+                type: integer
+              price:
+                type: number
+        total_amount:
+          type: number
+          example: 15.99
+        merchant_id:
+          type: string
+          example: "merchant_456"
+        source:
+          type: string
+          example: "consumer_app"
+
+    ConsumerSearchEvent:
+      type: object
+      required:
+        - user_id
+        - query
+      properties:
+        user_id:
+          type: string
+          example: "user_123"
+        query:
+          type: string
+          description: Search query string
+          example: "best pizza near me"
+        results_count:
+          type: integer
+          description: Number of search results
+          example: 25
+        clicked_item:
+          type: string
+          description: Item ID if user clicked on a result
+          example: "item_456"
+        source:
+          type: string
+          example: "consumer_app"
+
+    ConsumerViewEvent:
+      type: object
+      required:
+        - user_id
+        - item_id
+      properties:
+        user_id:
+          type: string
+          example: "user_123"
+        item_id:
+          type: string
+          example: "item_456"
+        item_name:
+          type: string
+          example: "Margherita Pizza"
+        merchant_id:
+          type: string
+          example: "merchant_789"
+        duration_seconds:
+          type: integer
+          description: Time spent viewing the item
+          example: 30
+        source:
+          type: string
+          example: "consumer_app"
+
+    # Auth Event Schemas
+    AuthSignupEvent:
+      type: object
+      required:
+        - user_id
+      properties:
+        user_id:
+          type: string
+          example: "user_123"
+        method:
+          type: string
+          enum: [email, phone, google, apple, facebook]
+          example: "email"
+        source:
+          type: string
+          example: "auth_service"
+
+    AuthLoginEvent:
+      type: object
+      required:
+        - user_id
+      properties:
+        user_id:
+          type: string
+          example: "user_123"
+        method:
+          type: string
+          enum: [email, phone, google, apple, facebook, password]
+          example: "password"
+        success:
+          type: boolean
+          default: true
+          example: true
+        source:
+          type: string
+          example: "auth_service"
+
+    AuthLogoutEvent:
+      type: object
+      required:
+        - user_id
+      properties:
+        user_id:
+          type: string
+          example: "user_123"
+        source:
+          type: string
+          example: "auth_service"
+
+    # Wallet Event Schemas
+    WalletTopupEvent:
+      type: object
+      required:
+        - user_id
+        - amount
+      properties:
+        user_id:
+          type: string
+          example: "user_123"
+        amount:
+          type: number
+          example: 100.00
+        payment_method:
+          type: string
+          enum: [credit_card, debit_card, bank_transfer, promo_code]
+          example: "credit_card"
+        balance_after:
+          type: number
+          description: Wallet balance after top-up
+          example: 250.00
+        transaction_id:
+          type: string
+          example: "txn_abc123"
+        source:
+          type: string
+          example: "wallet_service"
+
+    WalletWithdrawEvent:
+      type: object
+      required:
+        - user_id
+        - amount
+      properties:
+        user_id:
+          type: string
+          example: "user_123"
+        amount:
+          type: number
+          example: 50.00
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+          default: pending
+          example: "pending"
+        transaction_id:
+          type: string
+          example: "txn_def456"
+        source:
+          type: string
+          example: "wallet_service"
+
+    # Catalog Event Schemas
+    CatalogViewEvent:
+      type: object
+      properties:
+        user_id:
+          type: string
+          example: "user_123"
+        merchant_id:
+          type: string
+          example: "merchant_456"
+        item_id:
+          type: string
+          example: "item_789"
+        item_name:
+          type: string
+          example: "Chicken Wings"
+        category:
+          type: string
+          example: "Appetizers"
+        source:
+          type: string
+          example: "catalog_service"
+
+    # Gamification Event Schemas
+    GamificationEarnEvent:
+      type: object
+      required:
+        - user_id
+        - points
+      properties:
+        user_id:
+          type: string
+          example: "user_123"
+        points:
+          type: integer
+          description: Points earned
+          example: 100
+        reason:
+          type: string
+          description: Reason for earning points
+          example: "order_completed"
+        source:
+          type: string
+          example: "gamification_service"
+
+    GamificationRedeemEvent:
+      type: object
+      required:
+        - user_id
+        - points
+      properties:
+        user_id:
+          type: string
+          example: "user_123"
+        points:
+          type: integer
+          description: Points redeemed
+          example: 500
+        reward_id:
+          type: string
+          description: Reward being redeemed
+          example: "reward_456"
+        source:
+          type: string
+          example: "gamification_service"
+
+    # Support Event Schemas
+    SupportTicketEvent:
+      type: object
+      required:
+        - ticket_id
+        - user_id
+      properties:
+        ticket_id:
+          type: string
+          example: "ticket_123"
+        user_id:
+          type: string
+          example: "user_456"
+        category:
+          type: string
+          enum: [general, order_issue, payment_issue, refund, complaint, feedback, other]
+          default: general
+          example: "order_issue"
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+          default: medium
+          example: "high"
+        source:
+          type: string
+          example: "support_service"
+
+    # Chat Event Schemas
+    ChatMessageEvent:
+      type: object
+      required:
+        - message_id
+        - conversation_id
+        - sender_id
+      properties:
+        message_id:
+          type: string
+          example: "msg_123"
+        conversation_id:
+          type: string
+          example: "conv_456"
+        sender_id:
+          type: string
+          example: "user_789"
+        sender_type:
+          type: string
+          enum: [user, agent, bot]
+          default: user
+          example: "user"
+        content:
+          type: string
+          description: Message content (will be truncated to 100 chars)
+          example: "Hello, I need help with my order"
+        context:
+          type: string
+          description: Conversation context
+          example: "order_inquiry"
+        source:
+          type: string
+          example: "chat_service"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authenticated requests
+
+security:
+  - BearerAuth: []

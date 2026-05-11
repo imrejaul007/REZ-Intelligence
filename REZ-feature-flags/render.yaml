@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: rez-feature-flags
+    env: node
+    region: singapore
+    buildCommand: npm install
+    startCommand: node src/index.cjs
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4030
+      - key: REDIS_URL
+        sync: false

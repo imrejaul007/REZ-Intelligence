@@ -1,0 +1,17 @@
+{
+  "name": "rez-consumer-copilot",
+  "version": "1.0.0",
+  "description": "AI copilot dashboard for consumer app",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "build": "echo 'Static site - no build needed'"
+  },
+  "dependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "version": "v1.0.1778250484719",
+  "trainedAt": "2026-05-08T14:28:04.719Z",
+  "features": [
+    "totalIntents",
+    "avgConfidence",
+    "signalCount",
+    "daysActive",
+    "fulfillmentRate",
+    "checkoutRate",
+    "cartAddRate",
+    "viewRate",
+    "searchRate",
+    "recency",
+    "frequency"
+  ],
+  "weights": {
+    "totalIntents": -0.02415293955907099,
+    "avgConfidence": -0.032259531456083755,
+    "signalCount": 0.03293548539242381,
+    "daysActive": -0.011413530584668777,
+    "fulfillmentRate": 0.3285769074042073,
+    "checkoutRate": 0.5128995662351044,
+    "cartAddRate": 0.0030341876649021397,
+    "viewRate": -0.00524688818281935,
+    "searchRate": -0.02618225091730517,
+    "recency": -0.007335193795016158,
+    "frequency": -0.015963518808398258
+  },
+  "thresholds": {
+    "purchaseProbability": 0.5,
+    "churnRisk": 0.5
+  }
+}
