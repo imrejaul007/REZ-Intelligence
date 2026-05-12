@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'rez-intelligence'
+    static_configs:
+      - targets: ['localhost:4008', 'localhost:4050', 'localhost:4090']
+    metrics_path: /metrics

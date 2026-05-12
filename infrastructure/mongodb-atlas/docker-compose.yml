@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  mongodb-atlas-setup:
+    image: mongo:7
+    volumes:
+      - ./migrations:/migrations
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+    command: >
+      bash -c "
+        echo 'Running migrations...';
+        mongosh '$$MONGODB_URI' --eval 'load(\"/migrations/001_create_indexes.js\")';
+      "
+    restart: "no"
