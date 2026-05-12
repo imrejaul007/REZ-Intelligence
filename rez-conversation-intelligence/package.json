@@ -1,0 +1,53 @@
+{
+  "name": "rez-conversation-intelligence",
+  "version": "1.0.0",
+  "description": "REZ Conversation Intelligence service for learning from every conversation",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.0.3",
+    "ioredis": "^5.3.2",
+    "bullmq": "^5.1.0",
+    "zod": "^3.22.4",
+    "winston": "^3.11.0",
+    "dotenv": "^16.3.1",
+    "uuid": "^9.0.1",
+    "node-cron": "^3.0.3",
+    "axios": "^1.6.2",
+    "sentiment": "^5.0.2",
+    "natural": "^6.10.4",
+    "compromise": "^14.10.0",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "compression": "^1.7.4",
+    "express-rate-limit": "^7.1.5"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.5",
+    "@types/uuid": "^9.0.7",
+    "@types/cors": "^2.8.17",
+    "@types/compression": "^1.7.5",
+    "@types/sentiment": "^5.0.4",
+    "typescript": "^5.3.3",
+    "tsx": "^4.7.0",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.11",
+    "ts-jest": "^29.1.1",
+    "eslint": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

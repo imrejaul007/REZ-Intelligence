@@ -1,466 +1,309 @@
 /**
- * ReZ Voice AI Service
- * Universal voice ordering for all verticals
+ * REZ AI Voice Agent Service - Main Entry Point
+ * Express server for Twilio Voice integration with OpenAI Whisper and ElevenLabs TTS
  */
 
-import { AIPlugin, AIPluginConfig } from '../rez-ai-plugins/src/registry';
+import express, { Express, Request, Response, NextFunction } from 'express';
+import dotenv from 'dotenv';
+import { existsSync, mkdirSync } from 'fs';
+import path from 'path';
+import { handleVoiceWebhook } from './webhooks/twilioVoiceWebhook';
+import callRoutes from './routes/call.routes';
+import usageRoutes from './routes/usage.routes';
+import { logger } from './utils/logger';
+import { HealthCheckResponse } from './types';
 
-export interface VoiceContext {
-  vertical: 'restaurant' | 'salon' | 'fitness' | 'hotel' | 'events' | 'healthcare';
-  userId?: string;
-  storeId?: string;
-  sessionId: string;
-  language?: string;
-}
+// Load environment variables
+dotenv.config();
 
-export interface VoiceIntent {
-  action: string;
-  entities: Record<string, any>;
-  confidence: number;
-  raw: string;
-}
-
-export interface VoiceResponse {
-  message: string;
-  audio?: Buffer;
-  action?: any;
-  suggestions?: string[];
-}
-
-/**
- * Voice AI Service
- * Universal voice ordering for all verticals
- */
-export class VoiceAIService implements AIPlugin {
-  name = 'voice';
-  version = '1.0.0';
-  description = 'Universal Voice AI for all verticals';
-  events = [
-    'voice.started',
-    'voice.completed',
-    'voice.failed'
+// Validate required environment variables
+function validateEnvironment(): void {
+  const required = [
+    'TWILIO_ACCOUNT_SID',
+    'TWILIO_AUTH_TOKEN',
+    'TWILIO_PHONE_NUMBER',
+    'OPENAI_API_KEY',
+    'ELEVENLABS_API_KEY',
+    'ANTHROPIC_API_KEY'
   ];
-  models = [
-    'speech-to-text',
-    'intent-parsing',
-    'text-to-speech',
-    'entity-extraction'
+
+  const missing = required.filter(key => !process.env[key]);
+
+  if (missing.length > 0) {
+    logger.warn('Missing environment variables', { missing });
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+    }
+  }
+}
+
+// Create Express app
+const app: Express = express();
+const startTime = Date.now();
+
+// Ensure required directories exist
+function ensureDirectories(): void {
+  const dirs = [
+    process.env.TTS_OUTPUT_DIR || './audio_output',
+    process.env.LOG_DIR || './logs'
   ];
-  api: any = {};
 
-  private config: AIPluginConfig | null = null;
-
-  // Vertical-specific intent handlers
-  private verticalHandlers: Map<string, VerticalHandler> = new Map();
-
-  async init(config: AIPluginConfig): Promise<void> {
-    this.config = config;
-    console.log('[Voice AI] Initialized');
-
-    // Register vertical handlers
-    this.registerVerticalHandlers();
-
-    // Set up API routes
-    this.api = {
-      'POST /process': this.processVoice.bind(this),
-      'POST /stream': this.streamVoice.bind(this),
-      'GET /voices': this.getVoices.bind(this),
-      'GET /languages': this.getLanguages.bind(this),
-      'POST /webhook/twilio': this.twilioWebhook.bind(this),
-      'POST /webhook/daily': this.dailyWebhook.bind(this),
-    };
+  for (const dir of dirs) {
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+      logger.info('Created directory', { dir });
+    }
   }
+}
 
-  async shutdown(): Promise<void> {
-    console.log('[Voice AI] Shutting down');
-  }
+// Middleware
+function setupMiddleware(): void {
+  // Parse JSON bodies
+  app.use(express.json());
 
-  // ==========================================
-  // VERTICAL HANDLERS
-  // ==========================================
+  // Parse URL-encoded bodies
+  app.use(express.urlencoded({ extended: true }));
 
-  private registerVerticalHandlers(): void {
-    // Restaurant
-    this.verticalHandlers.set('restaurant', {
-      intents: [
-        { pattern: /order\s+(.+)/i, action: 'create_order', extract: (m) => ({ item: m[1] }) },
-        { pattern: /book\s+(.+)\s+for\s+(\d+)/i, action: 'reserve_table', extract: (m) => ({ type: m[1], guests: m[2] }) },
-        { pattern: /add\s+(.+)\s+to\s+(my\s+)?order/i, action: 'add_item', extract: (m) => ({ item: m[1] }) },
-        { pattern: /track\s+(my\s+)?order/i, action: 'track_order' },
-        { pattern: /cancel\s+(my\s+)?order/i, action: 'cancel_order' },
-        { pattern: /pay\s+(my\s+)?bill/i, action: 'pay_bill' },
-        { pattern: /split\s+the\s+bill/i, action: 'split_bill' },
-        { pattern: /call\s+(the\s+)?waiter/i, action: 'call_waiter' },
-        { pattern: /menu/i, action: 'show_menu' },
-        { pattern: /recommend/i, action: 'get_recommendation' },
-        { pattern: /what('s|s| is)\s+(.+)/i, action: 'query', extract: (m) => ({ query: m[2] }) },
-      ],
-      createOrder: async (entities: any) => {
-        return {
-          success: true,
-          message: `I've added ${entities.item} to your order. Anything else?`,
-          action: { type: 'add_to_cart', item: entities.item }
-        };
-      },
-      reserveTable: async (entities: any) => {
-        return {
-          success: true,
-          message: `Booking a ${entities.type} for ${entities.guests} guests. What's your name?`,
-          action: { type: 'create_reservation', guests: entities.guests }
-        };
-      },
-      getRecommendation: async () => {
-        return {
-          success: true,
-          message: "Based on your preferences, I'd recommend our signature Biryani. Would you like to add it to your order?",
-          suggestions: ['Yes, add it', 'Show me more options', 'No thanks']
-        };
-      }
+  // Parse multipart/form-data (for Twilio webhooks)
+  app.use(express.urlencoded({ extended: true, type: 'application/x-www-form-urlencoded' }));
+
+  // CORS (configure for your domain in production)
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const origin = req.headers.origin;
+    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
+
+    if (process.env.NODE_ENV !== 'production' || allowedOrigins.includes(origin || '')) {
+      res.header('Access-Control-Allow-Origin', origin || '*');
+    }
+
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Internal-Token');
+
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(200);
+      return;
+    }
+
+    next();
+  });
+
+  // Request logging
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const start = Date.now();
+
+    res.on('finish', () => {
+      const duration = Date.now() - start;
+      logger.info('HTTP Request', {
+        method: req.method,
+        path: req.path,
+        status: res.statusCode,
+        duration: `${duration}ms`,
+        ip: req.ip
+      });
     });
 
-    // Salon
-    this.verticalHandlers.set('salon', {
-      intents: [
-        { pattern: /book\s+(.+)\s+with\s+(.+)/i, action: 'book_appointment', extract: (m) => ({ service: m[1], stylist: m[2] }) },
-        { pattern: /schedule\s+(.+)/i, action: 'schedule', extract: (m) => ({ service: m[1] }) },
-        { pattern: /show\s+(my\s+)?appointments/i, action: 'show_appointments' },
-        { pattern: /cancel\s+(.+)/i, action: 'cancel_appointment' },
-        { pattern: /what\s+services\s+(do\s+you\s+have|available)/i, action: 'show_services' },
-        { pattern: /price\s+of\s+(.+)/i, action: 'get_price', extract: (m) => ({ service: m[1] }) },
-      ],
-      bookAppointment: async (entities: any) => {
-        return {
-          success: true,
-          message: `Booking ${entities.service} with ${entities.stylist}. What date works for you?`,
-          action: { type: 'create_appointment', service: entities.service, stylist: entities.stylist }
-        };
-      },
-      showServices: async () => {
-        return {
-          success: true,
-          message: "We offer haircuts, coloring, treatments, and more. Which interests you?",
-          suggestions: ['Haircut', 'Color', 'Treatment', 'All services']
-        };
-      }
-    });
+    next();
+  });
 
-    // Fitness
-    this.verticalHandlers.set('fitness', {
-      intents: [
-        { pattern: /book\s+(.+)\s+class/i, action: 'book_class', extract: (m) => ({ class: m[1] }) },
-        { pattern: /schedule\s+(.+)/i, action: 'schedule', extract: (m) => ({ session: m[1] }) },
-        { pattern: /show\s+(my\s+)?classes/i, action: 'show_classes' },
-        { pattern: /book\s+(.+)\s+trainer/i, action: 'book_trainer', extract: (m) => ({ trainer: m[1] }) },
-        { pattern: /how('s|s| is)\s+my\s+progress/i, action: 'show_progress' },
-        { pattern: /diet\s+plan/i, action: 'show_diet' },
-        { pattern: /cancel\s+(.+)/i, action: 'cancel_session' },
-      ],
-      bookClass: async (entities: any) => {
-        return {
-          success: true,
-          message: `Found ${entities.class} class. Would you like to book it?`,
-          action: { type: 'book_class', class: entities.class }
-        };
-      }
-    });
+  // Security headers
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    res.header('X-Content-Type-Options', 'nosniff');
+    res.header('X-Frame-Options', 'DENY');
+    res.header('X-XSS-Protection', '1; mode=block');
+    next();
+  });
+}
 
-    // Hotel
-    this.verticalHandlers.set('hotel', {
-      intents: [
-        { pattern: /book\s+(.+)\s+room/i, action: 'book_room', extract: (m) => ({ room: m[1] }) },
-        { pattern: /order\s+room\s+service/i, action: 'room_service' },
-        { pattern: /checkout/i, action: 'checkout' },
-        { pattern: /upgrade\s+(.+)/i, action: 'upgrade_room', extract: (m) => ({ type: m[1] }) },
-        { pattern: /late\s+checkout/i, action: 'late_checkout' },
-        { pattern: /concierge/i, action: 'concierge' },
-        { pattern: /spa\s+(.+)/i, action: 'book_spa', extract: (m) => ({ service: m[1] }) },
-      ],
-      bookRoom: async (entities: any) => {
-        return {
-          success: true,
-          message: `Looking for ${entities.room} rooms. What are your check-in and check-out dates?`,
-          action: { type: 'search_rooms', preference: entities.room }
-        };
-      },
-      roomService: async () => {
-        return {
-          success: true,
-          message: "Our room service menu is available. What would you like to order?",
-          suggestions: ['Breakfast', 'Lunch', 'Dinner', 'Beverages']
-        };
-      }
-    });
-  }
+// Routes
+function setupRoutes(): void {
+  // Health check endpoint
+  app.get('/health', async (req: Request, res: Response) => {
+    const { getSTTService } = await import('./services/sttService');
+    const { getTTSService } = await import('./services/ttsService');
 
-  // ==========================================
-  // VOICE PROCESSING
-  // ==========================================
+    const sttService = getSTTService();
+    const ttsService = getTTSService();
 
-  /**
-   * POST /process
-   * Process voice input
-   */
-  private async processVoice(req: any, res: any): Promise<void> {
     try {
-      const { audio, context, language = 'en-IN' } = req.body;
+      const [sttHealthy, ttsHealthy] = await Promise.all([
+        sttService.healthCheck().catch(() => false),
+        ttsService.healthCheck().catch(() => false)
+      ]);
 
-      // 1. Speech to Text
-      const transcript = await this.speechToText(audio, language);
-      console.log('[Voice AI] Transcript:', transcript);
-
-      // 2. Parse Intent
-      const intent = this.parseIntent(transcript, context.vertical);
-      console.log('[Voice AI] Intent:', intent);
-
-      // 3. Execute Action
-      const response = await this.executeIntent(intent, context);
-
-      // 4. Generate Response
-      const message = await this.generateResponse(response, context);
-
-      res.status(200).json({
-        success: true,
-        transcript,
-        intent,
-        response,
-        message,
-        suggestions: response.suggestions || []
-      });
-    } catch (error) {
-      console.error('[Voice AI] Process error:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to process voice'
-      });
-    }
-  }
-
-  /**
-   * POST /stream
-   * Stream voice processing (for real-time)
-   */
-  private async streamVoice(req: any, res: any): Promise<void> {
-    // Handle streaming audio
-    res.status(200).json({
-      success: true,
-      message: 'Stream endpoint ready'
-    });
-  }
-
-  /**
-   * Speech to Text
-   */
-  private async speechToText(audio: Buffer, language: string): Promise<string> {
-    // Would integrate with:
-    // - Whisper API
-    // - Google Speech-to-Text
-    // - AssemblyAI
-    // - Deepgram
-
-    // Mock for now
-    return "Order biryani for delivery";
-  }
-
-  /**
-   * Parse intent from transcript
-   */
-  private parseIntent(transcript: string, vertical: string): VoiceIntent {
-    const handler = this.verticalHandlers.get(vertical);
-    if (!handler) {
-      return {
-        action: 'unknown',
-        entities: {},
-        confidence: 0,
-        raw: transcript
+      const response: HealthCheckResponse = {
+        status: sttHealthy && ttsHealthy ? 'healthy' : 'unhealthy',
+        timestamp: new Date(),
+        services: {
+          twilio: true, // Twilio SDK would throw if not configured
+          openai: sttHealthy,
+          elevenlabs: ttsHealthy
+        },
+        uptime: Date.now() - startTime
       };
-    }
 
-    for (const intentDef of handler.intents) {
-      const match = transcript.match(intentDef.pattern);
-      if (match) {
-        return {
-          action: intentDef.action,
-          entities: intentDef.extract ? intentDef.extract(match) : {},
-          confidence: 0.9,
-          raw: transcript
-        };
+      res.status(response.status === 'healthy' ? 200 : 503).json(response);
+    } catch (error) {
+      res.status(503).json({
+        status: 'unhealthy',
+        timestamp: new Date(),
+        services: {
+          twilio: false,
+          openai: false,
+          elevenlabs: false
+        },
+        uptime: Date.now() - startTime
+      });
+    }
+  });
+
+  // Readiness check
+  app.get('/ready', (req: Request, res: Response) => {
+    res.status(200).json({ ready: true });
+  });
+
+  // Twilio Voice Webhook
+  app.post('/webhook/voice', handleVoiceWebhook);
+  app.get('/webhook/voice', handleVoiceWebhook);
+
+  // API Routes
+  app.use('/api/calls', callRoutes);
+  app.use('/api/usage', usageRoutes);
+
+  // Audio files endpoint (serve synthesized audio)
+  const audioDir = process.env.TTS_OUTPUT_DIR || './audio_output';
+  app.use('/audio', express.static(audioDir));
+
+  // Root endpoint
+  app.get('/', (req: Request, res: Response) => {
+    res.json({
+      service: 'REZ AI Voice Agent',
+      version: '1.0.0',
+      status: 'running',
+      endpoints: {
+        voiceWebhook: 'POST /webhook/voice',
+        calls: 'GET/POST /api/calls',
+        usage: 'GET /api/usage',
+        health: 'GET /health'
       }
-    }
-
-    return {
-      action: 'unknown',
-      entities: {},
-      confidence: 0,
-      raw: transcript
-    };
-  }
-
-  /**
-   * Execute intent action
-   */
-  private async executeIntent(intent: VoiceIntent, context: VoiceContext): Promise<any> {
-    const handler = this.verticalHandlers.get(context.vertical);
-    if (!handler) {
-      return { success: false, message: "I'm not sure how to help with that." };
-    }
-
-    switch (intent.action) {
-      case 'create_order':
-        return handler.createOrder?.(intent.entities) || { success: false };
-      case 'reserve_table':
-        return handler.reserveTable?.(intent.entities) || { success: false };
-      case 'get_recommendation':
-        return handler.getRecommendation?.() || { success: false };
-      case 'show_menu':
-        return handler.showMenu?.() || { success: false };
-      case 'book_appointment':
-        return handler.bookAppointment?.(intent.entities) || { success: false };
-      case 'show_services':
-        return handler.showServices?.() || { success: false };
-      case 'book_class':
-        return handler.bookClass?.(intent.entities) || { success: false };
-      case 'book_room':
-        return handler.bookRoom?.(intent.entities) || { success: false };
-      case 'room_service':
-        return handler.roomService?.() || { success: false };
-      default:
-        return { success: false, message: "I'm not sure I understood. Can you repeat that?" };
-    }
-  }
-
-  /**
-   * Generate response message
-   */
-  private async generateResponse(response: any, context: VoiceContext): Promise<string> {
-    if (response.success) {
-      return response.message;
-    }
-    return response.message || "I'm sorry, I couldn't help with that.";
-  }
-
-  /**
-   * Text to Speech
-   */
-  private async textToSpeech(text: string, language: string): Promise<Buffer> {
-    // Would integrate with:
-    // - ElevenLabs
-    // - Google TTS
-    // - AWS Polly
-    // - Azure Speech
-
-    // Mock for now
-    return Buffer.from('audio-data');
-  }
-
-  // ==========================================
-  // WEBHOOKS
-  // ==========================================
-
-  /**
-   * POST /webhook/twilio
-   * Handle Twilio voice webhooks
-   */
-  private async twilioWebhook(req: any, res: any): Promise<void> {
-    const { CallSid, From, RecordingUrl } = req.body;
-
-    // Download recording
-    const audio = await this.downloadAudio(RecordingUrl);
-
-    // Process
-    const result = await this.processVoice({
-      body: {
-        audio,
-        context: { vertical: 'restaurant', sessionId: CallSid }
-      }
-    }, { status: () => ({ json: (data: any) => data }) } as any);
-
-    // Generate TwiML response
-    const twiml = `
-      <Response>
-        <Say voice="Polly.Amy">${result.message}</Say>
-        <Gather numDigits="1" action="/api/voice/process">
-          <Say>Press 1 for more options.</Say>
-        </Gather>
-      </Response>
-    `;
-
-    res.type('text/xml').send(twiml);
-  }
-
-  /**
-   * POST /webhook/daily
-   * Handle Daily.co voice webhooks
-   */
-  private async dailyWebhook(req: any, res: any): Promise<void> {
-    const { audio } = req.body;
-
-    // Process audio
-    const result = await this.processVoice({
-      body: {
-        audio: Buffer.from(audio, 'base64'),
-        context: { vertical: 'restaurant' }
-      }
-    }, { status: () => ({ json: (data: any) => data }) } as any);
-
-    res.status(200).json(result);
-  }
-
-  // ==========================================
-  // HELPERS
-  // ==========================================
-
-  private async downloadAudio(url: string): Promise<Buffer> {
-    // Would download from Twilio/S3/etc
-    return Buffer.from('mock-audio');
-  }
-
-  /**
-   * GET /voices
-   * Get available TTS voices
-   */
-  private getVoices(req: any, res: any): void {
-    res.status(200).json({
-      voices: [
-        { id: 'amy', name: 'Amy', language: 'en-IN', gender: 'female' },
-        { id: 'aru', name: 'Aarav', language: 'en-IN', gender: 'male' },
-        { id: 'priya', name: 'Priya', language: 'en-IN', gender: 'female' }
-      ]
     });
-  }
+  });
 
-  /**
-   * GET /languages
-   * Get supported languages
-   */
-  private getLanguages(req: any, res: any): void {
-    res.status(200).json({
-      languages: [
-        { code: 'en-IN', name: 'English (India)', supported: true },
-        { code: 'hi', name: 'Hindi', supported: true },
-        { code: 'ta', name: 'Tamil', supported: true },
-        { code: 'te', name: 'Telugu', supported: true },
-        { code: 'bn', name: 'Bengali', supported: true }
-      ]
+  // 404 handler
+  app.use((req: Request, res: Response) => {
+    res.status(404).json({
+      error: 'Not Found',
+      path: req.path
     });
+  });
+
+  // Error handler
+  app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+    logger.error('Unhandled error', {
+      error: err.message,
+      stack: err.stack,
+      path: req.path
+    });
+
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: process.env.NODE_ENV === 'development' ? err.message : 'An error occurred'
+    });
+  });
+}
+
+// Graceful shutdown
+function setupGracefulShutdown(): void {
+  const shutdown = (signal: string) => {
+    logger.info(`Received ${signal}, shutting down gracefully...`);
+
+    // Close server
+    server.close(() => {
+      logger.info('Server closed');
+      process.exit(0);
+    });
+
+    // Force exit after timeout
+    setTimeout(() => {
+      logger.error('Forced shutdown after timeout');
+      process.exit(1);
+    }, 30000);
+  };
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+
+  // Handle uncaught exceptions
+  process.on('uncaughtException', (error) => {
+    logger.error('Uncaught exception', { error });
+    process.exit(1);
+  });
+
+  process.on('unhandledRejection', (reason) => {
+    logger.error('Unhandled rejection', { reason });
+  });
+}
+
+// Start server
+let server: ReturnType<Express['listen']>;
+
+async function start(): Promise<void> {
+  try {
+    // Validate environment
+    validateEnvironment();
+
+    // Ensure directories exist
+    ensureDirectories();
+
+    // Setup middleware
+    setupMiddleware();
+
+    // Setup routes
+    setupRoutes();
+
+    // Setup graceful shutdown
+    setupGracefulShutdown();
+
+    // Start listening
+    const port = parseInt(process.env.PORT || '3000', 10);
+    const host = process.env.HOST || '0.0.0.0';
+
+    server = app.listen(port, host, () => {
+      logger.info(`REZ AI Voice Agent started`, {
+        host,
+        port,
+        nodeEnv: process.env.NODE_ENV || 'development',
+        webhookBaseUrl: process.env.TWILIO_WEBHOOK_BASE_URL || 'not configured'
+      });
+
+      console.log(`
+╔══════════════════════════════════════════════════════════════╗
+║                    REZ AI Voice Agent                      ║
+╠══════════════════════════════════════════════════════════════╣
+║  Service:    Voice AI Agent                                ║
+║  Version:    1.0.0                                         ║
+║  Port:       ${port}                                            ║
+║  Mode:       ${(process.env.NODE_ENV || 'development').padEnd(43)}║
+╠══════════════════════════════════════════════════════════════╣
+║  Endpoints:                                                ║
+║  - Voice:    POST /webhook/voice                           ║
+║  - Calls:    GET/POST /api/calls                           ║
+║  - Usage:    GET /api/usage                                ║
+║  - Health:   GET /health                                   ║
+╠══════════════════════════════════════════════════════════════╣
+║  Ready to receive calls!                                   ║
+╚══════════════════════════════════════════════════════════════╝
+      `);
+    });
+  } catch (error) {
+    logger.error('Failed to start server', { error });
+    process.exit(1);
   }
 }
 
-// Vertical Handler Interface
-interface VerticalHandler {
-  intents: Array<{
-    pattern: RegExp;
-    action: string;
-    extract?: (match: RegExpMatchArray) => Record<string, any>;
-  }>;
-  createOrder?: (entities: any) => Promise<any>;
-  reserveTable?: (entities: any) => Promise<any>;
-  getRecommendation?: () => Promise<any>;
-  showMenu?: () => Promise<any>;
-  bookAppointment?: (entities: any) => Promise<any>;
-  showServices?: () => Promise<any>;
-  bookClass?: (entities: any) => Promise<any>;
-  bookRoom?: (entities: any) => Promise<any>;
-  roomService?: () => Promise<any>;
-}
+// Export for testing
+export { app };
 
-export default VoiceAIService;
+// Start if run directly
+if (require.main === module) {
+  start();
+}
