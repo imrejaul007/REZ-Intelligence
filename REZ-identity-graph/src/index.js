@@ -5,10 +5,22 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
+const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 
 const logger = require('../shared/logger');
 const { errorHandler, asyncHandler } = require('../shared/errorHandler');
+
+// Timing-safe string comparison to prevent timing attacks
+function timingSafeEqual(a, b) {
+  if (!a || !b) return false;
+  if (a.length !== b.length) return false;
+  try {
+    return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  } catch {
+    return false;
+  }
+}
 
 // Environment validation
 const REQUIRED_ENV = ['MONGODB_URI', 'REDIS_URL', 'INTERNAL_SERVICE_TOKEN'];
@@ -330,7 +342,30 @@ const resolver = new IdentityResolver();
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+
+// CORS - restrictive configuration
+const isProduction = process.env.NODE_ENV === 'production';
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').filter(Boolean) || [];
+
+if (isProduction && allowedOrigins.length === 0) {
+  console.error('FATAL: ALLOWED_ORIGINS environment variable is required in production');
+  process.exit(1);
+}
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (!isProduction && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+      return callback(null, true);
+    }
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error('Origin not allowed by CORS policy'));
+  },
+  credentials: true
+}));
+
 app.use(express.json({ limit: '1mb' }));
 
 app.use((req, res, next) => {
@@ -344,7 +379,11 @@ app.use((req, res, next) => {
   if (publicPaths.some(p => req.path.startsWith(p))) return next();
 
   const token = req.headers['x-internal-token'];
-  if (token !== process.env.INTERNAL_SERVICE_TOKEN) {
+  const expectedToken = process.env.INTERNAL_SERVICE_TOKEN;
+
+  // Use timing-safe comparison to prevent timing attacks
+  if (!token || !expectedToken || !timingSafeEqual(token, expectedToken)) {
+    logger.warn('Unauthorized access attempt', { path: req.path, ip: req.ip });
     return res.status(401).json({ error: 'Unauthorized' });
   }
   next();
@@ -658,8 +697,16 @@ const PORT = process.env.PORT || 4050;
 
 async function start() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    logger.info('Connected to MongoDB');
+    // Connect with write concern and retry settings for production durability
+    await mongoose.connect(process.env.MONGODB_URI, {
+      w: 'majority',              // Wait for majority acknowledgment
+      journal: true,              // Ensure journal is written
+      retryWrites: true,          // Retry failed writes
+      retryReads: true,           // Retry failed reads
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    });
+    logger.info('Connected to MongoDB with write concern: majority');
     app.listen(PORT, () => {
       logger.info(`Identity Graph Service started on port ${PORT}`);
       logger.info(`Sources: ${Object.values(APP_SOURCES).join(', ')}`);

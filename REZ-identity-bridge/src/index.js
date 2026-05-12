@@ -6,12 +6,24 @@ const mongoose = require('mongoose');
 const axios = require('axios');
 const cors = require('cors');
 const helmet = require('helmet');
+const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 
 const logger = {
   info: (msg, data) => console.log(JSON.stringify({ timestamp: new Date().toISOString(), level: 'info', msg, ...data })),
   error: (msg, data) => console.error(JSON.stringify({ timestamp: new Date().toISOString(), level: 'error', msg, ...data }))
 };
+
+// Timing-safe string comparison to prevent timing attacks
+function timingSafeEqual(a, b) {
+  if (!a || !b) return false;
+  if (a.length !== b.length) return false;
+  try {
+    return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  } catch {
+    return false;
+  }
+}
 
 // Identity services to query
 const IDENTITY_SERVICES = {
@@ -69,8 +81,30 @@ const UnifiedIdentity = mongoose.model('UnifiedIdentity', unifiedIdentitySchema)
 // Express app
 const app = express();
 app.use(helmet());
-app.use(cors());
-app.use(express.json());
+
+// CORS - restrictive configuration
+const isProduction = process.env.NODE_ENV === 'production';
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').filter(Boolean) || [];
+
+if (isProduction && allowedOrigins.length === 0) {
+  throw new Error('ALLOWED_ORIGINS environment variable is required in production');
+}
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (!isProduction && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+      return callback(null, true);
+    }
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error('Origin not allowed by CORS policy'));
+  },
+  credentials: true
+}));
+
+app.use(express.json({ limit: '100kb' }));
 
 app.use((req, res, next) => {
   req.requestId = req.headers['x-request-id'] || uuidv4();
@@ -81,7 +115,11 @@ app.use((req, res, next) => {
   const publicPaths = ['/health', '/ready', '/resolve'];
   if (publicPaths.some(p => req.path.startsWith(p))) return next();
   const token = req.headers['x-internal-token'];
-  if (token !== process.env.INTERNAL_SERVICE_TOKEN) {
+  const expectedToken = process.env.INTERNAL_SERVICE_TOKEN;
+
+  // Use timing-safe comparison to prevent timing attacks
+  if (!token || !expectedToken || !timingSafeEqual(token, expectedToken)) {
+    logger.warn('Unauthorized access attempt', { path: req.path, ip: req.ip });
     return res.status(401).json({ error: 'Unauthorized' });
   }
   next();
@@ -104,6 +142,42 @@ app.get('/ready', async (req, res) => {
 app.post('/resolve', async (req, res) => {
   try {
     const { phone, email, deviceId, appId, sourceUserId } = req.body;
+
+    // Validate input - at least one identifier required
+    if (!phone && !email && !deviceId) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        code: 'MISSING_IDENTIFIER',
+        message: 'At least one of phone, email, or deviceId is required'
+      });
+    }
+
+    // Validate phone format (5-15 digits)
+    if (phone && !/^\d{5,15}$/.test(phone)) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        code: 'INVALID_PHONE',
+        message: 'Phone must be 5-15 digits'
+      });
+    }
+
+    // Validate email format
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        code: 'INVALID_EMAIL',
+        message: 'Invalid email format'
+      });
+    }
+
+    // Validate appId if provided
+    if (appId && (typeof appId !== 'string' || appId.length > 50)) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        code: 'INVALID_APP_ID',
+        message: 'Invalid appId'
+      });
+    }
 
     // Query all identity services
     const results = await Promise.allSettled([
@@ -301,8 +375,16 @@ const PORT = process.env.PORT || 4092;
 
 async function start() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    logger.info('Connected to MongoDB');
+    // Connect with write concern and retry settings for production durability
+    await mongoose.connect(process.env.MONGODB_URI, {
+      w: 'majority',              // Wait for majority acknowledgment
+      journal: true,              // Ensure journal is written
+      retryWrites: true,          // Retry failed writes
+      retryReads: true,           // Retry failed reads
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    });
+    logger.info('Connected to MongoDB with write concern: majority');
     app.listen(PORT, () => {
       console.log(`Identity Bridge running on port ${PORT}`);
     });

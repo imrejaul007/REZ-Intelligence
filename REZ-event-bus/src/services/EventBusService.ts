@@ -37,6 +37,28 @@ export class EventBusService {
     eventsFailed: 0,
   };
 
+  /**
+   * Scan Redis keys using SCAN instead of KEYS (non-blocking)
+   * KEYS command blocks Redis and should never be used in production
+   */
+  private async scanKeys(pattern: string, maxKeys = 1000): Promise<string[]> {
+    const keys: string[] = [];
+    let cursor = '0';
+
+    do {
+      const [newCursor, batch] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+      cursor = newCursor;
+      keys.push(...batch);
+
+      // Stop if we have enough keys
+      if (keys.length >= maxKeys) {
+        break;
+      }
+    } while (cursor !== '0');
+
+    return keys.slice(0, maxKeys);
+  }
+
   async initialize(): Promise<void> {
     console.log('Event Bus Service initialized');
 
@@ -146,7 +168,8 @@ export class EventBusService {
     const { eventType, userId, limit = 100, offset = 0 } = options;
 
     const pattern = eventType ? `events:${eventType}:*` : 'events:*';
-    const keys = await redis.keys(pattern);
+    // Use SCAN instead of KEYS to avoid blocking Redis
+    const keys = await this.scanKeys(pattern, 1000);
 
     const events: Event[] = [];
     for (const key of keys.slice(offset, offset + limit)) {
@@ -166,9 +189,9 @@ export class EventBusService {
    * Get service stats
    */
   async getStats(): Promise<typeof this.stats & { subscriptions: number }> {
-    const subscriptionCount = await redis.keys('subscription:*').then((keys) =>
-      Promise.all(keys.map((k) => redis.hlen(k)))
-    ).then((counts) => counts.reduce((a, b) => a + b, 0));
+    // Use SCAN instead of KEYS to avoid blocking Redis
+    const subscriptionKeys = await this.scanKeys('subscription:*', 100);
+    const subscriptionCount = subscriptionKeys.length;
 
     return {
       ...this.stats,
@@ -187,7 +210,8 @@ export class EventBusService {
   }
 
   private async loadSubscriptions(): Promise<void> {
-    const keys = await redis.keys('subscription:*');
+    // Use SCAN instead of KEYS to avoid blocking Redis
+    const keys = await this.scanKeys('subscription:*', 100);
     for (const key of keys) {
       const eventType = key.replace('subscription:', '');
       const subs = await redis.hgetall(key);
