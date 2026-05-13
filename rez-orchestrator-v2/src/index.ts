@@ -133,7 +133,7 @@ function configureMiddleware(): void {
 
 function configureRoutes(): void {
   // Health check (no auth required)
-  app.get(appConfig.healthCheck.route, async (req: Request, res: Response) => {
+  app.get(appConfig.healthCheck.route, async (_req: Request, res: Response) => {
     try {
       const redisOk = redis.status === 'ready';
       const metrics = agentRegistry.getMetrics();
@@ -158,7 +158,7 @@ function configureRoutes(): void {
   });
 
   // Readiness check
-  app.get('/ready', async (req: Request, res: Response) => {
+  app.get('/ready', async (_req: Request, res: Response) => {
     const redisOk = redis.status === 'ready';
 
     if (redisOk) {
@@ -169,7 +169,7 @@ function configureRoutes(): void {
   });
 
   // Circuit breaker endpoints (no auth required for internal monitoring)
-  app.get('/circuits', (req: Request, res: Response) => {
+  app.get('/circuits', (_req: Request, res: Response) => {
     const stats = circuitRegistry.getAllStats();
     res.json({
       success: true,
@@ -216,9 +216,10 @@ function configureRoutes(): void {
       message: `Circuit breaker for ${agentId} forced to ${state}`,
       ...circuit.getStats(),
     });
+    return;
   });
 
-  app.post('/circuits/reset-all', (req: Request, res: Response) => {
+  app.post('/circuits/reset-all', (_req: Request, res: Response) => {
     circuitRegistry.resetAll();
     res.json({
       success: true,

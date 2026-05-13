@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import { RCSService } from '../services/rcsService';
@@ -48,7 +48,7 @@ const sendButtonSchema = z.object({
 router.post(
   '/send',
   internalAuthMiddleware,
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
       const validation = sendRichMessageSchema.safeParse(req.body);
 
@@ -67,10 +67,10 @@ router.post(
       const { to, card, carrier, from, tags } = validation.data;
 
       // Add message ID to tags for tracking
-      const enrichedTags = {
-        ...tags,
+      const enrichedTags: Record<string, string> = {
+        ...(tags || {}),
         messageId: tags?.messageId || uuidv4(),
-        serviceName: (req as Request & { serviceName?: string }).serviceName,
+        serviceName: (req as Request & { serviceName?: string }).serviceName || 'rcs-bridge',
       };
 
       const result = await rcsService.sendRichMessage(to, card, {
@@ -90,7 +90,8 @@ router.post(
         timestamp: result.timestamp,
       });
     } catch (error) {
-      next(error);
+      logger.error('RCS route error', { error: (error as Error).message });
+      res.status(500).json({ success: false, error: (error as Error).message });
     }
   }
 );
@@ -102,7 +103,7 @@ router.post(
 router.post(
   '/send-carousel',
   internalAuthMiddleware,
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
       const validation = sendCarouselSchema.safeParse(req.body);
 
@@ -120,10 +121,10 @@ router.post(
 
       const { to, cards, carrier, from, tags } = validation.data;
 
-      const enrichedTags = {
-        ...tags,
+      const enrichedTags: Record<string, string> = {
+        ...(tags || {}),
         messageId: tags?.messageId || uuidv4(),
-        serviceName: (req as Request & { serviceName?: string }).serviceName,
+        serviceName: 'rcs-bridge',
       };
 
       const result = await rcsService.sendCarousel(to, cards, {
@@ -143,7 +144,8 @@ router.post(
         timestamp: result.timestamp,
       });
     } catch (error) {
-      next(error);
+      logger.error('RCS route error', { error: (error as Error).message });
+      res.status(500).json({ success: false, error: (error as Error).message });
     }
   }
 );
@@ -155,7 +157,7 @@ router.post(
 router.post(
   '/send-button',
   internalAuthMiddleware,
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
       const validation = sendButtonSchema.safeParse(req.body);
 
@@ -173,10 +175,10 @@ router.post(
 
       const { to, text, buttons, carrier, from, tags } = validation.data;
 
-      const enrichedTags = {
-        ...tags,
+      const enrichedTags: Record<string, string> = {
+        ...(tags || {}),
         messageId: tags?.messageId || uuidv4(),
-        serviceName: (req as Request & { serviceName?: string }).serviceName,
+        serviceName: 'rcs-bridge',
       };
 
       const result = await rcsService.sendButton(to, text, buttons, {
@@ -196,7 +198,8 @@ router.post(
         timestamp: result.timestamp,
       });
     } catch (error) {
-      next(error);
+      logger.error('RCS route error', { error: (error as Error).message });
+      res.status(500).json({ success: false, error: (error as Error).message });
     }
   }
 );
@@ -208,7 +211,7 @@ router.post(
 router.get(
   '/status/:messageId',
   internalAuthMiddleware,
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
       const { messageId } = req.params;
 
@@ -243,7 +246,8 @@ router.get(
         carrier: rcsService.getActiveCarrier(),
       });
     } catch (error) {
-      next(error);
+      logger.error('RCS route error', { error: (error as Error).message });
+      res.status(500).json({ success: false, error: (error as Error).message });
     }
   }
 );
@@ -281,7 +285,7 @@ router.get(
 router.post(
   '/webhook/rcs',
   webhookSignatureMiddleware('jio'),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
       // Determine carrier from headers or body
       const carrier =
@@ -396,7 +400,7 @@ async function handleInboundMessage(
     to: body.to as string || body.destination as string,
     type: (body.type || RCSMessageType.TEXT) as RCSMessageType,
     content: (body.content || body.text || '') as string,
-    timestamp: new Date(body.timestamp || Date.now()),
+    timestamp: new Date((body.timestamp as string) || Date.now()),
     carrier: carrier as 'jio' | 'airtel' | 'unknown',
   };
 

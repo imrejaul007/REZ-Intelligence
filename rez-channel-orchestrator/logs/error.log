@@ -1,0 +1,9 @@
+2026-05-13T17:04:14.287Z [[31merror[39m]: Orchestrator routing failed {"error":"Request failed with status code 500","channel":"WEB","userId":"user123"}
+2026-05-13T17:04:14.310Z [[31merror[39m]: Orchestrator routing failed {"error":"Request failed with status code 500","channel":"SMS","userId":"919876543210"}
+2026-05-13T17:04:14.327Z [[31merror[39m]: Orchestrator routing failed {"error":"Request failed with status code 500","channel":"EMAIL","userId":"user@email.com"}
+2026-05-13T17:06:05.807Z [[31merror[39m]: Orchestrator routing failed {"error":"Request failed with status code 500","channel":"WEB","userId":"user123"}
+2026-05-13T17:08:33.046Z [[31merror[39m]: Orchestrator routing failed {"error":"Request failed with status code 500","channel":"WEB","userId":"user123"}
+2026-05-13T17:08:33.062Z [[31merror[39m]: Orchestrator routing failed {"error":"Request failed with status code 500","channel":"SMS","userId":"919876543210"}
+2026-05-13T17:08:33.076Z [[31merror[39m]: Orchestrator routing failed {"error":"Request failed with status code 500","channel":"EMAIL","userId":"user@email.com"}
+2026-05-13T17:11:11.953Z [[31merror[39m]: Orchestrator routing failed {"error":"Request failed with status code 500","channel":"WEB","userId":"user123"}
+2026-05-13T17:26:11.660Z [[31merror[39m]: Routing failed {"error":"Request failed with status code 500","channel":"WEB","userId":"user789"}

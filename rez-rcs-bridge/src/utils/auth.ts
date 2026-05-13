@@ -66,7 +66,7 @@ export function internalAuthMiddleware(
  */
 export function optionalInternalAuthMiddleware(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): void {
   const internalToken = req.headers['x-internal-token'] as string;

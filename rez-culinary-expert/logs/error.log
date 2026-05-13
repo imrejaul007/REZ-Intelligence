@@ -1,0 +1,5 @@
+2026-05-13 22:42:24 [error]: AI response generation failed: ANTHROPIC_API_KEY not configured
+Error: ANTHROPIC_API_KEY not configured
+    at getAnthropicClient (/Users/rejaulkarim/Documents/ReZ Full App/REZ-Intelligence/rez-culinary-expert/src/routes/culinary.routes.ts:99:13)
+    at <anonymous> (/Users/rejaulkarim/Documents/ReZ Full App/REZ-Intelligence/rez-culinary-expert/src/routes/culinary.routes.ts:351:26)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)

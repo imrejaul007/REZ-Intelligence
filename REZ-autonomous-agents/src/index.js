@@ -611,8 +611,8 @@ class AttributionAgent extends BaseAgent {
     } catch (err) {
       logger.warn('AttributionAgent: Failed to fetch real data', { error: err.message });
 
-      // Fallback
-      attribution.conversions = Math.floor(Math.random() * 100) + 50;
+      // Fallback - deterministic
+      attribution.conversions = seededInt(50, 150);
       attribution.touchpoints = {
         push: 0.3, email: 0.2, sms: 0.15, inApp: 0.25, organic: 0.1
       };
@@ -1156,6 +1156,49 @@ class AgentManager {
 
 const agentManager = new AgentManager();
 
+/**
+ * Timing-safe token comparison for internal service authentication
+ */
+function isValidInternalToken(token) {
+  const expectedToken = process.env.INTERNAL_SERVICE_TOKEN;
+  if (!expectedToken || !token) return false;
+
+  try {
+    const tokenBuffer = Buffer.from(token);
+    const expectedBuffer = Buffer.from(expectedToken);
+
+    // Timing-safe comparison
+    if (tokenBuffer.length !== expectedBuffer.length) {
+      return false;
+    }
+    return crypto.timingSafeEqual(tokenBuffer, expectedBuffer);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Authentication middleware with improved security
+ */
+function authMiddleware(req, res, next) {
+  const publicPaths = ['/health', '/ready'];
+  if (publicPaths.some(p => req.path.startsWith(p))) return next();
+
+  const token = req.headers['x-internal-token'];
+
+  if (!token) {
+    logger.warn('Authentication failed: missing token', { path: req.path, ip: req.ip });
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  if (!isValidInternalToken(token)) {
+    logger.warn('Authentication failed: invalid token', { path: req.path, ip: req.ip });
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  next();
+}
+
 // Express app
 const app = express();
 
@@ -1169,16 +1212,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use((req, res, next) => {
-  const publicPaths = ['/health', '/ready'];
-  if (publicPaths.some(p => req.path.startsWith(p))) return next();
-
-  const token = req.headers['x-internal-token'];
-  if (token !== process.env.INTERNAL_SERVICE_TOKEN) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  next();
-});
+app.use(authMiddleware);
 
 app.get('/health', (req, res) => {
   res.json({

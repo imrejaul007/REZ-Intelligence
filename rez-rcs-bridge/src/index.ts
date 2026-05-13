@@ -155,7 +155,7 @@ async function startServer(): Promise<void> {
     logger.info('Connected to Redis', { url: config.redis.url });
 
     // Start HTTP server
-    const server = app.listen(config.server.port, () => {
+    app.listen(config.server.port, () => {
       logger.info('REZ RCS Bridge started', {
         port: config.server.port,
         nodeEnv: config.server.nodeEnv,

@@ -52,3 +52,134 @@
 2026-05-13 07:55:36 [info]: Intent classified: ADD_TO_ORDER (0.9)
 2026-05-13 07:55:36 [info]: POST /chat 200 - 23ms {"ip":"::1","userAgent":"curl/8.7.1"}
 2026-05-13 07:55:36 [warn]: Failed to record activity in Core Brain {"error":{"statusCode":500,"name":"CoreBrainError"}}
+2026-05-13 16:32:49 [info]: GET /health 200 - 281ms {"ip":"::1","userAgent":"curl/8.7.1"}
+2026-05-13 22:35:15 [info]: Connecting to databases...
+2026-05-13 22:35:15 [info]: Connected to MongoDB {"uri":"mongodb://localhost:27017"}
+2026-05-13 22:35:15 [info]: Connected to Redis {"url":"redis://localhost:6379"}
+2026-05-13 22:35:15 [info]: Connecting to Core Brain...
+2026-05-13 22:35:15 [info]: Core Brain client initialized for culinary expert {"baseUrl":"http://localhost:4072"}
+2026-05-13 22:35:15 [warn]: Core Brain not available - running in degraded mode
+2026-05-13 22:35:15 [info]: Initializing services...
+2026-05-13 22:35:15 [info]: CulinaryExpertiseService initialized
+2026-05-13 22:35:15 [info]: CulinaryExpertiseService initialized
+2026-05-13 22:35:15 [info]: MenuService initialized
+2026-05-13 22:35:15 [info]: MenuService initialized
+2026-05-13 22:35:15 [info]: DietaryService initialized
+2026-05-13 22:35:15 [info]: DietaryService initialized
+2026-05-13 22:35:15 [info]: RecommendationsService initialized
+2026-05-13 22:35:15 [info]: RecommendationsService initialized
+2026-05-13 22:35:15 [info]: OrderFlowHandler initialized
+2026-05-13 22:35:15 [info]: OrderFlowHandler initialized
+2026-05-13 22:35:15 [info]: 
+╔═══════════════════════════════════════════════════════════════╗
+║                    REZ Culinary Expert Agent                  ║
+╠═══════════════════════════════════════════════════════════════╣
+║  Status:     Running                                         ║
+║  Port:       3001                                                 ║
+║  Environment: development                                  ║
+║  MongoDB:    rez_culinary                                 ║
+╚═══════════════════════════════════════════════════════════════╝
+      
+2026-05-13 22:35:15 [info]: API Endpoints:
+2026-05-13 22:35:15 [info]:   POST /api/culinary/chat         - Chat with culinary expert
+2026-05-13 22:35:15 [info]:   GET  /api/culinary/menu/:id     - Get restaurant menu
+2026-05-13 22:35:15 [info]:   POST /api/culinary/recommendations - Get recommendations
+2026-05-13 22:35:15 [info]:   POST /api/culinary/dietary/*    - Dietary management
+2026-05-13 22:35:15 [info]:   POST /api/culinary/orders/*     - Order management
+2026-05-13 22:35:15 [info]:   GET  /health                    - Health check
+2026-05-13 22:38:34 [warn]: GET /api/culinary/chat/health 404 - 5ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:39:04 [warn]: GET /api/culinary/chat/health 404 - 2ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:39:34 [warn]: GET /api/culinary/chat/health 404 - 2ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:40:04 [warn]: GET /api/culinary/chat/health 404 - 2ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:40:08 [info]: Core Brain context loaded {"userId":"test","hasPreferences":false,"hasLoyalty":false,"memoryCount":0}
+2026-05-13 22:40:08 [info]: Intent classified: ADD_TO_ORDER (0.9)
+2026-05-13 22:40:08 [info]: POST /chat 200 - 13ms {"ip":"::1","userAgent":"curl/8.7.1"}
+2026-05-13 22:40:08 [warn]: Failed to record activity in Core Brain {"error":{"statusCode":500,"name":"CoreBrainError"}}
+2026-05-13 22:40:34 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:40:34 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:41:04 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:41:04 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:41:34 [warn]: GET /api/culinary/chat/health 404 - 3ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:41:34 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:42:04 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:42:04 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:42:24 [info]: GET /health 200 - 1ms {"ip":"::1","userAgent":"curl/8.7.1"}
+2026-05-13 22:42:24 [info]: Core Brain context loaded {"userId":"test","hasPreferences":false,"hasLoyalty":false,"memoryCount":0}
+2026-05-13 22:42:24 [info]: Intent classified: UNKNOWN (0)
+2026-05-13 22:42:24 [error]: AI response generation failed: ANTHROPIC_API_KEY not configured
+Error: ANTHROPIC_API_KEY not configured
+    at getAnthropicClient (/Users/rejaulkarim/Documents/ReZ Full App/REZ-Intelligence/rez-culinary-expert/src/routes/culinary.routes.ts:99:13)
+    at <anonymous> (/Users/rejaulkarim/Documents/ReZ Full App/REZ-Intelligence/rez-culinary-expert/src/routes/culinary.routes.ts:351:26)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-05-13 22:42:24 [info]: POST /chat 200 - 11ms {"ip":"::1","userAgent":"curl/8.7.1"}
+2026-05-13 22:42:24 [warn]: Failed to record activity in Core Brain {"error":{"statusCode":500,"name":"CoreBrainError"}}
+2026-05-13 22:42:34 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:42:34 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:43:04 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:43:04 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:43:34 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:43:34 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:44:04 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:44:04 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:44:34 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:44:34 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:45:04 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:45:04 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:45:34 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:45:34 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:46:04 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:46:04 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:46:34 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:46:34 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:47:04 [warn]: GET /api/culinary/chat/health 404 - 2ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:47:04 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:47:34 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:47:34 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:48:04 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:48:04 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:48:34 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:48:34 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:49:04 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:49:04 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:49:34 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:49:34 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:50:04 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:50:04 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:50:34 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:50:34 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:51:04 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:51:04 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:51:34 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:51:34 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:52:04 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:52:04 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:52:34 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:52:34 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:53:04 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:53:04 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:53:34 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:53:34 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:54:04 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:54:04 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:54:34 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:54:34 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:55:04 [warn]: GET /api/culinary/chat/health 404 - 8ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:55:04 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:55:35 [warn]: GET /api/culinary/chat/health 404 - 6ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:55:35 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:56:04 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:56:04 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:56:11 [info]: Core Brain context loaded {"userId":"user123","hasPreferences":false,"hasLoyalty":false,"memoryCount":0}
+2026-05-13 22:56:11 [info]: Intent classified: ADD_TO_ORDER (0.9)
+2026-05-13 22:56:11 [info]: POST /chat 200 - 18ms {"ip":"::1","userAgent":"axios/1.16.1"}
+2026-05-13 22:56:11 [warn]: Failed to record activity in Core Brain {"error":{"statusCode":500,"name":"CoreBrainError"}}
+2026-05-13 22:56:24 [info]: Core Brain context loaded {"userId":"919876543210","hasPreferences":false,"hasLoyalty":false,"memoryCount":0}
+2026-05-13 22:56:24 [info]: Intent classified: ADD_TO_ORDER (0.9)
+2026-05-13 22:56:24 [info]: POST /chat 200 - 54ms {"ip":"::1","userAgent":"axios/1.16.1"}
+2026-05-13 22:56:24 [warn]: Failed to record activity in Core Brain {"error":{"statusCode":500,"name":"CoreBrainError"}}
+2026-05-13 22:56:34 [warn]: GET /api/culinary/chat/health 404 - 2ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:56:34 [warn]: GET /api/culinary/chat/health 404 - 0ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:57:04 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:57:04 [warn]: GET /api/culinary/chat/health 404 - 1ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:57:34 [warn]: GET /api/culinary/chat/health 404 - 7ms {"ip":"::1","userAgent":"node"}
+2026-05-13 22:57:34 [warn]: GET /api/culinary/chat/health 404 - 2ms {"ip":"::1","userAgent":"node"}

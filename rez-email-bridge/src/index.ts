@@ -10,7 +10,7 @@ import helmet from 'helmet';
 import { logger } from './utils/logger';
 import { emailRoutes } from './routes/email.routes';
 import { errorMiddleware, notFoundMiddleware } from './middleware/error.middleware';
-import { authMiddleware } from './middleware/auth.middleware';
+import { authMiddleware } from './middleware/auth';
 
 const app: Express = express();
 const PORT = parseInt(process.env.PORT || '4086', 10);

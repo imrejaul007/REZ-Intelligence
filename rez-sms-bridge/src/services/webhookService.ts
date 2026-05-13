@@ -23,11 +23,11 @@ const logger = winston.createLogger({
 });
 
 export interface TwilioWebhookBody {
-  From: string;
-  To: string;
-  Body: string;
-  MessageSid: string;
-  AccountSid: string;
+  From?: string;
+  To?: string;
+  Body?: string;
+  MessageSid?: string;
+  AccountSid?: string;
 }
 
 export class WebhookService {
@@ -114,8 +114,8 @@ export class WebhookService {
         });
 
         // Send confirmation SMS if needed
-        if (orchestratorResponse.sendSMS) {
-          await smsService.send(body.From, orchestratorResponse.message);
+        if (orchestratorResponse.sendSMS && body.From) {
+          await smsService.send(body.From, orchestratorResponse.message || 'Done');
         }
       } else {
         logger.error('Orchestrator processing failed', {
@@ -125,7 +125,9 @@ export class WebhookService {
         });
 
         // Send error message to user
-        await smsService.send(body.From, `REZ: ${orchestratorResponse.error || 'Processing failed. Please try again.'}`);
+        if (body.From) {
+          await smsService.send(body.From, `REZ: ${orchestratorResponse.error || 'Processing failed. Please try again.'}`);
+        }
       }
 
       res.status(200).send();

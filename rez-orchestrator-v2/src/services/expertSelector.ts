@@ -30,7 +30,6 @@ export class ExpertSelector {
       preferredAgents,
       excludedAgents,
       requiredCapabilities,
-      maxAgents,
     } = routingHints;
 
     // Determine required capabilities
