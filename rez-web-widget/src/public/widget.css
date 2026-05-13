@@ -1,0 +1,506 @@
+/**
+ * REZ Web Widget Styles
+ * Modern, responsive chat widget styles with light/dark theme support
+ */
+
+/* CSS Variables for theming */
+:root {
+  /* Light theme (default) */
+  --rez-chat-primary: #6366f1;
+  --rez-chat-primary-hover: #4f46e5;
+  --rez-chat-primary-light: #eef2ff;
+  --rez-chat-background: #ffffff;
+  --rez-chat-surface: #f8fafc;
+  --rez-chat-border: #e2e8f0;
+  --rez-chat-text: #1e293b;
+  --rez-chat-text-secondary: #64748b;
+  --rez-chat-user-bubble: #6366f1;
+  --rez-chat-user-text: #ffffff;
+  --rez-chat-assistant-bubble: #f1f5f9;
+  --rez-chat-assistant-text: #1e293b;
+  --rez-chat-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  --rez-chat-button-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+
+  /* Dimensions */
+  --rez-chat-window-width: 380px;
+  --rez-chat-window-height: 520px;
+  --rez-chat-button-size: 60px;
+  --rez-chat-border-radius: 16px;
+  --rez-chat-input-height: 48px;
+}
+
+/* Dark theme */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --rez-chat-primary: #818cf8;
+    --rez-chat-primary-hover: #6366f1;
+    --rez-chat-primary-light: #1e1b4b;
+    --rez-chat-background: #1e293b;
+    --rez-chat-surface: #0f172a;
+    --rez-chat-border: #334155;
+    --rez-chat-text: #f1f5f9;
+    --rez-chat-text-secondary: #94a3b8;
+    --rez-chat-user-bubble: #818cf8;
+    --rez-chat-user-text: #ffffff;
+    --rez-chat-assistant-bubble: #334155;
+    --rez-chat-assistant-text: #f1f5f9;
+    --rez-chat-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    --rez-chat-button-shadow: 0 4px 20px rgba(129, 140, 248, 0.4);
+  }
+}
+
+/* Container */
+#rez-chat-container,
+#rez-chat {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--rez-chat-text);
+}
+
+/* Chat Window */
+.rez-chat-window {
+  position: fixed;
+  bottom: 80px;
+  right: 24px;
+  width: var(--rez-chat-window-width);
+  height: var(--rez-chat-window-height);
+  background: var(--rez-chat-background);
+  border-radius: var(--rez-chat-border-radius);
+  box-shadow: var(--rez-chat-shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 999998;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Hidden/Visible states */
+.rez-chat-hidden {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px) scale(0.95);
+  pointer-events: none;
+}
+
+.rez-chat-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+/* Chat Header */
+.rez-chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, var(--rez-chat-primary) 0%, var(--rez-chat-primary-hover) 100%);
+  color: white;
+}
+
+.rez-chat-header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rez-chat-avatar {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rez-chat-avatar svg {
+  width: 24px;
+  height: 24px;
+  color: white;
+}
+
+.rez-chat-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rez-chat-title {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.rez-chat-status {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.rez-chat-status-online {
+  color: #4ade80;
+}
+
+.rez-chat-status-offline,
+.rez-chat-status-connection-failed {
+  color: #f87171;
+}
+
+.rez-chat-status-connecting,
+.rez-chat-status-reconnecting {
+  color: #fbbf24;
+}
+
+.rez-chat-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.rez-chat-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.rez-chat-close svg {
+  width: 18px;
+  height: 18px;
+  color: white;
+}
+
+/* Messages Container */
+.rez-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  background: var(--rez-chat-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scroll-behavior: smooth;
+}
+
+/* Scrollbar styling */
+.rez-chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.rez-chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rez-chat-messages::-webkit-scrollbar-thumb {
+  background: var(--rez-chat-border);
+  border-radius: 3px;
+}
+
+.rez-chat-messages::-webkit-scrollbar-thumb:hover {
+  background: var(--rez-chat-text-secondary);
+}
+
+/* Welcome message */
+.rez-chat-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* Message styles */
+.rez-chat-message {
+  display: flex;
+  flex-direction: column;
+  max-width: 80%;
+  animation: messageIn 0.3s ease;
+}
+
+@keyframes messageIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rez-chat-message-user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.rez-chat-message-assistant {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+/* Message bubbles */
+.rez-chat-bubble {
+  padding: 12px 16px;
+  border-radius: 18px;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.rez-chat-message-user .rez-chat-bubble {
+  background: var(--rez-chat-user-bubble);
+  color: var(--rez-chat-user-text);
+  border-bottom-right-radius: 4px;
+}
+
+.rez-chat-message-assistant .rez-chat-bubble {
+  background: var(--rez-chat-assistant-bubble);
+  color: var(--rez-chat-assistant-text);
+  border-bottom-left-radius: 4px;
+}
+
+/* Avatar for assistant messages */
+.rez-chat-avatar-small {
+  width: 28px;
+  height: 28px;
+  background: var(--rez-chat-primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.rez-chat-avatar-small svg {
+  width: 16px;
+  height: 16px;
+  color: white;
+}
+
+/* Message timestamp */
+.rez-chat-time {
+  font-size: 11px;
+  color: var(--rez-chat-text-secondary);
+  margin-top: 4px;
+  padding: 0 4px;
+}
+
+/* Typing indicator */
+.rez-chat-typing-bubble {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 18px;
+}
+
+.rez-chat-typing-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--rez-chat-text-secondary);
+  border-radius: 50%;
+  animation: typingBounce 1.4s infinite ease-in-out;
+}
+
+.rez-chat-typing-dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.rez-chat-typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.rez-chat-typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typingBounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Input Area */
+.rez-chat-input-area {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 16px;
+  background: var(--rez-chat-background);
+  border-top: 1px solid var(--rez-chat-border);
+}
+
+.rez-chat-input {
+  flex: 1;
+  height: var(--rez-chat-input-height);
+  padding: 10px 16px;
+  border: 2px solid var(--rez-chat-border);
+  border-radius: 24px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--rez-chat-surface);
+  color: var(--rez-chat-text);
+  resize: none;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.rez-chat-input::placeholder {
+  color: var(--rez-chat-text-secondary);
+}
+
+.rez-chat-input:focus {
+  border-color: var(--rez-chat-primary);
+  box-shadow: 0 0 0 3px var(--rez-chat-primary-light);
+}
+
+/* Send Button */
+.rez-chat-send {
+  width: var(--rez-chat-input-height);
+  height: var(--rez-chat-input-height);
+  border: none;
+  border-radius: 50%;
+  background: var(--rez-chat-primary);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+  flex-shrink: 0;
+}
+
+.rez-chat-send:hover:not(:disabled) {
+  background: var(--rez-chat-primary-hover);
+  transform: scale(1.05);
+}
+
+.rez-chat-send:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.rez-chat-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rez-chat-send svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Floating Chat Button */
+.rez-chat-button {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: var(--rez-chat-button-size);
+  height: var(--rez-chat-button-size);
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--rez-chat-primary) 0%, var(--rez-chat-primary-hover) 100%);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--rez-chat-button-shadow);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  z-index: 999999;
+}
+
+.rez-chat-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 30px rgba(99, 102, 241, 0.5);
+}
+
+.rez-chat-button:active {
+  transform: scale(0.95);
+}
+
+.rez-chat-button-active {
+  transform: scale(1);
+}
+
+.rez-chat-button svg {
+  width: 28px;
+  height: 28px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* Position variants */
+#rez-chat-container.rez-chat-position-bottom-left .rez-chat-window,
+#rez-chat.rez-chat-position-bottom-left .rez-chat-window {
+  right: auto;
+  left: 24px;
+}
+
+#rez-chat-container.rez-chat-position-bottom-left .rez-chat-button,
+#rez-chat.rez-chat-position-bottom-left .rez-chat-button {
+  right: auto;
+  left: 24px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  :root {
+    --rez-chat-window-width: calc(100vw - 32px);
+    --rez-chat-window-height: calc(100vh - 120px);
+    --rez-chat-button-size: 56px;
+  }
+
+  .rez-chat-window {
+    bottom: 70px;
+    right: 16px;
+    left: 16px;
+    width: auto;
+  }
+
+  .rez-chat-button {
+    bottom: 16px;
+    right: 16px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .rez-chat-window,
+  .rez-chat-button,
+  .rez-chat-send,
+  .rez-chat-message {
+    transition: none;
+    animation: none;
+  }
+
+  .rez-chat-typing-dot {
+    animation: none;
+  }
+}
+
+/* Focus styles for accessibility */
+.rez-chat-button:focus-visible,
+.rez-chat-send:focus-visible,
+.rez-chat-close:focus-visible,
+.rez-chat-input:focus-visible {
+  outline: 2px solid var(--rez-chat-primary);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --rez-chat-border: var(--rez-chat-text);
+    --rez-chat-primary: #4338ca;
+  }
+
+  .rez-chat-bubble {
+    border: 2px solid currentColor;
+  }
+}

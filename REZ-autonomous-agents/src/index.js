@@ -7,9 +7,32 @@ const cors = require('cors');
 const helmet = require('helmet');
 const cron = require('node-cron');
 const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 
 const logger = require('../shared/logger');
 const { errorHandler, asyncHandler } = require('../shared/errorHandler');
+
+/**
+ * Seeded random number generator for deterministic fallback data.
+ * Uses a fixed seed so fallback data is reproducible.
+ */
+function createSeededRandom(seed = 12345) {
+  let state = seed;
+  return function seededRandom() {
+    state = (state * 1103515245 + 12345) & 0x7fffffff;
+    return state / 0x7fffffff;
+  };
+}
+
+// Fixed seed for reproducible fallback data
+const seededRandom = createSeededRandom(42);
+
+/**
+ * Generate deterministic fallback number within range
+ */
+function seededInt(min, max) {
+  return Math.floor(seededRandom() * (max - min + 1)) + min;
+}
 
 // Environment validation
 const REQUIRED_ENV = ['MONGODB_URI', 'REDIS_URL', 'INTERNAL_SERVICE_TOKEN'];
@@ -280,14 +303,14 @@ class DemandSignalAgent extends BaseAgent {
       }
     } catch (err) {
       logger.warn('DemandSignalAgent: Failed to fetch real data, using simulated fallback', { error: err.message });
-      // Fallback to simulated data with warning
+      // Fallback to deterministic data with warning
       demandSignals = {
         timestamp: new Date(),
-        totalDemand: Math.floor(Math.random() * 1000),
+        totalDemand: seededInt(500, 1000),
         byCategory: {
-          restaurant: Math.floor(Math.random() * 500),
-          hotel: Math.floor(Math.random() * 200),
-          retail: Math.floor(Math.random() * 300)
+          restaurant: seededInt(200, 500),
+          hotel: seededInt(50, 200),
+          retail: seededInt(100, 300)
         },
         trends: [
           { category: 'biryani', trend: 'up', velocity: 0.8 },
@@ -663,7 +686,7 @@ class AdaptiveScoringAgent extends BaseAgent {
 
         scoring.improvements.push({
           model: modelName,
-          improvement: Math.random() * 0.05, // Calculate from historical data
+          improvement: seededRandom() * 0.05, // Deterministic fallback
           newAccuracy: accuracy,
           correct: pred.correct,
           total: pred.total
@@ -704,9 +727,9 @@ class AdaptiveScoringAgent extends BaseAgent {
     } catch (err) {
       logger.warn('AdaptiveScoringAgent: Failed to fetch real data', { error: err.message });
 
-      // Fallback
+      // Fallback - deterministic
       scoring.modelsUpdated = 3;
-      scoring.accuracy = 0.85 + Math.random() * 0.1;
+      scoring.accuracy = 0.85 + seededRandom() * 0.1;
       scoring.improvements = [
         { model: 'churn_predictor', improvement: 0.05, newAccuracy: 0.88 },
         { model: 'reorder_predictor', improvement: 0.03, newAccuracy: 0.82 }
@@ -783,11 +806,11 @@ class FeedbackLoopAgent extends BaseAgent {
     } catch (err) {
       logger.warn('FeedbackLoopAgent: Failed to fetch real data', { error: err.message });
 
-      // Fallback
-      feedback.loopsClosed = Math.floor(Math.random() * 20) + 10;
+      // Fallback - deterministic
+      feedback.loopsClosed = seededInt(10, 30);
 
-      // Simulate drift detection
-      if (Math.random() > 0.8) {
+      // Deterministic drift detection (seeded)
+      if (seededRandom() > 0.8) {
         feedback.driftDetected = true;
         feedback.corrections.push({
           type: 'threshold_adjustment',
@@ -892,10 +915,10 @@ class NetworkEffectAgent extends BaseAgent {
     } catch (err) {
       logger.warn('NetworkEffectAgent: Failed to fetch real data', { error: err.message });
 
-      // Fallback
-      network.usersAnalyzed = Math.floor(Math.random() * 10000) + 5000;
-      network.similaritiesComputed = Math.floor(Math.random() * 50000) + 20000;
-      network.newClusters = Math.floor(Math.random() * 5) + 1;
+      // Fallback - deterministic
+      network.usersAnalyzed = seededInt(5000, 15000);
+      network.similaritiesComputed = seededInt(20000, 70000);
+      network.newClusters = seededInt(1, 5);
       network.clusters = [
         { id: 1, size: 250, type: 'foodies', avgOrderValue: 450 },
         { id: 2, size: 180, type: 'budget_diners', avgOrderValue: 200 },
@@ -1024,9 +1047,9 @@ class RevenueAttributionAgent extends BaseAgent {
     } catch (err) {
       logger.warn('RevenueAttributionAgent: Failed to fetch real data', { error: err.message });
 
-      // Fallback
+      // Fallback - deterministic
       revenue.gmv = {
-        total: Math.floor(Math.random() * 1000000) + 500000,
+        total: seededInt(500000, 1500000),
         bySource: { organic: 0.3, marketing: 0.5, repeat: 0.2 }
       };
       revenue.roi = {

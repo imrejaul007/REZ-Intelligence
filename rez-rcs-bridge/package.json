@@ -1,0 +1,40 @@
+{
+  "name": "@rez/rcs-bridge",
+  "version": "1.0.0",
+  "description": "REZ RCS Bridge - Rich Communication Services for India (Jio/Airtel)",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "lint": "eslint src/**/*.ts",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.0.0",
+    "axios": "^1.6.0",
+    "redis": "^4.6.10",
+    "zod": "^3.22.4",
+    "winston": "^3.11.0",
+    "dotenv": "^16.3.1",
+    "jsonwebtoken": "^9.0.2",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.0",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/uuid": "^9.0.6",
+    "typescript": "^5.3.0",
+    "ts-node": "^10.9.1",
+    "eslint": "^8.54.0",
+    "@typescript-eslint/eslint-plugin": "^6.12.0",
+    "@typescript-eslint/parser": "^6.12.0",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.10"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
