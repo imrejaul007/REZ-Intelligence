@@ -43,6 +43,7 @@ import {
 } from '../responses/templates.js';
 import { TonePreset, TONE_PRESETS } from '../config/tone.js';
 import { CULINARY_EXPERT_SYSTEM_PROMPT } from '../config/systemPrompt.js';
+import { getCoreBrainClient } from '../services/coreBrainIntegration.js';
 
 const router = Router();
 
@@ -121,8 +122,47 @@ router.post('/chat', async (req: Request, res: Response) => {
       } as ApiResponse);
     }
 
+    // Load Core Brain context for personalization
+    const coreBrain = getCoreBrainClient();
+    let coreBrainContext: {
+      preferences: Record<string, unknown> | null;
+      loyalty: Record<string, unknown> | null;
+      memories: Record<string, unknown>[];
+      diningHistory: Record<string, unknown>[];
+    } | null = null;
+
+    try {
+      const userContext = await coreBrain.loadUserContext(userId, req.body.sessionId || '', restaurantId);
+      if (userContext) {
+        coreBrainContext = {
+          preferences: userContext.preferences,
+          loyalty: userContext.loyalty,
+          memories: userContext.memories,
+          diningHistory: (userContext as Record<string, unknown>).diningHistory as Record<string, unknown>[] || [],
+        };
+        logger.info('Core Brain context loaded', {
+          userId,
+          hasPreferences: !!coreBrainContext.preferences,
+          hasLoyalty: !!coreBrainContext.loyalty,
+          memoryCount: coreBrainContext.memories.length,
+        });
+      }
+    } catch (coreBrainError) {
+      logger.warn('Failed to load Core Brain context', { error: coreBrainError, userId });
+    }
+
+    // Enhance context with Core Brain data
+    const enhancedContext = {
+      ...context,
+      ...coreBrainContext?.preferences,
+      dietaryContext: extractDietaryContext(coreBrainContext?.memories || []),
+      favoriteCuisines: extractFavoriteCuisines(coreBrainContext?.diningHistory || []),
+      loyaltyTier: coreBrainContext?.loyalty?.tier,
+      loyaltyPoints: coreBrainContext?.loyalty?.points,
+    };
+
     // Classify intent
-    const classified = classifyIntent(message, context);
+    const classified = classifyIntent(message, enhancedContext);
     logger.info(`Intent classified: ${classified.intent} (${classified.confidence})`);
 
     const menuService = getMenuService();
@@ -133,6 +173,13 @@ router.post('/chat', async (req: Request, res: Response) => {
 
     let response = '';
     let intentData: Record<string, unknown> = {};
+
+    // Track if we should record this activity
+    const activityToRecord = {
+      action: classified.intent,
+      agent: 'culinary-expert',
+      topic: message.substring(0, 100),
+    };
 
     // Handle intents
     switch (classified.intent) {
@@ -326,6 +373,11 @@ router.post('/chat', async (req: Request, res: Response) => {
         break;
     }
 
+    // Record activity in Core Brain (non-blocking)
+    coreBrain.recordActivity(userId, activityToRecord).catch((err) => {
+      logger.warn('Failed to record activity in Core Brain', { error: err });
+    });
+
     res.json({
       success: true,
       data: {
@@ -333,8 +385,20 @@ router.post('/chat', async (req: Request, res: Response) => {
         intent: classified.intent,
         confidence: classified.confidence,
         ...intentData,
+        // Include Core Brain context for client-side use
+        context: {
+          hasPersonalization: !!coreBrainContext?.preferences,
+          loyaltyTier: coreBrainContext?.loyalty?.tier || null,
+          loyaltyPoints: coreBrainContext?.loyalty?.points || null,
+          dietaryContext: extractDietaryContext(coreBrainContext?.memories || []),
+        },
       },
-    } as ApiResponse<{ response: string; intent: string; confidence: number }>);
+    } as ApiResponse<{
+      response: string;
+      intent: string;
+      confidence: number;
+      context: Record<string, unknown>;
+    }>);
   } catch (error) {
     logger.error('Chat endpoint error:', error);
     res.status(500).json({
@@ -343,6 +407,38 @@ router.post('/chat', async (req: Request, res: Response) => {
     } as ApiResponse);
   }
 });
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Extract dietary context from user memories
+ */
+function extractDietaryContext(memories: Record<string, unknown>[]): string[] {
+  const dietary: string[] = [];
+  for (const memory of memories) {
+    const tags = memory.tags as string[] | undefined;
+    if (tags?.includes('dietary') && memory.content) {
+      dietary.push(memory.content as string);
+    }
+  }
+  return [...new Set(dietary)];
+}
+
+/**
+ * Extract favorite cuisines from dining history
+ */
+function extractFavoriteCuisines(diningHistory: Record<string, unknown>[]): string[] {
+  const cuisines: string[] = [];
+  for (const memory of diningHistory) {
+    const metadata = memory.metadata as Record<string, unknown> | undefined;
+    if (metadata?.cuisine) {
+      cuisines.push(metadata.cuisine as string);
+    }
+  }
+  return [...new Set(cuisines)];
+}
 
 // ============================================================================
 // MENU ENDPOINTS

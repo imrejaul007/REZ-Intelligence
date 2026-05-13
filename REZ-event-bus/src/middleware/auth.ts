@@ -1,106 +1,158 @@
-import { Request, Response, NextFunction } from 'express';
-import crypto from 'crypto';
-
 /**
- * Internal Service Authentication Middleware
- * Authenticates requests from internal services using a shared token
+ * Authentication Middleware
+ * Verifies internal service tokens for service-to-service communication
  */
 
-interface ServiceInfo {
-  service: string;
+import { Request, Response, NextFunction } from 'express';
+import { config } from '../config';
+import { logger } from '../services/logger';
+
+/**
+ * Service information extracted from token
+ */
+export interface ServiceInfo {
+  serviceName: string;
   permissions: string[];
 }
 
-const serviceTokens = new Map<string, ServiceInfo>();
-
-function initializeServiceTokens(): void {
-  const tokensJson = process.env.INTERNAL_SERVICE_TOKENS_JSON;
-  if (tokensJson) {
-    try {
-      const tokens = JSON.parse(tokensJson);
-      for (const [service, token] of Object.entries(tokens)) {
-        serviceTokens.set(token as string, {
-          service,
-          permissions: getServicePermissions(service)
-        });
-      }
-      console.log(`[Auth] Loaded ${serviceTokens.size} internal service tokens`);
-    } catch (error) {
-      console.error('[Auth] Failed to parse INTERNAL_SERVICE_TOKENS_JSON:', error);
-    }
-  }
-}
-
-function getServicePermissions(service: string): string[] {
-  const permissions: Record<string, string[]> = {
-    'admin-panel': ['read', 'write', 'delete', 'publish'],
-    'payment-service': ['read', 'write', 'publish'],
-    'identity-service': ['read', 'write', 'publish'],
-    'capital-service': ['read', 'write', 'publish'],
-    'bnpl-service': ['read', 'write', 'publish'],
-    'ops-center': ['read', 'publish'],
-    'intent-service': ['read', 'write', 'publish'],
-    'wallet-service': ['read', 'write', 'publish'],
-    'order-service': ['read', 'write', 'publish'],
-    'merchant-service': ['read', 'write', 'publish'],
-    'notification-service': ['read', 'publish'],
-  };
-  return permissions[service] || ['read', 'publish'];
-}
-
-initializeServiceTokens();
-
+/**
+ * Authenticated request with service info
+ */
 export interface AuthenticatedRequest extends Request {
   serviceInfo?: ServiceInfo;
+  requestId?: string;
+}
+
+/**
+ * Permission types
+ */
+export enum Permission {
+  READ = 'read',
+  WRITE = 'write',
+  PUBLISH = 'publish',
+  SUBSCRIBE = 'subscribe',
+  ADMIN = 'admin',
+}
+
+/**
+ * Service permissions mapping
+ */
+const SERVICE_PERMISSIONS: Record<string, Permission[]> = {
+  'payment-service': [Permission.READ, Permission.WRITE, Permission.PUBLISH, Permission.SUBSCRIBE],
+  'wallet-service': [Permission.READ, Permission.WRITE, Permission.PUBLISH, Permission.SUBSCRIBE],
+  'order-service': [Permission.READ, Permission.WRITE, Permission.PUBLISH, Permission.SUBSCRIBE],
+  'notification-service': [Permission.READ, Permission.PUBLISH, Permission.SUBSCRIBE],
+  'intent-service': [Permission.READ, Permission.WRITE, Permission.PUBLISH, Permission.SUBSCRIBE],
+  'merchant-service': [Permission.READ, Permission.WRITE, Permission.PUBLISH, Permission.SUBSCRIBE],
+  'identity-service': [Permission.READ, Permission.WRITE, Permission.PUBLISH, Permission.SUBSCRIBE],
+  'admin-panel': [Permission.READ, Permission.WRITE, Permission.PUBLISH, Permission.SUBSCRIBE, Permission.ADMIN],
+};
+
+/**
+ * Get permissions for a service
+ */
+function getServicePermissions(serviceName: string): Permission[] {
+  return SERVICE_PERMISSIONS[serviceName] || [Permission.READ, Permission.PUBLISH];
+}
+
+/**
+ * Generate request ID
+ */
+function generateRequestId(): string {
+  return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
 /**
  * Verify internal service token
  */
 export function verifyInternalToken(
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): void {
   const token = req.headers['x-internal-token'] as string;
 
+  // Add request ID for tracing
+  req.requestId = generateRequestId();
+
   if (!token) {
+    logger.warn('Missing internal token', {
+      requestId: req.requestId,
+      path: req.path,
+      ip: req.ip,
+    });
+
     res.status(401).json({
       error: 'Unauthorized',
       code: 'MISSING_TOKEN',
-      message: 'X-Internal-Token header is required'
+      message: 'X-Internal-Token header is required',
+      requestId: req.requestId,
     });
     return;
   }
 
-  const serviceInfo = serviceTokens.get(token);
+  // Look up service by token
+  const serviceName = config.auth.internalServiceTokens[token];
 
-  if (!serviceInfo) {
+  if (!serviceName) {
+    logger.warn('Invalid internal token', {
+      requestId: req.requestId,
+      path: req.path,
+      ip: req.ip,
+    });
+
     res.status(401).json({
       error: 'Unauthorized',
       code: 'INVALID_TOKEN',
-      message: 'Invalid service token'
+      message: 'Invalid service token',
+      requestId: req.requestId,
     });
     return;
   }
 
-  (req as AuthenticatedRequest).serviceInfo = serviceInfo;
+  // Set service info on request
+  req.serviceInfo = {
+    serviceName,
+    permissions: getServicePermissions(serviceName),
+  };
+
+  logger.debug('Service authenticated', {
+    requestId: req.requestId,
+    serviceName,
+    permissions: req.serviceInfo.permissions,
+  });
+
   next();
 }
 
 /**
- * Require specific permissions for an endpoint
+ * Require specific permission
  */
-export function requirePermission(permission: string) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    const authReq = req as AuthenticatedRequest;
-    const permissions = authReq.serviceInfo?.permissions || [];
+export function requirePermission(permission: Permission) {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+    if (!req.serviceInfo) {
+      res.status(401).json({
+        error: 'Unauthorized',
+        code: 'NOT_AUTHENTICATED',
+        message: 'Authentication required',
+        requestId: req.requestId,
+      });
+      return;
+    }
 
-    if (!permissions.includes(permission)) {
+    if (!req.serviceInfo.permissions.includes(permission)) {
+      logger.warn('Insufficient permissions', {
+        requestId: req.requestId,
+        serviceName: req.serviceInfo.serviceName,
+        requiredPermission: permission,
+        currentPermissions: req.serviceInfo.permissions,
+      });
+
       res.status(403).json({
         error: 'Forbidden',
         code: 'INSUFFICIENT_PERMISSIONS',
-        message: `Required permission: ${permission}`
+        message: `Required permission: ${permission}`,
+        requestId: req.requestId,
       });
       return;
     }
@@ -110,11 +162,66 @@ export function requirePermission(permission: string) {
 }
 
 /**
- * Timing-safe string comparison
+ * Require admin permission
  */
-export function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) {
-    return false;
+export const requireAdmin = requirePermission(Permission.ADMIN);
+
+/**
+ * Require publish permission
+ */
+export const requirePublish = requirePermission(Permission.PUBLISH);
+
+/**
+ * Require subscribe permission
+ */
+export const requireSubscribe = requirePermission(Permission.SUBSCRIBE);
+
+/**
+ * Optional authentication - doesn't fail if no token
+ */
+export function optionalAuth(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): void {
+  const token = req.headers['x-internal-token'] as string;
+  req.requestId = generateRequestId();
+
+  if (token) {
+    const serviceName = config.auth.internalServiceTokens[token];
+    if (serviceName) {
+      req.serviceInfo = {
+        serviceName,
+        permissions: getServicePermissions(serviceName),
+      };
+    }
   }
-  return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+
+  next();
 }
+
+/**
+ * Add request ID to response headers
+ */
+export function addRequestId(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): void {
+  if (!req.requestId) {
+    req.requestId = generateRequestId();
+  }
+
+  res.setHeader('X-Request-Id', req.requestId);
+  next();
+}
+
+export default {
+  verifyInternalToken,
+  requirePermission,
+  requireAdmin,
+  requirePublish,
+  requireSubscribe,
+  optionalAuth,
+  addRequestId,
+};

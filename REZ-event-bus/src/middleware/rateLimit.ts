@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { redis } from '../config/redis';
+import Redis from 'ioredis';
+import { config } from '../config';
 
 /**
  * Redis-based distributed rate limiter
@@ -8,10 +9,15 @@ import { redis } from '../config/redis';
 export class RateLimiter {
   private defaultWindowMs: number;
   private defaultMaxRequests: number;
+  private redis: Redis;
 
   constructor(defaultWindowMs = 60000, defaultMaxRequests = 100) {
     this.defaultWindowMs = defaultWindowMs;
     this.defaultMaxRequests = defaultMaxRequests;
+    this.redis = new Redis(config.redis.url, {
+      maxRetriesPerRequest: config.redis.maxRetriesPerRequest,
+      keyPrefix: config.redis.keyPrefix,
+    });
   }
 
   /**
@@ -30,7 +36,7 @@ export class RateLimiter {
       const redisKey = `ratelimit:${key}`;
 
       // Use pipeline for atomic operations
-      const pipeline = redis.pipeline();
+      const pipeline = this.redis.pipeline();
       pipeline.zremrangebyscore(redisKey, 0, windowStart);
       pipeline.zcard(redisKey);
       pipeline.zadd(redisKey, now, `${now}-${Math.random()}`);
@@ -45,7 +51,7 @@ export class RateLimiter {
       const currentCount = results[1][1] as number;
 
       if (currentCount >= maxRequests) {
-        const oldestEntry = await redis.zrange(redisKey, 0, 0, 'WITHSCORES');
+        const oldestEntry = await this.redis.zrange(redisKey, 0, 0, 'WITHSCORES');
         const oldestTimestamp = oldestEntry.length > 1 ? parseInt(oldestEntry[1]) : now;
         const resetMs = Math.max(0, oldestTimestamp + windowMs - now);
         return { allowed: false, remaining: 0, resetMs };

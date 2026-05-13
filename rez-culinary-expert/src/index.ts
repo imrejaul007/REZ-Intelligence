@@ -240,13 +240,55 @@ function createApp(): Express {
     res.status(isHealthy ? 200 : 503).json(healthcheck);
   });
 
-  // Readiness check
-  app.get('/ready', (req: Request, res: Response) => {
-    if (mongoClient && redis?.status === 'ready') {
-      res.json({ status: 'ready' });
-    } else {
-      res.status(503).json({ status: 'not ready' });
-    }
+  // Detailed health check with dependencies
+  app.get('/health/detailed', async (req: Request, res: Response) => {
+    const memoryUsage = process.memoryUsage();
+
+    const healthData = {
+      status: 'healthy',
+      service: 'rez-culinary-expert',
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: config.nodeEnv,
+      dependencies: {
+        mongodb: mongoClient?.topology?.isConnected() ? 'connected' : 'disconnected',
+        redis: redis?.status === 'ready' ? 'connected' : 'disconnected',
+      },
+      memory: {
+        heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024),
+        heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024),
+        rss: Math.round(memoryUsage.rss / 1024 / 1024),
+        external: Math.round(memoryUsage.external / 1024 / 1024),
+      },
+      process: {
+        pid: process.pid,
+        uptime: process.uptime(),
+        platform: process.platform,
+        nodeVersion: process.version,
+      },
+    };
+
+    const isHealthy = healthData.dependencies.mongodb === 'connected' &&
+                     healthData.dependencies.redis === 'connected';
+
+    res.status(isHealthy ? 200 : 503).json(healthData);
+  });
+
+  // Kubernetes readiness probe
+  app.get('/health/ready', (req: Request, res: Response) => {
+    const checks = {
+      mongodb: mongoClient?.topology?.isConnected() ?? false,
+      redis: redis?.status === 'ready' ?? false,
+    };
+
+    const isReady = checks.mongodb && checks.redis;
+
+    res.status(isReady ? 200 : 503).json({
+      ready: isReady,
+      checks,
+      timestamp: new Date().toISOString(),
+    });
   });
 
   // Internal authentication middleware

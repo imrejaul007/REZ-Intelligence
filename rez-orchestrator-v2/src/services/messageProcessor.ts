@@ -19,6 +19,52 @@ import { appConfig } from '../config';
 import { logger } from '../utils/logger';
 import { ErrorDetails } from '../models/OrchestrationResponse';
 
+// Service URLs with environment variable overrides
+const CONTEXT_ENGINE_URL = process.env.CONTEXT_ENGINE_URL || 'http://localhost:4071';
+const CORE_BRAIN_URL = process.env.CORE_BRAIN_URL || 'http://localhost:4072';
+
+/**
+ * External service client for making HTTP requests
+ */
+async function fetchFromService<T>(
+  url: string,
+  options: RequestInit = {},
+  timeoutMs = 5000
+): Promise<T | null> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Internal-Token': process.env.INTERNAL_SERVICE_TOKEN || '',
+        'X-Service-Name': 'rez-orchestrator',
+        ...options.headers,
+      },
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      logger.warn(`Service request failed: ${url}`, { status: response.status });
+      return null;
+    }
+
+    return await response.json() as T;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      logger.warn(`Service request timeout: ${url}`);
+    } else {
+      logger.warn(`Service request failed: ${url}`, { error });
+    }
+    return null;
+  }
+}
+
 export interface ProcessingContext {
   requestId: string;
   startTime: number;
@@ -29,11 +75,29 @@ export interface ProcessingContext {
   selectedAgent?: AgentInfo;
   fallbackAgent?: AgentInfo;
   warnings: string[];
+  // External service context
+  contextEngineData?: Record<string, unknown>;
+  userContext?: Record<string, unknown>;
+  personalization?: Record<string, unknown>;
+  enrichedContext?: Record<string, unknown>;
 }
 
 export interface ProcessingResult {
   response: OrchestrationResponse;
   context: ProcessingContext;
+}
+
+/**
+ * Enriched context from external services
+ */
+export interface EnrichedContext {
+  sessionId?: string;
+  merchantId?: string;
+  entryPoint?: string;
+  userId?: string;
+  contextEngineData: Record<string, unknown>;
+  userContext: Record<string, unknown>;
+  personalization: Record<string, unknown>;
 }
 
 export class MessageProcessor {
@@ -79,6 +143,13 @@ export class MessageProcessor {
     });
 
     try {
+      // Step 0: Enrich context from external services (Context Engine and Core Brain)
+      const enrichedContext = await this.enrichContextFromExternalServices(processedRequest, requestContext);
+      context.contextEngineData = enrichedContext.contextEngineData;
+      context.userContext = enrichedContext.userContext;
+      context.personalization = enrichedContext.personalization;
+      context.enrichedContext = enrichedContext.contextEngineData; // Backward compatibility
+
       // Step 1: Select the best agent(s)
       context.agentSelectionStartTime = Date.now();
       const agentSelectionResult = await this.expertSelector.selectAgent(processedRequest);
@@ -111,6 +182,130 @@ export class MessageProcessor {
     } catch (error) {
       return this.handleProcessingError(error, processedRequest, context);
     }
+  }
+
+  /**
+   * Enrich request context by calling external services:
+   * - Context Engine: Provides session, merchant, and entry point context
+   * - Core Brain: Provides user memory and personalization data
+   */
+  private async enrichContextFromExternalServices(
+    request: ProcessedOrchestrationRequest,
+    requestContext?: Record<string, unknown>
+  ): Promise<{
+    contextEngineData: Record<string, unknown>;
+    userContext: Record<string, unknown>;
+    personalization: Record<string, unknown>;
+  }> {
+    const sessionId = request.sessionId || (requestContext?.sessionId as string);
+    const merchantId = request.merchantId || (requestContext?.merchantId as string);
+    const userId = request.userId || (requestContext?.userId as string);
+    const entryPoint = request.routingHints?.entryPoint || (requestContext?.entryPoint as string);
+
+    // Parallel calls to external services for better latency
+    const [contextEngineResult, coreBrainMemoryResult, coreBrainPersonalizationResult] = await Promise.allSettled([
+      // Call Context Engine for session/merchant context
+      sessionId || merchantId || entryPoint
+        ? this.fetchContextEngineContext({ sessionId, merchantId, entryPoint })
+        : Promise.resolve({}),
+
+      // Call Core Brain for user memory/context
+      userId
+        ? this.fetchCoreBrainMemory(userId)
+        : Promise.resolve({}),
+
+      // Call Core Brain for personalization
+      userId
+        ? this.fetchCoreBrainPersonalization(userId)
+        : Promise.resolve({}),
+    ]);
+
+    const contextEngineData = contextEngineResult.status === 'fulfilled'
+      ? (contextEngineResult.value as Record<string, unknown>) || {}
+      : {};
+
+    const userContext = coreBrainMemoryResult.status === 'fulfilled'
+      ? (coreBrainMemoryResult.value as Record<string, unknown>) || {}
+      : {};
+
+    const personalization = coreBrainPersonalizationResult.status === 'fulfilled'
+      ? (coreBrainPersonalizationResult.value as Record<string, unknown>) || {}
+      : {};
+
+    // Log enrichment results
+    logger.info('Context enrichment completed', {
+      requestId: request.requestId,
+      hasContextEngine: Object.keys(contextEngineData).length > 0,
+      hasUserContext: Object.keys(userContext).length > 0,
+      hasPersonalization: Object.keys(personalization).length > 0,
+    });
+
+    return { contextEngineData, userContext, personalization };
+  }
+
+  /**
+   * Call Context Engine to get session/merchant context
+   */
+  private async fetchContextEngineContext(params: {
+    sessionId?: string;
+    merchantId?: string;
+    entryPoint?: string;
+  }): Promise<Record<string, unknown>> {
+    const url = `${CONTEXT_ENGINE_URL}/api/context`;
+
+    const result = await fetchFromService<{ success: boolean; data?: Record<string, unknown> }>(
+      url,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          sessionId: params.sessionId,
+          merchantId: params.merchantId,
+          entryPoint: params.entryPoint,
+        }),
+      }
+    );
+
+    if (result && typeof result === 'object' && 'data' in result) {
+      return (result as { data: Record<string, unknown> }).data;
+    }
+
+    return result || {};
+  }
+
+  /**
+   * Call Core Brain to get user memory/context
+   */
+  private async fetchCoreBrainMemory(userId: string): Promise<Record<string, unknown>> {
+    const url = `${CORE_BRAIN_URL}/internal/memory?userId=${encodeURIComponent(userId)}&limit=10`;
+
+    const result = await fetchFromService<{ success: boolean; data?: Record<string, unknown> }>(
+      url,
+      { method: 'GET' }
+    );
+
+    if (result && typeof result === 'object' && 'data' in result) {
+      return (result as { data: Record<string, unknown> }).data;
+    }
+
+    return result || {};
+  }
+
+  /**
+   * Call Core Brain to get user personalization data
+   */
+  private async fetchCoreBrainPersonalization(userId: string): Promise<Record<string, unknown>> {
+    const url = `${CORE_BRAIN_URL}/internal/personalization/intelligence?userId=${encodeURIComponent(userId)}`;
+
+    const result = await fetchFromService<{ success: boolean; data?: Record<string, unknown> }>(
+      url,
+      { method: 'GET' }
+    );
+
+    if (result && typeof result === 'object' && 'data' in result) {
+      return (result as { data: Record<string, unknown> }).data;
+    }
+
+    return result || {};
   }
 
   private async processWithSingleAgent(

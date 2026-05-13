@@ -16,6 +16,11 @@ import { CollaborationManager, createCollaborationManager } from './services/col
 import { EscalationService, createEscalationService } from './services/escalationService';
 import { ResponseGenerator, createResponseGenerator } from './services/responseGenerator';
 import { MessageProcessor, createMessageProcessor } from './services/messageProcessor';
+import {
+  CircuitBreakerRegistry,
+  CircuitState,
+  getCircuitBreakerRegistry,
+} from './services/circuitBreaker';
 
 // Routes
 import { createMessageRoutes } from './routes/message.routes';
@@ -40,6 +45,7 @@ let escalationService: EscalationService;
 let responseGenerator: ResponseGenerator;
 let messageProcessor: MessageProcessor;
 let rateLimiter: RateLimiter;
+let circuitRegistry: CircuitBreakerRegistry;
 
 async function initializeServices(): Promise<void> {
   logger.info('Initializing services...');
@@ -85,6 +91,9 @@ async function initializeServices(): Promise<void> {
 
   // Initialize rate limiter
   rateLimiter = createRateLimiter(redis);
+
+  // Initialize circuit breaker registry
+  circuitRegistry = getCircuitBreakerRegistry();
 
   logger.info('Services initialized successfully');
 }
@@ -157,6 +166,64 @@ function configureRoutes(): void {
     } else {
       res.status(503).json({ ready: false, reason: 'Redis not connected' });
     }
+  });
+
+  // Circuit breaker endpoints (no auth required for internal monitoring)
+  app.get('/circuits', (req: Request, res: Response) => {
+    const stats = circuitRegistry.getAllStats();
+    res.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      ...stats,
+    });
+  });
+
+  app.get('/circuits/:agentId', (req: Request, res: Response) => {
+    const { agentId } = req.params;
+    const circuit = circuitRegistry.getCircuit(agentId);
+    res.json({
+      success: true,
+      ...circuit.getStats(),
+    });
+  });
+
+  app.post('/circuits/:agentId/reset', (req: Request, res: Response) => {
+    const { agentId } = req.params;
+    const circuit = circuitRegistry.getCircuit(agentId);
+    circuit.reset();
+    res.json({
+      success: true,
+      message: `Circuit breaker for ${agentId} has been reset`,
+      ...circuit.getStats(),
+    });
+  });
+
+  app.post('/circuits/:agentId/state', (req: Request, res: Response) => {
+    const { agentId } = req.params;
+    const { state } = req.body;
+
+    if (!Object.values(CircuitState).includes(state)) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid state. Must be one of: ${Object.values(CircuitState).join(', ')}`,
+      });
+    }
+
+    const circuit = circuitRegistry.getCircuit(agentId);
+    circuit.forceState(state);
+    res.json({
+      success: true,
+      message: `Circuit breaker for ${agentId} forced to ${state}`,
+      ...circuit.getStats(),
+    });
+  });
+
+  app.post('/circuits/reset-all', (req: Request, res: Response) => {
+    circuitRegistry.resetAll();
+    res.json({
+      success: true,
+      message: 'All circuit breakers have been reset',
+    });
   });
 
   // API routes (auth required)

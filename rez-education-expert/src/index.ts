@@ -122,6 +122,52 @@ app.get('/health', (_req: Request, res: Response) => {
   });
 });
 
+// Detailed health check with dependencies
+app.get('/health/detailed', (_req: Request, res: Response) => {
+  const memoryUsage = process.memoryUsage();
+
+  res.json({
+    status: 'healthy',
+    service: 'rez-education-expert',
+    version: AGENT_CONFIG.version,
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+    dependencies: {
+      redis: redisClient?.isOpen ? 'connected' : 'disconnected',
+      mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    },
+    memory: {
+      heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024),
+      heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024),
+      rss: Math.round(memoryUsage.rss / 1024 / 1024),
+      external: Math.round(memoryUsage.external / 1024 / 1024),
+    },
+    process: {
+      pid: process.pid,
+      uptime: process.uptime(),
+      platform: process.platform,
+      nodeVersion: process.version,
+    },
+  });
+});
+
+// Kubernetes readiness probe
+app.get('/health/ready', (_req: Request, res: Response) => {
+  const checks = {
+    redis: redisClient?.isOpen ?? false,
+    mongodb: mongoose.connection.readyState === 1,
+  };
+
+  const isReady = checks.redis && checks.mongodb;
+
+  res.status(isReady ? 200 : 503).json({
+    ready: isReady,
+    checks,
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Agent info endpoint
 app.get('/agent', (_req: Request, res: Response) => {
   res.json({

@@ -17,7 +17,22 @@
     "REZ-payments-brain",
     "REZ-inventory-sync",
     "REZ-creator-network",
-    "REZ-merchant-os"
+    "REZ-merchant-os",
+    "rez-shared-types",
+    "rez-core-brain",
+    "rez-orchestrator-v2",
+    "rez-context-engine",
+    "rez-hospitality-expert",
+    "rez-culinary-expert",
+    "rez-fitness-expert",
+    "rez-health-expert",
+    "rez-travel-expert",
+    "rez-retail-expert",
+    "rez-salon-expert",
+    "rez-education-expert",
+    "rez-expert-base",
+    "rez-agent-registry",
+    "rez-whatsapp-orchestrator-bridge"
   ],
   "scripts": {
     "install:all": "npm install && npm run install --workspaces",
@@ -40,9 +55,7 @@
     "start:all": "npm run start --workspaces",
     "clean": "rm -rf */dist */node_modules .next .turbo"
   },
-  "devDependencies": {
-    "docker-compose": "^4.0.0"
-  },
+  "devDependencies": {},
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"

@@ -1,0 +1,3 @@
+2026-05-13 07:30:14 [info]: Fitness Expert Agent initialized {"agentId":"f69e97c2-2dce-4ba4-86d5-59a082cd2c88","agentName":"Fitness Expert"}
+2026-05-13 07:30:14 [info]: REZ Fitness Expert starting...
+2026-05-13 07:30:14 [info]: REZ Fitness Expert started on port 3010 {"port":3010,"env":"development"}

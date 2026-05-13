@@ -23,7 +23,6 @@ export interface IInteraction {
 }
 
 export interface IMemoryEntry {
-  id: string;
   userId: string;
   type: 'short_term' | 'long_term' | 'episodic' | 'semantic';
   content: string;
@@ -40,7 +39,6 @@ export interface IMemoryEntry {
 }
 
 export interface ISession {
-  id: string;
   userId: string;
   agentId?: string;
   startTime: Date;

@@ -33,7 +33,38 @@ app.get('/health', (req, res) => {
         status: 'healthy',
         service: 'rez-fitness-expert',
         timestamp: new Date().toISOString(),
-        version: process.env.npm_package_version || '1.0.0'
+        version: process.env.npm_package_version || '1.0.0',
+        uptime: process.uptime(),
+    });
+});
+// Detailed health check with dependencies
+app.get('/health/detailed', async (req, res) => {
+    const healthData = {
+        status: 'healthy',
+        service: 'rez-fitness-expert',
+        timestamp: new Date().toISOString(),
+        version: process.env.npm_package_version || '1.0.0',
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development',
+        dependencies: {},
+        memory: {
+            heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+            heapTotal: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+            rss: Math.round(process.memoryUsage().rss / 1024 / 1024),
+        },
+    };
+    res.json(healthData);
+});
+// Kubernetes readiness probe
+app.get('/health/ready', (req, res) => {
+    const checks = {
+        initialized: true,
+    };
+    const isReady = checks.initialized;
+    res.status(isReady ? 200 : 503).json({
+        ready: isReady,
+        checks,
+        timestamp: new Date().toISOString(),
     });
 });
 app.use('/api/v1/fitness', fitness_routes_1.fitnessRouter);

@@ -32,7 +32,6 @@ export class SessionService {
         port: parseInt(redisConfig.url.split(':')[2] || '6379', 10),
         password: redisConfig.password || undefined,
         db: redisConfig.db,
-        retryDelayOnFailover: 100,
         maxRetriesPerRequest: 3,
       });
 

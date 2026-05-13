@@ -4,6 +4,12 @@ import { ProcessedOrchestrationRequest } from '../models/OrchestrationRequest';
 import { ProcessingContext } from './messageProcessor';
 import { appConfig } from '../config';
 import { logger } from '../utils/logger';
+import {
+  CircuitBreaker,
+  CircuitBreakerRegistry,
+  getCircuitBreakerRegistry,
+  CircuitState,
+} from './circuitBreaker';
 
 export interface AgentResponse {
   content: string;
@@ -23,10 +29,19 @@ export interface SwitchResult {
 export class AgentSwitcher {
   private maxRetries: number;
   private defaultTimeout: number;
+  private circuitRegistry: CircuitBreakerRegistry;
 
   constructor() {
     this.maxRetries = 2;
     this.defaultTimeout = appConfig.agent.maxResponseTimeMs;
+    this.circuitRegistry = getCircuitBreakerRegistry();
+  }
+
+  /**
+   * Get circuit breaker for an agent
+   */
+  private getCircuitBreaker(agent: AgentInfo): CircuitBreaker {
+    return this.circuitRegistry.getCircuit(agent.agentId);
   }
 
   async routeToAgent(
@@ -35,18 +50,46 @@ export class AgentSwitcher {
     context: ProcessingContext
   ): Promise<AgentResponse> {
     const startTime = Date.now();
+    const circuit = this.getCircuitBreaker(agent);
 
     logger.debug('Routing request to agent', {
       requestId: context.requestId,
       agentId: agent.agentId,
       agentName: agent.name,
       endpoint: agent.endpoint,
+      circuitState: circuit.getState(),
     });
+
+    // Check circuit breaker
+    if (!circuit.canExecute()) {
+      logger.warn('Circuit breaker is open, skipping agent', {
+        requestId: context.requestId,
+        agentId: agent.agentId,
+        circuitState: circuit.getState(),
+      });
+
+      // Try fallback agent if available
+      if (context.fallbackAgent && context.fallbackAgent.agentId !== agent.agentId) {
+        const fallbackCircuit = this.getCircuitBreaker(context.fallbackAgent);
+        if (fallbackCircuit.canExecute()) {
+          logger.info('Using fallback agent due to circuit breaker', {
+            requestId: context.requestId,
+            primaryAgent: agent.name,
+            fallbackAgent: context.fallbackAgent.name,
+          });
+          return this.routeToAgentWithFallback(agent, context.fallbackAgent, request, context);
+        }
+      }
+
+      throw new Error(`Circuit breaker is open for agent ${agent.name}`);
+    }
 
     try {
       const response = await this.sendToAgent(agent, request, context);
-
       const responseTimeMs = Date.now() - startTime;
+
+      // Record success with circuit breaker
+      circuit.recordSuccess(responseTimeMs);
 
       if (responseTimeMs > appConfig.responseTime.alertThresholdMs) {
         logger.warn('Agent response time exceeded alert threshold', {
@@ -61,21 +104,27 @@ export class AgentSwitcher {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
+      // Record failure with circuit breaker
+      circuit.recordFailure(errorMessage);
+
       logger.error('Agent request failed', {
         requestId: context.requestId,
         agentId: agent.agentId,
         agentName: agent.name,
         error: errorMessage,
+        circuitState: circuit.getState(),
       });
 
-      // Try fallback agent if configured
+      // Try fallback agent if configured and circuit is open
       if (context.fallbackAgent && context.fallbackAgent.agentId !== agent.agentId) {
-        logger.info('Attempting fallback agent', {
-          requestId: context.requestId,
-          fallbackAgentId: context.fallbackAgent.agentId,
-        });
-
-        return this.routeToAgentWithFallback(agent, context.fallbackAgent, request, context);
+        const fallbackCircuit = this.getCircuitBreaker(context.fallbackAgent);
+        if (fallbackCircuit.canExecute()) {
+          logger.info('Attempting fallback agent', {
+            requestId: context.requestId,
+            fallbackAgentId: context.fallbackAgent.agentId,
+          });
+          return this.routeToAgentWithFallback(agent, context.fallbackAgent, request, context);
+        }
       }
 
       throw error;

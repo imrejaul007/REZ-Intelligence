@@ -1,0 +1,21 @@
+{
+  "name": "@rez/shared-types",
+  "version": "1.0.0",
+  "description": "Shared TypeScript types for REZ Intelligence Platform",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "keywords": [
+    "rez",
+    "shared",
+    "types"
+  ],
+  "author": "REZ Team",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

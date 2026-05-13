@@ -88,6 +88,64 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
+// Detailed health check with dependencies
+app.get('/health/detailed', async (req: Request, res: Response) => {
+  try {
+    const coreBrainHealthy = await getCoreBrainClient().healthCheck().catch(() => false);
+
+    const healthData = {
+      status: coreBrainHealthy ? 'healthy' : 'degraded',
+      service: 'rez-hospitality-expert',
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: config.NODE_ENV,
+      dependencies: {
+        coreBrain: coreBrainHealthy ? 'connected' : 'disconnected',
+      },
+      memory: {
+        heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        heapTotal: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+        rss: Math.round(process.memoryUsage().rss / 1024 / 1024),
+      },
+    };
+
+    res.json(healthData);
+  } catch (error) {
+    res.status(503).json({
+      status: 'unhealthy',
+      service: 'rez-hospitality-expert',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+// Kubernetes readiness probe
+app.get('/health/ready', async (req: Request, res: Response) => {
+  try {
+    const coreBrainHealthy = await getCoreBrainClient().healthCheck().catch(() => false);
+
+    const checks = {
+      coreBrain: coreBrainHealthy,
+    };
+
+    const isReady = coreBrainHealthy;
+
+    res.status(isReady ? 200 : 503).json({
+      ready: isReady,
+      checks,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(503).json({
+      ready: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
 // API routes
 app.use('/api/v1/hospitality', hospitalityRoutes);
 

@@ -87,6 +87,3 @@ export const serviceConfig: HospitalityExpertConfig = {
 export const isProduction = config.NODE_ENV === 'production';
 export const isDevelopment = config.NODE_ENV === 'development';
 export const isTest = config.NODE_ENV === 'test';
-
-// Export raw config for general use
-export { config };

@@ -1,0 +1,12 @@
+{
+  "name": "rez-ml-production",
+  "version": "1.0.0",
+  "description": "REZ ML Production - Real ML models for predictions",
+  "main": "api/service.py",
+  "scripts": {
+    "start": "python api/service.py",
+    "train": "python models/churn_model.py && python models/ltv_model.py",
+    "train:churn": "python models/churn_model.py",
+    "train:ltv": "python models/ltv_model.py"
+  }
+}

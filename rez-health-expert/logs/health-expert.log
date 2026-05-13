@@ -1,0 +1,3 @@
+2026-05-13 07:57:43 [info]: Health Expert Agent initialized {"agentId":"d293c1be-c080-4de3-8a4d-27fec88e7aad","agentName":"Health Expert"}
+2026-05-13 07:57:43 [info]: REZ Health Expert starting...
+2026-05-13 07:57:43 [info]: REZ Health Expert started on port 3011 {"port":3011,"env":"development"}

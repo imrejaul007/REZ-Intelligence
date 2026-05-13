@@ -1,0 +1,41 @@
+{
+  "name": "rez-e2e-tests",
+  "version": "1.0.0",
+  "description": "End-to-end integration tests for REZ system",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --runInBand --forceExit",
+    "setup": "ts-node tests/setup.ts",
+    "teardown": "ts-node tests/teardown.ts"
+  },
+  "keywords": [
+    "e2e",
+    "integration-tests",
+    "rez",
+    "testing"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.7",
+    "dotenv": "^16.4.5",
+    "mongodb": "^6.3.0",
+    "ioredis": "^5.3.2",
+    "uuid": "^9.0.1",
+    "wait-port": "^1.1.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.19",
+    "@types/uuid": "^9.0.8",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.3.3"
+  },
+  "jest": {
+    "preset": "ts-jest"
+  }
+}

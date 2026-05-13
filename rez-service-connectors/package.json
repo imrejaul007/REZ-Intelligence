@@ -1,0 +1,40 @@
+{
+  "name": "@rez/service-connectors",
+  "version": "1.0.0",
+  "description": "Service connectors for ReZ Orchestrator to communicate with backend services",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "axios-retry": "^4.0.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./payment": "./dist/connectors/payment.js",
+    "./wallet": "./dist/connectors/wallet.js",
+    "./order": "./dist/connectors/order.js",
+    "./booking": "./dist/connectors/booking.js",
+    "./notification": "./dist/connectors/notification.js",
+    "./analytics": "./dist/connectors/analytics.js"
+  }
+}
