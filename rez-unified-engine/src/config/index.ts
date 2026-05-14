@@ -112,7 +112,7 @@ export const config: Config = {
     keyPrefix: 'rez:unified:',
   },
   security: {
-    jwtSecret: process.env.JWT_SECRET || 'default-secret-change-in-production',
+    jwtSecret: process.env.JWT_SECRET!,
     internalServiceTokens: parseInternalTokens(
       process.env.INTERNAL_SERVICE_TOKENS_JSON || '{}'
     ),

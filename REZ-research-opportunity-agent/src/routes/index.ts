@@ -14,11 +14,17 @@ import { dailyWorker, weeklyWorker, realTimeWorker } from '../workers/index.js';
 import { InsightReportModel } from '../models/index.js';
 import { OpportunityStatus, OpportunityType } from '../types/index.js';
 import { API_LIMITS } from '../constants/thresholds.js';
+import { rateLimitMiddleware } from '../middleware/rateLimit.js';
+import { authenticateInternalService } from '../middleware/auth.js';
 import logger from '../utils/logger.js';
 
 const log = logger.child({ context: 'Routes' });
 
 const router = Router();
+
+// Apply rate limiting and auth to all routes
+router.use(rateLimitMiddleware);
+router.use(authenticateInternalService);
 
 // Validation schemas
 const PaginationSchema = z.object({

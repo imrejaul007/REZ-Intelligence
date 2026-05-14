@@ -23,7 +23,7 @@ interface WeeklyReportTask {
 }
 
 class WeeklyWorker {
-  private tasks: Map<string, WeeklyReportTask> = new Map();
+  private tasks: Record<string, WeeklyReportTask> = {} as Record<string, WeeklyReportTask>;
   private cronJob: cron.ScheduledTask | null = null;
 
   async start(): Promise<void> {
@@ -53,7 +53,7 @@ class WeeklyWorker {
       status: 'running',
     };
 
-    this.tasks.set(task.id, task);
+    this.tasks[task.id] = task;
     log.info('Starting weekly report generation', { taskId: task.id });
 
     try {
@@ -127,7 +127,7 @@ class WeeklyWorker {
       });
     }
 
-    this.tasks.set(task.id, task);
+    this.tasks[task.id] = task;
     return task;
   }
 
@@ -163,7 +163,7 @@ class WeeklyWorker {
   }
 
   getTaskStatus(taskId: string): WeeklyReportTask | undefined {
-    return this.tasks.get(taskId);
+    return this.tasks[taskId];
   }
 
   getRecentTasks(limit: number = 10): WeeklyReportTask[] {

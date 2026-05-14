@@ -10,9 +10,14 @@ import {
   SEGMENTS,
 } from '../types/index.js';
 import { internalAuth } from '../middleware/auth.js';
+import { rateLimitMiddleware } from '../middleware/rateLimit.js';
 import logger from '../utils/logger.js';
 
 const router = Router();
+
+// Apply rate limiting and auth to all routes
+router.use(rateLimitMiddleware);
+router.use(internalAuth);
 
 /**
  * Validation error handler
@@ -37,7 +42,7 @@ function handleValidationError(error: unknown, res: Response): void {
  * POST /api/rfm/calculate
  * Calculate RFM scores for all customers (expects customer data in body)
  */
-router.post('/calculate', internalAuth, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+router.post('/calculate', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const parsed = CalculateAllSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -80,7 +85,7 @@ router.post('/calculate', internalAuth, async (req: Request, res: Response, next
  * POST /api/rfm/calculate/:customerId
  * Calculate RFM score for a single customer
  */
-router.post('/calculate/:customerId', internalAuth, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+router.post('/calculate/:customerId', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const paramResult = CustomerIdParamSchema.safeParse(req.params);
     if (!paramResult.success) {
@@ -136,7 +141,7 @@ router.post('/calculate/:customerId', internalAuth, async (req: Request, res: Re
  * GET /api/rfm/scores/:customerId
  * Get RFM score for a customer
  */
-router.get('/scores/:customerId', internalAuth, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+router.get('/scores/:customerId', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const result = CustomerIdParamSchema.safeParse(req.params);
     if (!result.success) {
@@ -178,7 +183,7 @@ router.get('/scores/:customerId', internalAuth, async (req: Request, res: Respon
  * GET /api/rfm/segments
  * List all segments
  */
-router.get('/segments', internalAuth, async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+router.get('/segments', async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const segments = await segmentService.getAllSegmentsWithCounts();
 
@@ -195,7 +200,7 @@ router.get('/segments', internalAuth, async (_req: Request, res: Response, next:
  * GET /api/rfm/segments/:segment
  * Get segment details
  */
-router.get('/segments/:segment', internalAuth, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+router.get('/segments/:segment', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const result = SegmentParamSchema.safeParse(req.params);
     if (!result.success) {
@@ -233,7 +238,7 @@ router.get('/segments/:segment', internalAuth, async (req: Request, res: Respons
  * GET /api/rfm/segments/:segment/customers
  * List customers in a segment
  */
-router.get('/segments/:segment/customers', internalAuth, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+router.get('/segments/:segment/customers', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const paramResult = SegmentParamSchema.safeParse(req.params);
     if (!paramResult.success) {
@@ -286,7 +291,7 @@ router.get('/segments/:segment/customers', internalAuth, async (req: Request, re
  * GET /api/rfm/analytics
  * Get segment analytics
  */
-router.get('/analytics', internalAuth, async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+router.get('/analytics', async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const analytics = await analyticsService.getAnalytics();
 
@@ -303,7 +308,7 @@ router.get('/analytics', internalAuth, async (_req: Request, res: Response, next
  * GET /api/rfm/thresholds
  * Get RFM scoring thresholds
  */
-router.get('/thresholds', internalAuth, async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+router.get('/thresholds', async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const thresholds = analyticsService.getScoringThresholds();
 
