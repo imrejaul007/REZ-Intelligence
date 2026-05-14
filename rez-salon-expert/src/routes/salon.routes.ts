@@ -116,7 +116,8 @@ router.post('/chat', validateRequest(chatSchema), async (req: Request, res: Resp
       currentService: null,
       currentCategory: context?.category ? context.category as ServiceCategory : null,
       appointments,
-      budget: context?.budget || null
+      budget: context?.budget || null,
+      preferredDate: null
     };
 
     const response = await salonExpert.processSalonQuery(salonContext, message);

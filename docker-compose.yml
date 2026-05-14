@@ -640,6 +640,119 @@ services:
       - rez-network
 
 # ============================================
+# NEW: Channel Orchestrator
+# ============================================
+  rez-channel-orchestrator:
+    build:
+      context: ./rez-channel-orchestrator
+      dockerfile: Dockerfile
+    container_name: rez-channel-orchestrator
+    restart: unless-stopped
+    ports:
+      - "4070:4070"
+    environment:
+      - NODE_ENV=production
+      - PORT=4070
+      - ORCHESTRATOR_URL=http://rez-orchestrator-v2:4006
+      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
+    depends_on:
+      - rez-orchestrator-v2
+    networks:
+      - rez-network
+
+  # ============================================
+  # NEW: Channel Bridges
+  # ============================================
+  rez-sms-bridge:
+    build:
+      context: ./rez-sms-bridge
+      dockerfile: Dockerfile
+    container_name: rez-sms-bridge
+    restart: unless-stopped
+    ports:
+      - "4085:4085"
+    environment:
+      - NODE_ENV=production
+      - PORT=4085
+      - ORCHESTRATOR_URL=http://rez-orchestrator-v2:4006
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+      - rez-orchestrator-v2
+    networks:
+      - rez-network
+
+  rez-email-bridge:
+    build:
+      context: ./rez-email-bridge
+      dockerfile: Dockerfile
+    container_name: rez-email-bridge
+    restart: unless-stopped
+    ports:
+      - "4086:4086"
+    environment:
+      - NODE_ENV=production
+      - PORT=4086
+      - ORCHESTRATOR_URL=http://rez-orchestrator-v2:4006
+    depends_on:
+      - rez-orchestrator-v2
+    networks:
+      - rez-network
+
+  rez-rcs-bridge:
+    build:
+      context: ./rez-rcs-bridge
+      dockerfile: Dockerfile
+    container_name: rez-rcs-bridge
+    restart: unless-stopped
+    ports:
+      - "4087:4087"
+    environment:
+      - NODE_ENV=production
+      - PORT=4087
+      - ORCHESTRATOR_URL=http://rez-orchestrator-v2:4006
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+      - rez-orchestrator-v2
+    networks:
+      - rez-network
+
+  rez-web-widget:
+    build:
+      context: ./rez-web-widget
+      dockerfile: Dockerfile
+    container_name: rez-web-widget
+    restart: unless-stopped
+    ports:
+      - "4088:4088"
+    environment:
+      - NODE_ENV=production
+      - PORT=4088
+      - ORCHESTRATOR_URL=http://rez-orchestrator-v2:4006
+    depends_on:
+      - rez-orchestrator-v2
+    networks:
+      - rez-network
+
+  rez-app-bridge:
+    build:
+      context: ./rez-app-bridge
+      dockerfile: Dockerfile
+    container_name: rez-app-bridge
+    restart: unless-stopped
+    ports:
+      - "4089:4089"
+    environment:
+      - NODE_ENV=production
+      - PORT=4089
+      - ORCHESTRATOR_URL=http://rez-orchestrator-v2:4006
+    depends_on:
+      - rez-orchestrator-v2
+    networks:
+      - rez-network
+
+# ============================================
 # Networks
 # ============================================
 networks:

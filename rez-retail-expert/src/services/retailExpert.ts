@@ -340,7 +340,7 @@ export class RetailExpert {
           response = await this.handleCategoryBrowse(context, entities);
           break;
         default:
-          response = await this.handleGeneralRetail(context, message);
+          response = await this.handleGeneralRetail(context, entities, message);
       }
 
       response.processingTime = Date.now() - startTime;
@@ -858,7 +858,7 @@ export class RetailExpert {
           data: { category, products },
           actions: [
             { type: 'browse_subcategory', data: { category: category.id } },
-            { type: 'filter_results', data: {} }
+            { type: 'sort_results', data: {} }
           ]
         };
       }
