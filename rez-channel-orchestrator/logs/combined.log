@@ -58,3 +58,4 @@
 2026-05-13T17:26:24.443Z [[32minfo[39m]: Email received {"from":"user@email.com","subject":"Book hotel"}
 2026-05-13T17:26:24.443Z [[32minfo[39m]: Routing message {"channel":"EMAIL","userId":"user@email.com","messageLength":47}
 2026-05-13T17:26:24.443Z [[32minfo[39m]: Selected expert: hospitality {"endpoint":"http://localhost:3000/api/v1/hospitality/chat"}
+2026-05-14T12:03:50.590Z [[32minfo[39m]: GET /health {"channel":"unknown","ip":"::1"}
