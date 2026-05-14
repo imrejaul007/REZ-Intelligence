@@ -25,11 +25,30 @@ function timingSafeEqual(a, b) {
   }
 }
 
-// Identity services to query
+// ============================================
+// SECURITY: Fail fast on missing environment variables
+// ============================================
+const nodeEnv = process.env.NODE_ENV || 'development';
+const isProduction = nodeEnv === 'production';
+
+const requiredEnvVars = ['IDENTITY_GRAPH_URL', 'CONSUMER_GRAPH_URL', 'CDP_URL'];
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    const error = `[FATAL] ${envVar} environment variable is required`;
+    if (isProduction) {
+      console.error(error);
+      process.exit(1);
+    } else {
+      console.warn(`[WARN] ${error} - using fallback (development only)`);
+    }
+  }
+}
+
+// Identity services to query - NO localhost fallbacks in production
 const IDENTITY_SERVICES = {
-  'identity-graph': process.env.IDENTITY_GRAPH_URL || 'http://localhost:4050',
-  'consumer-graph': process.env.CONSUMER_GRAPH_URL || 'http://localhost:3006',
-  'cdp': process.env.CDP_URL || 'http://localhost:3005'
+  'identity-graph': process.env.IDENTITY_GRAPH_URL,
+  'consumer-graph': process.env.CONSUMER_GRAPH_URL,
+  'cdp': process.env.CDP_URL
 };
 
 // MongoDB Schema
@@ -83,7 +102,6 @@ const app = express();
 app.use(helmet());
 
 // CORS - restrictive configuration
-const isProduction = process.env.NODE_ENV === 'production';
 const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').filter(Boolean) || [];
 
 if (isProduction && allowedOrigins.length === 0) {
@@ -103,6 +121,20 @@ app.use(cors({
   },
   credentials: true
 }));
+
+// Rate limiting
+const rateLimit = require('express-rate-limit');
+const limiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  message: {
+    error: 'Too Many Requests',
+    code: 'RATE_LIMIT_EXCEEDED',
+    message: 'Rate limit exceeded. Please try again later.'
+  },
+  skip: (req) => ['/health', '/ready'].some(p => req.path.startsWith(p))
+});
+app.use(limiter);
 
 app.use(express.json({ limit: '100kb' }));
 

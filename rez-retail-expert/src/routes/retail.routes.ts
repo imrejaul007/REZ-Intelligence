@@ -9,7 +9,7 @@ import {
   SortOption
 } from '../services/retailExpert';
 import { logger } from '../services/retailExpert';
-import { CATEGORIES } from '../config/knowledge';
+import { CATEGORIES, Product } from '../config/knowledge';
 
 const router = Router();
 

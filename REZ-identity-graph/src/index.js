@@ -477,16 +477,57 @@ app.get('/api/identity/:unifiedId', asyncHandler(async (req, res) => {
 app.get('/api/identity/find/:type/:value', asyncHandler(async (req, res) => {
   const { type, value } = req.params;
 
+  // Input validation and sanitization
+  const validTypes = ['phone', 'email', 'device_id', 'wallet_id', 'user_id'];
+  const sanitizedType = type.toLowerCase().trim();
+
+  if (!validTypes.includes(sanitizedType)) {
+    return res.status(400).json({
+      error: 'Bad Request',
+      code: 'INVALID_TYPE',
+      message: 'Invalid identifier type. Must be one of: ' + validTypes.join(', ')
+    });
+  }
+
+  // Sanitize value - remove special characters and limit length
+  const sanitizedValue = value.trim().substring(0, 200);
+
+  if (sanitizedValue.length < 3) {
+    return res.status(400).json({
+      error: 'Bad Request',
+      code: 'INVALID_VALUE',
+      message: 'Identifier value must be at least 3 characters'
+    });
+  }
+
+  // Additional phone validation
+  if (sanitizedType === 'phone' && !/^\d{10,15}$/.test(sanitizedValue)) {
+    return res.status(400).json({
+      error: 'Bad Request',
+      code: 'INVALID_PHONE',
+      message: 'Phone must be 10-15 digits'
+    });
+  }
+
+  // Additional email validation
+  if (sanitizedType === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sanitizedValue)) {
+    return res.status(400).json({
+      error: 'Bad Request',
+      code: 'INVALID_EMAIL',
+      message: 'Invalid email format'
+    });
+  }
+
   let identity;
-  switch (type) {
+  switch (sanitizedType) {
     case 'phone':
-      identity = await resolver.findByPhone(value);
+      identity = await resolver.findByPhone(sanitizedValue);
       break;
     case 'email':
-      identity = await resolver.findByEmail(value);
+      identity = await resolver.findByEmail(sanitizedValue);
       break;
     default:
-      identity = await resolver.findByValue(type, value);
+      identity = await resolver.findByValue(sanitizedType, sanitizedValue);
   }
 
   if (!identity) {

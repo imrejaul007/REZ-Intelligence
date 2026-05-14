@@ -858,7 +858,7 @@ export class RetailExpert {
           data: { category, products },
           actions: [
             { type: 'browse_subcategory', data: { category: category.id } },
-            { type: 'filter_and_sort', data: {} }
+            { type: 'filter_results', data: {} }
           ]
         };
       }
@@ -875,7 +875,7 @@ export class RetailExpert {
       message: responseMessage,
       data: { categories: CATEGORIES },
       actions: [
-        { type: 'browse_category', data: { categories: CATEGORIES.map(c => c.id) } }
+        { type: 'browse_subcategory', data: { categories: CATEGORIES.map(c => c.id) } }
       ]
     };
   }
