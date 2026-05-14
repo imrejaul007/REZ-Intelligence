@@ -19,7 +19,7 @@ interface WorkerTask {
 }
 
 class DailyWorker {
-  private tasks: Map<string, WorkerTask> = new Map();
+  private tasks: Record<string, WorkerTask> = {} as Record<string, WorkerTask>;
   private cronJob: cron.ScheduledTask | null = null;
 
   async start(): Promise<void> {
@@ -49,7 +49,7 @@ class DailyWorker {
       status: 'running',
     };
 
-    this.tasks.set(task.id, task);
+    this.tasks[task.id] = task;
     log.info('Starting daily briefing', { taskId: task.id });
 
     try {
@@ -108,7 +108,7 @@ class DailyWorker {
       });
     }
 
-    this.tasks.set(task.id, task);
+    this.tasks[task.id] = task;
     return task;
   }
 
@@ -118,11 +118,11 @@ class DailyWorker {
   }
 
   getTaskStatus(taskId: string): WorkerTask | undefined {
-    return this.tasks.get(taskId);
+    return this.tasks[taskId];
   }
 
   getRecentTasks(limit: number = 10): WorkerTask[] {
-    return Array.from(this.tasks.values())
+    return Object.values(this.tasks)
       .sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime())
       .slice(0, limit);
   }
@@ -133,7 +133,7 @@ class DailyWorker {
 
   // Cleanup old tasks (keep last 100)
   cleanup(): void {
-    const tasksArray = Array.from(this.tasks.values());
+    const tasksArray = Object.values(this.tasks);
     if (tasksArray.length > 100) {
       const sortedTasks = tasksArray.sort(
         (a, b) => b.startedAt.getTime() - a.startedAt.getTime()
@@ -141,7 +141,7 @@ class DailyWorker {
       const toRemove = sortedTasks.slice(100);
 
       for (const task of toRemove) {
-        this.tasks.delete(task.id);
+        delete this.tasks[task.id];
       }
 
       log.info('Cleaned up old tasks', { removed: toRemove.length });

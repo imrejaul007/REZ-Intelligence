@@ -80,6 +80,8 @@ export interface SearchFilters {
   rating?: number;
   inStock?: boolean;
   sort?: SortOption;
+  category?: string;
+  subcategory?: string;
 }
 
 export interface WishlistItem {

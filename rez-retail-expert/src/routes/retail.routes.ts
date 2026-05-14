@@ -6,8 +6,7 @@ import {
   RetailContext,
   Shopper,
   ProductCategory,
-  SortOption,
-  Product
+  SortOption
 } from '../services/retailExpert';
 import { logger } from '../services/retailExpert';
 import { CATEGORIES } from '../config/knowledge';

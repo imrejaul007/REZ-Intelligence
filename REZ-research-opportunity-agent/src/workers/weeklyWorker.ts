@@ -167,7 +167,7 @@ class WeeklyWorker {
   }
 
   getRecentTasks(limit: number = 10): WeeklyReportTask[] {
-    return Array.from(this.tasks.values())
+    return Object.values(this.tasks)
       .sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime())
       .slice(0, limit);
   }
@@ -203,7 +203,7 @@ class WeeklyWorker {
   }
 
   cleanup(): void {
-    const tasksArray = Array.from(this.tasks.values());
+    const tasksArray = Object.values(this.tasks);
     if (tasksArray.length > 50) {
       const sortedTasks = tasksArray.sort(
         (a, b) => b.startedAt.getTime() - a.startedAt.getTime()
@@ -211,7 +211,7 @@ class WeeklyWorker {
       const toRemove = sortedTasks.slice(50);
 
       for (const task of toRemove) {
-        this.tasks.delete(task.id);
+        delete this.tasks[task.id];
       }
 
       log.info('Cleaned up old tasks', { removed: toRemove.length });

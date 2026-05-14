@@ -25,7 +25,7 @@ interface RealTimeCheck {
 
 class RealTimeWorker {
   private intervalId: ReturnType<typeof setInterval> | null = null;
-  private checks: Map<string, RealTimeCheck> = new Map();
+  private checks: Record<string, RealTimeCheck> = {} as Record<string, RealTimeCheck>;
   private isRunning: boolean = false;
 
   async start(intervalMs: number = 300000): Promise<void> {
@@ -66,7 +66,7 @@ class RealTimeWorker {
       status: 'success',
     };
 
-    this.checks.set(check.id, check);
+    this.checks[check.id] = check;
     log.debug('Running real-time check', { checkId: check.id });
 
     try {
@@ -107,7 +107,7 @@ class RealTimeWorker {
       log.error('Real-time check failed', { checkId: check.id, error: check.error });
     }
 
-    this.checks.set(check.id, check);
+    this.checks[check.id] = check;
     return check;
   }
 
@@ -303,11 +303,11 @@ class RealTimeWorker {
   }
 
   getCheckStatus(checkId: string): RealTimeCheck | undefined {
-    return this.checks.get(checkId);
+    return this.checks[checkId];
   }
 
   getRecentChecks(limit: number = 20): RealTimeCheck[] {
-    return Array.from(this.checks.values())
+    return Object.values(this.checks)
       .sort((a, b) => b.checkedAt.getTime() - a.checkedAt.getTime())
       .slice(0, limit);
   }
@@ -334,14 +334,14 @@ class RealTimeWorker {
   cleanup(): void {
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    for (const [id, check] of this.checks.entries()) {
+    for (const [id, check] of Object.entries(this.checks)) {
       if (check.checkedAt < oneDayAgo) {
-        this.checks.delete(id);
+        delete this.checks[id];
       }
     }
 
     log.debug('Real-time worker cleanup completed', {
-      remainingChecks: this.checks.size,
+      remainingChecks: Object.keys(this.checks).length,
     });
   }
 }
