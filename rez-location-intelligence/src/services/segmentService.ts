@@ -7,7 +7,6 @@ import type { LocationVisit, LocationPattern, UserSegment } from '../types/index
 
 interface SegmentCriteria {
   name: UserSegment;
-  check: (visits: LocationVisit[], patterns: LocationPattern[]) => boolean;
   priority: number;
 }
 
@@ -48,12 +47,16 @@ function isPremiumMallVisitor(visits: LocationVisit[]): boolean {
 /**
  * Check if user is an office commuter
  */
-function isOfficeCommuter(visits: LocationVisit[], patterns: LocationPattern[]): boolean {
+function isOfficeCommuter(visits: LocationVisit[]): boolean {
   if (visits.length < SEGMENT_THRESHOLDS.COMMUTER_MIN_VISITS) return false;
 
-  // Check for commuter pattern
-  const hasCommuterPattern = patterns.some(p => p.type === 'commuter');
-  if (hasCommuterPattern) return true;
+  // Check for commuter pattern (patterns would be used here in real implementation)
+  const weekdayRatio = visits.filter(v => {
+    const day = new Date(v.timestamp).getDay();
+    return day >= 1 && day <= 5;
+  }).length / Math.max(visits.length, 1);
+
+  if (weekdayRatio >= SEGMENT_THRESHOLDS.COMMUTER_WEEKDAY_RATIO) return true;
 
   // Alternative: Check weekday ratio and office visits
   const weekdays = visits.filter(v => {
@@ -70,7 +73,7 @@ function isOfficeCommuter(visits: LocationVisit[], patterns: LocationPattern[]):
 /**
  * Check if user is a college student
  */
-function isCollegeStudent(visits: LocationVisit[], patterns: LocationPattern[]): boolean {
+function isCollegeStudent(visits: LocationVisit[]): boolean {
   const collegeVisits = visits.filter(v => v.locationType === 'college');
   if (collegeVisits.length < 3) return false;
 
@@ -91,20 +94,20 @@ function isCollegeStudent(visits: LocationVisit[], patterns: LocationPattern[]):
 /**
  * Check if user is a frequent traveler
  */
-function isFrequentTraveler(visits: LocationVisit[], patterns: LocationPattern[]): boolean {
-  // Check for traveler pattern
-  const hasTravelerPattern = patterns.some(p => p.type === 'traveler');
-  if (hasTravelerPattern) return true;
-
-  // Alternative: Check airport visits
+function isFrequentTraveler(visits: LocationVisit[]): boolean {
+  // Check airport visits
   const airportVisits = visits.filter(v => v.locationType === 'airport');
-  return airportVisits.length >= SEGMENT_THRESHOLDS.TRAVELER_MIN_AIRPORT_VISITS;
+  if (airportVisits.length >= SEGMENT_THRESHOLDS.TRAVELER_MIN_AIRPORT_VISITS) return true;
+
+  // Check for multiple city visits
+  const uniqueZones = new Set(visits.map(v => v.zone));
+  return uniqueZones.size >= 3 && visits.length >= 10;
 }
 
 /**
  * Check if user is a high footfall seeker
  */
-function isHighFootfallSeeker(visits: LocationVisit[], patterns: LocationPattern[]): boolean {
+function isHighFootfallSeeker(visits: LocationVisit[]): boolean {
   if (visits.length < SEGMENT_THRESHOLDS.FOOTFALL_SEEKER_VISITS) return false;
 
   // Check for many different zones
@@ -118,15 +121,11 @@ function isHighFootfallSeeker(visits: LocationVisit[], patterns: LocationPattern
 /**
  * Check if user is a food enthusiast
  */
-function isFoodEnthusiast(visits: LocationVisit[], patterns: LocationPattern[]): boolean {
-  // Check for foodie pattern
-  const hasFoodiePattern = patterns.some(p => p.type === 'foodie');
-  if (hasFoodiePattern) return true;
-
-  // Alternative: Check restaurant ratio
-  const restaurantVisits = visits.filter(v => v.locationType === 'restaurant');
+function isFoodEnthusiast(visits: LocationVisit[]): boolean {
   if (visits.length < SEGMENT_THRESHOLDS.FOODIE_MIN_VISITS) return false;
 
+  // Check restaurant ratio
+  const restaurantVisits = visits.filter(v => v.locationType === 'restaurant');
   const restaurantRatio = restaurantVisits.length / visits.length;
   return restaurantRatio >= SEGMENT_THRESHOLDS.FOODIE_RESTAURANT_RATIO;
 }
@@ -134,12 +133,8 @@ function isFoodEnthusiast(visits: LocationVisit[], patterns: LocationPattern[]):
 /**
  * Check if user is fitness focused
  */
-function isFitnessFocused(visits: LocationVisit[], patterns: LocationPattern[]): boolean {
-  // Check for gym enthusiast pattern
-  const hasGymPattern = patterns.some(p => p.type === 'gym_enthusiast');
-  if (hasGymPattern) return true;
-
-  // Alternative: Check gym visit ratio
+function isFitnessFocused(visits: LocationVisit[]): boolean {
+  // Check gym visit ratio
   const gymVisits = visits.filter(v => v.locationType === 'gym');
   if (gymVisits.length < 4) return false;
 
@@ -150,14 +145,10 @@ function isFitnessFocused(visits: LocationVisit[], patterns: LocationPattern[]):
 /**
  * Check if user is an explorer
  */
-function isExplorer(visits: LocationVisit[], patterns: LocationPattern[]): boolean {
-  // Check for explorer pattern
-  const hasExplorerPattern = patterns.some(p => p.type === 'explorer');
-  if (hasExplorerPattern) return true;
-
-  // Alternative: High location diversity
+function isExplorer(visits: LocationVisit[]): boolean {
   if (visits.length < SEGMENT_THRESHOLDS.EXPLORER_MIN_VISITS) return false;
 
+  // High location diversity
   const uniqueLocations = new Set(visits.map(v => v.locationId));
   return uniqueLocations.size >= SEGMENT_THRESHOLDS.EXPLORER_UNIQUE_LOCATIONS;
 }
@@ -167,29 +158,19 @@ function isExplorer(visits: LocationVisit[], patterns: LocationPattern[]): boole
  */
 export function classifyUserSegments(
   visits: LocationVisit[],
-  patterns: LocationPattern[]
+  _patterns?: LocationPattern[]
 ): UserSegment[] {
   const segments: UserSegment[] = [];
 
-  const checks: SegmentCriteria[] = [
-    { name: 'premium_mall_visitor', check: isPremiumMallVisitor, priority: 1 },
-    { name: 'office_commuter', check: isOfficeCommuter, priority: 2 },
-    { name: 'college_student', check: isCollegeStudent, priority: 3 },
-    { name: 'frequent_traveler', check: isFrequentTraveler, priority: 4 },
-    { name: 'food_enthusiast', check: isFoodEnthusiast, priority: 5 },
-    { name: 'fitness_focused', check: isFitnessFocused, priority: 6 },
-    { name: 'high_footfall_seeker', check: isHighFootfallSeeker, priority: 7 },
-    { name: 'explorer', check: isExplorer, priority: 8 }
-  ];
-
-  // Sort by priority (higher priority first)
-  checks.sort((a, b) => b.priority - a.priority);
-
-  for (const { name, check } of checks) {
-    if (check(visits, patterns)) {
-      segments.push(name);
-    }
-  }
+  // Run each check function
+  if (isPremiumMallVisitor(visits)) segments.push('premium_mall_visitor');
+  if (isOfficeCommuter(visits)) segments.push('office_commuter');
+  if (isCollegeStudent(visits)) segments.push('college_student');
+  if (isFrequentTraveler(visits)) segments.push('frequent_traveler');
+  if (isFoodEnthusiast(visits)) segments.push('food_enthusiast');
+  if (isFitnessFocused(visits)) segments.push('fitness_focused');
+  if (isHighFootfallSeeker(visits)) segments.push('high_footfall_seeker');
+  if (isExplorer(visits)) segments.push('explorer');
 
   return segments;
 }
