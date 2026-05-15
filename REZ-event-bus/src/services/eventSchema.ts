@@ -719,6 +719,172 @@ export function getEventTypeInfo(eventType: EventTypeValue): {
       description: 'Service health status changed',
       priority: 'high',
     },
+    // New event types
+    [EventType.OFFER_SHARED]: {
+      category: EventCategory.MARKETING,
+      description: 'User shared an offer with others',
+      priority: 'normal',
+    },
+    [EventType.OFFER_OPENED]: {
+      category: EventCategory.MARKETING,
+      description: 'User opened a shared offer',
+      priority: 'normal',
+    },
+    [EventType.REFERRAL_CLICKED]: {
+      category: EventCategory.REFERRAL,
+      description: 'User clicked on a referral link',
+      priority: 'normal',
+    },
+    [EventType.REFERRAL_SIGNED_UP]: {
+      category: EventCategory.REFERRAL,
+      description: 'Referred user completed signup',
+      priority: 'high',
+    },
+    [EventType.REFERRAL_PURCHASED]: {
+      category: EventCategory.REFERRAL,
+      description: 'Referred user made a purchase',
+      priority: 'high',
+    },
+    [EventType.LOCATION_VISITED]: {
+      category: EventCategory.ENGAGEMENT,
+      description: 'User visited a physical location',
+      priority: 'normal',
+    },
+    [EventType.LOCATION_DWELL]: {
+      category: EventCategory.ENGAGEMENT,
+      description: 'User dwelled at a location for extended time',
+      priority: 'normal',
+    },
+    [EventType.SEARCH_PERFORMED]: {
+      category: EventCategory.ENGAGEMENT,
+      description: 'User performed a search query',
+      priority: 'normal',
+    },
+    [EventType.WISHLIST_ADDED]: {
+      category: EventCategory.ENGAGEMENT,
+      description: 'User added item to wishlist',
+      priority: 'normal',
+    },
+    [EventType.WISHLIST_REMOVED]: {
+      category: EventCategory.ENGAGEMENT,
+      description: 'User removed item from wishlist',
+      priority: 'normal',
+    },
+    [EventType.PRICE_ALERT_SET]: {
+      category: EventCategory.ENGAGEMENT,
+      description: 'User set a price alert for an item',
+      priority: 'normal',
+    },
+    [EventType.PRICE_ALERT_TRIGGERED]: {
+      category: EventCategory.ENGAGEMENT,
+      description: 'Price alert was triggered',
+      priority: 'high',
+    },
+    [EventType.REVIEW_SUBMITTED]: {
+      category: EventCategory.ENGAGEMENT,
+      description: 'User submitted a review',
+      priority: 'normal',
+    },
+    [EventType.REVIEW_VIEWED]: {
+      category: EventCategory.ENGAGEMENT,
+      description: 'User viewed a review',
+      priority: 'low',
+    },
+    [EventType.PROFILE_UPDATED]: {
+      category: EventCategory.USER_INTERACTION,
+      description: 'User updated their profile',
+      priority: 'normal',
+    },
+    [EventType.FEEDBACK_GIVEN]: {
+      category: EventCategory.ENGAGEMENT,
+      description: 'User submitted feedback',
+      priority: 'normal',
+    },
+    [EventType.SUBSCRIPTION_STARTED]: {
+      category: EventCategory.BUSINESS_LOGIC,
+      description: 'User started a subscription',
+      priority: 'high',
+    },
+    [EventType.SUBSCRIPTION_RENEWED]: {
+      category: EventCategory.BUSINESS_LOGIC,
+      description: 'Subscription was renewed',
+      priority: 'high',
+    },
+    [EventType.SUBSCRIPTION_CANCELLED]: {
+      category: EventCategory.BUSINESS_LOGIC,
+      description: 'Subscription was cancelled',
+      priority: 'high',
+    },
+    [EventType.MEMBERSHIP_UPGRADED]: {
+      category: EventCategory.LOYALTY,
+      description: 'User upgraded their membership tier',
+      priority: 'high',
+    },
+    [EventType.MEMBERSHIP_DOWNGRADED]: {
+      category: EventCategory.LOYALTY,
+      description: 'User downgraded their membership tier',
+      priority: 'normal',
+    },
+    [EventType.LOYALTY_REDEEMED]: {
+      category: EventCategory.LOYALTY,
+      description: 'User redeemed loyalty points',
+      priority: 'normal',
+    },
+    [EventType.LOYALTY_EARNED]: {
+      category: EventCategory.LOYALTY,
+      description: 'User earned loyalty points',
+      priority: 'normal',
+    },
+    [EventType.COMPETITOR_VISITED]: {
+      category: EventCategory.ENGAGEMENT,
+      description: 'User visited a competitor location',
+      priority: 'normal',
+    },
+    [EventType.COMPETITOR_SWITCHED]: {
+      category: EventCategory.ENGAGEMENT,
+      description: 'User switched to a competitor',
+      priority: 'high',
+    },
+    [EventType.APP_INSTALLED]: {
+      category: EventCategory.USER_INTERACTION,
+      description: 'User installed the app',
+      priority: 'high',
+    },
+    [EventType.APP_OPENED]: {
+      category: EventCategory.USER_INTERACTION,
+      description: 'User opened the app',
+      priority: 'low',
+    },
+    [EventType.CONTENT_VIEWED]: {
+      category: EventCategory.ENGAGEMENT,
+      description: 'User viewed content',
+      priority: 'low',
+    },
+    [EventType.CONTENT_SHARED]: {
+      category: EventCategory.MARKETING,
+      description: 'User shared content',
+      priority: 'normal',
+    },
+    [EventType.CAMPAIGN_STARTED]: {
+      category: EventCategory.MARKETING,
+      description: 'User joined a campaign',
+      priority: 'normal',
+    },
+    [EventType.CAMPAIGN_COMPLETED]: {
+      category: EventCategory.MARKETING,
+      description: 'User completed a campaign',
+      priority: 'normal',
+    },
+    [EventType.SURVEY_STARTED]: {
+      category: EventCategory.ENGAGEMENT,
+      description: 'User started a survey',
+      priority: 'normal',
+    },
+    [EventType.SURVEY_COMPLETED]: {
+      category: EventCategory.ENGAGEMENT,
+      description: 'User completed a survey',
+      priority: 'normal',
+    },
   };
 
   return info[eventType];
