@@ -7,8 +7,8 @@ import {
   WorkoutType,
   ProgressUpdate,
   FitnessResponse
-} from './fitnessExpert';
-import { WARM_UP_EXERCISES, COOL_DOWN_EXERCISES, RECOVERY_RECOMMENDATIONS, EXERCISE_DATABASE } from '../config/knowledge';
+} from './fitnessExpert.js';
+import { WARM_UP_EXERCISES, COOL_DOWN_EXERCISES, RECOVERY_RECOMMENDATIONS, EXERCISE_DATABASE } from '../config/knowledge.js';
 
 export function validateEnv(): void {
   const required = ['NODE_ENV'];

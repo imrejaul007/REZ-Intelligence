@@ -9,14 +9,14 @@ import {
   UrgencyLevel,
   SymptomInfo,
   HealthResponse
-} from '../services/healthExpert';
+} from '../services/healthExpert.js';
 import {
   detectHealthIntent,
   getResponseForIntent,
   isEmergencyQuery,
   getEmergencyMessage,
   HealthIntent
-} from '../intents/healthIntents';
+} from '../intents/healthIntents.js';
 import {
   createAppointmentRequest,
   validateAppointmentRequest,
@@ -24,9 +24,10 @@ import {
   determineUrgencyFromSymptoms,
   formatAppointmentDetails,
   getAppointmentPreparationInstructions
-} from '../services/expertise';
-import { getRecommendationsForSymptom, getPreAppointmentChecklist } from '../services/recommendations';
-import { logger } from '../services/healthExpert';
+} from '../services/expertise.js';
+import { getRecommendationsForSymptom, getPreAppointmentChecklist } from '../services/recommendations.js';
+import { logger } from '../services/healthExpert.js';
+import { WELLNESS_TIPS } from '../config/knowledge.js';
 
 const router = Router();
 
@@ -392,12 +393,10 @@ router.post('/wellness', validateRequest(wellnessQuerySchema), async (req: Reque
 
     logger.info('Wellness tips request received', { category });
 
-    const { WELLNESS_TIPS } = require('../config/knowledge');
-
     let tips = WELLNESS_TIPS;
 
     if (category) {
-      tips = WELLNESS_TIPS.filter((t: any) => t.category.toLowerCase() === category.toLowerCase());
+      tips = WELLNESS_TIPS.filter((t) => t.category.toLowerCase() === category.toLowerCase());
     }
 
     tips = tips.slice(0, limit);

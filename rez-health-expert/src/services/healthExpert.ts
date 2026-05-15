@@ -1,6 +1,6 @@
 import winston from 'winston';
 import { v4 as uuidv4 } from 'uuid';
-import { Symptom } from '../config/knowledge';
+import { Symptom, SYMPTOM_DATABASE, WELLNESS_TIPS, HEALTH_GLOSSARY } from '../config/knowledge.js';
 
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
@@ -288,7 +288,6 @@ class HealthExpertAgent {
 
   private findMatchingSymptom(query: string): SymptomInfo | null {
     const lowerQuery = query.toLowerCase();
-    const { SYMPTOM_DATABASE } = require('../config/knowledge');
 
     for (const symptom of SYMPTOM_DATABASE) {
       if (lowerQuery.includes(symptom.name.toLowerCase())) {
@@ -483,7 +482,6 @@ class HealthExpertAgent {
   }
 
   private async handleWellnessRequest(query: string): Promise<HealthResponse> {
-    const { WELLNESS_TIPS } = require('../config/knowledge');
     const lowerQuery = query.toLowerCase();
 
     interface WellnessTipItem {
@@ -497,13 +495,13 @@ class HealthExpertAgent {
     let matchingTips: WellnessTipItem[] = [...WELLNESS_TIPS];
 
     if (lowerQuery.includes('sleep')) {
-      matchingTips = matchingTips.filter((t: WellnessTipItem) => t.category.toLowerCase() === 'sleep');
+      matchingTips = matchingTips.filter((t) => t.category.toLowerCase() === 'sleep');
     } else if (lowerQuery.includes('nutrition') || lowerQuery.includes('diet') || lowerQuery.includes('eat')) {
-      matchingTips = matchingTips.filter((t: WellnessTipItem) => t.category.toLowerCase() === 'nutrition');
+      matchingTips = matchingTips.filter((t) => t.category.toLowerCase() === 'nutrition');
     } else if (lowerQuery.includes('stress') || lowerQuery.includes('anxiety')) {
-      matchingTips = matchingTips.filter((t: WellnessTipItem) => t.category.toLowerCase() === 'stress management');
+      matchingTips = matchingTips.filter((t) => t.category.toLowerCase() === 'stress management');
     } else if (lowerQuery.includes('exercise') || lowerQuery.includes('activity') || lowerQuery.includes('fitness')) {
-      matchingTips = matchingTips.filter((t: WellnessTipItem) => t.category.toLowerCase() === 'physical activity');
+      matchingTips = matchingTips.filter((t) => t.category.toLowerCase() === 'physical activity');
     }
 
     if (matchingTips.length === 0) {
@@ -531,7 +529,6 @@ class HealthExpertAgent {
   }
 
   private async handleHealthInformation(query: string): Promise<HealthResponse> {
-    const { HEALTH_GLOSSARY } = require('../config/knowledge');
     const lowerQuery = query.toLowerCase();
 
     const matchingTerms = HEALTH_GLOSSARY.filter((term: { term: string; definition: string }) => {

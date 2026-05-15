@@ -7,7 +7,7 @@ import {
   SpecialtyType,
   SymptomInfo,
   UrgencyLevel
-} from './healthExpert';
+} from './healthExpert.js';
 
 export function validateEnv(): void {
   const required = ['NODE_ENV'];

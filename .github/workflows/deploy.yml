@@ -1,0 +1,48 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Docker image
+        run: |
+          docker build -t rez-intelligence:${{ github.sha }} .
+          docker tag rez-intelligence:${{ github.sha }} rez-intelligence:latest
+
+      - name: Push to registry
+        run: |
+          echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+          docker push rez-intelligence:${{ github.sha }}
+          docker push rez-intelligence:latest
+
+      - name: Deploy to Kubernetes
+        if: success()
+        run: |
+          kubectl set image deployment/rez-intelligence \
+            rez-intelligence=rez-intelligence:${{ github.sha }} \
+            --namespace=production
+          kubectl rollout status deployment/rez-intelligence --namespace=production --timeout=300s
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          curl -X POST ${{ secrets.SLACK_WEBHOOK }} \
+            -H 'Content-Type: application/json' \
+            -d '{"text":"Deployment failed for rez-intelligence:${{ github.sha }}"}'

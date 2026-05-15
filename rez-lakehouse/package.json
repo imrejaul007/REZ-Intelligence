@@ -1,0 +1,18 @@
+{
+  "name": "rez-lakehouse",
+  "version": "1.0.0",
+  "description": "Data lakehouse with Delta Lake, ETL pipelines, and analytics layer",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "ts-node src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.0.0",
+    "ioredis": "^5.3.0",
+    "aws-sdk": "^2.1500.0",
+    "winston": "^3.11.0"
+  }
+}

@@ -1,4 +1,4 @@
-import { UserProfile, Recommendation, FitnessLevel, WorkoutType } from './fitnessExpert';
+import { UserProfile, Recommendation, FitnessLevel, WorkoutType } from './fitnessExpert.js';
 
 export function getRecommendations(profile: UserProfile): Recommendation[] {
   const recommendations: Recommendation[] = [];

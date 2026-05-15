@@ -1,5 +1,6 @@
 import winston from 'winston';
 import { v4 as uuidv4 } from 'uuid';
+import { EXERCISE_DATABASE } from '../config/knowledge.js';
 
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
@@ -362,42 +363,40 @@ class FitnessExpertAgent {
 
   private findExercisesInQuery(query: string): Exercise[] {
     const lowerQuery = query.toLowerCase();
-    const { EXERCISE_DATABASE } = require('../config/knowledge');
 
     let exercises = [...EXERCISE_DATABASE];
 
     if (lowerQuery.includes('chest')) {
-      exercises = exercises.filter((e: Exercise) => e.muscleGroups.includes(MuscleGroup.CHEST));
+      exercises = exercises.filter((e) => e.muscleGroups.includes(MuscleGroup.CHEST));
     }
     if (lowerQuery.includes('back')) {
-      exercises = exercises.filter((e: Exercise) => e.muscleGroups.includes(MuscleGroup.BACK));
+      exercises = exercises.filter((e) => e.muscleGroups.includes(MuscleGroup.BACK));
     }
     if (lowerQuery.includes('leg') || lowerQuery.includes('quadriceps') || lowerQuery.includes('glute')) {
-      exercises = exercises.filter((e: Exercise) =>
-        e.muscleGroups.some((g: MuscleGroup) => [MuscleGroup.QUADRICEPS, MuscleGroup.GLUTES, MuscleGroup.HAMSTRINGS].includes(g))
+      exercises = exercises.filter((e) =>
+        e.muscleGroups.some((g) => [MuscleGroup.QUADRICEPS, MuscleGroup.GLUTES, MuscleGroup.HAMSTRINGS].includes(g))
       );
     }
     if (lowerQuery.includes('core') || lowerQuery.includes('abs')) {
-      exercises = exercises.filter((e: Exercise) => e.muscleGroups.includes(MuscleGroup.CORE));
+      exercises = exercises.filter((e) => e.muscleGroups.includes(MuscleGroup.CORE));
     }
     if (lowerQuery.includes('arm') || lowerQuery.includes('bicep') || lowerQuery.includes('tricep')) {
-      exercises = exercises.filter((e: Exercise) =>
-        e.muscleGroups.some((g: MuscleGroup) => [MuscleGroup.BICEPS, MuscleGroup.TRICEPS].includes(g))
+      exercises = exercises.filter((e) =>
+        e.muscleGroups.some((g) => [MuscleGroup.BICEPS, MuscleGroup.TRICEPS].includes(g))
       );
     }
     if (lowerQuery.includes('cardio')) {
-      exercises = exercises.filter((e: Exercise) => e.workoutType === WorkoutType.CARDIO || e.workoutType === WorkoutType.HIIT);
+      exercises = exercises.filter((e) => e.workoutType === WorkoutType.CARDIO || e.workoutType === WorkoutType.HIIT);
     }
     if (lowerQuery.includes('hiit')) {
-      exercises = exercises.filter((e: Exercise) => e.workoutType === WorkoutType.HIIT);
+      exercises = exercises.filter((e) => e.workoutType === WorkoutType.HIIT);
     }
 
     return exercises.slice(0, 5);
   }
 
   private getExercisesForPlan(plan: WorkoutPlan): Exercise[] {
-    const { EXERCISE_DATABASE } = require('../config/knowledge');
-    return EXERCISE_DATABASE.filter((e: Exercise) =>
+    return EXERCISE_DATABASE.filter((e) =>
       plan.exercises.some(p => p.exerciseId === e.id)
     );
   }

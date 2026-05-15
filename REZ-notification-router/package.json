@@ -2,20 +2,33 @@
   "name": "rez-notification-router",
   "version": "1.0.0",
   "description": "REZ Notification Router - Route notifications via push/SMS/email",
-  "main": "src/index.js",
+  "main": "dist/index.js",
+  "type": "module",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "node --watch dist/index.js",
+    "test": "node --test",
+    "lint": "eslint src/**/*.ts"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "mongoose": "^8.0.0",
+    "@rez/logger": "file:../packages/rez-logger",
+    "@rez/security-middleware": "file:../packages/rez-security-middleware",
+    "@rez/shared-types": "file:../packages/rez-shared-types",
     "axios": "^1.6.0",
     "cors": "^2.8.5",
+    "express": "^4.18.2",
     "helmet": "^7.1.0",
-    "dotenv": "^16.3.1",
-    "winston": "^3.11.0",
-    "uuid": "^9.0.0"
+    "mongoose": "^8.0.0",
+    "uuid": "^9.0.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.0",
+    "@types/uuid": "^9.0.7",
+    "typescript": "^5.3.2"
   },
   "engines": {
     "node": ">=18.0.0"

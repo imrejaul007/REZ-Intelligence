@@ -8,11 +8,12 @@ import {
   WorkoutType,
   Equipment,
   FitnessResponse
-} from '../services/fitnessExpert';
-import { detectFitnessIntent, getResponseForIntent, FitnessIntent, FitnessContext } from '../intents/fitnessIntents';
-import { createWorkoutPlan, getExercisesByType, getExercisesByMuscle, calculateProgress } from '../services/expertise';
-import { getRecommendations, getRecoveryTips } from '../services/recommendations';
-import { logger } from '../services/fitnessExpert';
+} from '../services/fitnessExpert.js';
+import { detectFitnessIntent, getResponseForIntent, FitnessIntent, FitnessContext } from '../intents/fitnessIntents.js';
+import { createWorkoutPlan, getExercisesByType, getExercisesByMuscle, calculateProgress } from '../services/expertise.js';
+import { getRecommendations, getRecoveryTips } from '../services/recommendations.js';
+import { logger } from '../services/fitnessExpert.js';
+import { EXERCISE_DATABASE } from '../config/knowledge.js';
 
 const router = Router();
 
@@ -178,7 +179,6 @@ router.post('/exercises', validateRequest(exerciseQuerySchema), async (req: Requ
     } else if (muscleGroup) {
       exercises = getExercisesByMuscle(muscleGroup);
     } else {
-      const { EXERCISE_DATABASE } = require('../config/knowledge');
       exercises = EXERCISE_DATABASE;
     }
 

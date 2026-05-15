@@ -1,0 +1,14 @@
+{
+  "name": "@rez-intelligence/packages",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "rez-shared-types",
+    "rez-logger",
+    "rez-security-middleware"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "clean": "npm run clean --workspaces"
+  }
+}
