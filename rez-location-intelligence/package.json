@@ -1,0 +1,36 @@
+{
+  "name": "rez-location-intelligence",
+  "version": "1.0.0",
+  "description": "Location intelligence for user behavior analysis - track visits, patterns, segments, and footfall analytics",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "node --test src/**/*.test.ts"
+  },
+  "keywords": [
+    "location-intelligence",
+    "geofencing",
+    "footfall-analytics",
+    "user-patterns",
+    "rez-platform"
+  ],
+  "author": "RABTUL Technologies",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.0.0",
+    "winston": "^3.11.0",
+    "zod": "^3.22.4",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3",
+    "tsx": "^4.6.0"
+  }
+}
