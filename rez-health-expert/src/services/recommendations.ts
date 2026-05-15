@@ -1,4 +1,4 @@
-import { UrgencyLevel, SymptomInfo, AppointmentType, SpecialtyType } from './healthExpert';
+import { UrgencyLevel, SymptomInfo, AppointmentType, SpecialtyType } from './healthExpert.js';
 
 export interface HealthRecommendation {
   type: 'appointment' | 'self_care' | 'urgent' | 'information' | 'lifestyle';

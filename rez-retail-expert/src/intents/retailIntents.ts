@@ -1,4 +1,4 @@
-import { ProductCategory, SortOption } from '../services/retailExpert';
+import { SortOption } from '../services/retailExpert.js';
 
 export interface RetailIntent {
   id: string;

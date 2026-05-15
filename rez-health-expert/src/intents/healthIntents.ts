@@ -1,5 +1,3 @@
-import { AppointmentType, SpecialtyType, SymptomCategory } from '../services/healthExpert';
-
 export enum HealthIntent {
   SYMPTOM_INQUIRY = 'symptom_inquiry',
   APPOINTMENT_BOOKING = 'appointment_booking',

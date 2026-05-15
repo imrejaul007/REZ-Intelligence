@@ -24,7 +24,7 @@ const validateRequest = (schema: z.ZodSchema) => {
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
@@ -35,8 +35,9 @@ const validateRequest = (schema: z.ZodSchema) => {
             }))
           }
         });
+      } else {
+        next(error);
       }
-      next(error);
     }
   };
 };

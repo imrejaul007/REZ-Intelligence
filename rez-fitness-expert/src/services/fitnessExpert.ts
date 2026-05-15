@@ -250,7 +250,7 @@ class FitnessExpertAgent {
     query: string,
     userProfile: UserProfile
   ): Promise<FitnessResponse> {
-    const { createWorkoutPlan } = await import('./expertise');
+    const { createWorkoutPlan } = await import('./expertise.js');
 
     const workoutPlan = createWorkoutPlan(userProfile);
 
@@ -268,7 +268,7 @@ class FitnessExpertAgent {
     query: string,
     userProfile: UserProfile
   ): Promise<FitnessResponse> {
-    const { getExercisesByType, getExercisesByMuscle } = await import('./expertise');
+    const { getExercisesByType, getExercisesByMuscle } = await import('./expertise.js');
 
     const exercises = this.findExercisesInQuery(query);
 
@@ -292,7 +292,7 @@ class FitnessExpertAgent {
     userProfile: UserProfile,
     sessionId: string
   ): Promise<FitnessResponse> {
-    const { calculateProgress } = await import('./expertise');
+    const { calculateProgress } = await import('./expertise.js');
 
     const progress = calculateProgress(userProfile);
 
@@ -307,7 +307,7 @@ class FitnessExpertAgent {
     query: string,
     userProfile: UserProfile
   ): Promise<FitnessResponse> {
-    const { getRecommendations } = await import('./recommendations');
+    const { getRecommendations } = await import('./recommendations.js');
 
     const recommendations = getRecommendations(userProfile);
 
@@ -319,7 +319,7 @@ class FitnessExpertAgent {
   }
 
   private async handleTerminologyQuery(query: string): Promise<FitnessResponse> {
-    const { getFitnessTerm } = await import('./expertise');
+    const { getFitnessTerm } = await import('./expertise.js');
 
     const terms = this.extractTermsFromQuery(query);
 

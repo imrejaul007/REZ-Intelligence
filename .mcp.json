@@ -1,0 +1,44 @@
+{
+  "mcpServers": {
+    "rez-service-discovery": {
+      "command": "node",
+      "args": ["./rez-mcp-service-discovery/dist/index.js"]
+    },
+    "rez-event-bus": {
+      "command": "node",
+      "args": ["./rez-mcp-event-bus/dist/index.js"]
+    },
+    "rez-agent-invoke": {
+      "command": "node",
+      "args": ["./rez-mcp-agent-invoke/dist/index.js"]
+    },
+    "rez-analytics": {
+      "command": "node",
+      "args": ["./rez-mcp-analytics/dist/index.js"]
+    },
+    "rez-identity": {
+      "command": "node",
+      "args": ["./rez-mcp-identity/dist/index.js"]
+    },
+    "rez-payment": {
+      "command": "node",
+      "args": ["./rez-mcp-payment/dist/index.js"]
+    },
+    "rez-order": {
+      "command": "node",
+      "args": ["./rez-mcp-order/dist/index.js"]
+    },
+    "rez-notification": {
+      "command": "node",
+      "args": ["./rez-mcp-notification/dist/index.js"]
+    },
+    "rez-inventory": {
+      "command": "node",
+      "args": ["./rez-mcp-inventory/dist/index.js"]
+    },
+    "rez-logs": {
+      "command": "node",
+      "args": ["./rez-mcp-logs/dist/index.js"]
+    }
+  }
+}

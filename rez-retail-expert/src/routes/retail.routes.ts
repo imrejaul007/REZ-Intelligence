@@ -4,12 +4,11 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   retailExpert,
   RetailContext,
-  Shopper,
-  ProductCategory,
+  Product,
   SortOption
-} from '../services/retailExpert';
-import { logger } from '../services/retailExpert';
-import { CATEGORIES, Product } from '../config/knowledge';
+} from '../services/retailExpert.js';
+import { logger } from '../services/retailExpert.js';
+import { CATEGORIES, SIZE_GUIDES } from '../config/knowledge.js';
 
 const router = Router();
 
@@ -20,7 +19,7 @@ const validateRequest = (schema: z.ZodSchema) => {
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
@@ -31,8 +30,9 @@ const validateRequest = (schema: z.ZodSchema) => {
             }))
           }
         });
+      } else {
+        next(error);
       }
-      next(error);
     }
   };
 };
@@ -239,8 +239,6 @@ router.get('/categories/:categoryId', async (req: Request, res: Response) => {
 });
 
 router.get('/size-guides', async (req: Request, res: Response) => {
-  const { SIZE_GUIDES } = await import('../config/knowledge');
-
   res.json({
     success: true,
     data: {
@@ -251,7 +249,6 @@ router.get('/size-guides', async (req: Request, res: Response) => {
 
 router.post('/size-guides/recommend', validateRequest(sizeGuideSchema), async (req: Request, res: Response) => {
   const { category, measurements } = req.body;
-  const { SIZE_GUIDES } = await import('../config/knowledge');
 
   const sizeGuide = SIZE_GUIDES.find(sg => sg.category === category);
 

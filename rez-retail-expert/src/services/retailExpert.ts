@@ -1,6 +1,30 @@
 import winston from 'winston';
 import { v4 as uuidv4 } from 'uuid';
-import { CATEGORIES, SIZE_GUIDES, Product, Category, SizeGuide } from '../config/knowledge';
+import { CATEGORIES, SIZE_GUIDES } from '../config/knowledge.js';
+
+export interface Product {
+  id: string;
+  name: string;
+  brand: string;
+  category: string;
+  subcategory?: string;
+  description: string;
+  price: number;
+  originalPrice?: number;
+  currency: string;
+  rating: number;
+  reviewCount: number;
+  colors?: Array<{ name: string; hex: string; inStock: boolean }>;
+  sizes?: Array<{ name: string; inStock: boolean }>;
+  materials?: string[];
+  features: string[];
+  careInstructions?: string[];
+  images?: string[];
+  dimensions?: { width?: string; height?: string; weight?: string; depth?: string; capacity?: string; diameter?: string };
+  inStock: boolean;
+  stockCount?: number;
+  tags: string[];
+}
 
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
