@@ -28,7 +28,7 @@ const SEGMENT_THRESHOLDS = {
 /**
  * Check if user is a premium mall visitor
  */
-function isPremiumMallVisitor(visits: LocationVisit[], patterns: LocationPattern[]): boolean {
+function isPremiumMallVisitor(visits: LocationVisit[]): boolean {
   if (visits.length < SEGMENT_THRESHOLDS.PREMIUM_MALL_MIN_VISITS) return false;
 
   const mallVisits = visits.filter(v => v.locationType === 'mall');
