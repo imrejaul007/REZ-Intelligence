@@ -5,7 +5,7 @@ import {
   SignalType,
   Channel,
   Timing
-} from '../types/interfaces';
+} from '../types/index';
 
 /**
  * Detection Service - Identifies competitor switching signals

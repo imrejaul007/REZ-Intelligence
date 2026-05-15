@@ -129,11 +129,12 @@ export class CompetitorService {
   /**
    * Update competitor profile with detection input
    */
-  async updateProfileWithDetection(input: DetectionInput): Promise<IUserCompetitorProfile> {
+  async updateProfileWithDetection(input: DetectionInput): Promise<IUserCompetitorProfile | null> {
     let profile = await UserCompetitorProfile.findOne({ userId: input.userId });
 
     if (!profile) {
       profile = await this.createProfile(input.userId);
+      if (!profile) return null;
     }
 
     // Detect switch signals

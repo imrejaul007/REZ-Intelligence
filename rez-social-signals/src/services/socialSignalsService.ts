@@ -500,12 +500,18 @@ export class SocialSignalsService {
       influenceScore: profile.influenceScore as UserSocialProfile['influenceScore'],
       communityRole: profile.communityRole as UserSocialProfile['communityRole'],
       socialReach: {
-        ...profile.socialReach.toObject(),
+        totalImpressions: profile.socialReach.totalImpressions,
+        uniqueRecipients: profile.socialReach.uniqueRecipients,
+        whatsappReach: profile.socialReach.whatsappReach,
+        instagramReach: profile.socialReach.instagramReach,
+        facebookReach: profile.socialReach.facebookReach,
+        twitterReach: profile.socialReach.twitterReach,
+        linkReach: profile.socialReach.linkReach,
+        estimatedAudience: profile.socialReach.estimatedAudience,
         reachByCategory: profile.socialReach.reachByCategory as Record<string, number>
       },
       referralMetrics: profile.referralMetrics as UserSocialProfile['referralMetrics'],
-      lastUpdated: profile.lastUpdated,
-      createdAt: profile.createdAt
+      lastUpdated: profile.lastUpdated
     };
   }
 
