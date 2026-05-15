@@ -6,6 +6,39 @@
 import { z } from 'zod';
 
 /**
+ * Channel Types for Event Attribution
+ */
+export const ChannelType = {
+  WHATSAPP: 'whatsapp',
+  SMS: 'sms',
+  PUSH: 'push',
+  EMAIL: 'email',
+  IN_APP: 'in_app',
+  QR_SCAN: 'qr_scan',
+  DEEP_LINK: 'deep_link',
+} as const;
+
+export type ChannelTypeValue = typeof ChannelType[keyof typeof ChannelType];
+
+/**
+ * Attribution Sources for Event Tracking
+ */
+export const AttributionSource = {
+  ORGANIC: 'organic',
+  PAID_AD: 'paid_ad',
+  INFLUENCER: 'influencer',
+  REFERRAL: 'referral',
+  QR_CODE: 'qr_code',
+  LOCATION: 'location',
+  NOTIFICATION: 'notification',
+  EMAIL_CAMPAIGN: 'email_campaign',
+  SOCIAL_MEDIA: 'social_media',
+  SEARCH: 'search',
+} as const;
+
+export type AttributionSourceValue = typeof AttributionSource[keyof typeof AttributionSource];
+
+/**
  * Standardized Event Types for REZ Agent OS v3
  * All services should use these event types for consistency
  */
@@ -32,9 +65,81 @@ export const EventType = {
 
   // Health Events
   SERVICE_HEALTH_CHANGED: 'SERVICE_HEALTH_CHANGED',
+
+  // Offer Events
+  OFFER_SHARED: 'offer.shared',
+  OFFER_OPENED: 'offer.opened',
+
+  // Referral Events
+  REFERRAL_CLICKED: 'referral.clicked',
+  REFERRAL_SIGNED_UP: 'referral.signed_up',
+  REFERRAL_PURCHASED: 'referral.purchased',
+
+  // Location Events
+  LOCATION_VISITED: 'location.visited',
+  LOCATION_DWELL: 'location.dwell',
+
+  // Search Events
+  SEARCH_PERFORMED: 'search.performed',
+
+  // Wishlist Events
+  WISHLIST_ADDED: 'wishlist.added',
+  WISHLIST_REMOVED: 'wishlist.removed',
+
+  // Price Alert Events
+  PRICE_ALERT_SET: 'price.alert_set',
+  PRICE_ALERT_TRIGGERED: 'price.alert_triggered',
+
+  // Review Events
+  REVIEW_SUBMITTED: 'review.submitted',
+  REVIEW_VIEWED: 'review.viewed',
+
+  // Profile Events
+  PROFILE_UPDATED: 'profile.updated',
+
+  // Feedback Events
+  FEEDBACK_GIVEN: 'feedback.given',
+
+  // Subscription Events
+  SUBSCRIPTION_STARTED: 'subscription.started',
+  SUBSCRIPTION_RENEWED: 'subscription.renewed',
+  SUBSCRIPTION_CANCELLED: 'subscription.cancelled',
+
+  // Membership Events
+  MEMBERSHIP_UPGRADED: 'membership.upgraded',
+  MEMBERSHIP_DOWNGRADED: 'membership.downgraded',
+
+  // Loyalty Events
+  LOYALTY_REDEEMED: 'loyalty.redeemed',
+  LOYALTY_EARNED: 'loyalty.earned',
+
+  // Competitor Events
+  COMPETITOR_VISITED: 'competitor.visited',
+  COMPETITOR_SWITCHED: 'competitor.switched',
+
+  // App Events
+  APP_INSTALLED: 'app.installed',
+  APP_OPENED: 'app.opened',
+
+  // Content Events
+  CONTENT_VIEWED: 'content.viewed',
+  CONTENT_SHARED: 'content.shared',
+
+  // Campaign Events
+  CAMPAIGN_STARTED: 'campaign.started',
+  CAMPAIGN_COMPLETED: 'campaign.completed',
+
+  // Survey Events
+  SURVEY_STARTED: 'survey.started',
+  SURVEY_COMPLETED: 'survey.completed',
 } as const;
 
 export type EventTypeValue = typeof EventType[keyof typeof EventType];
+
+/**
+ * All valid event types as a string array (for validation)
+ */
+export const ALL_EVENT_TYPES: string[] = Object.values(EventType);
 
 /**
  * Event Type Categories
@@ -47,6 +152,10 @@ export const EventCategory = {
   BUSINESS_LOGIC: 'BUSINESS_LOGIC',
   PAYMENT: 'PAYMENT',
   HEALTH: 'HEALTH',
+  MARKETING: 'MARKETING',
+  LOYALTY: 'LOYALTY',
+  REFERRAL: 'REFERRAL',
+  ENGAGEMENT: 'ENGAGEMENT',
 } as const;
 
 export type EventCategoryValue = typeof EventCategory[keyof typeof EventCategory];
@@ -55,6 +164,7 @@ export type EventCategoryValue = typeof EventCategory[keyof typeof EventCategory
  * Map event types to categories
  */
 export const EventTypeToCategory: Record<EventTypeValue, EventCategoryValue> = {
+  // Existing mappings
   [EventType.USER_MESSAGE_RECEIVED]: EventCategory.USER_INTERACTION,
   [EventType.USER_MESSAGE_SENT]: EventCategory.USER_INTERACTION,
   [EventType.INTENT_DETECTED]: EventCategory.INTENT_PROCESSING,
@@ -66,6 +176,73 @@ export const EventTypeToCategory: Record<EventTypeValue, EventCategoryValue> = {
   [EventType.PAYMENT_INITIATED]: EventCategory.PAYMENT,
   [EventType.PAYMENT_COMPLETED]: EventCategory.PAYMENT,
   [EventType.SERVICE_HEALTH_CHANGED]: EventCategory.HEALTH,
+
+  // Offer Events
+  [EventType.OFFER_SHARED]: EventCategory.MARKETING,
+  [EventType.OFFER_OPENED]: EventCategory.MARKETING,
+
+  // Referral Events
+  [EventType.REFERRAL_CLICKED]: EventCategory.REFERRAL,
+  [EventType.REFERRAL_SIGNED_UP]: EventCategory.REFERRAL,
+  [EventType.REFERRAL_PURCHASED]: EventCategory.REFERRAL,
+
+  // Location Events
+  [EventType.LOCATION_VISITED]: EventCategory.ENGAGEMENT,
+  [EventType.LOCATION_DWELL]: EventCategory.ENGAGEMENT,
+
+  // Search Events
+  [EventType.SEARCH_PERFORMED]: EventCategory.ENGAGEMENT,
+
+  // Wishlist Events
+  [EventType.WISHLIST_ADDED]: EventCategory.ENGAGEMENT,
+  [EventType.WISHLIST_REMOVED]: EventCategory.ENGAGEMENT,
+
+  // Price Alert Events
+  [EventType.PRICE_ALERT_SET]: EventCategory.ENGAGEMENT,
+  [EventType.PRICE_ALERT_TRIGGERED]: EventCategory.ENGAGEMENT,
+
+  // Review Events
+  [EventType.REVIEW_SUBMITTED]: EventCategory.ENGAGEMENT,
+  [EventType.REVIEW_VIEWED]: EventCategory.ENGAGEMENT,
+
+  // Profile Events
+  [EventType.PROFILE_UPDATED]: EventCategory.USER_INTERACTION,
+
+  // Feedback Events
+  [EventType.FEEDBACK_GIVEN]: EventCategory.ENGAGEMENT,
+
+  // Subscription Events
+  [EventType.SUBSCRIPTION_STARTED]: EventCategory.BUSINESS_LOGIC,
+  [EventType.SUBSCRIPTION_RENEWED]: EventCategory.BUSINESS_LOGIC,
+  [EventType.SUBSCRIPTION_CANCELLED]: EventCategory.BUSINESS_LOGIC,
+
+  // Membership Events
+  [EventType.MEMBERSHIP_UPGRADED]: EventCategory.LOYALTY,
+  [EventType.MEMBERSHIP_DOWNGRADED]: EventCategory.LOYALTY,
+
+  // Loyalty Events
+  [EventType.LOYALTY_REDEEMED]: EventCategory.LOYALTY,
+  [EventType.LOYALTY_EARNED]: EventCategory.LOYALTY,
+
+  // Competitor Events
+  [EventType.COMPETITOR_VISITED]: EventCategory.ENGAGEMENT,
+  [EventType.COMPETITOR_SWITCHED]: EventCategory.ENGAGEMENT,
+
+  // App Events
+  [EventType.APP_INSTALLED]: EventCategory.USER_INTERACTION,
+  [EventType.APP_OPENED]: EventCategory.USER_INTERACTION,
+
+  // Content Events
+  [EventType.CONTENT_VIEWED]: EventCategory.ENGAGEMENT,
+  [EventType.CONTENT_SHARED]: EventCategory.MARKETING,
+
+  // Campaign Events
+  [EventType.CAMPAIGN_STARTED]: EventCategory.MARKETING,
+  [EventType.CAMPAIGN_COMPLETED]: EventCategory.MARKETING,
+
+  // Survey Events
+  [EventType.SURVEY_STARTED]: EventCategory.ENGAGEMENT,
+  [EventType.SURVEY_COMPLETED]: EventCategory.ENGAGEMENT,
 };
 
 /**
@@ -246,6 +423,40 @@ export const ReZEventSchema = z.object({
     EventType.PAYMENT_INITIATED,
     EventType.PAYMENT_COMPLETED,
     EventType.SERVICE_HEALTH_CHANGED,
+    // New event types
+    EventType.OFFER_SHARED,
+    EventType.OFFER_OPENED,
+    EventType.REFERRAL_CLICKED,
+    EventType.REFERRAL_SIGNED_UP,
+    EventType.REFERRAL_PURCHASED,
+    EventType.LOCATION_VISITED,
+    EventType.LOCATION_DWELL,
+    EventType.SEARCH_PERFORMED,
+    EventType.WISHLIST_ADDED,
+    EventType.WISHLIST_REMOVED,
+    EventType.PRICE_ALERT_SET,
+    EventType.PRICE_ALERT_TRIGGERED,
+    EventType.REVIEW_SUBMITTED,
+    EventType.REVIEW_VIEWED,
+    EventType.PROFILE_UPDATED,
+    EventType.FEEDBACK_GIVEN,
+    EventType.SUBSCRIPTION_STARTED,
+    EventType.SUBSCRIPTION_RENEWED,
+    EventType.SUBSCRIPTION_CANCELLED,
+    EventType.MEMBERSHIP_UPGRADED,
+    EventType.MEMBERSHIP_DOWNGRADED,
+    EventType.LOYALTY_REDEEMED,
+    EventType.LOYALTY_EARNED,
+    EventType.COMPETITOR_VISITED,
+    EventType.COMPETITOR_SWITCHED,
+    EventType.APP_INSTALLED,
+    EventType.APP_OPENED,
+    EventType.CONTENT_VIEWED,
+    EventType.CONTENT_SHARED,
+    EventType.CAMPAIGN_STARTED,
+    EventType.CAMPAIGN_COMPLETED,
+    EventType.SURVEY_STARTED,
+    EventType.SURVEY_COMPLETED,
   ] as const),
   payload: z.unknown(), // Will be validated based on event type
   metadata: z.object({
@@ -259,6 +470,106 @@ export const ReZEventSchema = z.object({
   }),
   version: z.string().default('1.0'),
 });
+
+/**
+ * Generic Event Payload Schema for new event types
+ */
+export const GenericEventPayloadSchema = z.object({
+  userId: z.string().optional(),
+  merchantId: z.string().optional(),
+  sessionId: z.string().optional(),
+  deviceId: z.string().optional(),
+  locationId: z.string().optional(),
+  data: z.record(z.any()).optional(),
+  timestamp: z.string().datetime().optional(),
+});
+
+/**
+ * Enriched Event Interface
+ */
+export interface EnrichedEvent {
+  id: string;
+  type: string;
+  channel?: ChannelTypeValue;
+  attributionSource?: AttributionSourceValue;
+  userId?: string;
+  merchantId?: string;
+  sessionId?: string;
+  deviceId?: string;
+  locationId?: string;
+  data: Record<string, unknown>;
+  timestamp: string;
+  metadata: {
+    ip?: string;
+    userAgent?: string;
+    referrer?: string;
+    utm?: Record<string, string>;
+  };
+}
+
+/**
+ * Enriched Event Schema for validation
+ */
+export const EnrichedEventSchema = z.object({
+  id: z.string(),
+  type: z.string().min(1),
+  channel: z.enum(Object.values(ChannelType) as [string, ...string[]]).optional(),
+  attributionSource: z.enum(Object.values(AttributionSource) as [string, ...string[]]).optional(),
+  userId: z.string().optional(),
+  merchantId: z.string().optional(),
+  sessionId: z.string().optional(),
+  deviceId: z.string().optional(),
+  locationId: z.string().optional(),
+  data: z.record(z.any()),
+  timestamp: z.string().datetime(),
+  metadata: z.object({
+    ip: z.string().optional(),
+    userAgent: z.string().optional(),
+    referrer: z.string().optional(),
+    utm: z.record(z.string()).optional(),
+  }),
+});
+
+/**
+ * Event Validation Schema (for incoming events)
+ */
+export const eventValidationSchema = z.object({
+  type: z.string().min(1),
+  channel: z.enum(Object.values(ChannelType) as [string, ...string[]]).optional(),
+  attributionSource: z.enum(Object.values(AttributionSource) as [string, ...string[]]).optional(),
+  userId: z.string().optional(),
+  merchantId: z.string().optional(),
+  data: z.record(z.any()),
+  timestamp: z.string().datetime().optional(),
+  metadata: z.object({
+    ip: z.string().optional(),
+    userAgent: z.string().optional(),
+    referrer: z.string().optional(),
+    utm: z.record(z.string()).optional(),
+  }).optional(),
+});
+
+/**
+ * Validate an event against the event validation schema
+ */
+export function validateEvent(event: unknown): {
+  valid: boolean;
+  data?: z.infer<typeof eventValidationSchema>;
+  error?: string;
+} {
+  const result = eventValidationSchema.safeParse(event);
+
+  if (result.success) {
+    return { valid: true, data: result.data };
+  }
+
+  return {
+    valid: false,
+    error: result.error.issues
+      .map((i) => `${i.path.join('.')}: ${i.message}`)
+      .join('; '),
+  };
+}
 
 /**
  * Get payload schema for event type
@@ -276,6 +587,40 @@ export function getPayloadSchema(eventType: EventTypeValue): z.ZodSchema {
     [EventType.PAYMENT_INITIATED]: PaymentInitiatedPayloadSchema,
     [EventType.PAYMENT_COMPLETED]: PaymentCompletedPayloadSchema,
     [EventType.SERVICE_HEALTH_CHANGED]: ServiceHealthChangedPayloadSchema,
+    // New event types use generic schema
+    [EventType.OFFER_SHARED]: GenericEventPayloadSchema,
+    [EventType.OFFER_OPENED]: GenericEventPayloadSchema,
+    [EventType.REFERRAL_CLICKED]: GenericEventPayloadSchema,
+    [EventType.REFERRAL_SIGNED_UP]: GenericEventPayloadSchema,
+    [EventType.REFERRAL_PURCHASED]: GenericEventPayloadSchema,
+    [EventType.LOCATION_VISITED]: GenericEventPayloadSchema,
+    [EventType.LOCATION_DWELL]: GenericEventPayloadSchema,
+    [EventType.SEARCH_PERFORMED]: GenericEventPayloadSchema,
+    [EventType.WISHLIST_ADDED]: GenericEventPayloadSchema,
+    [EventType.WISHLIST_REMOVED]: GenericEventPayloadSchema,
+    [EventType.PRICE_ALERT_SET]: GenericEventPayloadSchema,
+    [EventType.PRICE_ALERT_TRIGGERED]: GenericEventPayloadSchema,
+    [EventType.REVIEW_SUBMITTED]: GenericEventPayloadSchema,
+    [EventType.REVIEW_VIEWED]: GenericEventPayloadSchema,
+    [EventType.PROFILE_UPDATED]: GenericEventPayloadSchema,
+    [EventType.FEEDBACK_GIVEN]: GenericEventPayloadSchema,
+    [EventType.SUBSCRIPTION_STARTED]: GenericEventPayloadSchema,
+    [EventType.SUBSCRIPTION_RENEWED]: GenericEventPayloadSchema,
+    [EventType.SUBSCRIPTION_CANCELLED]: GenericEventPayloadSchema,
+    [EventType.MEMBERSHIP_UPGRADED]: GenericEventPayloadSchema,
+    [EventType.MEMBERSHIP_DOWNGRADED]: GenericEventPayloadSchema,
+    [EventType.LOYALTY_REDEEMED]: GenericEventPayloadSchema,
+    [EventType.LOYALTY_EARNED]: GenericEventPayloadSchema,
+    [EventType.COMPETITOR_VISITED]: GenericEventPayloadSchema,
+    [EventType.COMPETITOR_SWITCHED]: GenericEventPayloadSchema,
+    [EventType.APP_INSTALLED]: GenericEventPayloadSchema,
+    [EventType.APP_OPENED]: GenericEventPayloadSchema,
+    [EventType.CONTENT_VIEWED]: GenericEventPayloadSchema,
+    [EventType.CONTENT_SHARED]: GenericEventPayloadSchema,
+    [EventType.CAMPAIGN_STARTED]: GenericEventPayloadSchema,
+    [EventType.CAMPAIGN_COMPLETED]: GenericEventPayloadSchema,
+    [EventType.SURVEY_STARTED]: GenericEventPayloadSchema,
+    [EventType.SURVEY_COMPLETED]: GenericEventPayloadSchema,
   };
 
   return schemas[eventType];
