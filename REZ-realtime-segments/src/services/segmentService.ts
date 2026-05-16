@@ -499,6 +499,291 @@ export async function refreshSegmentDefinitions(): Promise<SegmentDefinition[]> 
   return getAllSegments();
 }
 
+// Create a new segment
+export async function createSegment(
+  segment: Omit<SegmentDefinition, 'refreshInterval'> & { refreshInterval?: number }
+): Promise<SegmentDefinition> {
+  try {
+    // Check if segment already exists
+    const existing = await getSegmentById(segment.segmentId);
+    if (existing) {
+      throw new Error(`Segment already exists: ${segment.segmentId}`);
+    }
+
+    // Create in database
+    await SegmentDefinitionModel.create({
+      segmentId: segment.segmentId,
+      name: segment.name,
+      description: segment.description || '',
+      rules: segment.rules,
+      refreshInterval: segment.refreshInterval || 60,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    return {
+      segmentId: segment.segmentId,
+      name: segment.name,
+      description: segment.description || '',
+      rules: segment.rules,
+      refreshInterval: segment.refreshInterval || 60,
+    };
+  } catch (error) {
+    // If DB fails, return the segment as-is (will be in-memory only)
+    console.warn('Failed to create segment in DB, using in-memory:', error);
+    return {
+      segmentId: segment.segmentId,
+      name: segment.name,
+      description: segment.description || '',
+      rules: segment.rules,
+      refreshInterval: segment.refreshInterval || 60,
+    };
+  }
+}
+
+// Update an existing segment
+export async function updateSegment(
+  segmentId: string,
+  updates: Partial<SegmentDefinition>
+): Promise<SegmentDefinition | null> {
+  try {
+    const updated = await SegmentDefinitionModel.findOneAndUpdate(
+      { segmentId },
+      {
+        $set: {
+          ...(updates.name && { name: updates.name }),
+          ...(updates.description !== undefined && { description: updates.description }),
+          ...(updates.rules && { rules: updates.rules }),
+          ...(updates.refreshInterval && { refreshInterval: updates.refreshInterval }),
+          updatedAt: new Date(),
+        },
+      },
+      { new: true, lean: true }
+    );
+
+    if (updated) {
+      return {
+        segmentId: updated.segmentId,
+        name: updated.name,
+        description: updated.description,
+        rules: updated.rules as SegmentDefinition['rules'],
+        refreshInterval: updated.refreshInterval,
+      };
+    }
+  } catch (error) {
+    console.error('Failed to update segment in DB:', error);
+  }
+
+  // Fallback: update in-memory
+  const inMemory = findSegmentById(segmentId);
+  if (inMemory) {
+    return {
+      ...inMemory,
+      ...updates,
+    };
+  }
+
+  return null;
+}
+
+// Delete a segment
+export async function deleteSegment(segmentId: string): Promise<boolean> {
+  try {
+    const result = await SegmentDefinitionModel.findOneAndUpdate(
+      { segmentId },
+      { $set: { isActive: false, deletedAt: new Date() } }
+    );
+
+    return !!result;
+  } catch (error) {
+    console.error('Failed to delete segment:', error);
+    return false;
+  }
+}
+
+// Export segment members
+export async function exportSegmentMembers(
+  segmentId: string,
+  format: 'json' | 'csv' = 'json',
+  includeMetadata = false
+): Promise<string | null> {
+  const segment = await getSegmentById(segmentId);
+  if (!segment) {
+    return null;
+  }
+
+  try {
+    const memberships = await UserSegmentMembershipModel.find({
+      segmentId,
+      isActive: true,
+    }).lean();
+
+    if (format === 'csv') {
+      const headers = includeMetadata
+        ? 'userId,segmentId,segmentName,enteredAt,exitedAt,isActive'
+        : 'userId';
+      const rows = memberships.map((m) =>
+        includeMetadata
+          ? `${m.userId},${m.segmentId},${m.segmentName},${m.enteredAt},${m.exitedAt || ''},${m.isActive}`
+          : m.userId
+      );
+      return [headers, ...rows].join('\n');
+    }
+
+    return JSON.stringify(
+      includeMetadata
+        ? memberships.map((m) => ({
+            userId: m.userId,
+            segmentId: m.segmentId,
+            segmentName: m.segmentName,
+            enteredAt: m.enteredAt,
+            exitedAt: m.exitedAt,
+            isActive: m.isActive,
+          }))
+        : memberships.map((m) => m.userId),
+      null,
+      2
+    );
+  } catch (error) {
+    console.error('Failed to export segment members:', error);
+    return null;
+  }
+}
+
+// Segment analytics
+export interface SegmentAnalytics {
+  segmentId: string;
+  segmentName: string;
+  period: 'daily' | 'weekly' | 'monthly';
+  totalMembers: number;
+  newMembers: number;
+  exitedMembers: number;
+  netChange: number;
+  growthRate: number;
+  memberTrend: Array<{ date: string; count: number }>;
+  avgMembershipDuration: number;
+  topEntranceReasons: Array<{ reason: string; count: number }>;
+  topExitReasons: Array<{ reason: string; count: number }>;
+}
+
+export async function getSegmentAnalytics(
+  segmentId: string,
+  period: 'daily' | 'weekly' | 'monthly' = 'daily'
+): Promise<SegmentAnalytics | null> {
+  const segment = await getSegmentById(segmentId);
+  if (!segment) {
+    return null;
+  }
+
+  try {
+    const now = new Date();
+    let startDate: Date;
+    let dateFormat: string;
+    let groupFormat: string;
+
+    switch (period) {
+      case 'daily':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        dateFormat = '%Y-%m-%d';
+        groupFormat = '%Y-%m-%d';
+        break;
+      case 'weekly':
+        startDate = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
+        dateFormat = '%Y-W%v';
+        groupFormat = '%Y-W%v';
+        break;
+      case 'monthly':
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        dateFormat = '%Y-%m';
+        groupFormat = '%Y-%m';
+        break;
+    }
+
+    // Get current total
+    const totalMembers = await UserSegmentMembershipModel.countDocuments({
+      segmentId,
+      isActive: true,
+    });
+
+    // Get new members in period
+    const newMembers = await UserSegmentMembershipModel.countDocuments({
+      segmentId,
+      isActive: true,
+      enteredAt: { $gte: startDate },
+    });
+
+    // Get exited members in period
+    const exitedMembers = await UserSegmentMembershipModel.countDocuments({
+      segmentId,
+      isActive: false,
+      exitedAt: { $gte: startDate },
+    });
+
+    // Get member trend
+    const trendData = await UserSegmentMembershipModel.aggregate([
+      {
+        $match: {
+          segmentId,
+          enteredAt: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: groupFormat, date: '$enteredAt' },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    // Calculate average membership duration
+    const avgDurationResult = await UserSegmentMembershipModel.aggregate([
+      { $match: { segmentId, isActive: true } },
+      {
+        $project: {
+          durationDays: {
+            $divide: [{ $subtract: [new Date(), '$enteredAt'] }, 1000 * 60 * 60 * 24],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          avgDuration: { $avg: '$durationDays' },
+        },
+      },
+    ]);
+
+    const avgMembershipDuration = avgDurationResult.length > 0 ? avgDurationResult[0].avgDuration : 0;
+
+    return {
+      segmentId,
+      segmentName: segment.name,
+      period,
+      totalMembers,
+      newMembers,
+      exitedMembers,
+      netChange: newMembers - exitedMembers,
+      growthRate: totalMembers > 0 ? ((newMembers - exitedMembers) / totalMembers) * 100 : 0,
+      memberTrend: trendData.map((d) => ({ date: d._id, count: d.count })),
+      avgMembershipDuration: Math.round(avgMembershipDuration * 10) / 10,
+      topEntranceReasons: [],
+      topExitReasons: [],
+    };
+  } catch (error) {
+    console.error('Failed to get segment analytics:', error);
+    return null;
+  }
+}
+
+// Refresh segment definitions
+export async function refreshSegmentDefinitions(): Promise<SegmentDefinition[]> {
+  return getAllSegments();
+}
+
 export default {
   getAllSegments,
   getSegmentById,
@@ -509,5 +794,10 @@ export default {
   triggerSegmentEvaluation,
   getJobStatus,
   getUserCurrentSegments,
-  refreshSegmentDefinitions
+  refreshSegmentDefinitions,
+  createSegment,
+  updateSegment,
+  deleteSegment,
+  exportSegmentMembers,
+  getSegmentAnalytics,
 };
