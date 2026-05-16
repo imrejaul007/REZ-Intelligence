@@ -4,6 +4,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { UserGraph } from './userGraph.js';
 import { IdentityResolver } from './identityResolver.js';
+import { careerGraphService } from './services/careerGraph.js';
+import careerRoutes from './api/routes/career.js';
 import { asyncHandler } from './errors.js';
 import { logger } from './logger.js';
 import {
@@ -28,6 +30,18 @@ app.use(express.json());
 // Initialize services
 const userGraph = new UserGraph();
 const identityResolver = new IdentityResolver(userGraph);
+
+// Initialize Career Graph service
+userGraph.connect().then(() => {
+  if (userGraph.db) {
+    careerGraphService.setDatabase(userGraph.db);
+    if ((userGraph as any).redis) {
+      careerGraphService.setRedis((userGraph as any).redis);
+    }
+    careerGraphService.createIndexes();
+    logger.info('Career Graph service initialized');
+  }
+});
 
 // Health check
 app.get('/health', (_req: Request, res: Response) => {
@@ -282,6 +296,11 @@ app.post('/api/v1/sync/:source', authenticateInternal, asyncHandler(async (req: 
     res.status(500).json({ error: 'Failed to sync', message: (error as Error).message });
   }
 }));
+
+// ============ CAREER GRAPH ENDPOINTS ============
+
+// Mount career routes
+app.use('/api/career', careerRoutes);
 
 // Error handling middleware
 app.use((err: Error, _req: Request, res: Response, _next: express.NextFunction) => {
