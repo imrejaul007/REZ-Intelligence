@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { customerAggregator } from '../services/customerAggregator.js';
 import { dashboardService } from '../services/dashboardService.js';
 import { inboxService } from '../services/inboxService.js';
+import { validateInternalToken } from '../middleware/auth.js';
 import { logger } from '../utils/logger.js';
 import type {
   InternalCustomer,
@@ -28,27 +29,8 @@ import type {
 
 const router = Router();
 
-// ============================================
-// AUTHENTICATION MIDDLEWARE
-// ============================================
-
-router.use((req: Request, res: Response, next) => {
-  const token = req.headers['x-internal-token'];
-
-  if (!token || token !== process.env.INTERNAL_SERVICE_TOKEN) {
-    logger.warn('Unauthorized access attempt - INTERNAL API', {
-      ip: req.ip,
-      path: req.path,
-    });
-    return res.status(401).json({
-      success: false,
-      error: 'Unauthorized - Internal API',
-      message: 'This API is for internal REZ platform use only',
-    });
-  }
-
-  next();
-});
+// Apply internal token validation
+router.use(validateInternalToken);
 
 // ============================================
 // 🔒 INTERNAL DASHBOARD ROUTES
@@ -568,13 +550,53 @@ router.post('/inbox/messages/:messageId/reply', async (req: Request, res: Respon
 // HEALTH ROUTES
 // ============================================
 
+import { rezServices } from '../services/rezServices.js';
+
 router.get('/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok', service: 'rez-unified-crm-hub' });
+  res.json({
+    status: 'ok',
+    service: 'rez-unified-crm-hub',
+    type: 'internal',
+    timestamp: new Date().toISOString(),
+  });
 });
 
 router.get('/ready', async (_req: Request, res: Response) => {
-  // Would check database and service connections
-  res.json({ ready: true, service: 'rez-unified-crm-hub' });
+  try {
+    // Check service connections
+    const services = await rezServices.checkServicesHealth();
+    const allHealthy = services.every(s => s.healthy);
+
+    res.json({
+      ready: allHealthy,
+      service: 'rez-unified-crm-hub',
+      type: 'internal',
+      services,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(503).json({
+      ready: false,
+      service: 'rez-unified-crm-hub',
+      error: 'Service health check failed',
+    });
+  }
+});
+
+router.get('/services', async (_req: Request, res: Response) => {
+  try {
+    const services = await rezServices.checkServicesHealth();
+    res.json({
+      success: true,
+      data: services,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to check services',
+    });
+  }
 });
 
 export default router;

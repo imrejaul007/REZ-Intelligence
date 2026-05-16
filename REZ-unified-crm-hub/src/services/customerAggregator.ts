@@ -12,6 +12,7 @@
 import axios from 'axios';
 import { serviceUrls } from '../config/index.js';
 import { logger } from '../utils/logger.js';
+import { rezServices } from './rezServices.js';
 import type {
   InternalCustomer,
   InternalDemographics,
@@ -81,31 +82,20 @@ export class CustomerAggregator {
 
   /**
    * Get unified customer profile by userId
+   * Uses REZ Services Connector for reliable service communication
    */
   async getCustomer(userId: string): Promise<InternalCustomer | null> {
     try {
-      // Try REZ Intelligence unified profile first
-      const [intelligenceRes, nowRes, mediaRes] = await Promise.allSettled([
-        this.fetchFromService(
-          `${serviceUrls.intelligence.unifiedProfile}/api/profile/${userId}`
-        ),
-        this.fetchFromService(
-          `${serviceUrls.consumer.rezNow}/api/customers/${userId}`
-        ),
-        this.fetchFromService(
-          `${serviceUrls.media.engagementPlatform}/api/customers/${userId}`
-        ),
-      ]);
-
-      const intelligenceData = intelligenceRes.status === 'fulfilled' ? intelligenceRes.value : null;
-      const nowData = nowRes.status === 'fulfilled' ? nowRes.value : null;
-      const mediaData = mediaRes.status === 'fulfilled' ? mediaRes.value : null;
+      // Use rezServices connector for all service calls
+      const data = await rezServices.aggregateCustomerData(userId);
 
       // Merge data from all sources
       return this.mergeCustomerData(userId, {
-        intelligence: intelligenceData,
-        now: nowData,
-        media: mediaData,
+        intelligence: data.profile,
+        now: data.rezNow,
+        media: data.engagement,
+        predictions: data.predictions,
+        rfm: data.rfm,
       });
     } catch (error) {
       logger.error('Error fetching customer', { userId, error });
@@ -445,11 +435,15 @@ export class CustomerAggregator {
       intelligence: any;
       now: any;
       media: any;
+      predictions?: any;
+      rfm?: any;
     }
   ): InternalCustomer {
     const intelligence = sources.intelligence || {};
     const now = sources.now || {};
     const media = sources.media || {};
+    const predictions = sources.predictions || {};
+    const rfm = sources.rfm || {};
 
     // Demographics from any source
     const demographics: InternalDemographics = {
@@ -509,14 +503,14 @@ export class CustomerAggregator {
       engagementFrequency: media.frequency || 'WEEKLY',
     };
 
-    // Predictions from AI
-    const predictions: InternalPredictions = {
-      churnRisk: intelligence.churnRisk || 'LOW',
-      churnProbability: intelligence.churnProbability || 0.1,
-      nextPurchaseLikelihood: intelligence.nextPurchaseLikelihood || 0.5,
-      ltvPrediction: intelligence.ltvPrediction,
-      productAffinity: intelligence.productAffinity || [],
-      preferredChannels: media.preferredChannels || ['APP_PUSH'],
+    // Predictions from AI (merge with predictions from rezServices if available)
+    const mergedPredictions: InternalPredictions = {
+      churnRisk: predictions.churnRisk || intelligence.churnRisk || 'LOW',
+      churnProbability: predictions.churnProbability || intelligence.churnProbability || 0.1,
+      nextPurchaseLikelihood: predictions.nextPurchaseLikelihood || intelligence.nextPurchaseLikelihood || 0.5,
+      ltvPrediction: predictions.ltvPrediction || intelligence.ltvPrediction,
+      productAffinity: predictions.productAffinity || intelligence.productAffinity || [],
+      preferredChannels: predictions.preferredChannels || media.preferredChannels || ['APP_PUSH'],
     };
 
     // Segments
@@ -569,7 +563,7 @@ export class CustomerAggregator {
       lifetime,
       activity,
       engagement,
-      predictions,
+      predictions: mergedPredictions,
       segments,
       smartTags: [], // Will be populated separately
       intentSignals: intelligence.intentSignals || {

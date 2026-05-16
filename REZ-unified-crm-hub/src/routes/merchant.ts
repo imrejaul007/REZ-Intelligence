@@ -22,6 +22,7 @@ import {
   sanitizeSegmentList,
   validateMerchantSafe,
 } from '../services/sanitizer.js';
+import { validateMerchantJWT, requirePermission, generateMerchantToken } from '../middleware/auth.js';
 import { logger } from '../utils/logger.js';
 import type {
   MerchantCustomer,
@@ -35,50 +36,64 @@ import type {
 const router = Router();
 
 // ============================================
-// MERCHANT AUTHENTICATION MIDDLEWARE
+// PUBLIC AUTH ENDPOINTS (No auth required)
 // ============================================
 
 /**
- * Merchant authentication middleware
- * Validates merchant JWT token and extracts merchantId
+ * POST /api/v1/merchant/auth/token
+ * Generate test token (development only)
  */
-router.use(async (req: Request, res: Response, next) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    logger.warn('Missing or invalid authorization header - Merchant API', {
-      ip: req.ip,
-      path: req.path,
-    });
-    return res.status(401).json({
+router.post('/auth/token', (req: Request, res: Response) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({
       success: false,
-      error: 'Unauthorized',
-      message: 'Valid merchant JWT required',
+      error: 'Forbidden',
+      message: 'Token generation not available in production',
     });
   }
 
-  const token = authHeader.substring(7);
+  const { merchantId, merchantName } = req.body;
 
-  // In production, validate JWT here
-  // For now, we'll accept any token and extract merchantId
-  try {
-    // TODO: Validate JWT and extract merchantId
-    // const decoded = await verifyMerchantToken(token);
-    // (req as any).merchantId = decoded.merchantId;
-
-    // For development, use header
-    (req as any).merchantId = req.headers['x-merchant-id'] as string || 'demo-merchant';
-
-    next();
-  } catch (error) {
-    logger.warn('Invalid merchant token', { error });
-    return res.status(401).json({
+  if (!merchantId) {
+    return res.status(400).json({
       success: false,
-      error: 'Unauthorized',
-      message: 'Invalid merchant token',
+      error: 'Bad Request',
+      message: 'merchantId required',
     });
   }
+
+  const token = generateMerchantToken({
+    merchantId,
+    merchantName: merchantName || 'Test Merchant',
+    permissions: ['read:customers', 'write:customers', 'read:orders', 'write:orders'],
+    storeIds: [],
+  });
+
+  res.json({
+    success: true,
+    data: {
+      token,
+      type: 'Bearer',
+      expiresIn: '7d',
+    },
+  });
 });
+
+/**
+ * GET /api/v1/merchant/auth/me
+ * Get current merchant info
+ */
+router.get('/auth/me', (req: Request, res: Response) => {
+  res.json({
+    success: true,
+    data: {
+      merchantId: req.merchantId,
+      merchantName: req.merchantName,
+      permissions: req.merchantPermissions,
+    },
+  });
+});
+
 
 // ============================================
 // CUSTOMER ROUTES

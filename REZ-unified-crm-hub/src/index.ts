@@ -16,8 +16,10 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import http from 'http';
+import swaggerUi from 'swagger-ui-express';
 import { env } from './config/index.js';
 import { logger } from './utils/logger.js';
+import { swaggerSpec } from './config/swagger.js';
 
 // Internal routes (Port 4100)
 import internalRoutes from './routes/index.js';
@@ -79,6 +81,12 @@ merchantApp.use((req, _res, next) => {
   });
   next();
 });
+
+// Swagger documentation (Internal API only)
+internalApp.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'REZ CRM - Internal API Docs',
+}));
 
 // API routes
 // Internal API (Port 4100)
