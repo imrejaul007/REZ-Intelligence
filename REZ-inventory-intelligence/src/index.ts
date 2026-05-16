@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import config from './config/index.js';
+import config, { validateConfig } from './config/index.js';
 import logger from './utils/logger.js';
 import inventoryRoutes from './routes/index.js';
 
@@ -13,9 +13,25 @@ import inventoryRoutes from './routes/index.js';
 function createApp(): Express {
   const app = express();
 
+  // Trust proxy for rate limiting behind reverse proxy
+  app.set('trust proxy', 1);
+
   // Security middleware
-  app.use(helmet());
-  app.use(cors());
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+      },
+    },
+  }));
+  app.use(cors({
+    origin: config.nodeEnv === 'production' ? false : '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Internal-Token'],
+  }));
 
   // Compression
   app.use(compression());
@@ -24,46 +40,34 @@ function createApp(): Express {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
 
-  // Request logging
+  // Request logging with timing
   app.use((req: Request, _res: Response, next: NextFunction) => {
-    logger.info(`${req.method} ${req.path}`, {
-      ip: req.ip,
-      userAgent: req.get('user-agent'),
+    const startTime = Date.now();
+    _res.on('finish', () => {
+      const duration = Date.now() - startTime;
+      logger.info(`${req.method} ${req.path}`, {
+        statusCode: _res.statusCode,
+        duration: `${duration}ms`,
+        ip: req.ip,
+        userAgent: req.get('user-agent'),
+      });
     });
     next();
   });
 
   // API routes
-  app.use('/api', inventoryRoutes);
+  app.use('/', inventoryRoutes);
 
-  // Root health check
+  // Root endpoint
   app.get('/', (_req: Request, res: Response) => {
     res.json({
       service: 'REZ Inventory Intelligence',
       version: '1.0.0',
       status: 'running',
       port: config.port,
-      description: 'Real-time Inventory Intelligence - Stock insights, velocity analysis, and demand forecasting',
-    });
-  });
-
-  // 404 handler
-  app.use((_req: Request, res: Response) => {
-    res.status(404).json({
-      success: false,
-      error: 'Not Found',
-      message: 'The requested endpoint does not exist',
-    });
-  });
-
-  // Global error handler
-  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    logger.error('Unhandled error', { error: err.message, stack: err.stack });
-
-    res.status(500).json({
-      success: false,
-      error: 'Internal Server Error',
-      message: config.nodeEnv === 'production' ? 'An unexpected error occurred' : err.message,
+      description: 'Inventory Intelligence Service with Demand Forecasting, Stock Optimization, and Reorder Management for REZ Ecosystem',
+      documentation: `/api/v1`,
+      health: `/api/health`,
     });
   });
 
@@ -71,24 +75,53 @@ function createApp(): Express {
 }
 
 /**
- * Connect to MongoDB
+ * Connect to MongoDB with retry logic
  */
-async function connectDatabase(): Promise<void> {
-  try {
-    logger.info('Connecting to MongoDB...', {
-      uri: config.mongodb.uri.replace(/\/\/.*@/, '//<credentials>@'),
-    });
+async function connectDatabase(maxRetries: number = 5): Promise<void> {
+  let retries = 0;
 
-    await mongoose.connect(config.mongodb.uri, {
-      maxPoolSize: config.mongodb.options.maxPoolSize,
-      serverSelectionTimeoutMS: config.mongodb.options.serverSelectionTimeoutMS,
-      socketTimeoutMS: config.mongodb.options.socketTimeoutMS,
-    });
+  while (retries < maxRetries) {
+    try {
+      logger.info('Connecting to MongoDB...', {
+        uri: config.mongodb.uri.replace(/\/\/.*@/, '//<credentials>@'),
+        attempt: retries + 1,
+      });
 
-    logger.info('Connected to MongoDB successfully');
-  } catch (error) {
-    logger.error('Failed to connect to MongoDB', { error });
-    throw error;
+      await mongoose.connect(config.mongodb.uri, {
+        maxPoolSize: config.mongodb.options.maxPoolSize,
+        serverSelectionTimeoutMS: config.mongodb.options.serverSelectionTimeoutMS,
+        socketTimeoutMS: config.mongodb.options.socketTimeoutMS,
+      });
+
+      logger.info('Connected to MongoDB successfully');
+
+      // Set up connection event handlers
+      mongoose.connection.on('error', (error) => {
+        logger.error('MongoDB connection error', { error });
+      });
+
+      mongoose.connection.on('disconnected', () => {
+        logger.warn('MongoDB disconnected');
+      });
+
+      mongoose.connection.on('reconnected', () => {
+        logger.info('MongoDB reconnected');
+      });
+
+      return;
+    } catch (error) {
+      retries++;
+      logger.error(`Failed to connect to MongoDB (attempt ${retries}/${maxRetries})`, { error });
+
+      if (retries >= maxRetries) {
+        throw error;
+      }
+
+      // Wait before retry (exponential backoff)
+      const delay = Math.min(1000 * Math.pow(2, retries), 30000);
+      logger.info(`Retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
   }
 }
 
@@ -99,9 +132,16 @@ async function shutdown(signal: string): Promise<void> {
   logger.info(`Received ${signal}, shutting down gracefully...`);
 
   try {
-    await mongoose.connection.close();
-    logger.info('MongoDB connection closed');
+    // Close MongoDB connection
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.connection.close();
+      logger.info('MongoDB connection closed');
+    }
 
+    // Allow time for graceful shutdown
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    logger.info('Shutdown complete');
     process.exit(0);
   } catch (error) {
     logger.error('Error during shutdown', { error });
@@ -114,6 +154,9 @@ async function shutdown(signal: string): Promise<void> {
  */
 async function main(): Promise<void> {
   try {
+    // Validate configuration
+    validateConfig();
+
     // Connect to database
     await connectDatabase();
 
@@ -122,9 +165,30 @@ async function main(): Promise<void> {
 
     // Start server
     const server = app.listen(config.port, () => {
-      logger.info(`REZ Inventory Intelligence started on port ${config.port}`);
+      logger.info('='.repeat(60));
+      logger.info('REZ Inventory Intelligence Service');
+      logger.info('='.repeat(60));
+      logger.info(`Port: ${config.port}`);
       logger.info(`Environment: ${config.nodeEnv}`);
-      logger.info(`Health check: http://localhost:${config.port}/api/health`);
+      logger.info(`MongoDB: ${config.mongodb.uri.replace(/\/\/.*@/, '//<credentials>@')}`);
+      logger.info('-'.repeat(60));
+      logger.info('Endpoints:');
+      logger.info(`  Health:     http://localhost:${config.port}/api/health`);
+      logger.info(`  API Base:   http://localhost:${config.port}/api/v1`);
+      logger.info(`  Forecast:   http://localhost:${config.port}/api/v1/forecast/:sku`);
+      logger.info(`  Reorder:    http://localhost:${config.port}/api/v1/reorder/:sku`);
+      logger.info(`  Optimize:   http://localhost:${config.port}/api/v1/optimize/:sku`);
+      logger.info(`  ABC:        http://localhost:${config.port}/api/v1/abc-analysis`);
+      logger.info('='.repeat(60));
+    });
+
+    // Handle server errors
+    server.on('error', (error: NodeJS.ErrnoException) => {
+      if (error.code === 'EADDRINUSE') {
+        logger.error(`Port ${config.port} is already in use`);
+        process.exit(1);
+      }
+      throw error;
     });
 
     // Graceful shutdown handlers
