@@ -6,14 +6,32 @@ import { alerts, AlertStatus, AlertSeverity } from './alerts';
 
 const router = Router();
 
-// Health check
+// Internal auth middleware
+function requireInternalAuth(req: Request, res: Response, next: Function): void {
+  const apiKey = req.headers['x-internal-token'] as string;
+  const validKey = process.env.INTERNAL_SERVICE_TOKEN;
+
+  if (!validKey) {
+    if (process.env.NODE_ENV === 'development') return next();
+    res.status(503).json({ success: false, error: 'Service not configured' });
+    return;
+  }
+
+  if (apiKey !== validKey) {
+    res.status(401).json({ success: false, error: 'Unauthorized' });
+    return;
+  }
+  next();
+}
+
+// Health check (public)
 router.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
 
-// ==================== LOGS ====================
+// ==================== LOGS (Protected) ====================
 
-router.get('/logs', (req: Request, res: Response) => {
+router.get('/logs', requireInternalAuth, (req: Request, res: Response) => {
   const query: LogQuery = {
     level: req.query.level as string,
     service: req.query.service as string,
@@ -33,11 +51,11 @@ router.get('/logs', (req: Request, res: Response) => {
   });
 });
 
-router.get('/logs/stats', (_req: Request, res: Response) => {
+router.get('/logs/stats', requireInternalAuth, (_req: Request, res: Response) => {
   res.json(logger.getLogStats());
 });
 
-router.get('/logs/:id', (req: Request, res: Response) => {
+router.get('/logs/:id', requireInternalAuth, (req: Request, res: Response) => {
   const log = logger.getLogById(req.params.id);
   if (!log) {
     return res.status(404).json({ error: 'Log not found' });
@@ -45,7 +63,7 @@ router.get('/logs/:id', (req: Request, res: Response) => {
   res.json(log);
 });
 
-router.post('/logs', (req: Request, res: Response) => {
+router.post('/logs', requireInternalAuth, (req: Request, res: Response) => {
   const { level, message, service, metadata, traceId, spanId } = req.body;
 
   if (!level || !message || !service) {
@@ -70,12 +88,12 @@ router.post('/logs', (req: Request, res: Response) => {
 
 // ==================== METRICS ====================
 
-router.get('/metrics', async (_req: Request, res: Response) => {
+router.get('/metrics', requireInternalAuth, async (_req: Request, res: Response) => {
   res.set('Content-Type', 'text/plain');
   res.send(await metrics.getPrometheusMetrics());
 });
 
-router.get('/metrics/time-series', (req: Request, res: Response) => {
+router.get('/metrics/time-series', requireInternalAuth, (req: Request, res: Response) => {
   const { name, startTime, endTime } = req.query;
   const timeSeries = metrics.getTimeSeries(
     name as string,
@@ -85,7 +103,7 @@ router.get('/metrics/time-series', (req: Request, res: Response) => {
   res.json({ name, dataPoints: timeSeries });
 });
 
-router.get('/metrics/all', (_req: Request, res: Response) => {
+router.get('/metrics/all', requireInternalAuth, (_req: Request, res: Response) => {
   res.json(metrics.getAllTimeSeries());
 });
 
@@ -93,7 +111,7 @@ router.get('/metrics/summary', (_req: Request, res: Response) => {
   res.json(metrics.getMetricsSummary());
 });
 
-router.post('/metrics/counter', (req: Request, res: Response) => {
+router.post('/metrics/counter', requireInternalAuth, (req: Request, res: Response) => {
   const { name, labels } = req.body;
   if (!name) {
     return res.status(400).json({ error: 'name is required' });
@@ -102,7 +120,7 @@ router.post('/metrics/counter', (req: Request, res: Response) => {
   res.json({ success: true, name });
 });
 
-router.post('/metrics/gauge', (req: Request, res: Response) => {
+router.post('/metrics/gauge', requireInternalAuth, (req: Request, res: Response) => {
   const { name, value, labels } = req.body;
   if (!name || value === undefined) {
     return res.status(400).json({ error: 'name and value are required' });
