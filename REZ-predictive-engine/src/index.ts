@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import logger from './utils/logger';
 import predictRoutes from './routes/predict';
 import healthRoutes from './routes/health';
+import mlRoutes from './routes/ml';
 import { authMiddleware, requestIdMiddleware, corsMiddleware } from './middleware/auth';
 import { errorHandler, notFoundHandler, rateLimitMiddleware } from './middleware/errorHandler';
 
@@ -77,13 +78,14 @@ app.use('/health', healthRoutes);
 
 // API routes
 app.use('/predict', predictRoutes);
+app.use('/ml', authMiddleware, mlRoutes);
 
 // Root endpoint
 app.get('/', (_req, res) => {
   res.json({
     service: 'REZ Predictive Engine',
     version: process.env.npm_package_version || '1.0.0',
-    description: 'AI predictions for churn, LTV, revisit, and conversion',
+    description: 'AI predictions for churn, LTV, revisit, conversion, and ML-based predictions',
     endpoints: {
       health: {
         base: '/health',
@@ -102,6 +104,20 @@ app.get('/', (_req, res) => {
         atRisk: 'GET /predict/segments/at-risk',
         highValue: 'GET /predict/segments/high-value',
         stats: 'GET /predict/stats'
+      },
+      ml: {
+        base: '/ml',
+        churn: 'GET /ml/:userId/churn',
+        ltv: 'GET /ml/:userId/ltv',
+        nextPurchase: 'GET /ml/:userId/next-purchase',
+        propensity: 'GET /ml/:userId/propensity',
+        propensityAction: 'GET /ml/:userId/propensity/:action',
+        segment: 'GET /ml/:userId/segment',
+        batchChurn: 'POST /ml/batch/churn',
+        batchLtv: 'POST /ml/batch/ltv',
+        batchPropensity: 'POST /ml/batch/propensity',
+        segments: 'GET /ml/segments/:segment',
+        models: 'GET /ml/models'
       }
     },
     documentation: '/docs',
