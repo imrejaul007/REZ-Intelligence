@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  unified-crm-hub:
+    build: .
+    container_name: rez-unified-crm-hub
+    ports:
+      - "4100:4100"  # Internal API
+      - "4101:4101"  # Merchant API
+    environment:
+      - NODE_ENV=production
+      - PORT=4100
+      - MERCHANT_PORT=4101
+      - MONGODB_URI=mongodb://mongo:27017/rez-unified-crm-hub
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN}
+      # REZ Intelligence Services
+      - IDENTITY_GRAPH_URL=http://rez-identity-graph:4050
+      - PREDICTIVE_ENGINE_URL=http://rez-predictive-engine:4059
+      - RFM_SERVICE_URL=http://rez-rfm-service:4055
+      - UNIFIED_PROFILE_URL=http://rez-unified-profile:4060
+      - CUSTOMER_INTELLIGENCE_URL=http://rez-customer-intelligence:4140
+      # REZ Consumer Services
+      - REZ_NOW_URL=http://rez-now:3000
+      - MERCHANT_SERVICE_URL=http://rez-merchant-service:4005
+      # REZ Media Services
+      - ENGAGEMENT_PLATFORM_URL=http://rez-engagement:4017
+      - CAMPAIGN_BUILDER_URL=http://rez-campaign-builder:4009
+      # External CRM
+      - CRM_HUB_URL=http://rez-crm-hub:4056
+    depends_on:
+      - mongo
+      - redis
+    restart: unless-stopped
+    networks:
+      - rez-network
+
+  mongo:
+    image: mongo:6
+    container_name: rez-unified-crm-mongo
+    volumes:
+      - unified-crm-mongo-data:/data/db
+    restart: unless-stopped
+    networks:
+      - rez-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: rez-unified-crm-redis
+    volumes:
+      - unified-crm-redis-data:/data
+    restart: unless-stopped
+    networks:
+      - rez-network
+
+volumes:
+  unified-crm-mongo-data:
+  unified-crm-redis-data:
+
+networks:
+  rez-network:
+    external: true

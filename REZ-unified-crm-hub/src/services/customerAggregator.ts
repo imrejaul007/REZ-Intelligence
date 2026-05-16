@@ -1,7 +1,7 @@
 /**
  * Customer Aggregator Service
  *
- * Aggregates customer data from all sources:
+ * 🔒 INTERNAL: Aggregates customer data from all sources:
  * - REZ NOW (orders, CRM)
  * - REZ Media (engagement, campaigns)
  * - REZ Intelligence (AI predictions, segments)
@@ -13,14 +13,14 @@ import axios from 'axios';
 import { serviceUrls } from '../config/index.js';
 import { logger } from '../utils/logger.js';
 import type {
-  Customer,
-  CustomerDemographics,
-  CustomerLifetime,
-  CustomerActivity,
-  CustomerEngagement,
-  CustomerPredictions,
-  CustomerSegment,
-  SmartTag,
+  InternalCustomer,
+  InternalDemographics,
+  InternalLifetime,
+  InternalActivity,
+  InternalEngagement,
+  InternalPredictions,
+  InternalSegment,
+  InternalSmartTag,
   CustomerSource,
   ChurnRisk,
   EngagementTier,
@@ -82,7 +82,7 @@ export class CustomerAggregator {
   /**
    * Get unified customer profile by userId
    */
-  async getCustomer(userId: string): Promise<Customer | null> {
+  async getCustomer(userId: string): Promise<InternalCustomer | null> {
     try {
       // Try REZ Intelligence unified profile first
       const [intelligenceRes, nowRes, mediaRes] = await Promise.allSettled([
@@ -122,7 +122,7 @@ export class CustomerAggregator {
     tagIds?: string[];
     page?: number;
     limit?: number;
-  }): Promise<{ customers: Customer[]; total: number }> {
+  }): Promise<{ customers: InternalCustomer[]; total: number }> {
     try {
       // Use REZ Intelligence unified profile search
       const response = await this.fetchFromService(
@@ -152,7 +152,7 @@ export class CustomerAggregator {
   /**
    * Get customer segments
    */
-  async getCustomerSegments(userId: string): Promise<CustomerSegment[]> {
+  async getInternalSegments(userId: string): Promise<InternalSegment[]> {
     try {
       const response = await this.fetchFromService(
         `${serviceUrls.intelligence.unifiedProfile}/api/profile/${userId}/segments`
@@ -182,15 +182,15 @@ export class CustomerAggregator {
   async getCustomerSmartTags(
     userId: string,
     orderHistory?: any[]
-  ): Promise<SmartTag[]> {
-    const tags: SmartTag[] = [];
+  ): Promise<InternalSmartTag[]> {
+    const tags: InternalSmartTag[] = [];
 
     try {
       // Get predictions for AI-based tags
-      const predictions = await this.getCustomerPredictions(userId);
+      const predictions = await this.getInternalPredictions(userId);
 
       // Get engagement score
-      const engagement = await this.getCustomerEngagement(userId);
+      const engagement = await this.getInternalEngagement(userId);
 
       // Analyze order patterns if available
       const patterns = this.analyzeOrderPatterns(orderHistory);
@@ -297,9 +297,9 @@ export class CustomerAggregator {
   /**
    * Get customer predictions from AI
    */
-  async getCustomerPredictions(
+  async getInternalPredictions(
     userId: string
-  ): Promise<CustomerPredictions> {
+  ): Promise<InternalPredictions> {
     try {
       const response = await this.fetchFromService(
         `${serviceUrls.intelligence.predictiveEngine}/api/predictions/${userId}`
@@ -316,7 +316,7 @@ export class CustomerAggregator {
               confidence: response.ltvPrediction.confidence || 0,
               timeframe: response.ltvPrediction.timeframe || '365d',
             }
-          : undefined,
+          : { predicted: 0, actual: 0, confidence: 0, timeframe: '365d' },
         productAffinity: response.productAffinity || [],
         preferredChannels: response.preferredChannels || ['APP_PUSH'],
       };
@@ -326,7 +326,12 @@ export class CustomerAggregator {
         churnRisk: 'LOW',
         churnProbability: 0.1,
         nextPurchaseLikelihood: 0.5,
-        ltvPrediction: undefined,
+        ltvPrediction: {
+          predicted: 0,
+          actual: 0,
+          confidence: 0,
+          timeframe: '365d',
+        },
         productAffinity: [],
         preferredChannels: ['APP_PUSH'],
       };
@@ -336,7 +341,7 @@ export class CustomerAggregator {
   /**
    * Get customer engagement score
    */
-  async getCustomerEngagement(userId: string): Promise<CustomerEngagement> {
+  async getInternalEngagement(userId: string): Promise<InternalEngagement> {
     try {
       const response = await this.fetchFromService(
         `${serviceUrls.intelligence.unifiedProfile}/api/profile/${userId}/activity`
@@ -441,13 +446,13 @@ export class CustomerAggregator {
       now: any;
       media: any;
     }
-  ): Customer {
+  ): InternalCustomer {
     const intelligence = sources.intelligence || {};
     const now = sources.now || {};
     const media = sources.media || {};
 
     // Demographics from any source
-    const demographics: CustomerDemographics = {
+    const demographics: InternalDemographics = {
       age: intelligence.age || now.age,
       gender: intelligence.gender || now.gender,
       city: intelligence.city || now.city,
@@ -461,7 +466,7 @@ export class CustomerAggregator {
     // Lifetime data from orders
     const orders = now.orders || [];
     const totalSpend = orders.reduce((sum: number, o: any) => sum + (o.total || 0), 0);
-    const lifetime: CustomerLifetime = {
+    const lifetime: InternalLifetime = {
       tenureDays: now.tenureDays || 0,
       totalOrders: orders.length,
       totalSpend,
@@ -477,7 +482,7 @@ export class CustomerAggregator {
     };
 
     // Activity
-    const activity: CustomerActivity = {
+    const activity: InternalActivity = {
       last30Days: now.activity30Days || { orders: 0, spend: 0, visits: 0 },
       last90Days: now.activity90Days || { orders: 0, spend: 0, visits: 0 },
       last365Days: now.activity365Days || { orders: 0, spend: 0, visits: 0 },
@@ -492,7 +497,7 @@ export class CustomerAggregator {
     };
 
     // Engagement
-    const engagement: CustomerEngagement = {
+    const engagement: InternalEngagement = {
       score: media.engagementScore || intelligence.engagementScore || 50,
       tier: media.engagementTier || intelligence.tier || 'WARM',
       emailOptIn: media.emailOptIn !== false,
@@ -505,7 +510,7 @@ export class CustomerAggregator {
     };
 
     // Predictions from AI
-    const predictions: CustomerPredictions = {
+    const predictions: InternalPredictions = {
       churnRisk: intelligence.churnRisk || 'LOW',
       churnProbability: intelligence.churnProbability || 0.1,
       nextPurchaseLikelihood: intelligence.nextPurchaseLikelihood || 0.5,
@@ -515,7 +520,7 @@ export class CustomerAggregator {
     };
 
     // Segments
-    const segments: CustomerSegment[] = [
+    const segments: InternalSegment[] = [
       ...(intelligence.segments || []),
       ...(now.segments || []),
       ...(media.segments || []),
@@ -567,13 +572,17 @@ export class CustomerAggregator {
       predictions,
       segments,
       smartTags: [], // Will be populated separately
+      intentSignals: intelligence.intentSignals || {
+        preferredChannels: [],
+        intentScore: 50,
+      },
       sources: sourcesData,
       createdAt: new Date(intelligence.createdAt || now.createdAt || Date.now()),
       updatedAt: new Date(),
     };
   }
 
-  private mapToCustomer(data: any): Customer {
+  private mapToCustomer(data: any): InternalCustomer {
     return {
       id: data.userId || data.id,
       userId: data.userId || data.id,
@@ -625,6 +634,10 @@ export class CustomerAggregator {
         updatedAt: new Date(s.updatedAt || s.createdAt || Date.now()),
       })),
       smartTags: [],
+      intentSignals: data.intentSignals || {
+        preferredChannels: [],
+        intentScore: 50,
+      },
       sources: data.sources || [],
       createdAt: new Date(data.createdAt || Date.now()),
       updatedAt: new Date(data.updatedAt || data.createdAt || Date.now()),

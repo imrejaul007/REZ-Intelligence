@@ -19,9 +19,6 @@ import { inboxService } from '../services/inboxService.js';
 import { logger } from '../utils/logger.js';
 import type {
   InternalCustomer,
-  MerchantCustomer,
-  MerchantCustomerDetail,
-  InternalPredictions,
   InternalSmartTag,
   InternalSegment,
   DashboardOverview,
@@ -88,38 +85,16 @@ router.get('/internal/dashboard/overview', async (req: Request, res: Response) =
     });
   }
 });
- */
-router.get('/dashboard/overview', async (req: Request, res: Response) => {
-  try {
-    const filters = {
-      merchantId: req.query.merchantId as string,
-      storeId: req.query.storeId as string,
-    };
-
-    const overview = await dashboardService.getOverview(filters);
-
-    res.json({
-      success: true,
-      data: overview,
-    });
-  } catch (error) {
-    logger.error('Error fetching dashboard overview', { error });
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch dashboard overview',
-    });
-  }
-});
 
 // ============================================
 // CUSTOMER ROUTES
 // ============================================
 
 /**
- * GET /api/v1/customers
- * List customers with filters
+ * GET /api/v1/internal/customers
+ * List customers with internal intelligence
  */
-router.get('/customers', async (req: Request, res: Response) => {
+router.get('/internal/customers', async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
@@ -190,15 +165,15 @@ router.get('/customers/:customerId', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/v1/customers/:customerId/segments
+ * GET /api/v1/internal/customers/:customerId/segments
  * Get customer segments
  */
 router.get(
-  '/customers/:customerId/segments',
+  '/internal/customers/:customerId/segments',
   async (req: Request, res: Response) => {
     try {
       const { customerId } = req.params;
-      const segments = await customerAggregator.getCustomerSegments(customerId);
+      const segments = await customerAggregator.getInternalSegments(customerId);
 
       res.json({
         success: true,
@@ -215,16 +190,16 @@ router.get(
 );
 
 /**
- * GET /api/v1/customers/:customerId/predictions
+ * GET /api/v1/internal/customers/:customerId/predictions
  * Get AI predictions for customer
  */
 router.get(
-  '/customers/:customerId/predictions',
+  '/internal/customers/:customerId/predictions',
   async (req: Request, res: Response) => {
     try {
       const { customerId } = req.params;
       const predictions =
-        await customerAggregator.getCustomerPredictions(customerId);
+        await customerAggregator.getInternalPredictions(customerId);
 
       res.json({
         success: true,
@@ -273,7 +248,7 @@ router.get('/customers/:customerId/tags', async (req: Request, res: Response) =>
 router.get('/segments', async (req: Request, res: Response) => {
   try {
     // Would fetch from segments service
-    const segments: CustomerSegment[] = [
+    const segments: InternalSegment[] = [
       {
         id: 'champions',
         name: 'Champions',
@@ -391,7 +366,7 @@ router.get('/segments/:segmentId', async (req: Request, res: Response) => {
  */
 router.get('/tags', async (req: Request, res: Response) => {
   try {
-    const tags: SmartTag[] = [
+    const tags: InternalSmartTag[] = [
       {
         id: 'high_spender',
         name: 'High Spender',

@@ -148,8 +148,8 @@ merchantApp.use((err: Error, _req: express.Request, res: express.Response, _next
 });
 
 // Start servers
-const INTERNAL_PORT = parseInt(process.env.PORT || '4100');
-const MERCHANT_PORT = parseInt(process.env.MERCHANT_PORT || '4101');
+const INTERNAL_PORT = parseInt(process.env.PORT || '4100', 10);
+const MERCHANT_PORT = parseInt(process.env.MERCHANT_PORT || '4101', 10);
 
 // Internal API server (Port 4100)
 const internalServer = http.createServer(internalApp);
@@ -194,61 +194,3 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 
 export { internalApp, merchantApp };
-
-  res.status(404).json({
-    success: false,
-    error: 'Not found',
-  });
-});
-
-// Error handler
-app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  logger.error('Unhandled error', {
-    error: err.message,
-    stack: env.NODE_ENV === 'development' ? err.stack : undefined,
-  });
-
-  res.status(500).json({
-    success: false,
-    error: 'Internal server error',
-  });
-});
-
-// Start server
-const PORT = env.PORT || 4100;
-
-const server = app.listen(PORT, '0.0.0.0', () => {
-  logger.info(`REZ Unified CRM Hub started`, {
-    port: PORT,
-    env: env.NODE_ENV,
-  });
-  logger.info('Available endpoints:', {
-    dashboard: `http://localhost:${PORT}/api/v1/dashboard/overview`,
-    customers: `http://localhost:${PORT}/api/v1/customers`,
-    segments: `http://localhost:${PORT}/api/v1/segments`,
-    tags: `http://localhost:${PORT}/api/v1/tags`,
-    inbox: `http://localhost:${PORT}/api/v1/inbox/messages`,
-    channels: `http://localhost:${PORT}/api/v1/inbox/channels`,
-  });
-});
-
-// Graceful shutdown
-const shutdown = async (signal: string) => {
-  logger.info(`Received ${signal}, shutting down gracefully...`);
-
-  server.close(() => {
-    logger.info('HTTP server closed');
-    process.exit(0);
-  });
-
-  // Force exit after 30s
-  setTimeout(() => {
-    logger.error('Forced shutdown after timeout');
-    process.exit(1);
-  }, 30000);
-};
-
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
-
-export default app;

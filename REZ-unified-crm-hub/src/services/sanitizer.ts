@@ -15,9 +15,23 @@ import type {
   MerchantTag,
   InternalSegment,
   MerchantSegment,
-  InternalOrderSummary,
   MerchantOrderSummary,
 } from '../types/index.js';
+
+// Internal order type for transformation
+interface InternalOrder {
+  id: string;
+  orderNumber: string;
+  storeName: string;
+  items: Array<{ productId: string; productName: string; quantity: number; price: number; imageUrl?: string }>;
+  subtotal: number;
+  tax: number;
+  discount: number;
+  total: number;
+  status: string;
+  paymentMethod?: string;
+  createdAt: Date;
+}
 
 /**
  * Transform InternalCustomer to MerchantCustomer
@@ -45,8 +59,8 @@ export function toMerchantCustomer(internal: InternalCustomer): MerchantCustomer
  */
 export function toMerchantCustomerDetail(
   internal: InternalCustomer,
-  orders?: InternalOrderSummary[],
-  reviews?: any[]
+  orders?: InternalOrder[],
+  reviews?: Record<string, any>[]
 ): MerchantCustomerDetail {
   return {
     id: internal.id,
@@ -96,12 +110,12 @@ export function toMerchantTag(internal: InternalSmartTag): MerchantTag {
 /**
  * Transform order to merchant-safe format
  */
-function toMerchantOrder(order: InternalOrderSummary): MerchantOrderSummary {
+function toMerchantOrder(order: InternalOrder): MerchantOrderSummary {
   return {
     id: order.id,
     orderNumber: order.orderNumber,
     storeName: order.storeName,
-    items: order.items.map(item => item.productName),
+    items: order.items.map((item) => item.productName),
     total: order.total,
     status: order.status,
     createdAt: new Date(order.createdAt),
