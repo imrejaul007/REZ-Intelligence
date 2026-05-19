@@ -1,0 +1,33 @@
+[submodule "REZ-ledger-service"]
+	path = REZ-ledger-service
+	url = https://github.com/imrejaul007/REZ-ledger-service.git
+[submodule "REZ-experimentation-engine"]
+	path = REZ-experimentation-engine
+	url = https://github.com/imrejaul007/REZ-experimentation-engine.git
+[submodule "REZ-creative-engine"]
+	path = REZ-creative-engine
+	url = https://github.com/imrejaul007/REZ-creative-engine.git
+[submodule "REZ-insights-service"]
+	path = REZ-insights-service
+	url = https://github.com/imrejaul007/REZ-insights-service.git
+[submodule "rez-unified-engine"]
+	path = rez-unified-engine
+	url = https://github.com/imrejaul007/rez-unified-engine.git
+[submodule "REZ-attribution-system"]
+	path = REZ-attribution-system
+	url = https://github.com/imrejaul007/REZ-attribution-system.git
+[submodule "REZ-recommendation-engine"]
+	path = REZ-recommendation-engine
+	url = https://github.com/imrejaul007/REZ-recommendation-engine.git
+[submodule "REZ-support-copilot"]
+	path = REZ-support-copilot
+	url = https://github.com/imrejaul007/REZ-support-copilot.git
+[submodule "rez-ai-platform"]
+	path = rez-ai-platform
+	url = https://github.com/imrejaul007/rez-ai-platform.git
+[submodule "rez-intent-graph"]
+	path = rez-intent-graph
+	url = https://github.com/imrejaul007/rez-intent-graph.git
+[submodule "REZ-load-tests"]
+	path = REZ-load-tests
+	url = https://github.com/imrejaul007/REZ-load-tests.git
