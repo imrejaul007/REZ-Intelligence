@@ -50,7 +50,7 @@ app.use(express.json());
 // =========================================================================
 
 const CONFIG = {
-  PORT: process.env.PORT || 4100,
+  PORT: parseInt(process.env.PORT || '4152', 10),
   INTELLIGENCE: {
     INTENT: process.env.REZ_INTENT_URL || 'http://localhost:4050',
     MEMORY: process.env.REZ_MEMORY_URL || 'http://localhost:4051',

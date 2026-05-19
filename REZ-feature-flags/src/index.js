@@ -10,8 +10,8 @@ const mongoose = require('mongoose');
 const app = express();
 app.use(express.json());
 
-const PORT = process.env.PORT || 4030;
-const MONGODB = process.env.MONGODB_URI || 'mongodb+srv://work_db_user:ZAFYAYH1zK0C74Ap@rez-intent-graph.a8ilqgi.mongodb.net/rez-feature-flags';
+const PORT = parseInt(process.env.PORT || '4030', 10);
+const MONGODB = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-feature-flags';
 
 // Feature Flag Schema
 const featureFlagSchema = new mongoose.Schema({

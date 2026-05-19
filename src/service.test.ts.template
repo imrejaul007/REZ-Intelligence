@@ -1,0 +1,221 @@
+/**
+ * Test Template for REZ Intelligence Services
+ *
+ * Copy this to your service's src folder and customize
+ */
+
+import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
+
+// ============================================================================
+// Mock Dependencies
+// ============================================================================
+
+class MockEventBus {
+  private events: Map<string, any[]> = new Map();
+
+  async publish(event: any): Promise<string> {
+    const id = `evt_${Date.now()}`;
+    event.id = id;
+    event.timestamp = new Date().toISOString();
+
+    const category = event.type.split('.')[0];
+    const existing = this.events.get(category) || [];
+    existing.push(event);
+    this.events.set(category, existing);
+
+    return id;
+  }
+
+  getEvents(category: string): any[] {
+    return this.events.get(category) || [];
+  }
+
+  clear(): void {
+    this.events.clear();
+  }
+}
+
+class MockDatabase {
+  private data: Map<string, any> = new Map();
+
+  async find(collection: string, query: any): Promise<any[]> {
+    return Array.from(this.data.values());
+  }
+
+  async findOne(collection: string, query: any): Promise<any | null> {
+    return this.data.get(JSON.stringify(query)) || null;
+  }
+
+  async insert(collection: string, doc: any): Promise<string> {
+    const id = `doc_${Date.now()}`;
+    this.data.set(collection + id, doc);
+    return id;
+  }
+
+  async update(collection: string, query: any, update: any): Promise<number> {
+    return 1;
+  }
+
+  async delete(collection: string, query: any): Promise<number> {
+    return 1;
+  }
+
+  clear(): void {
+    this.data.clear();
+  }
+}
+
+// ============================================================================
+// Test Suite Template
+// ============================================================================
+
+describe('SERVICE_NAME Tests', () => {
+
+  let eventBus: MockEventBus;
+  let db: MockDatabase;
+
+  beforeEach(() => {
+    eventBus = new MockEventBus();
+    db = new MockDatabase();
+  });
+
+  afterEach(() => {
+    eventBus.clear();
+    db.clear();
+  });
+
+  // ============================================
+  // Unit Tests
+  // ============================================
+
+  describe('Unit Tests', () => {
+
+    test('should initialize correctly', () => {
+      expect(eventBus).toBeDefined();
+      expect(db).toBeDefined();
+    });
+
+    test('should handle basic operations', () => {
+      const result = true;
+      expect(result).toBe(true);
+    });
+
+    test('should validate input', () => {
+      const validateInput = (input: any) => {
+        if (!input) return false;
+        return true;
+      };
+
+      expect(validateInput({ data: 'test' })).toBe(true);
+      expect(validateInput(null)).toBe(false);
+      expect(validateInput(undefined)).toBe(false);
+    });
+
+    test('should calculate metrics correctly', () => {
+      const calculateScore = (interactions: number, recency: number) => {
+        return (interactions * 0.6) + (recency * 0.4);
+      };
+
+      expect(calculateScore(10, 5)).toBe(8);
+      expect(calculateScore(0, 0)).toBe(0);
+      expect(calculateScore(100, 100)).toBe(100);
+    });
+  });
+
+  // ============================================
+  // Integration Tests
+  // ============================================
+
+  describe('Integration Tests', () => {
+
+    test('should emit event on action', async () => {
+      const action = async () => {
+        await eventBus.publish({
+          type: 'test.action',
+          data: { value: 42 }
+        });
+      };
+
+      await action();
+
+      const events = eventBus.getEvents('test');
+      expect(events.length).toBe(1);
+      expect(events[0].data.value).toBe(42);
+    });
+
+    test('should emit multiple events in sequence', async () => {
+      await eventBus.publish({ type: 'event.first', data: { order: 1 } });
+      await eventBus.publish({ type: 'event.second', data: { order: 2 } });
+      await eventBus.publish({ type: 'event.third', data: { order: 3 } });
+
+      const events = eventBus.getEvents('event');
+      expect(events.length).toBe(3);
+    });
+  });
+
+  // ============================================
+  // Error Handling Tests
+  // ============================================
+
+  describe('Error Handling', () => {
+
+    test('should handle missing data gracefully', () => {
+      const processData = (data: any) => {
+        if (!data) return null;
+        return data.value || 'default';
+      };
+
+      expect(processData(null)).toBe(null);
+      expect(processData({})).toBe('default');
+      expect(processData({ value: 'test' })).toBe('test');
+    });
+
+    test('should handle invalid input', () => {
+      const validateEmail = (email: string) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+      };
+
+      expect(validateEmail('test@example.com')).toBe(true);
+      expect(validateEmail('invalid')).toBe(false);
+      expect(validateEmail('')).toBe(false);
+    });
+  });
+
+  // ============================================
+  // Performance Tests
+  // ============================================
+
+  describe('Performance Tests', () => {
+
+    test('should process quickly', async () => {
+      const start = Date.now();
+
+      // Simulate work
+      for (let i = 0; i < 1000; i++) {
+        await eventBus.publish({ type: 'perf.test', data: { i } });
+      }
+
+      const elapsed = Date.now() - start;
+      expect(elapsed).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    test('should handle batch operations', async () => {
+      const batchSize = 100;
+      const start = Date.now();
+
+      for (let i = 0; i < batchSize; i++) {
+        await db.insert('test', { id: i, value: `test_${i}` });
+      }
+
+      const elapsed = Date.now() - start;
+      expect(elapsed).toBeLessThan(500);
+    });
+  });
+});
+
+// ============================================================================
+// Export for running
+// ============================================================================
+
+export { MockEventBus, MockDatabase };

@@ -13,7 +13,7 @@ if (!fs.existsSync(logsDir)) {
 }
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT || '4109', 10);
 
 // Middleware
 app.use(express.json());

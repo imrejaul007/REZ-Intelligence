@@ -21,7 +21,7 @@ import {
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 
 // Configuration
-const PORT = parseInt(process.env.PORT || '3000', 10);
+const PORT = parseInt(process.env.PORT || '4113', 10);
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // Initialize logger

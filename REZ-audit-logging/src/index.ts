@@ -11,7 +11,7 @@ import { errorHandler, notFoundHandler } from './middleware/error.middleware';
 dotenv.config();
 
 const app: Application = express();
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT || '4106', 10);
 
 app.use(cors());
 app.use(express.json());

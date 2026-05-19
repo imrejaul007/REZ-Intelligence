@@ -13,7 +13,7 @@ import logger from './utils/logger';
 dotenv.config();
 
 const app: Express = express();
-const PORT = process.env.PORT || 4059;
+const PORT = parseInt(process.env.PORT || '4143', 10);
 
 // Trust proxy for rate limiting
 app.set('trust proxy', 1);

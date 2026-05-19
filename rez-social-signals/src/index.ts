@@ -19,7 +19,7 @@ import {
 dotenv.config();
 
 const app: Express = express();
-const PORT = process.env.PORT || 4060;
+const PORT = parseInt(process.env.PORT || '4146', 10);
 
 // Database connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-social-signals';

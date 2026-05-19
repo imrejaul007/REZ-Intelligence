@@ -649,7 +649,7 @@ app.get('/api/stats', asyncHandler(async (req, res) => {
 
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 4060;
+const PORT = parseInt(process.env.PORT || '4145', 10);
 
 async function start() {
   try {

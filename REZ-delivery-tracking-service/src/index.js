@@ -12,7 +12,7 @@ import driverRoutes from './routes/driverRoutes.js';
 // Load environment variables
 dotenv.config();
 
-const PORT = process.env.PORT || 4060;
+const PORT = parseInt(process.env.PORT || '4144', 10);
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-delivery-tracking';
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';

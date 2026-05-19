@@ -296,7 +296,7 @@ const bootstrap = async () => {
 };
 
 // Start server
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT || '4111', 10);
 
 bootstrap().then(app => {
   app.listen(PORT, () => {

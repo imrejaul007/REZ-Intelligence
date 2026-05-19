@@ -13,7 +13,7 @@ import { errorMiddleware, notFoundMiddleware } from './middleware/error.middlewa
 import { authMiddleware } from './middleware/auth';
 
 const app: Express = express();
-const PORT = parseInt(process.env.PORT || '4086', 10);
+const PORT = parseInt(process.env.PORT || '4160', 10);
 
 // Middleware
 app.use(helmet());

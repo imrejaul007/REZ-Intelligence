@@ -16,7 +16,7 @@ import { checkSignalServicesHealth } from './services/signalAggregator.js';
 
 // Initialize Express app
 const app: Express = express();
-const PORT = process.env.PORT || 4060;
+const PORT = parseInt(process.env.PORT || '4060', 10);
 
 // Trust proxy for correct IP detection
 app.set('trust proxy', 1);

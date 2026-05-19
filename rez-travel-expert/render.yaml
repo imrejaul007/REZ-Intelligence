@@ -1,0 +1,21 @@
+# Render Blueprint - Travel Expert Agent
+services:
+  - type: web
+    name: rez-travel-expert
+    env: node
+    region: singapore
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3010
+      - key: MONGODB_URI
+        sync: false
+      - key: INTERNAL_SERVICE_TOKEN
+        generateValue: true
+      - key: REZ_CARE_URL
+        value: https://rez-care.onrender.com

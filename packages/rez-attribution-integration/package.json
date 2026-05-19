@@ -1,0 +1,25 @@
+{
+  "name": "@rez/attribution-integration",
+  "version": "1.0.0",
+  "description": "REZ Attribution Integration - Unified client for all attribution services",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest"
+  },
+  "dependencies": {},
+  "peerDependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0"
+  },
+  "keywords": [
+    "rez",
+    "attribution",
+    "analytics",
+    "marketing",
+    "dooh"
+  ]
+}

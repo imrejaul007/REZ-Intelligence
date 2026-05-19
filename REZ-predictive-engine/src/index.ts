@@ -19,7 +19,7 @@ dotenv.config();
 const app: Express = express();
 
 // Configuration
-const PORT = parseInt(process.env.PORT || '4059', 10);
+const PORT = parseInt(process.env.PORT || '4141', 10);
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-predictive-engine';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 

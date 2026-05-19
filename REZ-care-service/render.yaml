@@ -1,0 +1,38 @@
+# Render Blueprint for REZ Care Service
+# Deploy with: render blueprint create
+
+services:
+  # REZ Care Service
+  - type: web
+    name: rez-care-service
+    env: node
+    region: singapore
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4058
+      - key: MONGODB_URI
+        sync: false
+      - key: INTERNAL_SERVICE_TOKEN
+        generateValue: true
+      - key: SUPPORT_COPILOT_URL
+        value: https://rez-support-copilot.onrender.com
+      - key: MERCHANT_INTELLIGENCE_URL
+        value: https://rez-merchant-intelligence.onrender.com
+      - key: KB_SERVICE_URL
+        value: https://rez-knowledge-base.onrender.com
+      - key: WHATSAPP_BRIDGE_URL
+        value: https://rez-whatsapp-bridge.onrender.com
+      - key: NOTIFICATIONS_SERVICE_URL
+        value: https://rez-notifications.onrender.com
+
+# Optional: MongoDB Atlas (uncomment if using Atlas)
+# databases:
+#   - name: rez-care-db
+#     databaseName: rez-care
+#     plan: starter

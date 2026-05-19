@@ -802,7 +802,7 @@ app.use(errorHandler);
 // SERVER STARTUP
 // ============================================
 
-const PORT = process.env.PORT || 4040;
+const PORT = parseInt(process.env.PORT || '4156', 10);
 
 async function start(): Promise<void> {
   try {

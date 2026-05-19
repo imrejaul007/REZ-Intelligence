@@ -264,7 +264,7 @@ async function start(): Promise<void> {
     setupGracefulShutdown();
 
     // Start listening
-    const port = parseInt(process.env.PORT || '3000', 10);
+    const port = parseInt(process.env.PORT || '4112', 10);
     const host = process.env.HOST || '0.0.0.0';
 
     server = app.listen(port, host, () => {

@@ -13,7 +13,7 @@ import { z } from 'zod';
 // ============================================
 
 const config = {
-  port: parseInt(process.env.PORT || '4059', 10),
+  port: parseInt(process.env.PORT || '4142', 10),
   mongodbUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-signals',
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
   cacheTtl: parseInt(process.env.CACHE_TTL || '300', 10), // 5 minutes default

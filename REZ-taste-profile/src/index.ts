@@ -703,7 +703,7 @@ app.use(errorHandler);
 // SERVER STARTUP
 // ============================================
 
-const PORT = process.env.PORT || 4041;
+const PORT = parseInt(process.env.PORT || '4157', 10);
 
 async function start(): Promise<void> {
   try {

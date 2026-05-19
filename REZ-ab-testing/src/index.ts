@@ -108,13 +108,58 @@ const app = express();
 app.use(express.json());
 
 // =============================================================================
+// SECURITY - Authentication
+// =============================================================================
+
+import crypto from 'crypto';
+
+const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
+const TOKENS_JSON = process.env.INTERNAL_SERVICE_TOKENS_JSON || '{}';
+
+function timingSafeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  try {
+    return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  } catch {
+    return false;
+  }
+}
+
+function verifyToken(token: string): boolean {
+  if (INTERNAL_TOKEN && timingSafeCompare(token, INTERNAL_TOKEN)) return true;
+  try {
+    const tokens = JSON.parse(TOKENS_JSON);
+    return Object.values(tokens).some((t: string) => timingSafeCompare(token, t));
+  } catch {
+    return false;
+  }
+}
+
+function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction): void {
+  const token = req.headers['x-internal-token'] as string;
+
+  if (!token) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+
+  if (!verifyToken(token)) {
+    res.status(403).json({ error: 'Invalid token' });
+    return;
+  }
+
+  next();
+}
+
+// =============================================================================
 // EXPERIMENT MANAGEMENT
 // =============================================================================
 
 /**
  * Create experiment
+ * SECURITY: Added requireAuth
  */
-app.post('/api/experiments', asyncHandler(async (req: Request, res: Response) => {
+app.post('/api/experiments', requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const experimentId = uuidv4();
   const experiment = new Experiment({
     experimentId,
@@ -129,7 +174,7 @@ app.post('/api/experiments', asyncHandler(async (req: Request, res: Response) =>
 /**
  * Get experiment
  */
-app.get('/api/experiments/:experimentId', asyncHandler(async (req: Request, res: Response) => {
+app.get('/api/experiments/:experimentId', requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const experiment = await Experiment.findOne({ experimentId: req.params.experimentId });
   if (!experiment) {
     return res.status(404).json({ error: 'Experiment not found' });
@@ -140,7 +185,7 @@ app.get('/api/experiments/:experimentId', asyncHandler(async (req: Request, res:
 /**
  * List experiments
  */
-app.get('/api/experiments', asyncHandler(async (req: Request, res: Response) => {
+app.get('/api/experiments', requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { status, limit = '50' } = req.query;
   const filter = status ? { status } : {};
   const experiments = await Experiment.find(filter)
@@ -152,7 +197,7 @@ app.get('/api/experiments', asyncHandler(async (req: Request, res: Response) => 
 /**
  * Start experiment
  */
-app.post('/api/experiments/:experimentId/start', asyncHandler(async (req: Request, res: Response) => {
+app.post('/api/experiments/:experimentId/start', requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const experiment = await Experiment.findOneAndUpdate(
     { experimentId: req.params.experimentId },
     { status: ExperimentStatus.RUNNING, 'stats.startDate': new Date() },
@@ -170,7 +215,7 @@ app.post('/api/experiments/:experimentId/start', asyncHandler(async (req: Reques
 /**
  * Stop experiment
  */
-app.post('/api/experiments/:experimentId/stop', asyncHandler(async (req: Request, res: Response) => {
+app.post('/api/experiments/:experimentId/stop', requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const experiment = await Experiment.findOneAndUpdate(
     { experimentId: req.params.experimentId },
     { status: ExperimentStatus.COMPLETED, 'stats.endDate': new Date() },
@@ -195,7 +240,7 @@ app.post('/api/experiments/:experimentId/stop', asyncHandler(async (req: Request
 /**
  * Get variant for user
  */
-app.get('/api/experiments/:experimentId/variant', asyncHandler(async (req: Request, res: Response) => {
+app.get('/api/experiments/:experimentId/variant', requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { userId, appId } = req.query as { userId?: string; appId?: string };
   const experimentId = req.params.experimentId;
 
@@ -239,7 +284,7 @@ app.get('/api/experiments/:experimentId/variant', asyncHandler(async (req: Reque
 /**
  * Record conversion
  */
-app.post('/api/conversions', asyncHandler(async (req: Request, res: Response) => {
+app.post('/api/conversions', requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { assignmentId, value } = req.body as RecordConversionRequest;
 
   const assignment = await Assignment.findOneAndUpdate(
@@ -262,7 +307,7 @@ app.post('/api/conversions', asyncHandler(async (req: Request, res: Response) =>
 /**
  * Get user's experiments
  */
-app.get('/api/users/:userId/experiments', asyncHandler(async (req: Request, res: Response) => {
+app.get('/api/users/:userId/experiments', requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const assignments = await Assignment.find({ userId: req.params.userId })
     .populate('experimentId', 'name status variants');
   res.json({ success: true, assignments });
@@ -275,7 +320,7 @@ app.get('/api/users/:userId/experiments', asyncHandler(async (req: Request, res:
 /**
  * Get experiment results
  */
-app.get('/api/experiments/:experimentId/results', asyncHandler(async (req: Request, res: Response) => {
+app.get('/api/experiments/:experimentId/results', requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const experiment = await Experiment.findOne({ experimentId: req.params.experimentId });
   if (!experiment) {
     return res.status(404).json({ error: 'Experiment not found' });

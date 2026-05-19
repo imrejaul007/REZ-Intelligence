@@ -34,7 +34,7 @@ for (const env of REQUIRED_ENV) {
 
 // Configuration
 const CONFIG = {
-  PORT: parseInt(process.env.PORT) || 4052,
+  PORT: parseInt(process.env.PORT) || 4158,
   IDENTITY_GRAPH_URL: process.env.IDENTITY_GRAPH_URL,
   MEMORY_ENGINE_URL: process.env.MEMORY_ENGINE_URL,
   EVENT_PLATFORM_URL: process.env.EVENT_PLATFORM_URL,

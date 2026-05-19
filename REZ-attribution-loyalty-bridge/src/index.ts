@@ -34,7 +34,7 @@ config();
 // CONFIGURATION
 // ============================================
 
-const PORT = parseInt(process.env.PORT || '4040', 10);
+const PORT = parseInt(process.env.PORT || '4155', 10);
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-attribution-loyalty-bridge';
 const SERVICE_NAME = process.env.SERVICE_NAME || 'rez-attribution-loyalty-bridge';
 

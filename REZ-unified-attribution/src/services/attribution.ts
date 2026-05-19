@@ -244,6 +244,31 @@ function dataDrivenAttribution(
 
 /**
  * Get channel attribution summary for a merchant
+ *
+ * PERFORMANCE ISSUE: N+1 Query Problem (Lines 262-275)
+ * ------------------------------------------
+ * This function executes one query per conversion in the result set.
+ *
+ * Problem:
+ *   1. First query fetches all conversions for merchant/date range
+ *   2. Loop then calls calculateAttribution() for EACH conversion
+ *   3. Each calculateAttribution() executes additional DB queries
+ *   4. For 1000 conversions = 1 + 1000*3 = 3001 queries
+ *
+ * Fix Approach (Batch Refactoring):
+ *   Option A: Aggregate touchpoints in a single pipeline
+ *     - Use $lookup to join touchpoints with conversions
+ *     - Calculate attribution in MongoDB aggregation
+ *
+ *   Option B: Batch fetch touchpoints
+ *     - Collect all customerIds from conversions
+ *     - Single query: Touchpoint.find({ customerId: { $in: [...] } })
+ *     - Group touchpoints by customerId in memory
+ *     - Calculate attribution using grouped data
+ *
+ *   Option C: Pre-aggregate attribution data
+ *     - Store attribution results on conversion creation
+ *     - Query pre-computed results directly
  */
 export async function getChannelAttributionSummary(
   merchantId: string,
@@ -251,6 +276,44 @@ export async function getChannelAttributionSummary(
   endDate: Date,
   model: AttributionModel = AttributionModel.LAST_TOUCH
 ): Promise<ChannelAttribution[]> {
+  /**
+   * PERFORMANCE ISSUE: Unbounded Memory Loading (Lines 254-258)
+   * ------------------------------------------
+   * Conversion.find() loads ALL matching conversions into memory.
+   *
+   * Problem:
+   *   - Merchants with high volume can have millions of conversions
+   *   - All data loaded at once = potential OOM for large date ranges
+   *   - No pagination or streaming
+   *
+   * Fix Approach (Pagination Required):
+   *   Use cursor-based pagination with batch processing:
+   *
+   *   ```typescript
+   *   const batchSize = 1000;
+   *   let lastId = null;
+   *   let hasMore = true;
+   *
+   *   while (hasMore) {
+   *     const conversions = await Conversion.find({
+   *       merchantId,
+   *       timestamp: { $gte: startDate, $lte: endDate },
+   *       status: 'completed',
+   *       ...(lastId && { _id: { $gt: lastId } })
+   *     }).sort({ _id: 1 }).limit(batchSize);
+   *
+   *     if (conversions.length === 0) break;
+   *     lastId = conversions[conversions.length - 1]._id;
+   *
+   *     // Process batch...
+   *     hasMore = conversions.length === batchSize;
+   *   }
+   *   ```
+   *
+   * Alternative: Use MongoDB Aggregation with $out or $merge
+   *   - Process in database, write results to temp collection
+   *   - Stream results back
+   */
   const conversions = await Conversion.find({
     merchantId,
     timestamp: { $gte: startDate, $lte: endDate },

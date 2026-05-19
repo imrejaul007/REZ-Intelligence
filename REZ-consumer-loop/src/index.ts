@@ -27,7 +27,7 @@ import {
 import { generateMockRecommendations, determineFlywheelStage, calculateReorderWindow } from './helpers.js';
 
 const app = express();
-const PORT = process.env.PORT || 3005;
+const PORT = parseInt(process.env.PORT || '4154', 10);
 
 // Middleware
 app.use(cors());
