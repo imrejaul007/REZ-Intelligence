@@ -453,7 +453,7 @@ class DemandSignalAgent extends BaseAgent {
 
       demandSignals = { ...demandSignals, trends };
     } catch (err) {
-      logger.warn('DemandSignalAgent: Using simulated fallback', { error: (err as Error).message });
+      logger.warn('DemandSignalAgent: Using simulated fallback - DATABASE UNAVAILABLE', { error: (err as Error).message });
       demandSignals = {
         timestamp: new Date(),
         totalDemand: seededInt(500, 1000),
@@ -467,7 +467,8 @@ class DemandSignalAgent extends BaseAgent {
           { category: 'pizza', trend: 'stable', velocity: 0.5 }
         ],
         merchants: [],
-        source: 'simulated_fallback'
+        source: 'simulated_fallback',
+        warning: '⚠️ SIMULATED DATA - MongoDB unavailable. This is NOT real demand data.'
       };
     }
 
@@ -749,7 +750,7 @@ class AttributionAgent extends BaseAgent {
 
       attribution.source = 'real';
     } catch (err) {
-      logger.warn('AttributionAgent: Using simulated fallback', { error: (err as Error).message });
+      logger.warn('AttributionAgent: Using simulated fallback - DATABASE UNAVAILABLE', { error: (err as Error).message });
 
       attribution.conversions = seededInt(50, 150);
       attribution.touchpoints = {
@@ -773,6 +774,7 @@ class AttributionAgent extends BaseAgent {
       }
 
       attribution.source = 'simulated_fallback';
+      attribution.warning = '⚠️ SIMULATED DATA - MongoDB unavailable. This is NOT real attribution data.';
     }
 
     return attribution;
@@ -1166,7 +1168,7 @@ class RevenueAttributionAgent extends BaseAgent {
 
       revenue.source = 'real';
     } catch (err) {
-      logger.warn('RevenueAttributionAgent: Using simulated fallback', { error: (err as Error).message });
+      logger.warn('RevenueAttributionAgent: Using simulated fallback - DATABASE UNAVAILABLE', { error: (err as Error).message });
 
       revenue.gmv = {
         total: seededInt(500000, 1500000),
@@ -1197,6 +1199,7 @@ class RevenueAttributionAgent extends BaseAgent {
       }
 
       revenue.source = 'simulated_fallback';
+      revenue.warning = '⚠️ SIMULATED DATA - MongoDB unavailable. This is NOT real GMV/revenue data. DO NOT use for financial decisions.';
     }
 
     return revenue;
