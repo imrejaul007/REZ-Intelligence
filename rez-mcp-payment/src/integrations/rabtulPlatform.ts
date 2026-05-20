@@ -1,6 +1,6 @@
 /**
  * RABTUL Platform Integration
- * Service: rez-fraud-detection-service
+ * Service: rez-mcp-payment
  */
 
 const AUTH_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:4002';
@@ -69,7 +69,7 @@ export const events = {
   publish: async (type: string, category: string, data: any, context: Record<string, any> = {}) =>
     request(`${EVENT_BUS_URL}/api/events`, {
       method: 'POST',
-      body: JSON.stringify({ type, category, version: '1.0.0', source: 'rez-fraud-detection-service', data, ...context }),
+      body: JSON.stringify({ type, category, version: '1.0.0', source: 'rez-mcp-payment', data, ...context }),
     }),
 };
 

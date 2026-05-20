@@ -1,71 +1,76 @@
 /**
- * RABTUL Platform Integration for Cohort Service
- *
- * Uses RABTUL services for:
- * - Analytics (cohort tracking)
- * - Profile (user data)
- * - Notifications (alerts)
+ * RABTUL Platform Integration
+ * Service: rez-cohort-service
  */
 
 const AUTH_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:4002';
-const ANALYTICS_URL = process.env.ANALYTICS_SERVICE_URL || 'http://localhost:4016';
-const PROFILE_URL = process.env.PROFILE_SERVICE_URL || 'http://localhost:4013';
+const WALLET_URL = process.env.WALLET_SERVICE_URL || 'http://localhost:4004';
 const NOTIFICATION_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:4011';
+const ANALYTICS_URL = process.env.ANALYTICS_SERVICE_URL || 'http://localhost:4016';
+const EVENT_BUS_URL = process.env.EVENT_BUS_URL || 'http://localhost:4025';
+const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
-interface CohortData {
-  cohortId: string;
-  userIds: string[];
-  startDate: string;
-  endDate?: string;
+async function request(url: string, options: RequestInit = {}): Promise<any> {
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Internal-Token': INTERNAL_TOKEN,
+      ...options.headers,
+    },
+  });
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.json();
 }
 
-export const cohortIntegrations = {
-  /**
-   * Track cohort analytics
-   */
-  async trackCohort(cohort: CohortData): Promise<void> {
-    await fetch(`${ANALYTICS_URL}/api/events`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Internal-Token': process.env.INTERNAL_SERVICE_TOKEN || '',
-      },
-      body: JSON.stringify({
-        event: 'cohort_tracked',
-        properties: cohort,
-        timestamp: new Date().toISOString(),
-      }),
-    });
-  },
-
-  /**
-   * Get user profiles for cohort
-   */
-  async getUserProfiles(userIds: string[]): Promise<any[]> {
-    const profiles = await Promise.all(
-      userIds.map(async (userId) => {
-        const res = await fetch(`${PROFILE_URL}/api/profiles/${userId}`, {
-          headers: { 'X-Internal-Token': process.env.INTERNAL_SERVICE_TOKEN || '' },
-        });
-        return res.ok ? res.json() : null;
-      })
-    );
-    return profiles.filter(Boolean);
-  },
-
-  /**
-   * Send cohort notification
-   */
-  async notifyCohort(userIds: string[], title: string, message: string): Promise<void> {
-    await fetch(`${NOTIFICATION_URL}/api/notifications/send-bulk`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Internal-Token': process.env.INTERNAL_SERVICE_TOKEN || '',
-      },
-      body: JSON.stringify({ userIds, type: 'push', title, message }),
-    });
-  },
+export const auth = {
+  verify: async (token: string) => request(`${AUTH_URL}/api/auth/verify`, {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  }),
 };
 
-export default cohortIntegrations;
+export const wallet = {
+  addCoins: async (userId: string, amount: number, reason: string, metadata?: Record<string, any>) =>
+    request(`${WALLET_URL}/api/wallet/add`, {
+      method: 'POST',
+      body: JSON.stringify({ userId, amount, reason, metadata }),
+    }),
+  deductCoins: async (userId: string, amount: number, reason: string) =>
+    request(`${WALLET_URL}/api/wallet/deduct`, {
+      method: 'POST',
+      body: JSON.stringify({ userId, amount, reason }),
+    }),
+  getBalance: async (userId: string) => request(`${WALLET_URL}/api/wallet/balance/${userId}`),
+};
+
+export const notifications = {
+  send: async (params: { userId: string; title: string; message: string; type?: string; data?: any }) =>
+    request(`${NOTIFICATION_URL}/api/notifications/send`, {
+      method: 'POST',
+      body: JSON.stringify(params),
+    }),
+  sendBulk: async (notifications: any[]) =>
+    request(`${NOTIFICATION_URL}/api/notifications/send/batch`, {
+      method: 'POST',
+      body: JSON.stringify({ notifications }),
+    }),
+};
+
+export const analytics = {
+  track: async (event: string, properties: Record<string, any> = {}) =>
+    request(`${ANALYTICS_URL}/api/track`, {
+      method: 'POST',
+      body: JSON.stringify({ event, properties, timestamp: new Date().toISOString() }),
+    }),
+};
+
+export const events = {
+  publish: async (type: string, category: string, data: any, context: Record<string, any> = {}) =>
+    request(`${EVENT_BUS_URL}/api/events`, {
+      method: 'POST',
+      body: JSON.stringify({ type, category, version: '1.0.0', source: 'rez-cohort-service', data, ...context }),
+    }),
+};
+
+export default { auth, wallet, notifications, analytics, events };

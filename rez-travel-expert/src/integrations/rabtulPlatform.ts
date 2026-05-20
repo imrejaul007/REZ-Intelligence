@@ -1,6 +1,6 @@
 /**
  * RABTUL Platform Integration
- * Service: rez-fraud-detection-service
+ * Service: rez-travel-expert
  */
 
 const AUTH_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:4002';
@@ -23,6 +23,7 @@ async function request(url: string, options: RequestInit = {}): Promise<any> {
   return res.json();
 }
 
+// Auth Operations
 export const auth = {
   verify: async (token: string) => request(`${AUTH_URL}/api/auth/verify`, {
     method: 'POST',
@@ -30,6 +31,7 @@ export const auth = {
   }),
 };
 
+// Wallet Operations
 export const wallet = {
   addCoins: async (userId: string, amount: number, reason: string, metadata?: Record<string, any>) =>
     request(`${WALLET_URL}/api/wallet/add`, {
@@ -44,6 +46,7 @@ export const wallet = {
   getBalance: async (userId: string) => request(`${WALLET_URL}/api/wallet/balance/${userId}`),
 };
 
+// Notification Operations
 export const notifications = {
   send: async (params: { userId: string; title: string; message: string; type?: string; data?: any }) =>
     request(`${NOTIFICATION_URL}/api/notifications/send`, {
@@ -57,6 +60,7 @@ export const notifications = {
     }),
 };
 
+// Analytics Operations
 export const analytics = {
   track: async (event: string, properties: Record<string, any> = {}) =>
     request(`${ANALYTICS_URL}/api/track`, {
@@ -65,11 +69,12 @@ export const analytics = {
     }),
 };
 
+// Event Bus Operations
 export const events = {
   publish: async (type: string, category: string, data: any, context: Record<string, any> = {}) =>
     request(`${EVENT_BUS_URL}/api/events`, {
       method: 'POST',
-      body: JSON.stringify({ type, category, version: '1.0.0', source: 'rez-fraud-detection-service', data, ...context }),
+      body: JSON.stringify({ type, category, version: '1.0.0', source: 'rez-travel-expert', data, ...context }),
     }),
 };
 
