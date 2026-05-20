@@ -13,8 +13,12 @@ dotenv.config();
 // Configuration schema
 const configSchema = z.object({
   // Server
-  PORT: z.string().default('3015'),
+  PORT: z.string().default('3005'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+
+  // REZ Care Integration
+  REZ_CARE_URL: z.string().default('http://localhost:4058'),
+  INDUSTRY: z.string().default('hospitality'),
 
   // MongoDB
   MONGODB_URI: z.string().default('mongodb://localhost:27017'),

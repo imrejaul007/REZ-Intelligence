@@ -13,6 +13,22 @@ import { logger } from './utils/logger.js';
 import { errorHandler, notFoundHandler, requestLogger } from './middleware/validation.js';
 import hospitalityRoutes from './routes/hospitality.routes.js';
 import { getCoreBrainClient, CoreBrainClient } from './services/coreBrainIntegration.js';
+import { createRezCareIntegration } from '../rez-expert-base/src/services/rezCareIntegration.js';
+
+// ============================================
+// REZ CARE INTEGRATION
+// ============================================
+
+const rezCare = createRezCareIntegration();
+
+async function registerWithRezCare() {
+  const registered = await rezCare.register();
+  if (registered) {
+    logger.info('[REZ Care] Expert registered successfully');
+  } else {
+    logger.warn('[REZ Care] Expert registration failed - will retry on next startup');
+  }
+}
 
 // ============================================
 // APP INITIALIZATION
@@ -189,6 +205,9 @@ async function startServer() {
   try {
     const port = serviceConfig.port;
     const host = '0.0.0.0';
+
+    // Register with REZ Care (non-blocking)
+    registerWithRezCare().catch(() => {});
 
     // Initialize Core Brain client
     const coreBrain: CoreBrainClient = getCoreBrainClient();

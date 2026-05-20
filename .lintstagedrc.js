@@ -2,3 +2,7 @@ export default {
   '*.{js,jsx,ts,tsx}': ['eslint --fix', 'prettier --write'],
   '*.{json,css,md,html,yml,yaml}': ['prettier --write'],
 };
+module.exports = {
+  '*.{js,jsx,ts,tsx}': ['eslint --fix', 'prettier --write'],
+  '*.{json,css,md,html,yml,yaml}': ['prettier --write'],
+};
