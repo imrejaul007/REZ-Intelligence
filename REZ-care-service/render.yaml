@@ -1,38 +1,337 @@
 # Render Blueprint for REZ Care Service
 # Deploy with: render blueprint create
+# Updated: May 20, 2026
 
 services:
-  # REZ Care Service
+  # ============================================
+  # REZ CARE SERVICE (Central Hub)
+  # ============================================
   - type: web
     name: rez-care-service
     env: node
     region: singapore
     plan: starter
+    runtime: node
     buildCommand: npm install && npm run build
     startCommand: npm start
     healthCheckPath: /health
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 4058
+      # Database
       - key: MONGODB_URI
         sync: false
+      # Security
       - key: INTERNAL_SERVICE_TOKEN
         generateValue: true
+      # RABTUL Platform
+      - key: RABTUL_AUTH_URL
+        value: https://rez-auth-service.onrender.com
+      - key: RABTUL_PAYMENT_URL
+        value: https://rez-payment-service.onrender.com
+      - key: RABTUL_WALLET_URL
+        value: https://rez-wallet-service.onrender.com
+      - key: RABTUL_ORDER_URL
+        value: https://rez-order-service.onrender.com
+      - key: RABTUL_CATALOG_URL
+        value: https://rez-catalog-service.onrender.com
+      - key: RABTUL_PROFILE_URL
+        value: https://rez-profile-service.onrender.com
+      - key: NOTIFICATIONS_SERVICE_URL
+        value: https://rez-notifications.onrender.com
+      # REZ Intelligence
       - key: SUPPORT_COPILOT_URL
         value: https://rez-support-copilot.onrender.com
       - key: MERCHANT_INTELLIGENCE_URL
         value: https://rez-merchant-intelligence.onrender.com
-      - key: KB_SERVICE_URL
-        value: https://rez-knowledge-base.onrender.com
-      - key: WHATSAPP_BRIDGE_URL
-        value: https://rez-whatsapp-bridge.onrender.com
-      - key: NOTIFICATIONS_SERVICE_URL
-        value: https://rez-notifications.onrender.com
+      - key: CHURN_PREDICTOR_URL
+        value: https://rez-churn-predictor.onrender.com
+      - key: LTV_URL
+        value: https://rez-ltv-attribution.onrender.com
+      - key: SENTIMENT_URL
+        value: https://rez-sentiment-analysis.onrender.com
+      - key: INTENT_URL
+        value: https://rez-intent-predictor.onrender.com
+      # REZ Media
+      - key: CAMPAIGN_HUB_URL
+        value: https://rez-campaign-hub.onrender.com
+      - key: LOYALTY_URL
+        value: https://rez-loyalty.onrender.com
+      - key: KARMA_URL
+        value: https://rez-karma.onrender.com
+      - key: ATTRIBUTION_URL
+        value: https://rez-attribution-hub.onrender.com
+      # WhatsApp
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_BUSINESS_ACCOUNT_ID
+        sync: false
+      - key: WHATSAPP_API_TOKEN
+        sync: false
+      - key: WHATSAPP_WEBHOOK_VERIFY_TOKEN
+        generateValue: true
+      # Email
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: EMAIL_FROM
+        value: "support@rez.money"
+      # Redis (Optional)
+      - key: REDIS_URL
+        sync: false
 
-# Optional: MongoDB Atlas (uncomment if using Atlas)
-# databases:
-#   - name: rez-care-db
-#     databaseName: rez-care
-#     plan: starter
+  # ============================================
+  # REZ SUPPORT COPILOT (AI Brain)
+  # ============================================
+  - type: web
+    name: rez-support-copilot
+    env: node
+    region: singapore
+    plan: starter
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4033
+      - key: MONGODB_URI
+        sync: false
+      - key: REZ_CARE_URL
+        value: https://rez-care-service.onrender.com
+      - key: INTERNAL_SERVICE_TOKEN
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false
+
+  # ============================================
+  # EXPERT SERVICES (8 Industry Experts)
+  # ============================================
+  - type: web
+    name: rez-hospitality-expert
+    env: node
+    region: singapore
+    plan: free
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3005
+      - key: INDUSTRY
+        value: hospitality
+      - key: REZ_CARE_URL
+        value: https://rez-care-service.onrender.com
+      - key: MONGODB_URI
+        sync: false
+      - key: INTERNAL_SERVICE_TOKEN
+        generateValue: true
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+  - type: web
+    name: rez-salon-expert
+    env: node
+    region: singapore
+    plan: free
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3006
+      - key: INDUSTRY
+        value: salon
+      - key: REZ_CARE_URL
+        value: https://rez-care-service.onrender.com
+      - key: MONGODB_URI
+        sync: false
+      - key: INTERNAL_SERVICE_TOKEN
+        generateValue: true
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+  - type: web
+    name: rez-fitness-expert
+    env: node
+    region: singapore
+    plan: free
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3007
+      - key: INDUSTRY
+        value: fitness
+      - key: REZ_CARE_URL
+        value: https://rez-care-service.onrender.com
+      - key: MONGODB_URI
+        sync: false
+      - key: INTERNAL_SERVICE_TOKEN
+        generateValue: true
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+  - type: web
+    name: rez-health-expert
+    env: node
+    region: singapore
+    plan: free
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3008
+      - key: INDUSTRY
+        value: health
+      - key: REZ_CARE_URL
+        value: https://rez-care-service.onrender.com
+      - key: MONGODB_URI
+        sync: false
+      - key: INTERNAL_SERVICE_TOKEN
+        generateValue: true
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+  - type: web
+    name: rez-education-expert
+    env: node
+    region: singapore
+    plan: free
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3009
+      - key: INDUSTRY
+        value: education
+      - key: REZ_CARE_URL
+        value: https://rez-care-service.onrender.com
+      - key: MONGODB_URI
+        sync: false
+      - key: INTERNAL_SERVICE_TOKEN
+        generateValue: true
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+  - type: web
+    name: rez-travel-expert
+    env: node
+    region: singapore
+    plan: free
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3010
+      - key: INDUSTRY
+        value: travel
+      - key: REZ_CARE_URL
+        value: https://rez-care-service.onrender.com
+      - key: MONGODB_URI
+        sync: false
+      - key: INTERNAL_SERVICE_TOKEN
+        generateValue: true
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+  - type: web
+    name: rez-retail-expert
+    env: node
+    region: singapore
+    plan: free
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3011
+      - key: INDUSTRY
+        value: retail
+      - key: REZ_CARE_URL
+        value: https://rez-care-service.onrender.com
+      - key: MONGODB_URI
+        sync: false
+      - key: INTERNAL_SERVICE_TOKEN
+        generateValue: true
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+  - type: web
+    name: rez-culinary-expert
+    env: node
+    region: singapore
+    plan: free
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3012
+      - key: INDUSTRY
+        value: culinary
+      - key: REZ_CARE_URL
+        value: https://rez-care-service.onrender.com
+      - key: MONGODB_URI
+        sync: false
+      - key: INTERNAL_SERVICE_TOKEN
+        generateValue: true
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+# ============================================
+# DATABASE (MongoDB Atlas recommended)
+# ============================================
+databases:
+  - name: rez-care-db
+    databaseName: rez_care
+    plan: starter
+    ipAllowList:
+      - 0.0.0.0/0
