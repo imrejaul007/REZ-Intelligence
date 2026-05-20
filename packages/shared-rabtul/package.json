@@ -1,0 +1,37 @@
+{
+  "name": "@rez/shared-rabtul",
+  "version": "1.0.0",
+  "description": "Shared RABTUL integration package for REZ-Intelligence services",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@types/node": "^20.10.0"
+  },
+  "peerDependencies": {},
+  "keywords": [
+    "rez",
+    "rabtul",
+    "integration",
+    "auth",
+    "wallet",
+    "payment",
+    "notifications"
+  ],
+  "author": "REZ Team",
+  "license": "MIT"
+}

@@ -1,369 +1,721 @@
 /**
- * REZ-Intelligence RABTUL Integration
+ * REZ Intelligence - RABTUL Platform Integration
  *
- * Shared integration module for connecting to RABTUL platform services.
- * All REZ-Intelligence services should use this module for:
- * - Authentication (rez-auth-service)
- * - Payments (rez-payment-service)
- * - Wallet (rez-wallet-service)
- * - Notifications (rez-notifications-service)
+ * Canonical integration module for connecting REZ-Intelligence services
+ * to RABTUL platform services (Auth, Payment, Wallet, Notifications, etc.)
+ *
+ * USAGE:
+ * ```typescript
+ * import { createRABTULIntegration } from '@rez/rabtul-integration';
+ *
+ * const rabtul = createRABTULIntegration({
+ *   serviceName: 'my-service',
+ *   internalToken: process.env.INTERNAL_SERVICE_TOKEN
+ * });
+ *
+ * // Authenticate
+ * const user = await rabtul.auth.verify(token);
+ *
+ * // Send notification
+ * await rabtul.notifications.send({ userId, type: 'push', message });
+ *
+ * // Add coins to wallet
+ * await rabtul.wallet.add(userId, 100, 'reward');
+ * ```
  */
 
-export const RABTUL_ENDPOINTS = {
-  // Core RABTUL Services (as defined in RABTUL-Technologies/RAP.md)
-  auth: process.env.RABTUL_AUTH_URL || process.env.AUTH_SERVICE_URL || 'http://localhost:4002',
-  payment: process.env.RABTUL_PAYMENT_URL || process.env.PAYMENT_SERVICE_URL || 'http://localhost:4001',
-  wallet: process.env.RABTUL_WALLET_URL || process.env.WALLET_SERVICE_URL || 'http://localhost:4004',
-  notifications: process.env.RABTUL_NOTIFICATIONS_URL || process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:4011',
-  order: process.env.RABTUL_ORDER_URL || process.env.ORDER_SERVICE_URL || 'http://localhost:4006',
-  catalog: process.env.RABTUL_CATALOG_URL || process.env.CATALOG_SERVICE_URL || 'http://localhost:4007',
-  profile: process.env.RABTUL_PROFILE_URL || process.env.PROFILE_SERVICE_URL || 'http://localhost:4013',
-} as const;
+import axios, { AxiosInstance } from 'axios';
 
-export const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
+// ============================================================================
+// Configuration Types
+// ============================================================================
 
-/**
- * Headers for service-to-service communication
- */
-export function getServiceHeaders(): Record<string, string> {
-  return {
-    'Content-Type': 'application/json',
-    'X-Internal-Token': INTERNAL_TOKEN,
-  };
+export interface RABTULConfig {
+  serviceName: string;
+  internalToken?: string;
+  authUrl?: string;
+  paymentUrl?: string;
+  walletUrl?: string;
+  notificationUrl?: string;
+  orderUrl?: string;
+  catalogUrl?: string;
+  profileUrl?: string;
+  eventBusUrl?: string;
+  timeout?: number;
 }
 
-/**
- * Base fetch wrapper for RABTUL services
- */
-export async function rabtulFetch<T = unknown>(
-  service: keyof typeof RABTUL_ENDPOINTS,
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const url = `${RABTUL_ENDPOINTS[service]}${path}`;
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...getServiceHeaders(),
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`RABTUL ${service} error: ${response.status} ${response.statusText}`);
-  }
-
-  return response.json();
-}
-
-// ============================================
-// Auth Service Integration
-// ============================================
-
-export interface AuthVerifyResponse {
-  valid: boolean;
-  userId?: string;
-  sessionId?: string;
-  channel?: string;
-  email?: string;
-  phone?: string;
-}
-
-export const authService = {
-  /**
-   * Verify a JWT token via RABTUL Auth Service
-   */
-  async verify(token: string): Promise<AuthVerifyResponse> {
-    try {
-      return await rabtulFetch<AuthVerifyResponse>('auth', '/api/auth/verify', {
-        method: 'POST',
-        body: JSON.stringify({ token }),
-      });
-    } catch (error) {
-      console.error('[RABTUL Auth] Verification failed:', error);
-      return { valid: false };
-    }
-  },
-
-  /**
-   * Generate a service-to-service token
-   */
-  async generateServiceToken(serviceId: string, serviceSecret: string): Promise<string> {
-    const response = await rabtulFetch<{ token: string }>('auth', '/api/auth/service-token', {
-      method: 'POST',
-      body: JSON.stringify({ serviceId, serviceSecret }),
-    });
-    return response.token;
-  },
-
-  /**
-   * Send OTP for authentication
-   */
-  async sendOTP(phone: string, channel: 'sms' | 'whatsapp' = 'sms'): Promise<{ success: boolean }> {
-    return rabtulFetch('auth', '/api/auth/otp/send', {
-      method: 'POST',
-      body: JSON.stringify({ phone, channel }),
-    });
-  },
-
-  /**
-   * Verify OTP
-   */
-  async verifyOTP(phone: string, otp: string): Promise<{ success: boolean; token?: string }> {
-    return rabtulFetch('auth', '/api/auth/otp/verify', {
-      method: 'POST',
-      body: JSON.stringify({ phone, otp }),
-    });
-  },
+export const DEFAULT_CONFIG: Partial<RABTULConfig> = {
+  timeout: 10000,
+  authUrl: process.env.AUTH_SERVICE_URL || 'https://rez-auth-service.onrender.com',
+  paymentUrl: process.env.PAYMENT_SERVICE_URL || 'https://rez-payment-service.onrender.com',
+  walletUrl: process.env.WALLET_SERVICE_URL || 'https://rez-wallet-service-36vo.onrender.com',
+  notificationUrl: process.env.NOTIFICATION_SERVICE_URL || 'https://rez-notifications-service.onrender.com',
+  orderUrl: process.env.ORDER_SERVICE_URL || 'http://localhost:4006',
+  catalogUrl: process.env.CATALOG_SERVICE_URL || 'http://localhost:4007',
+  profileUrl: process.env.PROFILE_SERVICE_URL || 'http://localhost:4013',
+  eventBusUrl: process.env.EVENT_BUS_URL || 'http://localhost:4025',
+  internalToken: process.env.INTERNAL_SERVICE_TOKEN || '',
 };
 
-// ============================================
-// Payment Service Integration
-// ============================================
+// ============================================================================
+// API Client Factory
+// ============================================================================
 
-export interface PaymentRequest {
-  orderId: string;
-  amount: number;
-  paymentMethod: 'upi' | 'card' | 'wallet' | 'netbanking' | 'cod';
-  purpose?: string;
-  userId?: string;
-  metadata?: Record<string, unknown>;
+function createApiClient(baseURL: string, internalToken?: string): AxiosInstance {
+  return axios.create({
+    baseURL,
+    timeout: DEFAULT_CONFIG.timeout,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Internal-Token': internalToken || DEFAULT_CONFIG.internalToken || '',
+      'X-Service-Name': 'rez-intelligence',
+    },
+  });
 }
 
-export interface PaymentResponse {
+// ============================================================================
+// Auth Service
+// ============================================================================
+
+export interface AuthUser {
+  id: string;
+  email?: string;
+  phone?: string;
+  role?: string;
+  name?: string;
+}
+
+export interface AuthSession {
+  token: string;
+  refreshToken?: string;
+  expiresAt?: string;
+  user: AuthUser;
+}
+
+export const createAuthService = (config: RABTULConfig) => {
+  const client = createApiClient(config.authUrl || DEFAULT_CONFIG.authUrl!, config.internalToken);
+
+  return {
+    /**
+     * Verify JWT token and get user info
+     */
+    async verify(token: string): Promise<AuthUser | null> {
+      try {
+        const res = await client.post<{ success: boolean; user?: AuthUser }>('/api/auth/verify', { token });
+        return res.data.success ? res.data.user || null : null;
+      } catch {
+        return null;
+      }
+    },
+
+    /**
+     * Send OTP to phone number
+     */
+    async sendOTP(phone: string, channel: 'sms' | 'whatsapp' = 'sms'): Promise<boolean> {
+      try {
+        const res = await client.post<{ success: boolean }>('/api/auth/send-otp', { phone, channel });
+        return res.data.success ?? false;
+      } catch {
+        return false;
+      }
+    },
+
+    /**
+     * Verify OTP code
+     */
+    async verifyOTP(phone: string, otp: string): Promise<AuthSession | null> {
+      try {
+        const res = await client.post<{ success: boolean; token?: string; user?: AuthUser }>('/api/auth/verify-otp', { phone, otp });
+        if (res.data.success && res.data.token) {
+          return {
+            token: res.data.token,
+            user: res.data.user || { id: phone },
+          };
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    },
+
+    /**
+     * Refresh access token
+     */
+    async refresh(refreshToken: string): Promise<AuthSession | null> {
+      try {
+        const res = await client.post<{ success: boolean; token?: string; user?: AuthUser }>('/api/auth/refresh', { refreshToken });
+        if (res.data.success && res.data.token) {
+          return {
+            token: res.data.token,
+            refreshToken,
+            user: res.data.user || {},
+          };
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    },
+
+    /**
+     * Logout / invalidate token
+     */
+    async logout(token: string): Promise<boolean> {
+      try {
+        await client.post('/api/auth/logout', { token });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+
+    /**
+     * Validate internal service token
+     */
+    async validateInternalToken(token: string): Promise<boolean> {
+      try {
+        const res = await client.get<{ valid: boolean }>('/api/auth/internal/validate', {
+          headers: { 'X-Internal-Token': token },
+        });
+        return res.data.valid ?? false;
+      } catch {
+        return false;
+      }
+    },
+  };
+};
+
+// ============================================================================
+// Payment Service
+// ============================================================================
+
+export interface PaymentRequest {
+  userId: string;
+  amount: number;
+  currency?: string;
+  description: string;
+  metadata?: Record<string, string>;
+}
+
+export interface PaymentResult {
   paymentId: string;
   status: 'pending' | 'completed' | 'failed';
   amount: number;
   gatewayUrl?: string;
 }
 
-export const paymentService = {
-  /**
-   * Initiate a payment
-   */
-  async initiate(request: PaymentRequest): Promise<PaymentResponse> {
-    return rabtulFetch('payment', '/api/payments/initiate', {
-      method: 'POST',
-      body: JSON.stringify(request),
-    });
-  },
+export const createPaymentService = (config: RABTULConfig) => {
+  const client = createApiClient(config.paymentUrl || DEFAULT_CONFIG.paymentUrl!, config.internalToken);
 
-  /**
-   * Get payment status
-   */
-  async getStatus(paymentId: string): Promise<PaymentResponse> {
-    return rabtulFetch('payment', `/api/payments/${paymentId}/status`);
-  },
+  return {
+    /**
+     * Create a new payment order
+     */
+    async createOrder(request: PaymentRequest): Promise<PaymentResult | null> {
+      try {
+        const res = await client.post<{ paymentId: string; status: string }>('/api/payments/create', {
+          userId: request.userId,
+          amount: request.amount,
+          description: request.description,
+          metadata: { source: config.serviceName, ...request.metadata },
+        });
+        return {
+          paymentId: res.data.paymentId,
+          status: res.data.status as 'pending' | 'completed' | 'failed',
+          amount: request.amount,
+        };
+      } catch {
+        return null;
+      }
+    },
 
-  /**
-   * Refund a payment
-   */
-  async refund(paymentId: string, amount?: number): Promise<{ success: boolean }> {
-    return rabtulFetch('payment', `/api/payments/${paymentId}/refund`, {
-      method: 'POST',
-      body: JSON.stringify({ amount }),
-    });
-  },
+    /**
+     * Get payment status
+     */
+    async getStatus(paymentId: string): Promise<PaymentResult | null> {
+      try {
+        const res = await client.get<{ paymentId: string; status: string; amount: number }>(`/api/payments/${paymentId}`);
+        return {
+          paymentId: res.data.paymentId,
+          status: res.data.status as 'pending' | 'completed' | 'failed',
+          amount: res.data.amount,
+        };
+      } catch {
+        return null;
+      }
+    },
 
-  /**
-   * Verify webhook signature
-   */
-  async verifyWebhook(payload: string, signature: string): Promise<boolean> {
-    const response = await rabtulFetch<{ valid: boolean }>('payment', '/api/webhooks/verify', {
-      method: 'POST',
-      body: JSON.stringify({ payload, signature }),
-    });
-    return response.valid;
-  },
+    /**
+     * Refund a payment
+     */
+    async refund(paymentId: string, amount?: number): Promise<boolean> {
+      try {
+        await client.post(`/api/payments/${paymentId}/refund`, { amount });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+
+    /**
+     * Verify webhook signature
+     */
+    async verifyWebhook(payload: string, signature: string): Promise<boolean> {
+      try {
+        const res = await client.post<{ valid: boolean }>('/api/webhooks/verify', { payload, signature });
+        return res.data.valid ?? false;
+      } catch {
+        return false;
+      }
+    },
+  };
 };
 
-// ============================================
-// Wallet Service Integration
-// ============================================
+// ============================================================================
+// Wallet Service
+// ============================================================================
 
-export interface CoinRequest {
+export interface WalletBalance {
   userId: string;
-  amount: number;
-  reason: string;
-  source?: string;
-  metadata?: Record<string, unknown>;
+  coins: number;
+  currency: string;
 }
 
-export const walletService = {
-  /**
-   * Add coins to user wallet
-   */
-  async addCoins(request: CoinRequest): Promise<{ success: boolean; balance: number }> {
-    return rabtulFetch('wallet', '/api/wallet/coins/add', {
-      method: 'POST',
-      body: JSON.stringify(request),
-    });
-  },
+export interface WalletTransaction {
+  transactionId: string;
+  type: 'credit' | 'debit';
+  amount: number;
+  reason: string;
+  timestamp: string;
+}
 
-  /**
-   * Deduct coins from user wallet
-   */
-  async deductCoins(request: CoinRequest): Promise<{ success: boolean; balance: number }> {
-    return rabtulFetch('wallet', '/api/wallet/coins/deduct', {
-      method: 'POST',
-      body: JSON.stringify(request),
-    });
-  },
+export const createWalletService = (config: RABTULConfig) => {
+  const client = createApiClient(config.walletUrl || DEFAULT_CONFIG.walletUrl!, config.internalToken);
 
-  /**
-   * Get user wallet balance
-   */
-  async getBalance(userId: string): Promise<{ balance: number; lifetimeEarnings: number }> {
-    return rabtulFetch('wallet', `/api/wallet/${userId}/balance`);
-  },
+  return {
+    /**
+     * Get user wallet balance
+     */
+    async getBalance(userId: string): Promise<WalletBalance | null> {
+      try {
+        const res = await client.get<{ userId: string; balance: number; currency?: string }>(`/api/wallet/${userId}/balance`);
+        return {
+          userId: res.data.userId,
+          coins: res.data.balance || 0,
+          currency: res.data.currency || 'REZ',
+        };
+      } catch {
+        return null;
+      }
+    },
 
-  /**
-   * Get transaction history
-   */
-  async getTransactions(userId: string, limit = 50): Promise<{ transactions: unknown[] }> {
-    return rabtulFetch('wallet', `/api/wallet/${userId}/transactions?limit=${limit}`);
-  },
+    /**
+     * Add coins to user wallet
+     */
+    async addCoins(userId: string, amount: number, reason: string, metadata?: Record<string, string>): Promise<boolean> {
+      try {
+        await client.post('/api/wallet/add', {
+          userId,
+          amount,
+          reason,
+          source: config.serviceName,
+          metadata,
+        });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+
+    /**
+     * Deduct coins from user wallet
+     */
+    async deductCoins(userId: string, amount: number, reason: string, metadata?: Record<string, string>): Promise<boolean> {
+      try {
+        await client.post('/api/wallet/deduct', {
+          userId,
+          amount,
+          reason,
+          source: config.serviceName,
+          metadata,
+        });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+
+    /**
+     * Get transaction history
+     */
+    async getTransactions(userId: string, limit = 20): Promise<WalletTransaction[]> {
+      try {
+        const res = await client.get<{ transactions: WalletTransaction[] }>(`/api/wallet/${userId}/transactions?limit=${limit}`);
+        return res.data.transactions || [];
+      } catch {
+        return [];
+      }
+    },
+  };
 };
 
-// ============================================
-// Notification Service Integration
-// ============================================
+// ============================================================================
+// Notification Service
+// ============================================================================
 
 export interface NotificationRequest {
   userId?: string;
   phone?: string;
   email?: string;
-  channel: 'push' | 'sms' | 'email' | 'whatsapp';
+  channel: 'push' | 'email' | 'sms' | 'whatsapp';
   type: string;
-  title: string;
+  title?: string;
   message: string;
-  data?: Record<string, unknown>;
+  data?: Record<string, string>;
 }
 
-export const notificationService = {
-  /**
-   * Send a notification
-   */
-  async send(request: NotificationRequest): Promise<{ success: boolean; notificationId: string }> {
-    return rabtulFetch('notifications', '/api/notifications/send', {
-      method: 'POST',
-      body: JSON.stringify(request),
-    });
-  },
+export interface NotificationResult {
+  notificationId: string;
+  status: string;
+}
 
-  /**
-   * Send batch notifications
-   */
-  async sendBatch(requests: NotificationRequest[]): Promise<{ success: boolean; sent: number }> {
-    return rabtulFetch('notifications', '/api/notifications/send/batch', {
-      method: 'POST',
-      body: JSON.stringify({ notifications: requests }),
-    });
-  },
+export const createNotificationService = (config: RABTULConfig) => {
+  const client = createApiClient(config.notificationUrl || DEFAULT_CONFIG.notificationUrl!, config.internalToken);
 
-  /**
-   * Get notification history
-   */
-  async getHistory(userId: string, limit = 50): Promise<{ notifications: unknown[] }> {
-    return rabtulFetch('notifications', `/api/notifications/${userId}/history?limit=${limit}`);
-  },
+  return {
+    /**
+     * Send a notification
+     */
+    async send(request: NotificationRequest): Promise<NotificationResult | null> {
+      try {
+        const res = await client.post<{ notificationId: string; status: string }>('/api/notifications/send', {
+          ...request,
+          source: config.serviceName,
+        });
+        return {
+          notificationId: res.data.notificationId,
+          status: res.data.status,
+        };
+      } catch {
+        return null;
+      }
+    },
+
+    /**
+     * Send bulk notifications
+     */
+    async sendBulk(requests: NotificationRequest[]): Promise<{ sent: number; failed: number }> {
+      try {
+        const res = await client.post<{ sent: number; failed: number }>('/api/notifications/send/batch', {
+          notifications: requests.map((r) => ({ ...r, source: config.serviceName })),
+        });
+        return { sent: res.data.sent || 0, failed: res.data.failed || 0 };
+      } catch {
+        return { sent: 0, failed: requests.length };
+      }
+    },
+
+    /**
+     * Get notification history
+     */
+    async getHistory(userId: string, limit = 50): Promise<unknown[]> {
+      try {
+        const res = await client.get<{ notifications: unknown[] }>(`/api/notifications/${userId}/history?limit=${limit}`);
+        return res.data.notifications || [];
+      } catch {
+        return [];
+      }
+    },
+  };
 };
 
-// ============================================
-// Order Service Integration
-// ============================================
+// ============================================================================
+// Order Service
+// ============================================================================
 
 export interface OrderRequest {
   userId: string;
-  merchantId: string;
   items: { productId: string; quantity: number; price: number }[];
   totalAmount: number;
   paymentMethod: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, string>;
 }
 
-export const orderService = {
-  /**
-   * Create a new order
-   */
-  async create(request: OrderRequest): Promise<{ orderId: string; status: string }> {
-    return rabtulFetch('order', '/api/orders/create', {
-      method: 'POST',
-      body: JSON.stringify(request),
-    });
-  },
+export interface OrderResult {
+  orderId: string;
+  status: string;
+  totalAmount: number;
+}
 
-  /**
-   * Get order status
-   */
-  async getStatus(orderId: string): Promise<{ orderId: string; status: string }> {
-    return rabtulFetch('order', `/api/orders/${orderId}/status`);
-  },
+export const createOrderService = (config: RABTULConfig) => {
+  const client = createApiClient(config.orderUrl || DEFAULT_CONFIG.orderUrl!, config.internalToken);
 
-  /**
-   * Update order status
-   */
-  async updateStatus(orderId: string, status: string): Promise<{ success: boolean }> {
-    return rabtulFetch('order', `/api/orders/${orderId}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    });
-  },
+  return {
+    /**
+     * Create a new order
+     */
+    async create(request: OrderRequest): Promise<OrderResult | null> {
+      try {
+        const res = await client.post<{ orderId: string; status: string; totalAmount: number }>('/api/orders/create', {
+          ...request,
+          source: config.serviceName,
+        });
+        return {
+          orderId: res.data.orderId,
+          status: res.data.status,
+          totalAmount: res.data.totalAmount,
+        };
+      } catch {
+        return null;
+      }
+    },
+
+    /**
+     * Get order status
+     */
+    async getStatus(orderId: string): Promise<OrderResult | null> {
+      try {
+        const res = await client.get<{ orderId: string; status: string; totalAmount: number }>(`/api/orders/${orderId}/status`);
+        return {
+          orderId: res.data.orderId,
+          status: res.data.status,
+          totalAmount: res.data.totalAmount,
+        };
+      } catch {
+        return null;
+      }
+    },
+
+    /**
+     * Update order status
+     */
+    async updateStatus(orderId: string, status: string): Promise<boolean> {
+      try {
+        await client.patch(`/api/orders/${orderId}/status`, { status });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+  };
 };
 
-// ============================================
-// Catalog Service Integration
-// ============================================
+// ============================================================================
+// Profile Service
+// ============================================================================
 
-export const catalogService = {
-  /**
-   * Get product by ID
-   */
-  async getProduct(productId: string): Promise<unknown> {
-    return rabtulFetch('catalog', `/api/products/${productId}`);
-  },
+export interface UserProfile {
+  userId: string;
+  email?: string;
+  phone?: string;
+  name?: string;
+  avatar?: string;
+  preferences?: Record<string, unknown>;
+}
 
-  /**
-   * Search products
-   */
-  async searchProducts(query: string, limit = 20): Promise<{ products: unknown[] }> {
-    return rabtulFetch('catalog', `/api/products/search?q=${encodeURIComponent(query)}&limit=${limit}`);
-  },
+export const createProfileService = (config: RABTULConfig) => {
+  const client = createApiClient(config.profileUrl || DEFAULT_CONFIG.profileUrl!, config.internalToken);
 
-  /**
-   * Get merchant products
-   */
-  async getMerchantProducts(merchantId: string): Promise<{ products: unknown[] }> {
-    return rabtulFetch('catalog', `/api/merchants/${merchantId}/products`);
-  },
+  return {
+    /**
+     * Get user profile
+     */
+    async get(userId: string): Promise<UserProfile | null> {
+      try {
+        const res = await client.get<UserProfile>(`/api/profiles/user/${userId}`);
+        return res.data;
+      } catch {
+        return null;
+      }
+    },
+
+    /**
+     * Update user profile
+     */
+    async update(userId: string, data: Partial<UserProfile>): Promise<boolean> {
+      try {
+        await client.patch(`/api/profiles/user/${userId}`, data);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+  };
 };
 
-// ============================================
-// Profile Service Integration
-// ============================================
+// ============================================================================
+// Event Bus Service
+// ============================================================================
 
-export const profileService = {
-  /**
-   * Get user profile
-   */
-  async getUserProfile(userId: string): Promise<unknown> {
-    return rabtulFetch('profile', `/api/profiles/user/${userId}`);
-  },
+export interface REZEvent {
+  type: string;
+  category: string;
+  version?: string;
+  source?: string;
+  userId?: string;
+  merchantId?: string;
+  data: Record<string, unknown>;
+  timestamp?: string;
+}
 
-  /**
-   * Update user profile
-   */
-  async updateUserProfile(userId: string, data: Record<string, unknown>): Promise<{ success: boolean }> {
-    return rabtulFetch('profile', `/api/profiles/user/${userId}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    });
-  },
+export const createEventBusService = (config: RABTULConfig) => {
+  const client = createApiClient(config.eventBusUrl || DEFAULT_CONFIG.eventBusUrl!, config.internalToken);
 
-  /**
-   * Get merchant profile
-   */
-  async getMerchantProfile(merchantId: string): Promise<unknown> {
-    return rabtulFetch('profile', `/api/profiles/merchant/${merchantId}`);
-  },
+  return {
+    /**
+     * Publish an event
+     */
+    async publish(event: REZEvent): Promise<string | null> {
+      try {
+        const res = await client.post<{ eventId: string }>('/api/events', {
+          ...event,
+          source: event.source || config.serviceName,
+          version: event.version || '1.0.0',
+          timestamp: event.timestamp || new Date().toISOString(),
+        });
+        return res.data.eventId;
+      } catch {
+        return null;
+      }
+    },
+
+    /**
+     * Publish commerce event
+     */
+    async publishCommerce(type: string, data: Record<string, unknown>, context?: { userId?: string; merchantId?: string }): Promise<string | null> {
+      return this.publish({
+        type: `commerce.${type}`,
+        category: 'commerce',
+        source: config.serviceName,
+        data,
+        ...context,
+      });
+    },
+
+    /**
+     * Publish intelligence event
+     */
+    async publishIntelligence(type: string, data: Record<string, unknown>, context?: { userId?: string }): Promise<string | null> {
+      return this.publish({
+        type: `intelligence.${type}`,
+        category: 'intelligence',
+        source: config.serviceName,
+        data,
+        ...context,
+      });
+    },
+
+    /**
+     * Query events
+     */
+    async query(filters: Record<string, unknown>, limit = 100): Promise<REZEvent[]> {
+      try {
+        const res = await client.post<{ events: REZEvent[] }>('/api/events/query', { filters, limit });
+        return res.data.events || [];
+      } catch {
+        return [];
+      }
+    },
+  };
 };
+
+// ============================================================================
+// Main Integration Factory
+// ============================================================================
+
+export interface RABTULIntegration {
+  auth: ReturnType<typeof createAuthService>;
+  payment: ReturnType<typeof createPaymentService>;
+  wallet: ReturnType<typeof createWalletService>;
+  notifications: ReturnType<typeof createNotificationService>;
+  order: ReturnType<typeof createOrderService>;
+  profile: ReturnType<typeof createProfileService>;
+  events: ReturnType<typeof createEventBusService>;
+  config: RABTULConfig;
+}
+
+/**
+ * Create a fully configured RABTUL integration
+ */
+export function createRABTULIntegration(config: RABTULConfig): RABTULIntegration {
+  return {
+    auth: createAuthService(config),
+    payment: createPaymentService(config),
+    wallet: createWalletService(config),
+    notifications: createNotificationService(config),
+    order: createOrderService(config),
+    profile: createProfileService(config),
+    events: createEventBusService(config),
+    config,
+  };
+}
+
+/**
+ * Default integration instance
+ */
+export function getDefaultIntegration(serviceName: string): RABTULIntegration {
+  return createRABTULIntegration({
+    serviceName,
+    internalToken: process.env.INTERNAL_SERVICE_TOKEN,
+  });
+}
+
+// ============================================================================
+// Express Middleware Helpers
+// ============================================================================
+
+export interface AuthenticatedRequest {
+  user?: AuthUser;
+  token?: string;
+}
+
+/**
+ * Create authentication middleware for Express
+ */
+export function createAuthMiddleware(rabtul: RABTULIntegration) {
+  return async (req: Record<string, unknown>, res: Record<string, unknown>, next: () => void) => {
+    const authHeader = req.headers?.['authorization'] as string;
+
+    if (!authHeader?.startsWith('Bearer ')) {
+      (res as Record<string, unknown>).status = 401;
+      (res as Record<string, unknown>).json = { error: 'Missing or invalid authorization header' };
+      return;
+    }
+
+    const token = authHeader.slice(7);
+    const user = await rabtul.auth.verify(token);
+
+    if (!user) {
+      (res as Record<string, unknown>).status = 401;
+      (res as Record<string, unknown>).json = { error: 'Invalid or expired token' };
+      return;
+    }
+
+    (req as AuthenticatedRequest).user = user;
+    (req as AuthenticatedRequest).token = token;
+    next();
+  };
+}
+
+/**
+ * Create internal token validation middleware
+ */
+export function createInternalAuthMiddleware(rabtul: RABTULIntegration) {
+  return (req: Record<string, unknown>, res: Record<string, unknown>, next: () => void) => {
+    const internalToken = req.headers?.['x-internal-token'] as string;
+
+    if (!internalToken || internalToken !== rabtul.config.internalToken) {
+      (res as Record<string, unknown>).status = 401;
+      (res as Record<string, unknown>).json = { error: 'Invalid internal token' };
+      return;
+    }
+
+    next();
+  };
+}
+
+// ============================================================================
+// Exports
+// ============================================================================
+
+export default createRABTULIntegration;

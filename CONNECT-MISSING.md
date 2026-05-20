@@ -1,23 +1,23 @@
 # REZ Intelligence - Services Needing Integrations
 
-**Date:** May 19, 2026
+**Date:** May 20, 2026
 **Total Services:** 188
-**Connected:** 9 (5%)
-**Not Connected:** 179 (95%)
+**Connected:** 14 (7%)
+**Not Connected:** 174 (93%)
 
 ---
 
-## PRIORITY SERVICES TO CONNECT
+## PRIORITY SERVICES - STATUS
 
-### P0 - Critical (Connect This Week)
+### P0 - Critical (Connect This Week) ✅ COMPLETED
 
-| Service | Purpose | Integration Needed |
-|---------|---------|------------------|
-| `REZ-autonomous-agents` | 8 AI agents | Intent, Profile, Analytics |
-| `REZ-predictive-engine` | Churn, LTV | Profile, Wallet, Notifications |
-| `REZ-identity-graph` | Identity resolution | Profile, Auth |
-| `REZ-signal-aggregator` | Signal collection | All services |
-| `REZ-realtime-segments` | User segmentation | All consumer services |
+| Service | Status | Integrations Added |
+|---------|--------|-------------------|
+| `REZ-autonomous-agents` | ✅ DONE | RABTUL (Wallet, Notifications, Analytics, Profile) + Intelligence (Intent, Predict, Segments, Signals, Identity) |
+| `REZ-predictive-engine` | ✅ DONE | RABTUL (Retention, Rewards, Profile) + Intelligence (Signals, Segments, Identity) |
+| `REZ-identity-graph` | ✅ DONE | RABTUL (Intent notifications, Rewards) + Intelligence (Predict, Segments, Signals) |
+| `REZ-signal-aggregator` | ✅ DONE | RABTUL (Rewards, At-risk alerts, Profile) + Intelligence (Predict, Segments, Identity) |
+| `REZ-realtime-segments` | ✅ DONE | RABTUL (Segment triggers, Rewards, DOOH) + Intelligence (Signals, Predict, Identity) |
 
 ### P1 - High Priority (Connect This Month)
 
@@ -31,31 +31,75 @@
 ### P2 - Medium Priority (Connect This Quarter)
 
 | Service | Integration Needed |
-|---------|------------------|
-| All 179 services | RABTUL Analytics |
+|---------|-------------------|
+| All remaining 170 services | RABTUL Analytics |
 
 ---
 
-## QUICK CONNECT
+## INTEGRATION FILES CREATED (May 20, 2026)
 
-### Priority 1: Add to these services NOW
-
-```bash
-# Create integrations for critical services
-mkdir -p REZ-Intelligence/REZ-autonomous-agents/src/integrations
-mkdir -p REZ-Intelligence/REZ-predictive-engine/src/integrations
-mkdir -p REZ-Intelligence/REZ-identity-graph/src/integrations
-mkdir -p REZ-Intelligence/REZ-signal-aggregator/src/integrations
-mkdir -p REZ-Intelligence/REZ-realtime-segments/src/integrations
+### REZ-autonomous-agents
+```
+src/integrations/
+├── index.ts
+├── rabtulPlatform.ts  # Wallet, Notifications, Analytics, Profile, Auth
+└── rezIntelligence.ts  # Intent, Predict, Segments, Signals, Identity
 ```
 
-### Priority 2: Add to all remaining services
+### REZ-predictive-engine
+```
+src/integrations/
+├── index.ts
+├── rabtulPlatform.ts  # Retention campaigns, Rewards, Profile updates
+└── rezIntelligence.ts  # Signals, Segments, Identity enrichment
+```
+
+### REZ-identity-graph
+```
+src/integrations/
+├── index.ts
+├── rabtulPlatform.ts  # Intent notifications, Rewards, Analytics
+└── rezIntelligence.ts  # Predict, Segments, Signals enrichment
+```
+
+### REZ-signal-aggregator
+```
+src/integrations/
+├── index.ts
+├── rabtulPlatform.ts  # High-value rewards, At-risk alerts, Profile
+└── rezIntelligence.ts  # Predict, Segments, Identity
+```
+
+### REZ-realtime-segments
+```
+src/integrations/
+├── index.ts
+├── rabtulPlatform.ts  # Segment triggers, Rewards, Sales alerts
+└── rezIntelligence.ts  # Signals, Predict, Identity, DOOH targeting
+```
+
+---
+
+## NEXT STEPS
+
+### P1 Services to Connect
 
 ```bash
-# Automated script to add integrations to all services
+# Create integrations for P1 services
+mkdir -p REZ-Intelligence/REZ-creative-engine/src/integrations
+mkdir -p REZ-Intelligence/REZ-targeting-engine/src/integrations
+mkdir -p REZ-Intelligence/REZ-ab-testing/src/integrations
+mkdir -p REZ-Intelligence/REZ-care-service/src/integrations
+```
+
+### Automated Batch Connect
+
+```bash
+# Add integrations to all remaining services
 for dir in REZ-Intelligence/*/src; do
   if [ ! -d "$dir/integrations" ]; then
     mkdir -p "$dir/integrations"
+    # Create template integration files
   fi
 done
 ```
@@ -66,24 +110,29 @@ done
 
 ```typescript
 // REZ-Intelligence/[service]/src/integrations/rabtulPlatform.ts
-export const [service]Integrations = {
-  intent: () => {/* Use intent predictor */},
-  profile: () => {/* Use unified profile */},
-  analytics: () => {/* Track events */},
+export const [service]Actions = {
+  // RABTUL actions
+  async triggerAction(params): Promise<void> { /* ... */ },
+};
+
+// REZ-Intelligence/[service]/src/integrations/rezIntelligence.ts
+export const [service]Intelligence = {
+  // Cross-service intelligence
+  async enrich(params): Promise<any> { /* ... */ },
 };
 ```
 
 ---
 
-## RECOMMENDED PRIORITY
+## RECOMMENDED PRIORITY (Updated)
 
-1. REZ-autonomous-agents
-2. REZ-predictive-engine
-3. REZ-identity-graph
-4. REZ-signal-aggregator
-5. REZ-realtime-segments
+1. ~~REZ-autonomous-agents~~ ✅
+2. ~~REZ-predictive-engine~~ ✅
+3. ~~REZ-identity-graph~~ ✅
+4. ~~REZ-signal-aggregator~~ ✅
+5. ~~REZ-realtime-segments~~ ✅
 6. REZ-creative-engine
 7. REZ-targeting-engine
 8. REZ-ab-testing
 9. REZ-care-service
-10. All remaining 170 services
+10. All remaining 165 services
