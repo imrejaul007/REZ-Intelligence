@@ -1,8 +1,11 @@
 # REZ API Gateway Configuration
+# NOTE: All secrets should be provided via environment variables
+# DO NOT hardcode API keys or tokens in this file
+
 app:
   host: "0.0.0.0"
-  port: 4000
-  env: "development"
+  port: ${GATEWAY_PORT:-4000}
+  env: ${NODE_ENV:-development}
 
 # Rate limiting configuration
 rateLimit:
@@ -15,7 +18,7 @@ rateLimit:
 # Services configuration
 services:
   - name: identity-bridge
-    url: http://localhost:4092
+    url: ${IDENTITY_BRIDGE_URL:-http://localhost:4092}
     timeout: 30000
     retryAttempts: 3
     retryDelay: 1000
@@ -25,7 +28,7 @@ services:
       path: /health
 
   - name: unified-recs
-    url: http://localhost:4090
+    url: ${UNIFIED_RECS_URL:-http://localhost:4090}
     timeout: 30000
     retryAttempts: 3
     retryDelay: 1000
@@ -35,7 +38,7 @@ services:
       path: /health
 
   - name: feedback-collector
-    url: http://localhost:4085
+    url: ${FEEDBACK_COLLECTOR_URL:-http://localhost:4085}
     timeout: 30000
     retryAttempts: 3
     retryDelay: 1000
@@ -45,7 +48,7 @@ services:
       path: /health
 
   - name: notification-router
-    url: http://localhost:4093
+    url: ${NOTIFICATION_ROUTER_URL:-http://localhost:4093}
     timeout: 30000
     retryAttempts: 3
     retryDelay: 1000
@@ -55,7 +58,7 @@ services:
       path: /health
 
   - name: event-platform
-    url: http://localhost:4008
+    url: ${EVENT_PLATFORM_URL:-http://localhost:4008}
     timeout: 30000
     retryAttempts: 3
     retryDelay: 1000
@@ -65,32 +68,24 @@ services:
       path: /health
 
 # Authentication configuration
+# API keys must be provided via environment variables
+# Format: JSON array of {key, appId, permissions, rateLimit}
+# Example: API_KEYS='[{"key":"key-here","appId":"app1","permissions":["read","write"],"rateLimit":100}]'
 auth:
   enabled: true
   apiKeysHeader: "x-api-key"
   internalTokenHeader: "x-internal-token"
-  validApiKeys:
-    - key: "rez-prod-key-001"
-      appId: "hotel-ota"
-      permissions: ["read", "write"]
-      rateLimit: 200  # Override default rate limit
-    - key: "rez-prod-key-002"
-      appId: "adbazaar"
-      permissions: ["read", "write"]
-      rateLimit: 150
-    - key: "rez-dev-key-001"
-      appId: "development"
-      permissions: ["read"]
-      rateLimit: 50
-  internalServiceTokens:
-    payment-service: "int-token-payment-svc-abc123"
-    auth-service: "int-token-auth-svc-def456"
-    wallet-service: "int-token-wallet-svc-ghi789"
+  # API keys loaded from API_KEYS environment variable (JSON array)
+  # Each key must have: key, appId, permissions (array), rateLimit
+  validApiKeys: []
+  # Internal service tokens loaded from INTERNAL_SERVICE_TOKENS_JSON
+  # Format: JSON object { "service-name": "token" }
+  internalServiceTokens: {}
 
 # Logging configuration
 logging:
-  level: "info"  # debug, info, warn, error
-  format: "json"  # json, simple
+  level: ${LOG_LEVEL:-info}  # debug, info, warn, error
+  format: ${LOG_FORMAT:-json}  # json, simple
   includeTimestamp: true
   includeRequestId: true
   includeUserId: true
@@ -100,9 +95,9 @@ logging:
 cors:
   enabled: true
   origins:
-    - "https://rez.example.com"
-    - "https://admin.rez.example.com"
-    - "http://localhost:3000"
+    - ${CORS_ORIGIN_1:-https://rez.example.com}
+    - ${CORS_ORIGIN_2:-https://admin.rez.example.com}
+    - ${CORS_ORIGIN_3:-http://localhost:3000}
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
   allowedHeaders: ["Content-Type", "Authorization", "X-API-Key", "X-Request-ID", "X-User-ID"]
   exposedHeaders: ["X-RateLimit-Remaining", "X-RateLimit-Reset"]
