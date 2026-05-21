@@ -129,7 +129,7 @@ class AutonomousLoop {
     }
 
     // 3. Execute actions
-    await Promise.all(actions.map(action => this.executeAction(action));
+    await Promise.all(actions.map(action => this.executeAction(action)));
 
     return { actions, ltv, churnRisk, sentiment };
   }

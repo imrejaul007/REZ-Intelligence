@@ -17,7 +17,7 @@
 
 ## Service Registry
 
-**Total Services:** 93 documented with SPEC.md
+**Total Services:** 117 documented with SPEC.md
 
 ### AI & Agents
 
@@ -279,4 +279,4 @@
 
 ---
 
-**Last Updated:** May 20, 2026
+**Last Updated:** May 21, 2026

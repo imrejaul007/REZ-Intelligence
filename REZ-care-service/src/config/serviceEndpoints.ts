@@ -76,12 +76,6 @@ export const SERVICE_ENDPOINTS = {
     token: process.env.INTERNAL_SERVICE_TOKEN || 'rez-internal-token',
   },
 
-  // AI Services
-  supportCopilot: {
-    url: process.env.SUPPORT_COPILOT_URL || 'https://rez-support-copilot.onrender.com',
-    token: process.env.INTERNAL_SERVICE_TOKEN || 'rez-internal-token',
-  },
-
   // Monitoring
   sentry: {
     dsn: process.env.SENTRY_DSN,
