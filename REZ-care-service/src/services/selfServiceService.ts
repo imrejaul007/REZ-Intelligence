@@ -56,14 +56,14 @@ export class SelfServiceService {
 
     // Check refund eligibility
     const refundStatus = await this.checkRefundEligibility(customerId);
-    if (refundStatus.eligible) {
+    if (refundStatus.data?.eligible) {
       actions.push({
         id: 'refund_check',
         type: 'refund_check',
         title: 'Check Refund Status',
         description: 'View your refund history and status',
         eligible: true,
-        actionData: { refunds: refundStatus.refunds }
+        actionData: { refunds: refundStatus.data?.refunds }
       });
     }
 
@@ -459,21 +459,20 @@ export class SelfServiceService {
     }
   }
 
-  private async checkRefundEligibility(customerId: string): Promise<{
-    eligible: boolean;
-    refunds?: any[];
-  }> {
+  private async checkRefundEligibility(customerId: string): Promise<SelfServiceResult> {
     try {
       const response = await axios.get(
         `${SERVICE_URLS.payment}/api/refunds/customer/${customerId}`,
         { headers: { 'X-Internal-Token': INTERNAL_TOKEN }, timeout: 5000 }
       );
       return {
-        eligible: true,
-        refunds: response.data.refunds || []
+        success: true,
+        action: 'refund_check',
+        message: 'Refund eligibility checked',
+        data: { eligible: true, refunds: response.data.refunds || [] }
       };
     } catch {
-      return { eligible: false };
+      return { success: false, action: 'refund_check', message: 'Unable to check refund eligibility' };
     }
   }
 

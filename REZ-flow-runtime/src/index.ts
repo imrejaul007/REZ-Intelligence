@@ -293,26 +293,35 @@ app.delete('/api/dlq/:jobId', authenticateInternal, async (req: Request, res: Re
 app.get('/api/stats', authenticateInternal, async (req: Request, res: Response) => {
   try {
     const [executionStats, dlqStats, workflowStats] = await Promise.all([
-      Execution.getStats(),
+      Execution.aggregate([
+        { $group: { _id: '$status', count: { $sum: 1 } } }
+      ]),
       dlqService.getStats(),
       Workflow.aggregate([
         { $group: { _id: '$status', count: { $sum: 1 } } }
       ])
     ]);
 
+    const execByStatus: Record<string, number> = {};
+    executionStats.forEach((item: { _id: string; count: number }) => {
+      execByStatus[item._id] = item.count;
+    });
+
+    const wfByStatus: Record<string, number> = {};
+    workflowStats.forEach((item: { _id: string; count: number }) => {
+      wfByStatus[item._id] = item.count;
+    });
+
     res.json({
       success: true,
       data: {
-        executions: executionStats,
+        executions: { byStatus: execByStatus },
         dlq: {
           totalMessages: dlqStats.totalMessages,
           retryStats: dlqStats.retryStats
         },
         workflows: {
-          byStatus: workflowStats.reduce((acc, item) => {
-            acc[item._id] = item.count;
-            return acc;
-          }, {} as Record<string, number>)
+          byStatus: wfByStatus
         },
         generatedAt: new Date()
       }

@@ -390,6 +390,7 @@ export interface BroadcastCreateInput {
   templateId: string;
   segment: BroadcastSegment;
   scheduledAt?: Date;
+  merchantId?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -537,31 +538,3 @@ export const CreateBroadcastSchema = z.object({
   scheduledAt: z.string().datetime().optional(),
   metadata: z.record(z.unknown()).optional(),
 });
-
-// ============================================
-// Type Exports
-// ============================================
-
-export type {
-  CartItem,
-  ConversationContext,
-  MessageRecord,
-  WhatsAppSession,
-  SessionCreateInput,
-  WhatsAppTemplate,
-  TemplateCreateInput,
-  MessagePayload,
-  WhatsAppMessage,
-  WebhookEvent,
-  WebhookEntry,
-  WebhookChange,
-  WebhookValue,
-  WhatsAppOrder,
-  OrderCreateInput,
-  WhatsAppBroadcast,
-  BroadcastCreateInput,
-  WhatsAppConversation,
-  IntentDetection,
-  ConversationTurn,
-  ApiResponse,
-};

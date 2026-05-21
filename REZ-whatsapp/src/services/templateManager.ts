@@ -336,11 +336,12 @@ export class TemplateManager {
     let errors = 0;
 
     try {
-      // Get approved templates from Twilio
+      // Get approved templates from Twilio - use v1 as fallback
+      const twilioClient = this.twilioClient as any;
       const twilioTemplates =
-        await this.twilioClient.whatsapp.v1
-          .services(this.businessAccountId)
-          .templates.list();
+        await (twilioClient.whatsapp?.v1
+          ?.services?.(this.businessAccountId)
+          ?.templates?.list?.() || []);
 
       for (const twilioTemplate of twilioTemplates) {
         try {

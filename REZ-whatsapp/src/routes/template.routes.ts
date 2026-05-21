@@ -129,7 +129,7 @@ export function createTemplateRoutes(
           name,
           category,
           language,
-          components,
+          components: components as any,
           merchantId,
           metadata,
         });
@@ -278,7 +278,7 @@ export function createTemplateRoutes(
         }
 
         // Validate for sending
-        const validation = templateManager.validateForSending(templateId);
+        const validation = await templateManager.validateForSending(templateId);
         if (!validation.valid) {
           const response: ApiResponse = {
             success: false,

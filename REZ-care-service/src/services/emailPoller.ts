@@ -165,7 +165,7 @@ class EmailPoller {
 
           msg.on('body', async (stream) => {
             try {
-              const parsed = await simpleParser(stream);
+              const parsed = await simpleParser(stream as any);
               const email = this.convertToEmailMessage(parsed, uid);
 
               logger.info('[EmailPoller] Processing email', {

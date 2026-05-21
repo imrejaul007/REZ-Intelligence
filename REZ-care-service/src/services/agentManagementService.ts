@@ -10,8 +10,27 @@ import { logger } from '../utils/logger';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-care';
 
-// Type alias for Agent (to avoid conflicts with mongoose model)
-declare const Agent: any;
+// Interface for Agent documents
+interface IAgent {
+  agentId: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: string;
+  level: number;
+  status: string;
+  currentTicketCount: number;
+  maxConcurrentTickets: number;
+  skills: Array<{ category: string; proficiency: string }>;
+  platforms: string[];
+  languages: string[];
+  performance: {
+    avgResolutionTime?: number;
+    csatScore?: number;
+    ticketsResolved: number;
+    firstContactResolution?: number;
+  };
+}
 
 // Agent Schema
 const AgentSchema = new mongoose.Schema({
@@ -145,7 +164,7 @@ export class AgentManagementService {
     return newAgent;
   }
 
-  async getAgent(agentId: string): Promise<Agent | null> {
+  async getAgent(agentId: string): Promise<IAgent | null> {
     await this.connect();
     return AgentModel.findOne({ agentId });
   }
@@ -155,7 +174,7 @@ export class AgentManagementService {
     role?: string;
     platform?: string;
     onlineOnly?: boolean;
-  }): Promise<Agent[]> {
+  }): Promise<IAgent[]> {
     await this.connect();
 
     const query: any = {};
@@ -170,10 +189,10 @@ export class AgentManagementService {
       ];
     }
 
-    return AgentModel.find(query).sort({ level: -1, 'performance.csatScore': -1 });
+    return AgentModel.find(query).sort({ level: -1, 'performance.csatScore': -1 }) as any;
   }
 
-  async updateAgent(agentId: string, updates: Partial<any>): Promise<Agent | null> {
+  async updateAgent(agentId: string, updates: Partial<any>): Promise<IAgent | null> {
     await this.connect();
     const agent = await AgentModel.findOneAndUpdate(
       { agentId },
@@ -184,7 +203,7 @@ export class AgentManagementService {
       agent.lastActiveAt = new Date();
       await agent.save();
     }
-    return agent;
+    return agent as any;
   }
 
   async deleteAgent(agentId: string): Promise<boolean> {
@@ -197,24 +216,24 @@ export class AgentManagementService {
   // AGENT STATUS
   // ============================================
 
-  async setStatus(agentId: string, status: string): Promise<Agent | null> {
+  async setStatus(agentId: string, status: string): Promise<IAgent | null> {
     await this.connect();
     return AgentModel.findOneAndUpdate(
       { agentId },
       { $set: { status, lastActiveAt: new Date() } },
       { new: true }
-    );
+    ) as any;
   }
 
-  async goOnline(agentId: string): Promise<Agent | null> {
+  async goOnline(agentId: string): Promise<IAgent | null> {
     return this.setStatus(agentId, 'online');
   }
 
-  async goOffline(agentId: string): Promise<Agent | null> {
+  async goOffline(agentId: string): Promise<IAgent | null> {
     return this.setStatus(agentId, 'offline');
   }
 
-  async goOnBreak(agentId: string): Promise<Agent | null> {
+  async goOnBreak(agentId: string): Promise<IAgent | null> {
     return this.setStatus(agentId, 'break');
   }
 
@@ -251,7 +270,7 @@ export class AgentManagementService {
     await this.connect();
 
     // Find online agents
-    const onlineAgents = await Agent.find({ status: 'online' });
+    const onlineAgents = await AgentModel.find({ status: 'online' });
 
     if (onlineAgents.length === 0) {
       logger.warn('No online agents available');
@@ -261,7 +280,7 @@ export class AgentManagementService {
     // Filter by skills and platform
     let candidates = onlineAgents.filter(agent => {
       // Check platform
-      if (ticket.platform && !agent.platforms.includes('all') && !agent.platforms.includes(ticket.platform)) {
+      if (ticket.platform && !agent.platforms.includes('all') && !agent.platforms.includes(ticket.platform as any)) {
         return false;
       }
       return true;
@@ -323,7 +342,7 @@ export class AgentManagementService {
     platform?: string;
     priority?: string;
     customerId?: string;
-  }): Promise<{ agent: Agent; assignment: any } | null> {
+  }): Promise<{ agent: IAgent; assignment: any } | null> {
     const agent = await this.findBestAgent(ticket);
 
     if (!agent) {
@@ -395,25 +414,25 @@ export class AgentManagementService {
   /**
    * Escalate ticket to higher level
    */
-  async escalateTicket(ticketId: string, currentAgentId: string): Promise<Agent | null> {
-    const currentAgent = await Agent.findOne({ agentId: currentAgentId });
+  async escalateTicket(ticketId: string, currentAgentId: string): Promise<IAgent | null> {
+    const currentAgent = await AgentModel.findOne({ agentId: currentAgentId });
     if (!currentAgent) return null;
 
     // Find escalation target
-    let escalationAgent: Agent | null = null;
+    let escalationAgent: IAgent | null = null;
 
     if (currentAgent.escalationTarget) {
-      escalationAgent = await Agent.findOne({
+      escalationAgent = await AgentModel.findOne({
         agentId: currentAgent.escalationTarget,
         status: 'online'
-      });
+      }) as any;
     } else {
       // Find higher level agent
-      escalationAgent = await Agent.findOne({
+      escalationAgent = await AgentModel.findOne({
         level: { $gt: currentAgent.level },
         status: 'online',
         role: { $in: ['senior_agent', 'team_lead', 'supervisor'] }
-      }).sort({ level: 1 });
+      }).sort({ level: 1 }) as any;
     }
 
     if (escalationAgent) {
@@ -504,7 +523,7 @@ export class AgentManagementService {
     totalResolved: number;
     avgFCR: number;
   }> {
-    const agents = await Agent.find({ role: { $ne: 'manager' } });
+    const agents = await AgentModel.find({ role: { $ne: 'manager' } });
 
     const performance = agents.map(a => ({
       agentId: a.agentId,
@@ -535,14 +554,14 @@ export class AgentManagementService {
   /**
    * Get available agents based on shift schedule
    */
-  async getAvailableAgents(): Promise<Agent[]> {
+  async getAvailableAgents(): Promise<IAgent[]> {
     await this.connect();
 
     const now = new Date();
     const currentDay = now.getDay();
     const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
-    const agents = await Agent.find({ status: 'online' });
+    const agents = await AgentModel.find({ status: 'online' });
 
     // Filter by schedule
     return agents.filter(agent => {
@@ -563,6 +582,6 @@ export class AgentManagementService {
       }
 
       return true;
-    });
+    }) as any;
   }
 }

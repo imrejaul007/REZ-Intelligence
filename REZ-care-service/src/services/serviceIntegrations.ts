@@ -100,12 +100,13 @@ export async function getSupportHistory(userId: string): Promise<{
   const result = await callService('supportCopilot', `/user/${userId}/history`);
 
   if (result.success && result.data) {
+    const data = result.data as any;
     return {
-      totalTickets: result.data.totalTickets || 0,
-      openTickets: result.data.openTickets || 0,
-      avgResolutionTime: result.data.avgResolutionTime || 0,
-      sentiment: result.data.sentiment || 'neutral',
-      lastTicket: result.data.lastTicket,
+      totalTickets: data.totalTickets || 0,
+      openTickets: data.openTickets || 0,
+      avgResolutionTime: data.avgResolutionTime || 0,
+      sentiment: data.sentiment || 'neutral',
+      lastTicket: data.lastTicket,
     };
   }
 
@@ -128,9 +129,10 @@ export async function getTicketSuggestions(ticketId: string): Promise<{
   const result = await callService('supportCopilot', `/ticket/${ticketId}/suggestions`);
 
   if (result.success && result.data) {
+    const data = result.data as any;
     return {
-      suggestions: result.data.suggestions || [],
-      similarTickets: result.data.similarTickets || [],
+      suggestions: data.suggestions || [],
+      similarTickets: data.similarTickets || [],
     };
   }
 
@@ -216,7 +218,7 @@ export async function getMerchantDashboard(merchantId: string): Promise<{
   const result = await callService('merchantIntelligence', `/merchant/${merchantId}/dashboard`);
 
   if (result.success && result.data) {
-    return result.data;
+    return result.data as any;
   }
 
   return {
@@ -307,7 +309,7 @@ export async function searchKnowledgeBase(query: string, options?: {
   const result = await callService<{ articles: any[]; suggestions: string[] }>(
     'knowledgeBase',
     '/search',
-    { params: { q: query, ...options } as Record<string, string> }
+    { params: { q: query, limit: options.limit, category: options.category } as any }
   );
 
   if (result.success && result.data) {

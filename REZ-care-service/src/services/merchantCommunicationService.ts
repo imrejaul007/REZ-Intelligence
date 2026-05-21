@@ -5,9 +5,19 @@
  * about customer issues. Bidirectional communication for support context.
  */
 
-import mongoose, { Schema } from 'mongoose';
+import mongoose, { Schema, Model } from 'mongoose';
 import axios from 'axios';
 import { logger } from '../utils/logger';
+
+interface IMerchantCommunication {
+  communicationId: string;
+  customerId: string;
+  partnerId: string;
+  channel: string;
+  status: string;
+  priority: string;
+  actions: any[];
+}
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-care';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || 'rez-internal-token';
@@ -317,7 +327,7 @@ export class MerchantCommunicationService {
     message: string;
     actionTaken?: string;
     expectedResolutionTime?: Date;
-  }): Promise<MerchantCommunication | null> {
+  }): Promise<IMerchantCommunication | null> {
     await this.connect();
 
     const communication = await MerchantCommunication.findOne({ communicationId: params.communicationId });
@@ -348,7 +358,7 @@ export class MerchantCommunicationService {
   /**
    * Mark communication as resolved
    */
-  async resolve(communicationId: string, resolution: string): Promise<MerchantCommunication | null> {
+  async resolve(communicationId: string, resolution: string): Promise<IMerchantCommunication | null> {
     await this.connect();
 
     const communication = await MerchantCommunication.findOne({ communicationId });
@@ -365,7 +375,7 @@ export class MerchantCommunicationService {
       };
     }
 
-    communication.actions.push({
+    (communication as any).actions.push({
       type: 'resolved',
       takenBy: 'system',
       takenAt: new Date(),
@@ -378,13 +388,9 @@ export class MerchantCommunicationService {
     await this.notifyCustomer(communication);
 
     logger.info('Merchant communication resolved', { communicationId });
-    return communication;
+    return communication as any;
   }
-
-  /**
-   * Escalate to merchant management
-   */
-  async escalate(communicationId: string, escalationNote: string): Promise<MerchantCommunication | null> {
+  async escalate(communicationId: string, escalationNote: string): Promise<IMerchantCommunication | null> {
     await this.connect();
 
     const communication = await MerchantCommunication.findOne({ communicationId });
@@ -393,7 +399,7 @@ export class MerchantCommunicationService {
     communication.status = 'escalated';
     communication.priority = 'urgent';
 
-    communication.actions.push({
+    (communication as any).actions.push({
       type: 'escalated',
       takenBy: 'system',
       takenAt: new Date(),
@@ -410,7 +416,7 @@ export class MerchantCommunicationService {
     await communication.save();
 
     logger.info('Merchant communication escalated', { communicationId });
-    return communication;
+    return communication as any;
   }
 
   /**
@@ -420,7 +426,7 @@ export class MerchantCommunicationService {
     status?: string;
     limit?: number;
     offset?: number;
-  }): Promise<MerchantCommunication[]> {
+  }): Promise<any[]> {
     await this.connect();
 
     const query: any = { partnerId };
@@ -437,7 +443,7 @@ export class MerchantCommunicationService {
   /**
    * Get all communications for a ticket
    */
-  async getTicketCommunications(ticketId: string): Promise<MerchantCommunication[]> {
+  async getTicketCommunications(ticketId: string): Promise<any[]> {
     await this.connect();
     return MerchantCommunication.find({ ticketId }).sort({ createdAt: -1 });
   }

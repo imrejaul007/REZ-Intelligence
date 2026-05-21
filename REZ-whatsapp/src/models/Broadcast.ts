@@ -28,6 +28,15 @@ export interface IBroadcast extends Document {
   createdAt: Date;
   updatedAt: Date;
   metadata: Record<string, unknown>;
+  canStart(): boolean;
+  start(): Promise<void>;
+  cancel(): Promise<void>;
+  getProgress(): BroadcastProgress;
+}
+
+export interface IBroadcastModel extends mongoose.Model<IBroadcast> {
+  getBroadcastStats(merchantId?: string): Promise<any>;
+  findScheduled(): Promise<IBroadcast[]>;
 }
 
 const BroadcastSegmentSchema = new Schema<BroadcastSegment>(

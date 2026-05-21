@@ -13,6 +13,7 @@ export interface IConversation extends Document {
   startedAt: Date;
   endedAt?: Date;
   metadata: Record<string, unknown>;
+  addTurn(userMessage: string, assistantResponse: string, intent?: any, action?: string): void;
 }
 
 const IntentDetectionSchema = new Schema<IntentDetection>(

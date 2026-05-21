@@ -248,7 +248,7 @@ export class AutoTicketService {
       .sort({ detectedAt: -1 })
       .limit(filters?.limit || 50);
 
-    return tickets.map(t => t.toObject() as AutoTicket);
+    return tickets.map(t => t.toObject() as any);
   }
 
   /**
@@ -258,7 +258,7 @@ export class AutoTicketService {
     await this.connect();
 
     const ticket = await AutoTicketModel.findOne({ ticketId });
-    return ticket ? (ticket.toObject() as AutoTicket) : null;
+    return ticket ? (ticket.toObject() as any) : null;
   }
 
   /**
@@ -304,7 +304,7 @@ export class AutoTicketService {
     if (rule) {
       for (const action of rule.autoActions) {
         const result = await this.executeAutoAction(ticket, action);
-        ticket.autoActions.push({
+        (ticket as any).autoActions.push({
           type: action,
           timestamp: new Date(),
           result
@@ -322,7 +322,7 @@ export class AutoTicketService {
 
     logger.info('Auto-ticket created', { ticketId, type: data.type, severity: data.severity });
 
-    return ticket.toObject() as AutoTicket;
+    return ticket.toObject() as any;
   }
 
   /**
@@ -341,13 +341,13 @@ export class AutoTicketService {
     ticket.status = 'resolved';
     ticket.resolvedAt = new Date();
     ticket.resolution = resolution || 'Resolved';
-    ticket.resolvedBy = resolvedBy || 'system';
+    (ticket as any).resolvedBy = resolvedBy || 'system';
 
     await ticket.save();
 
     logger.info('Auto-ticket resolved', { ticketId, resolvedBy });
 
-    return ticket.toObject() as AutoTicket;
+    return ticket.toObject() as any;
   }
 
   /**
@@ -362,9 +362,9 @@ export class AutoTicketService {
     ticket.status = 'auto_resolved';
     ticket.resolvedAt = new Date();
     ticket.resolution = resolution;
-    ticket.resolvedBy = 'system';
+    (ticket as any).resolvedBy = 'system';
 
-    ticket.autoActions.push({
+    (ticket as any).autoActions.push({
       type: 'auto_resolve',
       timestamp: new Date(),
       result: resolution
@@ -379,7 +379,7 @@ export class AutoTicketService {
 
     logger.info('Auto-ticket auto-resolved', { ticketId, resolution });
 
-    return ticket.toObject() as AutoTicket;
+    return ticket.toObject() as any;
   }
 
   /**

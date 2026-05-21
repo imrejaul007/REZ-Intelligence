@@ -14,13 +14,14 @@ const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 /**
  * Make authenticated internal API request
  */
-async function internalRequest(url, options = {}) {
+async function internalRequest(url: string, options: RequestInit = {}) {
+  const headers = options.headers as Record<string, string> || {};
   const response = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
       'X-Internal-Token': INTERNAL_TOKEN,
-      ...options.headers,
+      ...headers,
     },
   });
 
@@ -28,7 +29,8 @@ async function internalRequest(url, options = {}) {
     throw new Error(`Platform API error: ${response.status}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  return data as any;
 }
 
 // ============================================

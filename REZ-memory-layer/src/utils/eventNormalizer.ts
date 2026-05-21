@@ -48,8 +48,8 @@ const EventCategorySchema = z.enum([
 const GenericEventSchema = z.object({
   userId: z.string().min(1),
   type: z.string().min(1),
-  category: EventCategorySchema,
-  source: EventSourceSchema,
+  category: z.string(),
+  source: z.string(),
   data: z.record(z.unknown()).optional().default({}),
   metadata: z
     .object({
@@ -57,20 +57,12 @@ const GenericEventSchema = z.object({
       deviceId: z.string().optional(),
       ipAddress: z.string().optional(),
       userAgent: z.string().optional(),
-      location: z
-        .object({
-          type: z.string().optional().default('Point'),
-          coordinates: z.tuple([z.number(), z.number()]),
-          city: z.string().optional(),
-          country: z.string().optional()
-        })
-        .optional(),
       correlationId: z.string().optional(),
       parentEventId: z.string().optional()
     })
     .optional()
     .default({}),
-  timestamp: z.string().datetime().optional().pipe(z.string().datetime())
+  timestamp: z.string().optional()
 });
 
 // Source-specific normalizers

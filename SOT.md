@@ -17,7 +17,17 @@
 
 ## Service Registry
 
-**Total Services:** 117 documented with SPEC.md
+**Total Services:** 188 documented with SPEC.md (Updated: May 21, 2026)
+
+### NEW Services (May 21, 2026)
+
+| Service | Port | Category | Status |
+|---------|------|----------|--------|
+| **REZ Flow Runtime** | 4200 | Automation | ✅ NEW |
+| **REZ Memory Layer** | 4201 | Customer Intelligence | ✅ NEW |
+| **REZ WhatsApp** | 4202 | Messaging | ✅ NEW |
+
+See: [docs/PLATFORM-INFRASTRUCTURE-BUILD.md](../docs/PLATFORM-INFRASTRUCTURE-BUILD.md)
 
 ### AI & Agents
 
@@ -219,9 +229,40 @@
 | rez-culinary-expert | - | Culinary | ✅ |
 | rez-consultant-agent | - | Consultant | ✅ |
 | rez-permission-system | - | Permissions | ✅ |
-| REZ-user-agents | - | User Agents | ✅ |
+| REZ-user-agents | 4030 | User Agents | ✅ |
 | REZ-qr-campaigns | - | QR Campaigns | ✅ |
 | REZ-knowledge-graph | - | Knowledge | ✅ |
+| REZ-memory-layer | 4201 | Memory | ✅ |
+| REZ-flow-runtime | 4200 | Workflow | ✅ |
+| REZ-flywheel-mvp | 4101 | Growth | ✅ |
+| REZ-ai-router | 4052 | AI Routing | ✅ |
+| REZ-ugc-engine | - | UGC | ✅ |
+| REZ-commerce-signal-connector | 4150 | Commerce | ✅ |
+| REZ-intelligence-hub | 4020 | Intelligence | ✅ |
+| REZ-orchestrator-v2 | - | Orchestration | ✅ |
+| REZ-aggregator-hub | - | Aggregators | ✅ |
+| rez-mcp-analytics | - | MCP Server | ✅ |
+| rez-mcp-identity | - | MCP Server | ✅ |
+| rez-mcp-notification | - | MCP Server | ✅ |
+| rez-mcp-event-bus | - | MCP Server | ✅ |
+| rez-mcp-logs | - | MCP Server | ✅ |
+| rez-mcp-inventory | - | MCP Server | ✅ |
+| rez-mcp-order | - | MCP Server | ✅ |
+| rez-mcp-agent-invoke | - | MCP Server | ✅ |
+| rez-ml-feature-store | 3005 | ML Features | ✅ |
+| rez-ml-model-registry | - | ML Registry | ✅ |
+| rez-ml-engine | - | ML Engine | ✅ |
+| rez-ml-models | - | ML Models | ✅ |
+| rez-core-brain | - | Core Brain | ✅ |
+| rez-behavioral-psychology | - | Psychology | ✅ |
+| rez-web-widget | - | Web Widget | ✅ |
+| rez-expert-base | - | Expert Base | ✅ |
+| rez-ai-plugins | - | AI Plugins | ✅ |
+| rez-migration-scripts | - | Migration | ✅ |
+| rez-integration-tests | - | Testing | ✅ |
+| rez-e2e-tests | - | E2E Testing | ✅ |
+| REZ-unified-crm-ui | 3000 | CRM Dashboard | ✅ |
+| rez-shared-types | - | Shared Types | ✅ |
 
 ---
 
@@ -268,14 +309,33 @@
 | 4156 | REZ-reorder-engine |
 | 4158 | REZ-event-connector |
 | 4170 | REZ-unified-commerce-graph |
+| 4150 | REZ-commerce-signal-connector |
+| 4200 | REZ-flow-runtime |
+| 4201 | REZ-memory-layer |
 
 ---
 
 ## Documentation
 
-- **SPEC.md files:** 93 services documented
+- **SPEC.md files:** 185 services documented (All services with package.json)
 - **Categories:** 20+ service categories
 - **Integration Points:** Fully documented
+
+## Service Categories
+
+| Category | Count | Examples |
+|----------|--------|----------|
+| AI Expert Agents | 8 | Travel, Health, Retail, Education, Culinary, Support, Info, Consultant |
+| AI Infrastructure | 5 | Intent Graph, Core Brain, Orchestrator v2, Agent SDK, Expert Base |
+| MCP Servers | 9 | Analytics, Identity, Notification, Event Bus, Logs, Inventory, Order |
+| ML Services | 4 | Feature Store, Model Registry, ML Engine, ML Models |
+| Intelligence Hub | 3 | Intelligence Hub, Flywheel MVP, Consumer Graph |
+| Integration Bridges | 5 | WhatsApp, SMS, RCS, App Bridge, Commerce Signal |
+| Analytics | 2 | Memory Layer, Cohort Service |
+| Infrastructure | 4 | Flow Runtime, Priority Engine, Lakehouse, Permission System |
+| Behavioral/Social | 2 | UGC Engine, Behavioral Psychology |
+| Dashboards | 2 | CRM UI, Consumer Copilot |
+| Other | 3 | Bootstrap Intelligence, Service Connectors, Shared Types |
 
 ---
 

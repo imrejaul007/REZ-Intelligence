@@ -292,17 +292,17 @@ export class ReportsService {
       { merchantName: 'Burger Joint', platform: 'restaurant', issues: 38, resolutionRate: 92, avgResolutionTime: 30, status: 'good' },
       { merchantName: 'Hotel Grand', platform: 'hotel', issues: 32, resolutionRate: 88, avgResolutionTime: 45, status: 'warning' },
       { merchantName: 'Quick Eats', platform: 'restaurant', issues: 28, resolutionRate: 85, avgResolutionTime: 35, status: 'warning' },
-      { merchantName: 'Fashion Store', platform: 'retail', issues: 25, resolutionRate: 80, avgResolutionTime: 50, status: 'warning' },
-      { merchantName: 'Tech Gadgets', platform: 'ecommerce', issues: 22, resolutionRate: 72, avgResolutionTime: 65, status: 'critical' },
-      { merchantName: 'Cafe Morning', platform: 'restaurant', issues: 18, resolutionRate: 78, avgResolutionTime: 55, status: 'warning' },
-      { merchantName: 'Stay Inn', platform: 'hotel', issues: 15, resolutionRate: 70, avgResolutionTime: 70, status: 'critical' }
+      { merchantName: 'Fashion Store', platform: 'retail', issues: 25, resolutionRate: 80, avgResolutionTime: 50, status: 'warning' as const },
+      { merchantName: 'Tech Gadgets', platform: 'ecommerce', issues: 22, resolutionRate: 72, avgResolutionTime: 65, status: 'critical' as const },
+      { merchantName: 'Cafe Morning', platform: 'restaurant', issues: 18, resolutionRate: 78, avgResolutionTime: 55, status: 'warning' as const },
+      { merchantName: 'Stay Inn', platform: 'hotel', issues: 15, resolutionRate: 70, avgResolutionTime: 70, status: 'critical' as const }
     ].slice(0, params.limit || 10);
 
     return {
       merchants: merchants.map((m, i) => ({
         merchantId: `MERCHANT-${i + 1}`,
         ...m
-      })),
+      })) as any,
       summary: {
         totalMerchants: 8,
         goodMerchants: 2,

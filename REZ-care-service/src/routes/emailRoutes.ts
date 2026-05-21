@@ -292,8 +292,8 @@ router.post('/generate', async (req: Request, res: Response) => {
     let body = template.body;
 
     for (const [key, value] of Object.entries(variables || {})) {
-      subject = subject.replace(new RegExp(`{{${key}}}`, 'g'), value);
-      body = body.replace(new RegExp(`{{${key}}}`, 'g'), value);
+      subject = subject.replace(new RegExp(`{{${key}}}`, 'g'), String(value));
+      body = body.replace(new RegExp(`{{${key}}}`, 'g'), String(value));
     }
 
     res.json({

@@ -117,15 +117,18 @@ class AutonomousLoop {
     }
 
     if (ticket.category === 'delivery') {
-      actions.push(...this.deliveryActions(ticket));
+      const deliveryActions = await this.deliveryActions(ticket);
+      actions.push(...deliveryActions);
     }
 
     if (ticket.category === 'out_of_stock') {
-      actions.push(...this.inventoryActions(ticket));
+      const inventoryActions = await this.inventoryActions(ticket);
+      actions.push(...inventoryActions);
     }
 
     if (ticket.platform === 'peopleos') {
-      actions.push(...this.corpperksActions(ticket));
+      const corpperksActions = await this.corpperksActions(ticket);
+      actions.push(...corpperksActions);
     }
 
     // 3. Execute actions
@@ -328,7 +331,7 @@ class AutonomousLoop {
     return actions;
   }
 
-  private async inventoryActions(ticket: TicketContext): AutonomousAction[] {
+  private async inventoryActions(ticket: TicketContext): Promise<AutonomousAction[]> {
     const actions: AutonomousAction[] = [];
     const inventory = await this.getInventory(ticket.metadata?.productId);
 

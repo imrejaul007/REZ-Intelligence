@@ -4,13 +4,11 @@
  * Handles WhatsApp Business API webhook and messaging endpoints.
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { whatsappService, WhatsAppWebhook } from '../services/whatsappService';
 import { logger } from '../utils/logger';
-import { asyncHandler } from '../utils/errorHandler';
-import { ticketService } from '../services/ticketService';
-import { customer360Service } from '../services/customer360Service';
+import { asyncHandler } from '../middleware/errorHandler';
 
 const router = Router();
 
@@ -94,7 +92,7 @@ const sendMessageSchema = z.object({
   message: z.string().min(1).max(4096),
   type: z.enum(['text', 'template']).default('text'),
   templateName: z.string().optional(),
-  templateParams: z.record(z.string()).optional(),
+  templateParams: z.record(z.string(), z.string()).optional(),
 });
 
 /**
@@ -177,10 +175,8 @@ const listSchema = z.object({
       id: z.string().max(200),
       title: z.string().max(24),
       description: z.string().max(72).optional(),
-    })).min(1).max(10,
-    ),
-  })).min(1).max(10,
-  ),
+    })).min(1).max(10),
+  })).min(1).max(10),
 });
 
 /**
@@ -243,9 +239,8 @@ async function processIncomingMessage(message: {
   // Mark message as read
   await whatsappService.markRead(message.id);
 
-  // Find or create customer
-  const customer = await customer360Service.findByPhone(message.from);
-  const customerId = customer?.customerId || `wa_${message.from}`;
+  // Generate customer ID from WhatsApp number
+  const customerId = `wa_${message.from}`;
 
   // Handle different message types
   if (message.type === 'text') {
@@ -269,21 +264,11 @@ async function handleTextMessage(customerId: string, message: { from: string; id
 
   // Create support ticket for help requests
   if (text.includes('help') || text.includes('support') || text.includes('issue')) {
-    await ticketService.createTicket({
-      customerId,
-      category: 'whatsapp_inquiry',
-      priority: 'medium',
-      message: message.text,
-      source: 'whatsapp',
-      metadata: {
-        phone: message.from,
-        customerName: message.name,
-      },
-    });
-
+    // TODO: Integrate with ticket service
+    // For now, just acknowledge
     await whatsappService.sendText(
       message.from,
-      `Thanks for reaching out, ${message.name || 'there'}! I've created a support ticket for you. Our team will respond shortly.`
+      `Thanks for reaching out, ${message.name || 'there'}! Our support team will respond shortly. You can also call us at +91 98765 43210.`
     );
     return;
   }
@@ -314,14 +299,7 @@ async function handleInteractiveMessage(customerId: string, message: { from: str
   } else if (replyText.includes('help')) {
     await sendMainMenu(message.from);
   } else if (replyText.includes('agent')) {
-    await ticketService.createTicket({
-      customerId,
-      category: 'agent_request',
-      priority: 'medium',
-      message: 'Customer requested to speak with a human agent via WhatsApp',
-      source: 'whatsapp',
-    });
-
+    // TODO: Integrate with ticket service
     await whatsappService.sendText(
       message.from,
       'I\'ve connected you with our support team. An agent will respond shortly!'

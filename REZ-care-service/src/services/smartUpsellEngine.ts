@@ -326,7 +326,7 @@ class SmartUpsellEngine {
       });
       if (res.ok) {
         const data = await res.json();
-        return data.products || [];
+        return (data as any).products || [];
       }
     } catch {
       // Use mock data
@@ -401,14 +401,14 @@ class SmartUpsellEngine {
   /**
    * Generate agent suggestions for conversation
    */
-  generateAgentSuggestions(offers: ReturnType<typeof this.getUpsells>): string {
+  generateAgentSuggestions(offers: any): string {
     let message = '\n\n📦 **UPSELL SUGGESTIONS FOR THIS CUSTOMER:**\n\n';
 
     const allOffers = [
-      ...offers.upgrades.map(o => ({ ...o, priority: 1 })),
-      ...offers.accessories.map(o => ({ ...o, priority: 2 })),
-      ...offers.complementary.map(o => ({ ...o, priority: 3 })),
-    ].sort((a, b) => b.confidence - a.confidence).slice(0, 3);
+      ...(offers.upgrades || []).map((o: any) => ({ ...o, priority: 1 })),
+      ...(offers.accessories || []).map((o: any) => ({ ...o, priority: 2 })),
+      ...(offers.complementary || []).map((o: any) => ({ ...o, priority: 3 })),
+    ].sort((a: any, b: any) => b.confidence - a.confidence).slice(0, 3);
 
     if (allOffers.length === 0) {
       return '';

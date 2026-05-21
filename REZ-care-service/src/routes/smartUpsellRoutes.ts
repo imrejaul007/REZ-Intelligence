@@ -50,7 +50,7 @@ router.post('/opportunities', async (req: Request, res: Response) => {
       success: true,
       offers: allOffers,
       byType: opportunities,
-      agentSuggestions: smartUpsellEngine.generateAgentSuggestions(opportunities),
+      agentSuggestions: smartUpsellEngine.generateAgentSuggestions(opportunities as any),
     });
   } catch (error: any) {
     logger.error('[SmartUpsell] Failed to get opportunities', error);
@@ -174,7 +174,7 @@ router.post('/agent-suggestions', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      suggestions: smartUpsellEngine.generateAgentSuggestions(opportunities),
+      suggestions: smartUpsellEngine.generateAgentSuggestions(opportunities as any),
       topOffers: opportunities.upgrades.slice(0, 2),
     });
   } catch (error: any) {

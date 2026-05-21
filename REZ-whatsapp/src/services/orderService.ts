@@ -42,7 +42,7 @@ const OrderSchema = new mongoose.Schema<IOrder>(
     sessionId: { type: String, required: true, index: true },
     userId: { type: String, required: true, index: true },
     merchantId: { type: String, required: true, index: true },
-    items: { type: [mongoose.Schema.Types.Mixed], required: true },
+    items: { type: [], required: true },
     subtotal: { type: Number, required: true },
     discount: { type: Number, default: 0 },
     deliveryFee: { type: Number, default: 0 },
@@ -133,8 +133,9 @@ export class OrderService {
     const orderId = this.generateOrderId();
 
     // Calculate totals
-    const subtotal = session.getCartTotal();
-    const discount = (session.metadata.get('discountAmount') as number) || 0;
+    const subtotal = (session as any).getCartTotal?.() || 0;
+    const metadata = session.metadata as any || {};
+    const discount = (metadata.discountAmount as number) || 0;
     const deliveryFee = this.calculateDeliveryFee(subtotal - discount);
     const total = subtotal - discount + deliveryFee;
 
@@ -167,7 +168,7 @@ export class OrderService {
     await session.save();
 
     // Clear cart after order creation
-    session.clearCart();
+    (session as any).clearCart?.();
     await session.save();
 
     logger.info('Order created', {

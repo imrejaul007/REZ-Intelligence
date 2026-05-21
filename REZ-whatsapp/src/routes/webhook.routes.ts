@@ -338,7 +338,7 @@ export function createWebhookRoutes(
         }
       }
 
-      const sentMessage = await twilioClient.messages.create(messageData as Parameters<typeof twilioClient.messages.create>[0]);
+      const sentMessage = await twilioClient.messages.create(messageData as any);
 
       // Add assistant message to session
       await sessionManager.addMessage(sessionId, 'assistant', message, sentMessage.sid);

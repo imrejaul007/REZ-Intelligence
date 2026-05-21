@@ -18,6 +18,12 @@ export interface ISession extends Document {
   createdAt: Date;
   expiresAt: Date;
   metadata: Record<string, unknown>;
+  addToCart(item: CartItem): void;
+  updateCartItem(productId: string, updates: Partial<CartItem>): void;
+  removeFromCart(productId: string): void;
+  clearCart(): void;
+  addMessage(message: MessageRecord): void;
+  getCartTotal(): { subtotal: number; tax: number; total: number };
 }
 
 const CartItemSchema = new Schema<CartItem>(

@@ -79,7 +79,7 @@ const INDUSTRY_EXPERT_MAP: Record<string, string> = {
   workout: 'fitness',
   fitness: 'fitness',
   exercise: 'fitness',
-  training: 'fitness',
+  training_program: 'fitness',
   yoga: 'fitness',
 
   // Health

@@ -26,7 +26,7 @@ interface ResponseOption {
 
 export class ConversationEngine {
   private intentPatterns: Map<string, RegExp[]>;
-  private stateResponses: Map<SessionState, (context: ConversationContext) => ResponseOption[])>;
+  private stateResponses: Map<SessionState, (context: ConversationContext) => ResponseOption[]>;
 
   constructor() {
     this.intentPatterns = new Map();
@@ -642,7 +642,7 @@ export class ConversationEngine {
     const intentResult = await this.detectIntent(message, { session });
 
     // Generate response
-    const response = await this.generateResponse(intentResult as IntentDetection, {
+    const response = await this.generateResponse(intentResult.intent, {
       session,
       entities: intentResult.entities,
     });
@@ -654,8 +654,8 @@ export class ConversationEngine {
     }
 
     // Add to conversation history
-    session.addMessage('user', message, uuidv4());
-    session.addMessage('assistant', response.message, uuidv4());
+    (session as any).addMessage?.('user', message, uuidv4());
+    (session as any).addMessage?.('assistant', response.message, uuidv4());
     await session.save();
 
     // Update or create conversation record

@@ -215,7 +215,7 @@ export class ProactiveDetectionService {
     alert.resolution = resolution;
     alert.resolvedBy = resolvedBy || 'system';
 
-    alert.actions.push({
+    (alert as any).actions.push({
       type: 'resolved',
       timestamp: new Date(),
       details: resolution,

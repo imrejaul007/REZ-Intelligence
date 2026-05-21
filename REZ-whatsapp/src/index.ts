@@ -117,7 +117,6 @@ async function initializeServices(): Promise<void> {
   // Redis
   redis = new Redis(CONFIG.REDIS_URL, {
     maxRetriesPerRequest: 3,
-    retryDelayOnFailover: 100,
     lazyConnect: true,
   });
 

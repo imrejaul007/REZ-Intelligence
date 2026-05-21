@@ -20,6 +20,8 @@ export interface ITemplate extends Document {
   createdAt: Date;
   updatedAt: Date;
   metadata: Record<string, unknown>;
+  validateForSending(): Promise<{ valid: boolean; errors: string[] }>;
+  whatsapp: any;
 }
 
 const TemplateButtonSchema = new Schema<TemplateButton>(
