@@ -1,8 +1,20 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
+import Redis from 'ioredis';
 import { MessageBridge } from '../services/messageBridge';
 import { ResponseBridge } from '../services/responseBridge';
 import { logger } from '../services/logger';
+
+// Message deduplication Redis client
+const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+const DEDUP_WINDOW_SECONDS = 60; // Messages within 60s are duplicates
+
+interface WebhookRoutesConfig {
+  messageBridge: MessageBridge;
+  responseBridge: ResponseBridge;
+  verifyToken: string;
+  appSecret: string;
+}
 
 export interface WebhookRoutesConfig {
   messageBridge: MessageBridge;
@@ -125,6 +137,20 @@ export function createWebhookRoutes(config: WebhookRoutesConfig): Router {
   });
 
   /**
+   * Check if message is a duplicate (WhatsApp delivers at-least-once)
+   */
+  async function isDuplicateMessage(messageId: string): Promise<boolean> {
+    const key = `whatsapp:dedup:${messageId}`;
+    const exists = await redis.exists(key);
+    if (exists) {
+      logger.debug('Duplicate message detected', { messageId });
+      return true;
+    }
+    await redis.setex(key, DEDUP_WINDOW_SECONDS, '1');
+    return false;
+  }
+
+  /**
    * Process webhook payload
    */
   async function processWebhook(payload: WhatsAppWebhookPayload): Promise<void> {
@@ -143,6 +169,12 @@ export function createWebhookRoutes(config: WebhookRoutesConfig): Router {
         // Handle incoming messages
         if (value.messages && value.messages.length > 0) {
           for (const message of value.messages) {
+            // Check for duplicate messages (WhatsApp at-least-once delivery)
+            if (await isDuplicateMessage(message.id)) {
+              logger.info('Skipping duplicate message', { messageId: message.id });
+              continue;
+            }
+
             try {
               await handleIncomingMessage(phoneNumberId, entry, change, message);
             } catch (error) {

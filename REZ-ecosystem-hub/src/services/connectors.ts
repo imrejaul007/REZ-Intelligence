@@ -407,7 +407,15 @@ export const recommendation = {
     return request('recommendation', '/api/recommend/products', {
       method: 'POST',
       data: { userId, ...context },
-    },
+    });
+  },
+
+  async trackRecommendation(userId: string, itemId: string, action: 'view' | 'click' | 'purchase') {
+    return request('recommendation', '/api/recommend/track', {
+      method: 'POST',
+      data: { userId, itemId, action },
+    });
+  },
 
   async getContentRecommendations(userId: string) {
     return request('recommendation', '/api/recommend/content', {
