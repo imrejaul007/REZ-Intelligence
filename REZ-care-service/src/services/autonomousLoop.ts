@@ -357,15 +357,19 @@ class AutonomousLoop {
     const platformActions: Record<string, AutonomousAction[]> = {
       peopleos: [
         { action: 'route_hr_agent', service: 'corpperks', params: { ticketId: ticket.ticketId }, reason: 'HR ticket', priority: 'high' },
+      ],
       talentai: [
         { action: 'route_talent_agent', service: 'corpperks', params: { ticketId: ticket.ticketId }, reason: 'Talent ticket', priority: 'high' },
+      ],
       restopapa: [
         { action: 'route_restaurant_agent', service: 'corpperks', params: { ticketId: ticket.ticketId }, reason: 'Restaurant ticket', priority: 'high' },
+      ],
       nextabizz: [
         { action: 'route_business_agent', service: 'corpperks', params: { ticketId: ticket.ticketId }, reason: 'Business ticket', priority: 'high' },
+      ],
       insightcampus: [
         { action: 'route_student_agent', service: 'corpperks', params: { ticketId: ticket.ticketId }, reason: 'Student ticket', priority: 'high' },
-     ],
+      ],
     };
 
     return platformActions[ticket.platform] || [];

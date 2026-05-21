@@ -1,7 +1,7 @@
 # REZ-Intelligence Port Registry
 
 ## Generated: 2026-05-19
-## Last Updated: May 19, 2026 - Commerce Intelligence Network added (4170, 4180, 4147)
+## Last Updated: May 21, 2026 - REZ Memory Layer added (4201)
 
 This document contains all service ports and database configurations for the REZ-Intelligence platform.
 
@@ -254,6 +254,8 @@ This document contains all service ports and database configurations for the REZ
 | REZ-intelligence-hub | 4020 | Intelligence hub | MongoDB |
 | **ML Feature Store** | | | |
 | rez-ml-feature-store | 3005 | ML feature store | MongoDB |
+| **Customer Intelligence** | | | |
+| rez-memory-layer | 4201 | Customer timeline service | MongoDB |
 
 ---
 

@@ -520,9 +520,6 @@ class ServiceConnector {
       sentimentScore: sentiment.score,
     };
   }
-}
-
-export const serviceConnector = new ServiceConnector();
 
   // NEW: Additional connections
   async getRecommendations(customerId: string): Promise<any[]> {
@@ -552,3 +549,6 @@ export const serviceConnector = new ServiceConnector();
       return true;
     } catch { return false; }
   }
+}
+
+export const serviceConnector = new ServiceConnector();

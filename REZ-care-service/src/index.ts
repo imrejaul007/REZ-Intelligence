@@ -48,6 +48,7 @@ import clientRoutes from './routes/clientRoutes';
 import merchantRoutes from './routes/merchantRoutes';
 import upsellRoutes from './routes/upsellRoutes';
 import smartUpsellRoutes from './routes/smartUpsellRoutes';
+import whatsappRoutes from './routes/whatsappRoutes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -755,53 +756,9 @@ app.use('/api/upsell', upsellRoutes);
 app.use('/api/smart-upsell', smartUpsellRoutes);
 
 // ============================================
-// WHATSAPP SUPPORT ROUTES
+// WHATSAPP SUPPORT ROUTES (Modular)
 // ============================================
-
-// Handle incoming WhatsApp message
-app.post('/api/whatsapp/inbound', async (req: Request, res: Response) => {
-  try {
-    const result = await whatsappService.handleInboundMessage(req.body);
-    res.json({ success: true, data: result });
-  } catch (error) {
-    logger.error('Failed to handle WhatsApp message', error);
-    res.status(500).json({ error: 'Failed to handle message' });
-  }
-});
-
-// Send WhatsApp message
-app.post('/api/whatsapp/send', async (req: Request, res: Response) => {
-  try {
-    const { phone, message, quickReplies } = req.body;
-    const success = await whatsappService.sendMessage({ phone, message, quickReplies });
-    res.json({ success });
-  } catch (error) {
-    logger.error('Failed to send WhatsApp', error);
-    res.status(500).json({ error: 'Failed to send message' });
-  }
-});
-
-// Get WhatsApp conversations for agent
-app.get('/api/whatsapp/conversations/:agentId', async (req: Request, res: Response) => {
-  try {
-    const conversations = await whatsappService.getAgentConversations(req.params.agentId);
-    res.json({ success: true, data: conversations });
-  } catch (error) {
-    logger.error('Failed to get conversations', error);
-    res.status(500).json({ error: 'Failed to get conversations' });
-  }
-});
-
-// WhatsApp metrics
-app.get('/api/whatsapp/metrics', async (req: Request, res: Response) => {
-  try {
-    const metrics = await whatsappService.getMetrics();
-    res.json({ success: true, data: metrics });
-  } catch (error) {
-    logger.error('Failed to get WhatsApp metrics', error);
-    res.status(500).json({ error: 'Failed to get metrics' });
-  }
-});
+app.use('/api/whatsapp', whatsappRoutes);
 
 // ============================================
 // ESCALATION ROUTES
