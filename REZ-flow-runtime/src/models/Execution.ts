@@ -64,6 +64,35 @@ export interface IExecution extends Document {
   startedAt: Date;
   completedAt?: Date;
   cancelledAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+
+  // Instance methods
+  addLog(level: 'info' | 'warn' | 'error' | 'debug', message: string, nodeId?: string, data?: Record<string, unknown>): void;
+  updateNodeResult(result: Partial<NodeResultType>): void;
+  markStarted(nodeId: string): void;
+  markCompleted(): void;
+  markFailed(error: string, nodeId?: string): void;
+  markCancelled(): void;
+}
+
+// Static method types
+export interface ExecutionModel extends mongoose.Model<IExecution> {
+  findByWorkflow(workflowId: string, options?: { page?: number; limit?: number; status?: ExecutionStatus }): Promise<IExecution[]>;
+  getStats(workflowId?: string): Promise<{
+    totalExecutions: number;
+    completed: number;
+    failed: number;
+    cancelled: number;
+    running: number;
+    avgDuration: number;
+    avgNodesCompleted: number;
+  }>;
+}
+
+// IWorkflow instance method type
+export interface WorkflowModel extends mongoose.Model<IWorkflow> {
+  publish(workflowId: string): Promise<IWorkflow>;
 }
 
 const NodeResultSchema = new Schema({
@@ -304,7 +333,7 @@ ExecutionSchema.pre('save', function(next) {
   next();
 });
 
-export const Execution = mongoose.model<IExecution>('Execution', ExecutionSchema);
+export const Execution = mongoose.model<IExecution, ExecutionModel>('Execution', ExecutionSchema);
 
 // ==================== WORKFLOW MODEL ====================
 
@@ -327,6 +356,9 @@ export interface IWorkflow extends Document {
   publishedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
+
+  // Instance methods
+  publish(): Promise<IWorkflow>;
 }
 
 const WorkflowSchema = new Schema<IWorkflow>(
@@ -395,6 +427,6 @@ WorkflowSchema.statics.publish = async function(workflowId: string) {
   return workflow;
 };
 
-export const Workflow = mongoose.model<IWorkflow>('Workflow', WorkflowSchema);
+export const Workflow = mongoose.model<IWorkflow, WorkflowModel>('Workflow', WorkflowSchema);
 
 export default { Execution, Workflow };

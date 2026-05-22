@@ -25,10 +25,11 @@ export class TimelineAggregator {
     }
 
     // Fetch from MongoDB
-    const events = await TimelineEventModel.findByUserId(userId, {
-      limit,
-      startDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) // Last 90 days
-    });
+    const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // Last 90 days
+    const events = await TimelineEventModel.find({
+      userId,
+      timestamp: { $gte: startDate }
+    }).sort({ timestamp: -1 }).limit(limit);
 
     // Convert to timeline entries with enrichments
     const entries = await this.buildTimelineEntries(events);

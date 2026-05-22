@@ -71,12 +71,12 @@ router.post('/register', authenticateApiKey, async (req: Request, res: Response)
       // Update existing workflow
       existingWorkflow.name = workflow.name;
       existingWorkflow.description = workflow.description;
-      existingWorkflow.definition = workflow;
-      existingWorkflow.nodes = workflow.nodes;
-      existingWorkflow.edges = workflow.edges;
+      existingWorkflow.definition = workflow as unknown as Record<string, unknown>;
+      existingWorkflow.nodes = workflow.nodes as unknown as Record<string, unknown>[];
+      existingWorkflow.edges = workflow.edges as unknown as Record<string, unknown>[];
       existingWorkflow.entryNodeId = workflow.entryNodeId;
-      existingWorkflow.variables = workflow.variables;
-      existingWorkflow.metadata = workflow.metadata;
+      existingWorkflow.variables = workflow.variables as Record<string, unknown>;
+      existingWorkflow.metadata = workflow.metadata as Record<string, unknown>;
 
       await existingWorkflow.save();
 

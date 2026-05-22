@@ -16,6 +16,14 @@ import { OrderService } from '../services/orderService';
 import { verifyTwilioWebhook, AuthenticatedRequest } from '../middleware/auth';
 import { logger } from '../utils/logger';
 
+// ============================================
+// Retry Configuration
+// ============================================
+
+const MAX_MESSAGE_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
+const TWILIO_RATE_LIMIT_CODE = 20429;
+
 // In-memory deduplication store (use Redis in production)
 const processedMessages = new Map<string, number>();
 const DEDUP_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
@@ -302,6 +310,19 @@ export function createWebhookRoutes(
     message: string,
     actions?: Array<{ type: string; title: string; payload?: string }>
   ): Promise<void> {
+    await sendWithRetry(sessionId, to, message, actions, 0);
+  }
+
+  /**
+   * Send message with retry logic for rate limits
+   */
+  async function sendWithRetry(
+    sessionId: string,
+    to: string,
+    message: string,
+    actions?: Array<{ type: string; title: string; payload?: string }>,
+    retryCount: number = 0
+  ): Promise<void> {
     try {
       const messageData: Record<string, unknown> = {
         from: `whatsapp:${whatsappPhoneNumber}`,
@@ -338,7 +359,7 @@ export function createWebhookRoutes(
         }
       }
 
-      const sentMessage = await twilioClient.messages.create(messageData as any);
+      const sentMessage = await twilioClient.messages.create(messageData as unknown as Parameters<typeof twilioClient.messages.create>[0]);
 
       // Add assistant message to session
       await sessionManager.addMessage(sessionId, 'assistant', message, sentMessage.sid);
@@ -347,13 +368,61 @@ export function createWebhookRoutes(
         sessionId,
         to,
         sid: sentMessage.sid,
+        status: sentMessage.status,
       });
-    } catch (error) {
+    } catch (error: unknown) {
+      const twilioError = error as { code?: number; message?: string };
+      const errorCode = twilioError.code;
+      const errorMessage = twilioError.message || '';
+
+      // Check for rate limit error
+      if (errorCode === TWILIO_RATE_LIMIT_CODE ||
+          errorMessage.includes('429') ||
+          errorMessage.includes('rate limit')) {
+
+        if (retryCount < MAX_MESSAGE_RETRIES) {
+          const delay = RETRY_DELAY_MS * Math.pow(2, retryCount); // Exponential backoff
+          logger.warn(`Twilio rate limited, retrying in ${delay}ms`, {
+            sessionId,
+            to,
+            retryCount: retryCount + 1,
+            maxRetries: MAX_MESSAGE_RETRIES,
+          });
+
+          // Wait and retry
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return sendWithRetry(sessionId, to, message, actions, retryCount + 1);
+        }
+
+        logger.error('Max retries exceeded for rate limit', {
+          sessionId,
+          to,
+          retryCount,
+        });
+      }
+
       logger.error('Failed to send response message', {
         sessionId,
         to,
         error,
+        errorCode,
+        retryCount,
       });
+
+      // Try sending a simple text message as fallback
+      if (actions && actions.length > 0 && retryCount === 0) {
+        logger.info('Retrying with simplified message', { sessionId, to });
+        try {
+          const fallbackMessage = await twilioClient.messages.create({
+            from: `whatsapp:${whatsappPhoneNumber}`,
+            to: `whatsapp:${to}`,
+            body: `${message}\n\nOptions:\n${actions.slice(0, 3).map((a, i) => `${i + 1}. ${a.title}`).join('\n')}`,
+          });
+          await sessionManager.addMessage(sessionId, 'assistant', message, fallbackMessage.sid);
+        } catch (fallbackError) {
+          logger.error('Fallback message also failed', { sessionId, to, fallbackError });
+        }
+      }
     }
   }
 

@@ -343,16 +343,16 @@ export interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy';
   timestamp: Date;
   services: {
-    mongodb: ServiceHealth;
-    redis: ServiceHealth;
-    eventBus: ServiceHealth;
+    mongodb: { status: string; latency?: number; error?: string };
+    redis: { status: string; latency?: number; error?: string };
+    eventBus: { status: string; subscriptions?: number; error?: string };
   };
   uptime: number;
   version: string;
 }
 
 export interface ServiceHealth {
-  status: 'up' | 'down' | 'unknown';
+  status: string;
   latency?: number;
   error?: string;
 }

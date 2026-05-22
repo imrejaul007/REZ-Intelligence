@@ -9,6 +9,9 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 
 import { logger } from './utils/logger';
+import { tracingMiddleware } from './middleware/tracing';
+import { metricsTracker } from './middleware/metricsTracker';
+import metricsRoutes, { updateRequestMetrics } from './routes/metrics';
 import { createWhatsAppRoutes } from './routes/whatsapp.routes';
 import { createWebhookRoutes } from './routes/webhook.routes';
 import { createTemplateRoutes } from './routes/template.routes';
@@ -91,6 +94,15 @@ app.use(compression());
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Distributed tracing middleware
+app.use(tracingMiddleware());
+
+// Metrics tracking middleware
+app.use(metricsTracker());
+
+// Metrics endpoint (for Prometheus)
+app.use('/metrics', metricsRoutes);
 
 // Rate limiting
 const limiter = rateLimit({

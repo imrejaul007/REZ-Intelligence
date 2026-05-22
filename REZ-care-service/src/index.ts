@@ -41,7 +41,9 @@ import { ReportsService } from './services/reportsService';
 import { initWebSocketServer, getWebSocketServer } from './services/websocketServer';
 import { logger } from './utils/logger';
 import * as integrations from './services/serviceIntegrations';
+import { checkAllServicesHealth } from './integrations/ecosystemServices';
 import selfServiceRoutes from './routes/selfServiceRoutes';
+import mobileRoutes from './routes/mobileRoutes';
 import supportRoutes from './routes/supportRoutes';
 import emailRoutes from './routes/emailRoutes';
 import clientRoutes from './routes/clientRoutes';
@@ -49,6 +51,7 @@ import merchantRoutes from './routes/merchantRoutes';
 import upsellRoutes from './routes/upsellRoutes';
 import smartUpsellRoutes from './routes/smartUpsellRoutes';
 import whatsappRoutes from './routes/whatsappRoutes';
+import ecosystemRoutes from './routes/ecosystemRoutes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -87,13 +90,16 @@ app.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'healthy',
     service: 'REZ Care Service',
-    version: '3.0.0',
+    version: '3.1.0',
     uptime: process.uptime(),
-    description: 'Complete Support Operating System',
+    description: 'AI Commerce Recovery & Customer Intelligence Platform',
     integrates: [
       'REZ-support-copilot (sentiment, history)',
       'REZ-merchant-intelligence (insights)',
-      'rez-knowledge-base-service (KB)'
+      'REZ-memory-layer (timeline)',
+      'REZ-unified-profile (Customer 360)',
+      'REZ-workflow-builder (automation)',
+      'Vector Search (RAG/Knowledge)'
     ],
     unique_features: [
       'csat-surveys',
@@ -105,9 +111,13 @@ app.get('/health', (req: Request, res: Response) => {
       'agent-management',
       'whatsapp-support',
       'escalation-engine',
-      'reports-analytics'
+      'reports-analytics',
+      'customer-timeline',
+      'unified-profile',
+      'workflow-automation',
+      'rag-knowledge'
     ],
-    serviceHealth: null // Will be populated on demand
+    ecosystem: '/api/ecosystem/health'
   });
 });
 
@@ -721,6 +731,7 @@ app.get('/api/websocket/status', (req: Request, res: Response) => {
 // ============================================
 
 app.use('/api/mobile', selfServiceRoutes);
+app.use('/api/mobile-sdk', mobileRoutes);
 
 // ============================================
 // UNIFIED SUPPORT ROUTES
@@ -759,6 +770,12 @@ app.use('/api/smart-upsell', smartUpsellRoutes);
 // WHATSAPP SUPPORT ROUTES (Modular)
 // ============================================
 app.use('/api/whatsapp', whatsappRoutes);
+
+// ============================================
+// ECOSYSTEM INTEGRATION ROUTES
+// Connects to: memory-layer, unified-profile, workflow-builder, vector-search
+// ============================================
+app.use('/api/ecosystem', ecosystemRoutes);
 
 // ============================================
 // ESCALATION ROUTES

@@ -1,4 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
+import axios from 'axios';
+import twilio from 'twilio';
 import { Session, ISession } from '../models/Session';
 import { Conversation, IConversation } from '../models/Conversation';
 import {
@@ -9,11 +11,61 @@ import {
 } from '../types/whatsapp';
 import { logger } from '../utils/logger';
 
+// ============================================
+// Twilio Retry Configuration
+// ============================================
+
+const TWILIO_RATE_LIMIT_DELAY = 5000; // 5 seconds between rate-limited requests
+const TWILIO_MAX_RETRIES = 3;
+const TWILIO_RETRY_DELAY_BASE = 1000; // Base delay for exponential backoff
+
+interface TwilioMessageResult {
+  messageId: string;
+  status: string;
+  sid?: string;
+}
+
+interface TemplateMessageResult {
+  messageId: string;
+  sid?: string;
+}
+
+interface WebhookData {
+  From?: string;
+  Body?: string;
+  MessageSid?: string;
+  Timestamp?: string;
+  [key: string]: unknown;
+}
+
 interface NLUResult {
   intent: string;
   confidence: number;
   entities: Record<string, unknown>;
   suggestedActions: string[];
+}
+
+/**
+ * AI-powered intent detection result
+ */
+interface AIIntentResult {
+  intent: string;
+  confidence: number;
+  entities: Record<string, unknown>;
+  suggestedActions: string[];
+  sentiment?: 'positive' | 'negative' | 'neutral';
+  language?: string;
+}
+
+/**
+ * Conversation context for AI detection
+ */
+interface AIConversationContext {
+  userId?: string;
+  state?: SessionState;
+  conversationHistory?: Array<{ intent: string; message: string }>;
+  cart?: unknown[];
+  sessionData?: Record<string, unknown>;
 }
 
 interface ResponseOption {
@@ -27,11 +79,423 @@ interface ResponseOption {
 export class ConversationEngine {
   private intentPatterns: Map<string, RegExp[]>;
   private stateResponses: Map<SessionState, (context: ConversationContext) => ResponseOption[]>;
+  private twilioClient: twilio.Twilio | null = null;
+  private whatsappPhoneNumber: string;
 
-  constructor() {
+  constructor(twilioClient?: twilio.Twilio, whatsappPhoneNumber?: string) {
     this.intentPatterns = new Map();
     this.stateResponses = new Map();
+    this.twilioClient = twilioClient || null;
+    this.whatsappPhoneNumber = whatsappPhoneNumber || '';
     this.initializePatterns();
+  }
+
+  /**
+   * Configure Twilio client after construction
+   */
+  configureTwilio(client: twilio.Twilio, phoneNumber: string): void {
+    this.twilioClient = client;
+    this.whatsappPhoneNumber = phoneNumber;
+    logger.info('Twilio client configured for ConversationEngine');
+  }
+
+  /**
+   * Retry helper with exponential backoff for Twilio rate limits
+   */
+  private async withTwilioRetry<T>(
+    operation: () => Promise<T>,
+    operationName: string,
+    retries: number = TWILIO_MAX_RETRIES
+  ): Promise<T> {
+    let lastError: Error | null = null;
+    let delay = TWILIO_RETRY_DELAY_BASE;
+
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        return await operation();
+      } catch (error: unknown) {
+        lastError = error as Error;
+        const errorMessage = lastError.message || '';
+        const errorCode = (error as { code?: string }).code;
+
+        // Check if this is a rate limit error (20429) or temporary failure
+        if (
+          errorCode === '20429' ||
+          errorMessage.includes('429') ||
+          errorMessage.includes('rate limit') ||
+          errorMessage.includes('temporarily unavailable')
+        ) {
+          if (attempt < retries) {
+            logger.warn(`Twilio rate limit hit, retrying in ${delay}ms`, {
+              attempt: attempt + 1,
+              maxRetries: retries,
+              operation: operationName,
+            });
+            await this.sleep(delay);
+            delay *= 2; // Exponential backoff
+            continue;
+          }
+        }
+
+        // For other errors, don't retry
+        throw lastError;
+      }
+    }
+
+    throw lastError;
+  }
+
+  /**
+   * Sleep utility for delays
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Send a real WhatsApp message via Twilio
+   */
+  async sendMessage(
+    to: string,
+    body: string,
+    mediaUrl?: string
+  ): Promise<TwilioMessageResult> {
+    if (!this.twilioClient) {
+      throw new Error('Twilio client not configured');
+    }
+
+    const from = `whatsapp:${this.whatsappPhoneNumber}`;
+    const toFormatted = `whatsapp:${to.replace(/^\+/, '')}`;
+
+    return this.withTwilioRetry(async () => {
+      const messageParams: {
+        from: string;
+        to: string;
+        body: string;
+        mediaUrl?: string[];
+      } = {
+        from,
+        to: toFormatted,
+        body,
+      };
+
+      if (mediaUrl) {
+        messageParams.mediaUrl = [mediaUrl];
+      }
+
+      const message = await this.twilioClient!.messages.create(messageParams);
+
+      logger.info('WhatsApp message sent via Twilio', {
+        messageId: message.sid,
+        to: toFormatted,
+        status: message.status,
+      });
+
+      return {
+        messageId: message.sid,
+        status: message.status,
+        sid: message.sid,
+      };
+    }, `sendMessage to ${to}`);
+  }
+
+  /**
+   * Send a template message via Twilio
+   */
+  async sendTemplateMessage(
+    to: string,
+    templateName: string,
+    components?: Record<string, string>
+  ): Promise<TemplateMessageResult> {
+    if (!this.twilioClient) {
+      throw new Error('Twilio client not configured');
+    }
+
+    const toFormatted = `whatsapp:${to.replace(/^\+/, '')}`;
+
+    return this.withTwilioRetry(async () => {
+      const messageParams: {
+        from: string;
+        to: string;
+        contentSid: string;
+        contentVariables?: string;
+      } = {
+        from: `whatsapp:${this.whatsappPhoneNumber}`,
+        to: toFormatted,
+        contentSid: templateName, // Template SID from Twilio
+      };
+
+      if (components && Object.keys(components).length > 0) {
+        // Convert { "1": "value" } format for Twilio
+        messageParams.contentVariables = JSON.stringify(components);
+      }
+
+      const message = await this.twilioClient!.messages.create(messageParams as Parameters<typeof this.twilioClient.messages.create>[0]);
+
+      logger.info('Template message sent via Twilio', {
+        messageId: message.sid,
+        to: toFormatted,
+        templateName,
+      });
+
+      return {
+        messageId: message.sid,
+        sid: message.sid,
+      };
+    }, `sendTemplateMessage to ${to}`);
+  }
+
+  /**
+   * Send interactive message with buttons
+   */
+  async sendInteractiveMessage(
+    to: string,
+    body: string,
+    buttons: Array<{ id: string; title: string }>,
+    header?: string
+  ): Promise<TwilioMessageResult> {
+    if (!this.twilioClient) {
+      throw new Error('Twilio client not configured');
+    }
+
+    const toFormatted = `whatsapp:${to.replace(/^\+/, '')}`;
+
+    return this.withTwilioRetry(async () => {
+      const interactiveContent = {
+        type: 'interactive',
+        interactive: {
+          type: 'button' as const,
+          header: header ? { type: 'text' as const, text: header } : undefined,
+          body: { text: body },
+          action: {
+            buttons: buttons.slice(0, 3).map((btn) => ({
+              type: 'reply' as const,
+              reply: {
+                id: btn.id,
+                title: btn.title.substring(0, 25), // WhatsApp max 25 chars
+              },
+            })),
+          },
+        },
+      };
+
+      const message = await this.twilioClient!.messages.create({
+        from: `whatsapp:${this.whatsappPhoneNumber}`,
+        to: toFormatted,
+        contentSid: 'interactive_template',
+        contentVariables: JSON.stringify({ '1': body }),
+      });
+
+      // If using contentSid approach doesn't work, fall back to body-only
+      if (message.status === 'failed') {
+        logger.warn('Interactive message failed, sending as text', {
+          messageId: message.sid,
+        });
+        // Send as plain text with button options inline
+        const fallbackBody = `${body}\n\nOptions:\n${buttons.map((b, i) => `${i + 1}. ${b.title}`).join('\n')}`;
+        const fallbackMessage = await this.twilioClient!.messages.create({
+          from: `whatsapp:${this.whatsappPhoneNumber}`,
+          to: toFormatted,
+          body: fallbackBody,
+        });
+        return {
+          messageId: fallbackMessage.sid,
+          status: fallbackMessage.status,
+          sid: fallbackMessage.sid,
+        };
+      }
+
+      logger.info('Interactive message sent via Twilio', {
+        messageId: message.sid,
+        to: toFormatted,
+        buttonCount: buttons.length,
+      });
+
+      return {
+        messageId: message.sid,
+        status: message.status,
+        sid: message.sid,
+      };
+    }, `sendInteractiveMessage to ${to}`);
+  }
+
+  /**
+   * Handle incoming webhook message from Twilio
+   */
+  async handleIncomingMessage(webhookData: WebhookData): Promise<void> {
+    const { From, Body, MessageSid, Timestamp } = webhookData;
+
+    if (!From || !MessageSid) {
+      logger.warn('Invalid webhook data received', { webhookData });
+      return;
+    }
+
+    // Extract phone number without whatsapp: prefix
+    const fromNumber = From.replace('whatsapp:', '').replace(/^\+/, '');
+
+    logger.info('Handling incoming WhatsApp message', {
+      from: fromNumber,
+      messageId: MessageSid,
+      timestamp: Timestamp,
+    });
+
+    try {
+      // Detect intent using NLP
+      const intentResult = await this.detectIntent(Body || '');
+
+      logger.info('Intent detected', {
+        from: fromNumber,
+        intent: intentResult.intent,
+        confidence: intentResult.confidence,
+      });
+
+      // Generate response
+      const response = await this.generateResponseFromIntent(intentResult);
+
+      // Send response back to user
+      if (response.message) {
+        if (response.actions && response.actions.length > 0) {
+          await this.sendInteractiveMessage(
+            fromNumber,
+            response.message,
+            response.actions.map((a) => ({
+              id: a.payload || a.title.toLowerCase().replace(/\s+/g, '_'),
+              title: a.title,
+            })),
+            response.type === MessageType.INTERACTIVE ? 'Menu' : undefined
+          );
+        } else {
+          await this.sendMessage(fromNumber, response.message, response.mediaUrl);
+        }
+      }
+
+      // Store message in history
+      await this.storeMessage(MessageSid, webhookData);
+
+    } catch (error) {
+      logger.error('Failed to handle incoming message', {
+        from: fromNumber,
+        messageId: MessageSid,
+        error,
+      });
+
+      // Send error message to user
+      try {
+        await this.sendMessage(
+          fromNumber,
+          "Sorry, I encountered an error processing your message. Please try again."
+        );
+      } catch (sendError) {
+        logger.error('Failed to send error message', { sendError });
+      }
+    }
+  }
+
+  /**
+   * Store message in conversation history
+   */
+  private async storeMessage(messageSid: string, webhookData: WebhookData): Promise<void> {
+    try {
+      const fromNumber = webhookData.From?.replace('whatsapp:', '') || '';
+      const body = webhookData.Body || '';
+      const timestamp = webhookData.Timestamp
+        ? new Date(parseInt(webhookData.Timestamp) * 1000)
+        : new Date();
+
+      // Find existing session or create minimal record
+      let session = await Session.findOne({ userId: fromNumber });
+
+      if (session) {
+        (session as any).addMessage?.('user', body, messageSid);
+        await session.save();
+      }
+
+      logger.debug('Message stored in history', { messageSid, fromNumber });
+    } catch (error) {
+      logger.error('Failed to store message', { messageSid, error });
+    }
+  }
+
+  /**
+   * Generate response from NLU result (for incoming webhook handling)
+   */
+  private async generateResponseFromIntent(intentResult: NLUResult): Promise<ResponseOption> {
+    // Create a minimal session context for response generation
+    const mockSession = {
+      userId: '',
+      state: SessionState.IDLE,
+      context: {
+        cart: [],
+        currentProduct: null,
+        currentOrder: null,
+      },
+    } as ISession;
+
+    switch (intentResult.intent) {
+      case 'greeting':
+        return this.handleGreeting(mockSession);
+      case 'goodbye':
+        return this.handleGoodbye(mockSession);
+      case 'view_products':
+        return this.handleViewProducts();
+      case 'search':
+        return this.handleSearch({ entities: intentResult.entities });
+      case 'support':
+        return this.handleSupport();
+      case 'order_status':
+        return this.handleOrderStatus(mockSession);
+      default:
+        return this.handleUnknown({});
+    }
+  }
+
+  /**
+   * Check Twilio account status and balance
+   */
+  async checkTwilioStatus(): Promise<{
+    accountSid: string;
+    status: string;
+    balance?: number;
+  }> {
+    if (!this.twilioClient) {
+      throw new Error('Twilio client not configured');
+    }
+
+    try {
+      // Use the accounts endpoint directly
+      const account = await (this.twilioClient as unknown as { accounts: { (sid: string): { fetch: () => Promise<{ sid: string; status?: string }> } } }).accounts(process.env.TWILIO_ACCOUNT_SID!).fetch();
+      return {
+        accountSid: account.sid,
+        status: account.status || 'unknown',
+      };
+    } catch (error) {
+      logger.error('Failed to check Twilio status', { error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get message delivery status from Twilio
+   */
+  async getMessageStatus(messageSid: string): Promise<{
+    sid: string;
+    status: string;
+    errorCode?: string;
+    errorMessage?: string;
+  }> {
+    if (!this.twilioClient) {
+      throw new Error('Twilio client not configured');
+    }
+
+    return this.withTwilioRetry(async () => {
+      const message = await this.twilioClient!.messages(messageSid).fetch();
+      return {
+        sid: message.sid,
+        status: message.status,
+        errorCode: (message.errorCode as unknown as { code?: string })?.code?.toString(),
+        errorMessage: message.errorMessage || undefined,
+      };
+    }, `getMessageStatus ${messageSid}`);
   }
 
   /**

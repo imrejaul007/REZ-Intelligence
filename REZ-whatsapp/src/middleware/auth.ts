@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
+import twilio from 'twilio';
 import { logger } from '../utils/logger';
 
 export interface AuthenticatedRequest extends Request {
@@ -68,20 +69,134 @@ export const verifyTwilioWebhook = (
   next: NextFunction
 ): void => {
   const signature = req.headers['x-twilio-signature'] as string;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const webhookUrl = process.env.WEBHOOK_URL || getWebhookUrl(req);
+
+  // Check environment
+  const isProduction = process.env.NODE_ENV === 'production';
 
   if (!signature) {
-    logger.warn('Missing Twilio signature', {
+    if (isProduction) {
+      logger.warn('Missing Twilio signature in production', {
+        path: req.path,
+        ip: req.ip,
+      });
+      res.status(403).json({
+        success: false,
+        error: {
+          code: 'MISSING_SIGNATURE',
+          message: 'Missing Twilio webhook signature',
+        },
+      });
+      return;
+    }
+    // Allow through in development but log
+    logger.warn('Missing Twilio signature (development mode)', {
       path: req.path,
     });
-    // Allow through for now, but log
+    next();
+    return;
   }
 
-  // In production, verify against Twilio's signature
-  // const twilioSignature = req.headers['x-twilio-signature'];
-  // const validator = new Twilio.validateRequest(authToken, twilioSignature, url, req.body);
+  if (!authToken) {
+    logger.error('TWILIO_AUTH_TOKEN not configured');
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'CONFIGURATION_ERROR',
+        message: 'Server misconfiguration: missing auth token',
+      },
+    });
+    return;
+  }
 
-  next();
+  try {
+    // Validate the request signature using Twilio's built-in validator
+    const isValid = twilio.validateRequest(
+      authToken,
+      signature,
+      webhookUrl,
+      req.body
+    );
+
+    if (!isValid) {
+      logger.warn('Invalid Twilio signature', {
+        path: req.path,
+        ip: req.ip,
+      });
+
+      if (isProduction) {
+        res.status(403).json({
+          success: false,
+          error: {
+            code: 'INVALID_SIGNATURE',
+            message: 'Invalid webhook signature',
+          },
+        });
+        return;
+      }
+      // Allow through in development for testing
+      logger.warn('Invalid signature accepted in development mode');
+    }
+
+    logger.debug('Twilio webhook signature verified', {
+      path: req.path,
+      valid: isValid,
+    });
+
+    next();
+  } catch (error) {
+    logger.error('Error validating Twilio webhook', { error });
+
+    if (isProduction) {
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Error validating webhook',
+        },
+      });
+      return;
+    }
+
+    next();
+  }
 };
+
+/**
+ * Helper to construct webhook URL from request
+ */
+function getWebhookUrl(req: Request): string {
+  const protocol = req.protocol;
+  const host = req.get('host') || 'localhost:4202';
+  const baseUrl = `${protocol}://${host}`;
+  return `${baseUrl}${req.path}`;
+}
+
+/**
+ * Verify Twilio webhook signature (standalone utility)
+ */
+export function verifyTwilioSignature(
+  authToken: string,
+  signature: string,
+  url: string,
+  params: Record<string, unknown>
+): boolean {
+  return twilio.validateRequest(authToken, signature, url, params);
+}
+
+/**
+ * Generate HMAC signature for outgoing webhooks (for services that need to call other webhooks)
+ */
+export function generateHmacSignature(
+  payload: string,
+  secret: string
+): string {
+  return crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+}
 
 // Merchant authentication (for merchant-facing endpoints)
 export const validateMerchantAuth = (

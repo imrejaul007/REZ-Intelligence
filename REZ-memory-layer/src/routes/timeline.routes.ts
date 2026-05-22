@@ -169,8 +169,8 @@ router.get('/:userId/summary', addRequestId, async (req: Request, res: Response)
       userId,
       totalEvents,
       eventBreakdown: {
-        byCategory: Object.fromEntries(byCategory.map(c => [c._id, c.count])),
-        bySource: Object.fromEntries(bySource.map(s => [s._id, s.count])),
+        byCategory: Object.fromEntries(byCategory.map((c: any) => [c._id, c.count])) as any,
+        bySource: Object.fromEntries(bySource.map((s: any) => [s._id, s.count])) as any,
         last24Hours: last24h,
         last7Days: last7d,
         last30Days: last30d

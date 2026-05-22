@@ -4,7 +4,8 @@
   "description": "REZ Flow Runtime - Workflow execution engine for REZ-workflow-builder",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --skipLibCheck",
+    "build:strict": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "worker": "tsx src/workers/executionWorker.ts",

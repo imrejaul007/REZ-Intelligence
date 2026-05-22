@@ -14,7 +14,10 @@ import Redis from 'ioredis';
 import { Execution, Workflow } from './models/Execution';
 import executionRoutes from './routes/execution.routes';
 import workflowRoutes from './routes/workflow.routes';
+import metricsRoutes from './routes/metrics';
 import { authenticateInternal, optionalAuth } from './middleware/auth';
+import { tracingMiddleware } from './middleware/tracing';
+import { metricsTracker } from './middleware/metricsTracker';
 import dlqService from './services/dlqService';
 import logger from './services/logger';
 
@@ -72,12 +75,19 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       statusCode: res.statusCode,
       duration,
       ip: req.ip,
-      userAgent: req.get('user-agent')
+      userAgent: req.get('user-agent'),
+      traceId: (req as Request & { trace?: { traceId: string } }).trace?.traceId
     });
   });
 
   next();
 });
+
+// Distributed tracing middleware
+app.use(tracingMiddleware());
+
+// Metrics tracking middleware
+app.use(metricsTracker());
 
 // Rate limiting
 const limiter = rateLimit({
@@ -115,12 +125,18 @@ const executionLimiter = rateLimit({
 
 app.use('/api/executions', executionLimiter);
 
+// ==================== METRICS ENDPOINT ====================
+
+app.use('/metrics', metricsRoutes);
+
 // ==================== HEALTH ENDPOINTS ====================
 
 app.get('/health', async (req: Request, res: Response) => {
   const checks = {
     status: 'healthy',
     timestamp: new Date().toISOString(),
+    service: 'REZ-flow-runtime',
+    version: '1.0.0',
     uptime: process.uptime(),
     checks: {
       mongodb: 'unknown',

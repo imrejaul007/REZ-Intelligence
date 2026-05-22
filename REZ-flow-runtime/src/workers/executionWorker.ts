@@ -132,7 +132,7 @@ worker.on('failed', async (job, error) => {
         retryCount: job.attemptsMade,
         failedAt: new Date(),
         workflowDefinition: job.data.workflowDefinition as WorkflowDefinition,
-        nodeData: { label: 'execution', type: 'unknown', config: {} },
+        nodeData: { label: 'execution', type: 'trigger', config: {} },
         context: job.data.context
       });
     } catch (dlqError) {
@@ -141,8 +141,9 @@ worker.on('failed', async (job, error) => {
   }
 });
 
-worker.on('stalled', (job) => {
-  logger.warn('Job stalled', { jobId: job?.id, executionId: job?.data.executionId });
+worker.on('stalled', (job: any) => {
+  const jobData = job?.data;
+  logger.warn('Job stalled', { jobId: job?.id, executionId: jobData?.executionId });
 });
 
 worker.on('error', (error) => {
@@ -150,10 +151,11 @@ worker.on('error', (error) => {
 });
 
 // Progress tracking
-worker.on('progress', (job, progress) => {
+worker.on('progress', (job: any, progress) => {
+  const jobData = job?.data;
   logger.debug('Job progress', {
-    jobId: job.id,
-    executionId: job.data.executionId,
+    jobId: job?.id,
+    executionId: jobData?.executionId,
     progress
   });
 });

@@ -5,15 +5,20 @@
 
 import mongoose, { Schema, Document } from 'mongoose';
 import {
-  TimelineEvent,
   EventMetadata,
   GeoLocation,
   EventSource,
   EventCategory
 } from '../types/timeline';
 
-export interface ITimelineEventDocument extends Omit<TimelineEvent, 'timestamp' | 'metadata'>, Document {
+export interface ITimelineEventDocument extends Document {
+  _id: mongoose.Types.ObjectId;
+  userId: string;
+  type: string;
+  category: EventCategory;
+  source: EventSource;
   timestamp: Date;
+  data: Record<string, unknown>;
   metadata: EventMetadata;
   createdAt: Date;
   updatedAt: Date;
@@ -189,7 +194,18 @@ TimelineEventSchema.statics.getUniqueActiveDays = function(userId: string, days:
   ]);
 };
 
-export const TimelineEvent = mongoose.model<ITimelineEventDocument>(
+// Static methods interface
+interface TimelineEventModelType extends mongoose.Model<ITimelineEventDocument> {
+  getEventCountByUserId(userId: string): Promise<number>;
+  getEventCountByCategory(userId: string): Promise<Record<string, number>>;
+  getEventCountBySource(userId: string): Promise<Record<string, number>>;
+  getRecentActivity(userId: string, days: number): Promise<ITimelineEventDocument[]>;
+  getUniqueActiveDays(userId: string, days: number): Promise<number>;
+}
+
+export const TimelineEvent = mongoose.model<ITimelineEventDocument, TimelineEventModelType>(
   'TimelineEvent',
   TimelineEventSchema
 );
+
+export const TimelineEventModel = TimelineEvent;

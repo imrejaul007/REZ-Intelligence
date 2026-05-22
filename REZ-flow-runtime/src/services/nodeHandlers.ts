@@ -1,10 +1,10 @@
 /**
  * REZ Flow Runtime - Node Handlers
- * Handler functions for each node type
+ * Handler functions for each node type with REAL service integrations
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 import {
   NodeType,
   NodeData,
@@ -22,6 +22,19 @@ import {
 } from '../types/workflow';
 import logger from './logger';
 
+// ==================== SERVICE URLS ====================
+
+const SERVICE_URLS = {
+  NOTIFY: process.env.NOTIFY_SERVICE_URL || 'http://localhost:4011',
+  WHATSAPP: process.env.WHATSAPP_SERVICE_URL || 'http://localhost:4202',
+  WALLET: process.env.WALLET_SERVICE_URL || 'http://localhost:4004',
+  ORDER: process.env.ORDER_SERVICE_URL || 'http://localhost:4006',
+  PROFILE: process.env.PROFILE_SERVICE_URL || 'http://localhost:4013',
+  AUTH: process.env.AUTH_SERVICE_URL || 'http://localhost:4002'
+};
+
+// ==================== TYPES ====================
+
 export interface NodeHandlerContext {
   context: ExecutionContext;
   nodeResults: Map<string, NodeResult>;
@@ -33,6 +46,175 @@ export interface HandlerResult {
   nextNodeIds: string[];
   shouldWait?: boolean;
   waitUntil?: Date;
+}
+
+export interface ServiceResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  retryable?: boolean;
+}
+
+export interface SMSResponse {
+  messageId: string;
+  status: string;
+  sentAt: string;
+}
+
+export interface WhatsAppResponse {
+  messageId: string;
+  status: string;
+  waId: string;
+}
+
+export interface PushResponse {
+  notificationId: string;
+  status: string;
+  delivered: boolean;
+}
+
+export interface EmailResponse {
+  emailId: string;
+  messageId: string;
+  accepted: boolean[];
+}
+
+export interface WalletResponse {
+  transactionId: string;
+  balance: number;
+  coinsAdded: number;
+}
+
+export interface OrderResponse {
+  orderId: string;
+  status: string;
+  totalAmount: number;
+}
+
+// ==================== RETRY UTILITIES ====================
+
+interface RetryOptions {
+  maxRetries?: number;
+  initialDelayMs?: number;
+  maxDelayMs?: number;
+  backoffMultiplier?: number;
+  retryableStatuses?: number[];
+}
+
+/**
+ * Timing-safe string comparison to prevent timing attacks
+ */
+export function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+/**
+ * Retry wrapper with exponential backoff
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  options: RetryOptions = {}
+): Promise<T> {
+  const {
+    maxRetries = 3,
+    initialDelayMs = 1000,
+    maxDelayMs = 30000,
+    backoffMultiplier = 2,
+    retryableStatuses = [408, 429, 500, 502, 503, 504]
+  } = options;
+
+  let lastError: Error | null = null;
+  let delay = initialDelayMs;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+
+      // Check if error is retryable
+      const isRetryable = (error as AxiosError)?.response?.status
+        ? retryableStatuses.includes((error as AxiosError).response?.status || 0)
+        : true;
+
+      if (attempt === maxRetries || !isRetryable) {
+        logger.error(`Max retries reached or non-retryable error`, {
+          attempt,
+          maxRetries,
+          error: lastError.message
+        });
+        throw lastError;
+      }
+
+      // Add jitter to prevent thundering herd
+      const jitter = Math.random() * 0.3 * delay;
+      const actualDelay = Math.min(delay + jitter, maxDelayMs);
+
+      logger.warn(`Retrying after ${actualDelay}ms`, {
+        attempt,
+        maxRetries,
+        nextDelay: actualDelay,
+        error: lastError.message
+      });
+
+      await new Promise(resolve => setTimeout(resolve, actualDelay));
+      delay = Math.min(delay * backoffMultiplier, maxDelayMs);
+    }
+  }
+
+  throw lastError;
+}
+
+/**
+ * Create internal service headers
+ */
+function getInternalHeaders(): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    'X-Internal-Token': process.env.INTERNAL_SERVICE_TOKEN || '',
+    'X-Service-Name': 'REZ-flow-runtime'
+  };
+}
+
+/**
+ * Make authenticated service call with retry
+ */
+async function serviceCall<T>(
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+  url: string,
+  data?: unknown,
+  options: { timeout?: number; retry?: boolean } = {}
+): Promise<T> {
+  const config: AxiosRequestConfig = {
+    method,
+    url,
+    headers: getInternalHeaders(),
+    timeout: options.timeout || 30000,
+    validateStatus: (status) => status < 500
+  };
+
+  if (data) {
+    config.data = data;
+  }
+
+  const makeRequest = async () => {
+    const response = await axios(config);
+    if (response.status >= 400) {
+      const error = new Error(`Service returned ${response.status}: ${JSON.stringify(response.data)}`) as AxiosError;
+      error.response = response;
+      throw error;
+    }
+    return response.data as T;
+  };
+
+  return options.retry !== false ? withRetry(makeRequest) : makeRequest();
 }
 
 // ==================== BASE HANDLER ====================
@@ -109,57 +291,16 @@ export const triggerHandlers: Record<string, (config: TriggerConfig, context: Ex
 // ==================== ACTION HANDLERS ====================
 
 export const actionHandlers: Record<string, (config: ActionConfig, context: ExecutionContext, nodeId: string) => Promise<HandlerResult>> = {
-  async send_email(config: ActionConfig, context: ExecutionContext, nodeId: string): Promise<HandlerResult> {
-    const { actionType, params } = config;
-    logger.info(`Executing action: ${actionType}`, { nodeId, executionId: context.executionId });
-
-    // Extract email parameters
-    const { to, subject, body, templateId } = params as {
-      to?: string;
-      subject?: string;
-      body?: string;
-      templateId?: string;
-    };
-
-    // Get user email from context if not provided
-    const recipientEmail = to || (context.variables.userEmail as string) || (context.variables.email as string);
-
-    if (!recipientEmail) {
-      throw new Error('Email recipient not found in context or params');
-    }
-
-    // In production, integrate with email service (SendGrid, SES, etc.)
-    // For now, simulate the action
-    const emailPayload = {
-      to: recipientEmail,
-      subject: subject || 'REZ Workflow Notification',
-      body: body || '',
-      templateId,
-      sentAt: new Date().toISOString(),
-      workflowExecutionId: context.executionId
-    };
-
-    logger.info(`Email action completed`, { nodeId, emailPayload });
-
-    return {
-      output: {
-        action: actionType,
-        success: true,
-        emailId: uuidv4(),
-        payload: emailPayload
-      },
-      nextNodeIds: []
-    };
-  },
-
+  // ==================== SMS HANDLER (RABTUL Notify Service) ====================
   async send_sms(config: ActionConfig, context: ExecutionContext, nodeId: string): Promise<HandlerResult> {
     const { actionType, params } = config;
     logger.info(`Executing action: ${actionType}`, { nodeId, executionId: context.executionId });
 
-    const { to, message, templateId } = params as {
+    const { to, message, templateId, senderId } = params as {
       to?: string;
       message?: string;
       templateId?: string;
+      senderId?: string;
     };
 
     const recipientPhone = to || (context.variables.phone as string) || (context.variables.userPhone as string);
@@ -168,172 +309,870 @@ export const actionHandlers: Record<string, (config: ActionConfig, context: Exec
       throw new Error('Phone number not found in context or params');
     }
 
-    // In production, integrate with SMS service (Twilio, MSG91, etc.)
-    const smsPayload = {
-      to: recipientPhone,
-      message: message || '',
-      templateId,
-      sentAt: new Date().toISOString(),
-      workflowExecutionId: context.executionId
-    };
+    if (!message) {
+      throw new Error('SMS message is required');
+    }
 
-    logger.info(`SMS action completed`, { nodeId, smsPayload });
+    logger.info(`Sending SMS to ${recipientPhone}`, {
+      nodeId,
+      executionId: context.executionId,
+      workflowId: context.workflowId
+    });
 
-    return {
-      output: {
-        action: actionType,
-        success: true,
-        messageId: uuidv4(),
-        payload: smsPayload
-      },
-      nextNodeIds: []
-    };
+    try {
+      const response = await serviceCall<SMSResponse & { success: boolean }>(
+        'POST',
+        `${SERVICE_URLS.NOTIFY}/api/notifications/sms/send`,
+        {
+          phone: recipientPhone,
+          message,
+          templateId,
+          senderId,
+          metadata: {
+            workflowId: context.workflowId,
+            executionId: context.executionId,
+            nodeId
+          }
+        }
+      );
+
+      logger.info(`SMS sent successfully`, {
+        nodeId,
+        messageId: response.messageId,
+        status: response.status
+      });
+
+      return {
+        output: {
+          action: actionType,
+          success: true,
+          messageId: response.messageId,
+          status: response.status,
+          recipientPhone,
+          sentAt: response.sentAt
+        },
+        nextNodeIds: []
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`SMS send failed`, {
+        nodeId,
+        error: errorMessage,
+        recipientPhone,
+        workflowId: context.workflowId
+      });
+
+      // Return failure output but don't throw - allow workflow to continue
+      return {
+        output: {
+          action: actionType,
+          success: false,
+          error: errorMessage,
+          recipientPhone
+        },
+        nextNodeIds: []
+      };
+    }
   },
 
+  // ==================== WHATSAPP HANDLER (Unified WhatsApp Service) ====================
   async send_whatsapp(config: ActionConfig, context: ExecutionContext, nodeId: string): Promise<HandlerResult> {
     const { actionType, params } = config;
     logger.info(`Executing action: ${actionType}`, { nodeId, executionId: context.executionId });
 
-    const { to, message, templateName } = params as {
+    const { to, message, templateName, components, mediaUrl } = params as {
       to?: string;
       message?: string;
       templateName?: string;
+      components?: Array<{ type: string; parameters: unknown[] }>;
+      mediaUrl?: string;
     };
 
-    const recipientPhone = to || (context.variables.phone as string) || (context.variables.whatsappNumber as string);
+    const recipientPhone = to || (context.variables.phone as string) ||
+      (context.variables.whatsappNumber as string) ||
+      (context.variables.userPhone as string);
 
     if (!recipientPhone) {
       throw new Error('WhatsApp number not found in context or params');
     }
 
-    // In production, integrate with WhatsApp Business API
-    const whatsappPayload = {
-      to: recipientPhone,
-      message: message || '',
-      templateName,
-      sentAt: new Date().toISOString(),
-      workflowExecutionId: context.executionId
-    };
+    if (!message && !templateName) {
+      throw new Error('Either message or templateName is required');
+    }
 
-    logger.info(`WhatsApp action completed`, { nodeId, whatsappPayload });
+    logger.info(`Sending WhatsApp to ${recipientPhone}`, {
+      nodeId,
+      executionId: context.executionId,
+      templateName
+    });
 
-    return {
-      output: {
-        action: actionType,
-        success: true,
-        messageId: uuidv4(),
-        payload: whatsappPayload
-      },
-      nextNodeIds: []
-    };
+    try {
+      const response = await serviceCall<WhatsAppResponse & { success: boolean }>(
+        'POST',
+        `${SERVICE_URLS.WHATSAPP}/api/whatsapp/send`,
+        {
+          to: recipientPhone,
+          message,
+          templateName,
+          components,
+          mediaUrl,
+          metadata: {
+            workflowId: context.workflowId,
+            executionId: context.executionId,
+            nodeId
+          }
+        }
+      );
+
+      logger.info(`WhatsApp message sent successfully`, {
+        nodeId,
+        messageId: response.messageId,
+        waId: response.waId,
+        status: response.status
+      });
+
+      return {
+        output: {
+          action: actionType,
+          success: true,
+          messageId: response.messageId,
+          waId: response.waId,
+          status: response.status,
+          recipientPhone
+        },
+        nextNodeIds: []
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`WhatsApp send failed`, {
+        nodeId,
+        error: errorMessage,
+        recipientPhone,
+        workflowId: context.workflowId
+      });
+
+      return {
+        output: {
+          action: actionType,
+          success: false,
+          error: errorMessage,
+          recipientPhone
+        },
+        nextNodeIds: []
+      };
+    }
   },
 
+  // ==================== PUSH NOTIFICATION HANDLER (RABTUL Notify Service) ====================
   async send_push(config: ActionConfig, context: ExecutionContext, nodeId: string): Promise<HandlerResult> {
     const { actionType, params } = config;
     logger.info(`Executing action: ${actionType}`, { nodeId, executionId: context.executionId });
 
-    const { userId, title, body, data } = params as {
+    const { userId, title, body, data, badge, sound, channelId } = params as {
       userId?: string;
       title?: string;
       body?: string;
       data?: Record<string, unknown>;
+      badge?: number;
+      sound?: string;
+      channelId?: string;
     };
 
-    const targetUserId = userId || context.userId;
+    const targetUserId = userId || context.userId || (context.variables.targetUserId as string);
 
     if (!targetUserId) {
       throw new Error('User ID not found in context or params');
     }
 
-    // In production, integrate with push notification service (FCM, Expo, etc.)
-    const pushPayload = {
-      userId: targetUserId,
-      title: title || 'REZ Notification',
-      body: body || '',
-      data: data || {},
-      sentAt: new Date().toISOString(),
-      workflowExecutionId: context.executionId
-    };
+    if (!title && !body) {
+      throw new Error('Either title or body is required for push notification');
+    }
 
-    logger.info(`Push notification action completed`, { nodeId, pushPayload });
+    logger.info(`Sending push notification to ${targetUserId}`, {
+      nodeId,
+      executionId: context.executionId,
+      title
+    });
 
-    return {
-      output: {
-        action: actionType,
-        success: true,
-        notificationId: uuidv4(),
-        payload: pushPayload
-      },
-      nextNodeIds: []
-    };
+    try {
+      const response = await serviceCall<PushResponse & { success: boolean }>(
+        'POST',
+        `${SERVICE_URLS.NOTIFY}/api/notifications/push/send`,
+        {
+          userId: targetUserId,
+          title: title || 'REZ Notification',
+          body: body || '',
+          data: {
+            ...data,
+            workflowId: context.workflowId,
+            executionId: context.executionId,
+            nodeId
+          },
+          badge,
+          sound: sound || 'default',
+          channelId,
+          metadata: {
+            workflowId: context.workflowId,
+            executionId: context.executionId,
+            nodeId
+          }
+        }
+      );
+
+      logger.info(`Push notification sent successfully`, {
+        nodeId,
+        notificationId: response.notificationId,
+        delivered: response.delivered
+      });
+
+      return {
+        output: {
+          action: actionType,
+          success: true,
+          notificationId: response.notificationId,
+          delivered: response.delivered,
+          status: response.status,
+          targetUserId
+        },
+        nextNodeIds: []
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`Push notification failed`, {
+        nodeId,
+        error: errorMessage,
+        targetUserId,
+        workflowId: context.workflowId
+      });
+
+      return {
+        output: {
+          action: actionType,
+          success: false,
+          error: errorMessage,
+          targetUserId
+        },
+        nextNodeIds: []
+      };
+    }
   },
 
-  async update_user(config: ActionConfig, context: ExecutionContext, nodeId: string): Promise<HandlerResult> {
+  // ==================== EMAIL HANDLER (RABTUL Notify Service) ====================
+  async send_email(config: ActionConfig, context: ExecutionContext, nodeId: string): Promise<HandlerResult> {
     const { actionType, params } = config;
     logger.info(`Executing action: ${actionType}`, { nodeId, executionId: context.executionId });
 
-    const { field, value } = params as { field: string; value: unknown };
+    const { to, subject, body, htmlContent, templateId, fromName } = params as {
+      to?: string;
+      subject?: string;
+      body?: string;
+      htmlContent?: string;
+      templateId?: string;
+      fromName?: string;
+    };
 
-    if (!context.userId) {
-      throw new Error('User ID not found in context');
+    const recipientEmail = to || (context.variables.userEmail as string) ||
+      (context.variables.email as string) ||
+      (context.variables.recipientEmail as string);
+
+    if (!recipientEmail) {
+      throw new Error('Email recipient not found in context or params');
     }
 
-    // In production, call RABTUL Profile Service or other user service
-    const updatePayload = {
-      userId: context.userId,
-      field,
-      value,
-      updatedAt: new Date().toISOString(),
-      workflowExecutionId: context.executionId
-    };
+    if (!subject) {
+      throw new Error('Email subject is required');
+    }
 
-    logger.info(`User update action completed`, { nodeId, updatePayload });
+    const emailBody = htmlContent || body || '';
 
-    return {
-      output: {
-        action: actionType,
-        success: true,
-        payload: updatePayload
-      },
-      nextNodeIds: []
-    };
+    logger.info(`Sending email to ${recipientEmail}`, {
+      nodeId,
+      executionId: context.executionId,
+      subject
+    });
+
+    try {
+      const response = await serviceCall<EmailResponse & { success: boolean }>(
+        'POST',
+        `${SERVICE_URLS.NOTIFY}/api/notifications/email/send`,
+        {
+          to: recipientEmail,
+          subject,
+          body: emailBody,
+          html: htmlContent,
+          templateId,
+          fromName: fromName || 'REZ',
+          metadata: {
+            workflowId: context.workflowId,
+            executionId: context.executionId,
+            nodeId
+          }
+        }
+      );
+
+      logger.info(`Email sent successfully`, {
+        nodeId,
+        emailId: response.emailId,
+        messageId: response.messageId,
+        accepted: response.accepted
+      });
+
+      return {
+        output: {
+          action: actionType,
+          success: true,
+          emailId: response.emailId,
+          messageId: response.messageId,
+          recipientEmail,
+          accepted: response.accepted
+        },
+        nextNodeIds: []
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`Email send failed`, {
+        nodeId,
+        error: errorMessage,
+        recipientEmail,
+        workflowId: context.workflowId
+      });
+
+      return {
+        output: {
+          action: actionType,
+          success: false,
+          error: errorMessage,
+          recipientEmail
+        },
+        nextNodeIds: []
+      };
+    }
   },
 
+  // ==================== WALLET HANDLER (RABTUL Wallet Service) ====================
+  async add_coins(config: ActionConfig, context: ExecutionContext, nodeId: string): Promise<HandlerResult> {
+    const { actionType, params } = config;
+    logger.info(`Executing action: ${actionType}`, { nodeId, executionId: context.executionId });
+
+    const { userId, amount, reason, source } = params as {
+      userId?: string;
+      amount: number;
+      reason?: string;
+      source?: string;
+    };
+
+    const targetUserId = userId || context.userId || (context.variables.targetUserId as string);
+
+    if (!targetUserId) {
+      throw new Error('User ID not found in context or params');
+    }
+
+    if (!amount || amount <= 0) {
+      throw new Error('Valid positive amount is required');
+    }
+
+    logger.info(`Adding ${amount} coins to user ${targetUserId}`, {
+      nodeId,
+      executionId: context.executionId,
+      reason
+    });
+
+    try {
+      const response = await serviceCall<WalletResponse & { success: boolean }>(
+        'POST',
+        `${SERVICE_URLS.WALLET}/api/wallet/add`,
+        {
+          userId: targetUserId,
+          amount,
+          reason: reason || `Workflow: ${context.workflowId}`,
+          source: source || 'workflow',
+          metadata: {
+            workflowId: context.workflowId,
+            executionId: context.executionId,
+            nodeId
+          }
+        }
+      );
+
+      logger.info(`Coins added successfully`, {
+        nodeId,
+        transactionId: response.transactionId,
+        balance: response.balance,
+        coinsAdded: response.coinsAdded
+      });
+
+      return {
+        output: {
+          action: actionType,
+          success: true,
+          transactionId: response.transactionId,
+          balance: response.balance,
+          coinsAdded: response.coinsAdded,
+          targetUserId,
+          amount
+        },
+        nextNodeIds: []
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`Add coins failed`, {
+        nodeId,
+        error: errorMessage,
+        targetUserId,
+        amount,
+        workflowId: context.workflowId
+      });
+
+      throw new Error(`Failed to add coins: ${errorMessage}`);
+    }
+  },
+
+  async deduct_coins(config: ActionConfig, context: ExecutionContext, nodeId: string): Promise<HandlerResult> {
+    const { actionType, params } = config;
+    logger.info(`Executing action: ${actionType}`, { nodeId, executionId: context.executionId });
+
+    const { userId, amount, reason, source } = params as {
+      userId?: string;
+      amount: number;
+      reason?: string;
+      source?: string;
+    };
+
+    const targetUserId = userId || context.userId || (context.variables.targetUserId as string);
+
+    if (!targetUserId) {
+      throw new Error('User ID not found in context or params');
+    }
+
+    if (!amount || amount <= 0) {
+      throw new Error('Valid positive amount is required');
+    }
+
+    logger.info(`Deducting ${amount} coins from user ${targetUserId}`, {
+      nodeId,
+      executionId: context.executionId,
+      reason
+    });
+
+    try {
+      const response = await serviceCall<WalletResponse & { success: boolean }>(
+        'POST',
+        `${SERVICE_URLS.WALLET}/api/wallet/deduct`,
+        {
+          userId: targetUserId,
+          amount,
+          reason: reason || `Workflow: ${context.workflowId}`,
+          source: source || 'workflow',
+          metadata: {
+            workflowId: context.workflowId,
+            executionId: context.executionId,
+            nodeId
+          }
+        }
+      );
+
+      logger.info(`Coins deducted successfully`, {
+        nodeId,
+        transactionId: response.transactionId,
+        balance: response.balance,
+        coinsDeducted: response.coinsAdded
+      });
+
+      return {
+        output: {
+          action: actionType,
+          success: true,
+          transactionId: response.transactionId,
+          balance: response.balance,
+          coinsDeducted: response.coinsAdded,
+          targetUserId,
+          amount
+        },
+        nextNodeIds: []
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`Deduct coins failed`, {
+        nodeId,
+        error: errorMessage,
+        targetUserId,
+        amount,
+        workflowId: context.workflowId
+      });
+
+      throw new Error(`Failed to deduct coins: ${errorMessage}`);
+    }
+  },
+
+  async get_balance(config: ActionConfig, context: ExecutionContext, nodeId: string): Promise<HandlerResult> {
+    const { actionType, params } = config;
+    logger.info(`Executing action: ${actionType}`, { nodeId, executionId: context.executionId });
+
+    const { userId } = params as { userId?: string };
+
+    const targetUserId = userId || context.userId || (context.variables.targetUserId as string);
+
+    if (!targetUserId) {
+      throw new Error('User ID not found in context or params');
+    }
+
+    logger.info(`Getting balance for user ${targetUserId}`, {
+      nodeId,
+      executionId: context.executionId
+    });
+
+    try {
+      const response = await serviceCall<{ balance: number; coins: number; lastUpdated: string }>(
+        'GET',
+        `${SERVICE_URLS.WALLET}/api/wallet/balance/${targetUserId}`
+      );
+
+      logger.info(`Balance retrieved`, {
+        nodeId,
+        balance: response.balance,
+        coins: response.coins
+      });
+
+      return {
+        output: {
+          action: actionType,
+          success: true,
+          balance: response.balance,
+          coins: response.coins,
+          lastUpdated: response.lastUpdated,
+          targetUserId
+        },
+        nextNodeIds: []
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`Get balance failed`, {
+        nodeId,
+        error: errorMessage,
+        targetUserId,
+        workflowId: context.workflowId
+      });
+
+      throw new Error(`Failed to get balance: ${errorMessage}`);
+    }
+  },
+
+  // ==================== ORDER HANDLER (RABTUL Order Service) ====================
   async create_order(config: ActionConfig, context: ExecutionContext, nodeId: string): Promise<HandlerResult> {
     const { actionType, params } = config;
     logger.info(`Executing action: ${actionType}`, { nodeId, executionId: context.executionId });
 
-    const { items, totalAmount, currency } = params as {
-      items?: Array<{ productId: string; quantity: number; price: number }>;
+    const { items, totalAmount, currency, metadata, shippingAddress, couponCode } = params as {
+      items?: Array<{ productId: string; name?: string; quantity: number; price: number; sku?: string }>;
       totalAmount?: number;
       currency?: string;
+      metadata?: Record<string, unknown>;
+      shippingAddress?: Record<string, string>;
+      couponCode?: string;
     };
 
-    // In production, call RABTUL Order Service
-    const orderPayload = {
-      orderId: `ORD-${uuidv4().slice(0, 8).toUpperCase()}`,
-      userId: context.userId,
-      items: items || [],
-      totalAmount: totalAmount || 0,
-      currency: currency || 'INR',
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      workflowExecutionId: context.executionId
-    };
+    const userId = context.userId || (context.variables.userId as string);
 
-    logger.info(`Order creation action completed`, { nodeId, orderPayload });
+    if (!userId) {
+      throw new Error('User ID not found in context');
+    }
 
-    return {
-      output: {
-        action: actionType,
-        success: true,
-        orderId: orderPayload.orderId,
-        payload: orderPayload
-      },
-      nextNodeIds: []
-    };
+    if (!items || items.length === 0) {
+      throw new Error('Order items are required');
+    }
+
+    // Calculate total if not provided
+    const calculatedTotal = totalAmount || items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    logger.info(`Creating order for user ${userId}`, {
+      nodeId,
+      executionId: context.executionId,
+      itemCount: items.length,
+      total: calculatedTotal
+    });
+
+    try {
+      const response = await serviceCall<OrderResponse & { success: boolean }>(
+        'POST',
+        `${SERVICE_URLS.ORDER}/api/orders`,
+        {
+          userId,
+          items,
+          totalAmount: calculatedTotal,
+          currency: currency || 'INR',
+          shippingAddress,
+          couponCode,
+          metadata: {
+            ...metadata,
+            workflowId: context.workflowId,
+            executionId: context.executionId,
+            nodeId
+          }
+        },
+        { timeout: 60000 }
+      );
+
+      logger.info(`Order created successfully`, {
+        nodeId,
+        orderId: response.orderId,
+        status: response.status,
+        totalAmount: response.totalAmount
+      });
+
+      return {
+        output: {
+          action: actionType,
+          success: true,
+          orderId: response.orderId,
+          status: response.status,
+          totalAmount: response.totalAmount,
+          userId,
+          itemCount: items.length
+        },
+        nextNodeIds: []
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`Create order failed`, {
+        nodeId,
+        error: errorMessage,
+        userId,
+        workflowId: context.workflowId
+      });
+
+      throw new Error(`Failed to create order: ${errorMessage}`);
+    }
   },
 
+  async get_order(config: ActionConfig, context: ExecutionContext, nodeId: string): Promise<HandlerResult> {
+    const { actionType, params } = config;
+    logger.info(`Executing action: ${actionType}`, { nodeId, executionId: context.executionId });
+
+    const { orderId } = params as { orderId: string };
+
+    if (!orderId) {
+      throw new Error('Order ID is required');
+    }
+
+    logger.info(`Fetching order ${orderId}`, { nodeId, executionId: context.executionId });
+
+    try {
+      const response = await serviceCall<{
+        orderId: string;
+        status: string;
+        items: unknown[];
+        totalAmount: number;
+        createdAt: string;
+        updatedAt: string;
+      }>('GET', `${SERVICE_URLS.ORDER}/api/orders/${orderId}`);
+
+      logger.info(`Order fetched`, { nodeId, orderId, status: response.status });
+
+      return {
+        output: {
+          action: actionType,
+          success: true,
+          order: response
+        },
+        nextNodeIds: []
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`Get order failed`, { nodeId, error: errorMessage, orderId });
+
+      throw new Error(`Failed to get order: ${errorMessage}`);
+    }
+  },
+
+  async update_order_status(config: ActionConfig, context: ExecutionContext, nodeId: string): Promise<HandlerResult> {
+    const { actionType, params } = config;
+    logger.info(`Executing action: ${actionType}`, { nodeId, executionId: context.executionId });
+
+    const { orderId, status, reason } = params as {
+      orderId: string;
+      status: string;
+      reason?: string;
+    };
+
+    if (!orderId || !status) {
+      throw new Error('Order ID and status are required');
+    }
+
+    logger.info(`Updating order ${orderId} status to ${status}`, {
+      nodeId,
+      executionId: context.executionId
+    });
+
+    try {
+      const response = await serviceCall<{
+        orderId: string;
+        status: string;
+        updatedAt: string;
+      }>('PATCH', `${SERVICE_URLS.ORDER}/api/orders/${orderId}/status`, {
+        status,
+        reason,
+        metadata: {
+          workflowId: context.workflowId,
+          executionId: context.executionId,
+          nodeId
+        }
+      });
+
+      logger.info(`Order status updated`, {
+        nodeId,
+        orderId,
+        newStatus: response.status
+      });
+
+      return {
+        output: {
+          action: actionType,
+          success: true,
+          orderId: response.orderId,
+          status: response.status,
+          updatedAt: response.updatedAt
+        },
+        nextNodeIds: []
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`Update order status failed`, {
+        nodeId,
+        error: errorMessage,
+        orderId,
+        newStatus: status
+      });
+
+      throw new Error(`Failed to update order status: ${errorMessage}`);
+    }
+  },
+
+  // ==================== USER PROFILE HANDLER (RABTUL Profile Service) ====================
+  async update_user(config: ActionConfig, context: ExecutionContext, nodeId: string): Promise<HandlerResult> {
+    const { actionType, params } = config;
+    logger.info(`Executing action: ${actionType}`, { nodeId, executionId: context.executionId });
+
+    const { userId, field, value, fields } = params as {
+      userId?: string;
+      field?: string;
+      value?: unknown;
+      fields?: Record<string, unknown>;
+    };
+
+    const targetUserId = userId || context.userId || (context.variables.targetUserId as string);
+
+    if (!targetUserId) {
+      throw new Error('User ID not found in context');
+    }
+
+    // Support both single field and bulk fields update
+    const updateData = fields || (field ? { [field]: value } : {});
+
+    if (Object.keys(updateData).length === 0) {
+      throw new Error('At least one field to update is required');
+    }
+
+    logger.info(`Updating user ${targetUserId} profile`, {
+      nodeId,
+      executionId: context.executionId,
+      fields: Object.keys(updateData)
+    });
+
+    try {
+      const response = await serviceCall<{
+        userId: string;
+        updated: boolean;
+        updatedAt: string;
+      }>(
+        'PATCH',
+        `${SERVICE_URLS.PROFILE}/api/profiles/${targetUserId}`,
+        {
+          ...updateData,
+          metadata: {
+            workflowId: context.workflowId,
+            executionId: context.executionId,
+            nodeId
+          }
+        }
+      );
+
+      logger.info(`User profile updated`, {
+        nodeId,
+        userId: response.userId,
+        updated: response.updated
+      });
+
+      return {
+        output: {
+          action: actionType,
+          success: true,
+          userId: response.userId,
+          updated: response.updated,
+          updatedAt: response.updatedAt
+        },
+        nextNodeIds: []
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`User update failed`, {
+        nodeId,
+        error: errorMessage,
+        targetUserId,
+        workflowId: context.workflowId
+      });
+
+      throw new Error(`Failed to update user profile: ${errorMessage}`);
+    }
+  },
+
+  async get_user(config: ActionConfig, context: ExecutionContext, nodeId: string): Promise<HandlerResult> {
+    const { actionType, params } = config;
+    logger.info(`Executing action: ${actionType}`, { nodeId, executionId: context.executionId });
+
+    const { userId, fields } = params as {
+      userId?: string;
+      fields?: string[];
+    };
+
+    const targetUserId = userId || context.userId || (context.variables.targetUserId as string);
+
+    if (!targetUserId) {
+      throw new Error('User ID not found in context');
+    }
+
+    logger.info(`Fetching user ${targetUserId} profile`, { nodeId, executionId: context.executionId });
+
+    try {
+      const queryString = fields ? `?fields=${fields.join(',')}` : '';
+      const response = await serviceCall<Record<string, unknown>>(
+        'GET',
+        `${SERVICE_URLS.PROFILE}/api/profiles/${targetUserId}${queryString}`
+      );
+
+      logger.info(`User profile fetched`, { nodeId, userId: targetUserId });
+
+      return {
+        output: {
+          action: actionType,
+          success: true,
+          user: response
+        },
+        nextNodeIds: []
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`Get user failed`, {
+        nodeId,
+        error: errorMessage,
+        targetUserId,
+        workflowId: context.workflowId
+      });
+
+      throw new Error(`Failed to get user profile: ${errorMessage}`);
+    }
+  },
+
+  // ==================== GENERIC WEBHOOK CALL HANDLER ====================
   async webhook_call(config: ActionConfig, context: ExecutionContext, nodeId: string): Promise<HandlerResult> {
     const { actionType, params } = config;
     logger.info(`Executing action: ${actionType}`, { nodeId, executionId: context.executionId });

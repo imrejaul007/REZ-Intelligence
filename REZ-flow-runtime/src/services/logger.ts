@@ -5,6 +5,37 @@
 
 import winston from 'winston';
 
+// Extend Logger interface with custom properties
+declare module 'winston' {
+  interface Logger {
+    execution: {
+      started: (executionId: string, workflowId: string, context: Record<string, unknown>) => void;
+      nodeStarted: (executionId: string, nodeId: string, nodeType: string) => void;
+      nodeCompleted: (executionId: string, nodeId: string, duration: number, output?: unknown) => void;
+      nodeFailed: (executionId: string, nodeId: string, error: string) => void;
+      completed: (executionId: string, duration: number, stats: Record<string, number>) => void;
+      failed: (executionId: string, error: string, nodeId?: string) => void;
+      cancelled: (executionId: string, cancelledBy?: string) => void;
+      retried: (executionId: string, nodeId: string, retryCount: number) => void;
+      delayed: (executionId: string, nodeId: string, delayUntil: Date) => void;
+    };
+    dlq: {
+      added: (executionId: string, nodeId: string, error: string, reason: string) => void;
+      retried: (executionId: string, nodeId: string, attempt: number) => void;
+      discarded: (executionId: string, nodeId: string, reason: string) => void;
+    };
+    saga?: {
+      started: (sagaId: string, sagaName: string, stepCount: number) => void;
+      stepCompleted: (sagaId: string, stepName: string, completedCount: number) => void;
+      stepRetried: (sagaId: string, stepName: string, attempt: number, maxRetries: number) => void;
+      compensating: (sagaId: string, stepName: string) => void;
+      compensated: (sagaId: string, stepName: string) => void;
+      completed: (sagaId: string, sagaName: string) => void;
+      failed: (sagaId: string, sagaName: string, error: string) => void;
+    };
+  }
+}
+
 const { combine, timestamp, printf, colorize, errors, json } = winston.format;
 
 // Custom log format

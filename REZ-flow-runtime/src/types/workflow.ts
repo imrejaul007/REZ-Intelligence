@@ -323,8 +323,8 @@ export interface ListExecutionsQuery {
   workflowId?: string;
   status?: ExecutionStatus;
   userId?: string;
-  fromDate?: Date;
-  toDate?: Date;
+  fromDate?: Date | string;
+  toDate?: Date | string;
   page?: number;
   limit?: number;
   sortBy?: 'createdAt' | 'status' | 'startedAt';
@@ -361,6 +361,7 @@ export interface ExecutionJob {
 
 export interface DLQMessage {
   executionId: string;
+  workflowId: string;
   nodeId: string;
   error: string;
   errorDetails?: Record<string, unknown>;

@@ -25,6 +25,9 @@ import eventRoutes from './routes/event.routes';
 
 // Import middleware
 import { authMiddleware, requestLogger, errorHandler } from './middleware/auth';
+import { tracingMiddleware } from './middleware/tracing';
+import { metricsTracker } from './middleware/metricsTracker';
+import metricsRoutes from './routes/metrics';
 
 // Import services
 import { eventConsumer } from './services/eventConsumer';
@@ -76,6 +79,12 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Request logging
 app.use(requestLogger);
+
+// Distributed tracing middleware
+app.use(tracingMiddleware());
+
+// Metrics tracking middleware
+app.use(metricsTracker());
 
 // Rate limiting
 const limiter = rateLimit({
@@ -159,69 +168,12 @@ app.get('/ready', async (req: Request, res: Response) => {
   }
 });
 
+// Metrics endpoint (for Prometheus) - public endpoint
+app.use('/metrics', metricsRoutes);
+
 // Authenticated routes
 app.use('/api/timeline', authMiddleware, timelineRoutes);
 app.use('/api/events', authMiddleware, eventRoutes);
-
-// Metrics endpoint (for Prometheus)
-app.get('/metrics', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    const mongoHealth = await checkMongoHealth();
-
-    // Basic metrics
-    const metrics = {
-      uptime_seconds: process.uptime(),
-      memory_usage_bytes: process.memoryUsage(),
-      cpu_usage: process.cpuUsage(),
-      mongodb_status: mongoHealth.status,
-      mongodb_latency_ms: mongoHealth.latency || 0,
-      event_consumer_connected: eventConsumer.isHealthy(),
-      event_consumer_subscriptions: eventConsumer.getStatus().subscriptions,
-      event_consumer_batch_size: eventConsumer.getStatus().batchBufferSize
-    };
-
-    // Prometheus format
-    const prometheusMetrics = `
-# HELP rez_memory_layer_uptime_seconds Time since service start
-# TYPE rez_memory_layer_uptime_seconds gauge
-rez_memory_layer_uptime_seconds ${metrics.uptime_seconds}
-
-# HELP rez_memory_heap_used_bytes Memory heap used
-# TYPE rez_memory_heap_used_bytes gauge
-rez_memory_heap_used_bytes ${metrics.memory_usage_bytes.heapUsed}
-
-# HELP rez_memory_heap_total_bytes Total memory heap
-# TYPE rez_memory_heap_total_bytes gauge
-rez_memory_heap_total_bytes ${metrics.memory_usage_bytes.heapTotal}
-
-# HELP rez_mongodb_status MongoDB connection status (1=up, 0=down)
-# TYPE rez_mongodb_status gauge
-rez_mongodb_status ${mongoHealth.status === 'up' ? 1 : 0}
-
-# HELP rez_mongodb_latency_ms MongoDB response latency
-# TYPE rez_mongodb_latency_ms gauge
-rez_mongodb_latency_ms ${metrics.mongodb_latency_ms}
-
-# HELP rez_event_consumer_connected Event consumer connection status
-# TYPE rez_event_consumer_connected gauge
-rez_event_consumer_connected ${metrics.event_consumer_connected ? 1 : 0}
-
-# HELP rez_event_consumer_subscriptions Number of event subscriptions
-# TYPE rez_event_consumer_subscriptions gauge
-rez_event_consumer_subscriptions ${metrics.event_consumer_subscriptions}
-
-# HELP rez_event_consumer_batch_size Current batch buffer size
-# TYPE rez_event_consumer_batch_size gauge
-rez_event_consumer_batch_size ${metrics.event_consumer_batch_size}
-`.trim();
-
-    res.set('Content-Type', 'text/plain');
-    res.send(prometheusMetrics);
-  } catch (error) {
-    contextLogger.error('Failed to generate metrics:', error);
-    res.status(500).json({ error: 'Failed to generate metrics' });
-  }
-});
 
 // Error handler (must be last)
 app.use(errorHandler);

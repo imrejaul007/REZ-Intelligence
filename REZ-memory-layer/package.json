@@ -4,7 +4,8 @@
   "description": "REZ Memory Layer - Unified Customer Timeline Service",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --skipLibCheck",
+    "build:strict": "tsc",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "test": "jest"
@@ -14,6 +15,7 @@
     "mongoose": "^8.0.0",
     "ioredis": "^5.3.2",
     "axios": "^1.6.0",
+    "ws": "^8.16.0",
     "zod": "^3.22.4",
     "winston": "^3.11.0",
     "uuid": "^9.0.1",
@@ -29,6 +31,7 @@
     "@types/uuid": "^9.0.7",
     "@types/cors": "^2.8.17",
     "@types/compression": "^1.7.5",
+    "@types/ws": "^8.5.10",
     "typescript": "^5.3.2",
     "ts-node": "^10.9.2"
   },
