@@ -127,8 +127,10 @@ worker.on('failed', async (job, error) => {
     try {
       await dlqService.addToQueue({
         executionId: job.data.executionId,
+        workflowId: job.data.workflowId || 'unknown',
         nodeId: 'root',
         error: error.message,
+        errorDetails: { message: error.message },
         retryCount: job.attemptsMade,
         failedAt: new Date(),
         workflowDefinition: job.data.workflowDefinition as WorkflowDefinition,
