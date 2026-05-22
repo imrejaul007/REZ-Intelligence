@@ -6,7 +6,7 @@
 import { Worker, Job } from 'bullmq';
 import Redis from 'ioredis';
 import mongoose from 'mongoose';
-import { ExecutionJob, WorkflowDefinition, ExecutionContext, ExecutionStatus } from '../types/workflow';
+import { ExecutionJob, WorkflowDefinition, ExecutionContext, ExecutionStatus, NodeType } from '../types/workflow';
 import { Execution, Workflow } from '../models/Execution';
 import { workflowExecutor } from '../services/workflowExecutor';
 import dlqService from '../services/dlqService';
@@ -132,7 +132,7 @@ worker.on('failed', async (job, error) => {
         retryCount: job.attemptsMade,
         failedAt: new Date(),
         workflowDefinition: job.data.workflowDefinition as WorkflowDefinition,
-        nodeData: { label: 'execution', type: 'trigger', config: {} },
+        nodeData: { label: 'execution', type: NodeType.TRIGGER, config: {} },
         context: job.data.context
       });
     } catch (dlqError) {
