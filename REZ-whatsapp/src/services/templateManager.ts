@@ -337,7 +337,7 @@ export class TemplateManager {
 
     try {
       // Get approved templates from Twilio - use v1 as fallback
-      const twilioClient = this.twilioClient as any;
+      const twilioClient = this.twilioClient as unknown;
       const twilioTemplates =
         await (twilioClient.whatsapp?.v1
           ?.services?.(this.businessAccountId)

@@ -493,7 +493,7 @@ export class SegmentationEngine {
   }
 
   /**
-   * Check if profile matches any of multiple segments
+   * Check if profile matches unknown of multiple segments
    */
   async checkProfileSegmentMembership(profileId: string): Promise<{
     profileId: string;

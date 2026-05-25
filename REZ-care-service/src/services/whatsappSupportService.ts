@@ -125,7 +125,7 @@ export class WhatsAppSupportService {
   }): Promise<{
     shouldRespond: boolean;
     response?: string;
-    quickReplies?: any[];
+    quickReplies?: unknown[];
     action?: string;
   }> {
     await this.connect();
@@ -159,7 +159,7 @@ export class WhatsAppSupportService {
       direction: 'inbound',
       content: message.content,
       timestamp: new Date(message.timestamp),
-      type: message.type as any,
+      type: message.type as unknown,
       status: 'delivered'
     });
     conversation.lastMessageAt = new Date();
@@ -172,10 +172,10 @@ export class WhatsAppSupportService {
   /**
    * Generate AI response for WhatsApp message
    */
-  private async generateResponse(conversation: any, message: string): Promise<{
+  private async generateResponse(conversation, message: string): Promise<{
     shouldRespond: boolean;
     response?: string;
-    quickReplies?: any[];
+    quickReplies?: unknown[];
     action?: string;
   }> {
     const lowerMessage = message.toLowerCase();
@@ -364,7 +364,7 @@ export class WhatsAppSupportService {
   /**
    * Get agent's conversations
    */
-  async getAgentConversations(agentId: string): Promise<any[]> {
+  async getAgentConversations(agentId: string): Promise<unknown[]> {
     await this.connect();
 
     return WhatsAppConversation.find({
@@ -376,7 +376,7 @@ export class WhatsAppSupportService {
   /**
    * Get waiting conversations (unassigned)
    */
-  async getWaitingConversations(): Promise<any[]> {
+  async getWaitingConversations(): Promise<unknown[]> {
     await this.connect();
 
     return WhatsAppConversation.find({
@@ -388,7 +388,7 @@ export class WhatsAppSupportService {
   /**
    * Get conversation by phone
    */
-  async getConversationByPhone(phone: string): Promise<any | null> {
+  async getConversationByPhone(phone: string): Promise<unknown | null> {
     await this.connect();
 
     return WhatsAppConversation.findOne({

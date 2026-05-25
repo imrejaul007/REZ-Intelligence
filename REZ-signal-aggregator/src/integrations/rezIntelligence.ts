@@ -8,7 +8,7 @@ const SEGMENTS_URL = process.env.REALTIME_SEGMENTS_URL || 'http://localhost:4126
 const IDENTITY_URL = process.env.IDENTITY_URL || 'http://localhost:4050';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
-async function intelligenceRequest(url: string, options: RequestInit = {}): Promise<any> {
+async function intelligenceRequest(url: string, options: RequestInit = {}): Promise<unknown> {
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -31,7 +31,7 @@ async function intelligenceRequest(url: string, options: RequestInit = {}): Prom
 
 const predictConfig = { baseUrl: PREDICT_URL, token: INTERNAL_TOKEN };
 
-async function predictRequest(path: string, options: RequestInit = {}): Promise<any> {
+async function predictRequest(path: string, options: RequestInit = {}): Promise<unknown> {
   const response = await fetch(`${predictConfig.baseUrl}${path}`, {
     ...options,
     headers: {
@@ -84,7 +84,7 @@ export const predictiveIntegration = {
 
 const segmentsConfig = { baseUrl: SEGMENTS_URL, token: INTERNAL_TOKEN };
 
-async function segmentsRequest(path: string, options: RequestInit = {}): Promise<any> {
+async function segmentsRequest(path: string, options: RequestInit = {}): Promise<unknown> {
   const response = await fetch(`${segmentsConfig.baseUrl}${path}`, {
     ...options,
     headers: {
@@ -148,7 +148,7 @@ export const realtimeSegments = {
 
 const identityConfig = { baseUrl: IDENTITY_URL, token: INTERNAL_TOKEN };
 
-async function identityRequest(path: string, options: RequestInit = {}): Promise<any> {
+async function identityRequest(path: string, options: RequestInit = {}): Promise<unknown> {
   const response = await fetch(`${identityConfig.baseUrl}${path}`, {
     ...options,
     headers: {
@@ -189,7 +189,7 @@ export const identityIntegration = {
   /**
    * Link signal to unified identity
    */
-  async linkSignalToIdentity(identifier: string, type: string, signalData: Record<string, any>): Promise<void> {
+  async linkSignalToIdentity(identifier: string, type: string, signalData: Record<string, unknown>): Promise<void> {
     await identityRequest('/api/identity/signal', {
       method: 'POST',
       body: JSON.stringify({

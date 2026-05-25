@@ -315,12 +315,12 @@ unifiedProfileSchema.index({ 'identity.emails': 1, 'identity.phones': 1, userId:
 
 // Virtual for full name
 unifiedProfileSchema.virtual('fullName').get(function() {
-  return (this as any).demographics?.name || 'Unknown';
+  return (this as unknown).demographics?.name || 'Unknown';
 });
 
 // Method to calculate engagement index
 unifiedProfileSchema.methods.calculateEngagementIndex = function(): number {
-  const eng = (this as any).activity?.engagement;
+  const eng = (this as unknown).activity?.engagement;
   if (!eng) return 0;
   return Math.round((eng.recencyScore + eng.frequencyScore + eng.monetaryScore) / 3);
 };
@@ -339,7 +339,7 @@ unifiedProfileSchema.statics.findByIdentifier = async function(identifier: strin
 // Static method to get profiles by segment
 unifiedProfileSchema.statics.findBySegment = async function(
   segment: string,
-  options: { limit?: number; skip?: number; sort?: any } = {}
+  options: { limit?: number; skip?: number; sort?: unknown } = {}
 ) {
   const { limit = 100, skip = 0, sort = { 'lifetime.totalSpend': -1 } } = options;
   return this.find({ segments: segment })
@@ -353,7 +353,7 @@ interface IUnifiedProfileModel extends Model<IUnifiedProfile> {
   findByIdentifier(identifier: string): Promise<IUnifiedProfile | null>;
   findBySegment(
     segment: string,
-    options?: { limit?: number; skip?: number; sort?: any }
+    options?: { limit?: number; skip?: number; sort?: unknown }
   ): Promise<IUnifiedProfile[]>;
 }
 

@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ Intelligence Bridge
  * Sends data to REZ Intelligence services
@@ -58,7 +60,7 @@ export async function sendToSignals(signal: Signal): Promise<void> {
       timestamp: signal.timestamp,
       metadata: signal.metadata,
     });
-    console.log(`Signal sent: ${signal.action} from ${signal.source}`);
+    logger.info(`Signal sent: ${signal.action} from ${signal.source}`);
   } catch (error) {
     console.error('Failed to send signal:', error);
     // Don't throw - continue processing
@@ -211,7 +213,7 @@ export async function sendBatchSignals(signals: Signal[]): Promise<void> {
     await axios.post(`${INTELLIGENCE_SERVICES.signals}/api/signals/batch`, {
       signals,
     });
-    console.log(`Batch sent: ${signals.length} signals`);
+    logger.info(`Batch sent: ${signals.length} signals`);
   } catch (error) {
     console.error('Failed to send batch signals:', error);
   }

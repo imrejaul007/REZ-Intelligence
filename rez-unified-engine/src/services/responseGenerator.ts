@@ -89,7 +89,7 @@ export class ResponseGenerator {
 
     this.fallbackResponses.set('complaint', [
       'I\'m sorry to hear about your experience. Let me connect you with our support team to resolve this.',
-      'I apologize for any inconvenience. Let me escalate this to ensure it gets proper attention.',
+      'I apologize for unknown inconvenience. Let me escalate this to ensure it gets proper attention.',
     ]);
 
     this.fallbackResponses.set('general_inquiry', [

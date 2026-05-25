@@ -240,7 +240,7 @@ export interface IntentHistoryItem {
   content: string;
   /** Timestamp */
   timestamp: Date;
-  /** Associated intent ID if any */
+  /** Associated intent ID if unknown */
   intentId?: string;
 }
 

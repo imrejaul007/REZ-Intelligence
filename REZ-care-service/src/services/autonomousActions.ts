@@ -31,11 +31,11 @@ export interface AutonomousAction {
   id: string;
   type: string;
   service: string;
-  params: Record<string, any>;
+  params: Record<string, unknown>;
   reason: string;
   priority: 'low' | 'medium' | 'high' | 'critical';
   executed: boolean;
-  result?: any;
+  result?;
 }
 
 /**
@@ -168,8 +168,8 @@ class AutonomousActionsEngine {
   /**
    * Execute all determined actions
    */
-  async executeActions(actions: AutonomousAction[]): Promise<{ executed: number; failed: number; results: any[] }> {
-    const results: any[] = [];
+  async executeActions(actions: AutonomousAction[]): Promise<{ executed: number; failed: number; results: unknown[] }> {
+    const results: unknown[] = [];
     let executed = 0;
     let failed = 0;
 
@@ -195,7 +195,7 @@ class AutonomousActionsEngine {
   /**
    * Execute single action
    */
-  private async executeAction(action: AutonomousAction): Promise<any> {
+  private async executeAction(action: AutonomousAction): Promise<unknown> {
     switch (action.service) {
       // RABTUL Services
       case 'RABTUL':
@@ -217,7 +217,7 @@ class AutonomousActionsEngine {
     }
   }
 
-  private async executeRABTULAction(action: AutonomousAction): Promise<any> {
+  private async executeRABTULAction(action: AutonomousAction): Promise<unknown> {
     switch (action.type) {
       case 'credit_wallet':
         return serviceConnector.creditWallet(
@@ -242,7 +242,7 @@ class AutonomousActionsEngine {
     }
   }
 
-  private async executeREZMediaAction(action: AutonomousAction): Promise<any> {
+  private async executeREZMediaAction(action: AutonomousAction): Promise<unknown> {
     switch (action.type) {
       case 'grant_loyalty':
         return serviceConnector.grantLoyaltyPoints(
@@ -266,7 +266,7 @@ class AutonomousActionsEngine {
     }
   }
 
-  private async executeIntelligenceAction(action: AutonomousAction): Promise<any> {
+  private async executeIntelligenceAction(action: AutonomousAction): Promise<unknown> {
     switch (action.type) {
       case 'notify_merchant':
         return serviceConnector.getMerchantInsights(action.params.merchantId);
@@ -275,11 +275,11 @@ class AutonomousActionsEngine {
     }
   }
 
-  private async executeExpertAction(action: AutonomousAction): Promise<any> {
+  private async executeExpertAction(action: AutonomousAction): Promise<unknown> {
     return serviceConnector.routeToExpert(action.params.ticketId);
   }
 
-  private async executeCorpPerksAction(action: AutonomousAction): Promise<any> {
+  private async executeCorpPerksAction(action: AutonomousAction): Promise<unknown> {
     return serviceConnector.routeToCorpPerks(
       action.params.employeeId,
       action.params.category

@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * Analytics Service Connector
  *
@@ -361,7 +363,7 @@ function getInternalToken(): string {
     const tokens = JSON.parse(tokensJson);
     return tokens.orchestrator || tokens.analytics || '';
   } catch {
-    console.warn('[AnalyticsConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+    logger.warn('[AnalyticsConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
     return '';
   }
 }

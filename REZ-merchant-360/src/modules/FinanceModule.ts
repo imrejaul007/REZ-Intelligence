@@ -189,7 +189,7 @@ export class FinanceModule {
       );
       this.cache.delete(`finances:${merchantId}`);
       return { success: true, payout_id: response.data.payout_id };
-    } catch (error: any) {
+    } catch (error) {
       return {
         success: false,
         error: error.response?.data?.message || 'Payout request failed',

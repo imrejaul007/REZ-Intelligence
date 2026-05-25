@@ -60,13 +60,13 @@ export interface TicketContext {
   platform: string;
   sentiment?: string;
   priority?: string;
-  metadata?: any;
+  metadata?;
 }
 
 export interface AutonomousAction {
   action: string;
   service: string;
-  params: any;
+  params;
   reason: string;
   priority: 'low' | 'medium' | 'high' | 'critical';
 }
@@ -92,7 +92,7 @@ class AutonomousLoop {
     actions: AutonomousAction[];
     ltv?: number;
     churnRisk?: number;
-    sentiment?: any;
+    sentiment?;
   }> {
     const actions: AutonomousAction[] = [];
 
@@ -165,7 +165,7 @@ class AutonomousLoop {
     }
   }
 
-  private async getSentiment(customerId: string): Promise<any> {
+  private async getSentiment(customerId: string): Promise<unknown> {
     try {
       const res = await axios.get(
         `${SERVICES.sentimentAnalysis}/customer/${customerId}`,
@@ -177,7 +177,7 @@ class AutonomousLoop {
     }
   }
 
-  private async getDeliveryTracking(orderId: string): Promise<any> {
+  private async getDeliveryTracking(orderId: string): Promise<unknown> {
     try {
       const res = await axios.get(
         `${SERVICES.deliveryTracking}/${orderId}`,
@@ -189,7 +189,7 @@ class AutonomousLoop {
     }
   }
 
-  private async getInventory(productId: string): Promise<any> {
+  private async getInventory(productId: string): Promise<unknown> {
     try {
       const res = await axios.get(
         `${SERVICES.inventoryIntelligence}/product/${productId}`,
@@ -418,35 +418,35 @@ class AutonomousLoop {
     }
   }
 
-  private async executeWallet(params: any): Promise<void> {
+  private async executeWallet(params): Promise<void> {
     await axios.post(`${SERVICES.wallet}/credit`, params, { headers: this.headers });
   }
 
-  private async executeNotification(params: any): Promise<void> {
+  private async executeNotification(params): Promise<void> {
     await axios.post(`${SERVICES.notifications}/send`, params, { headers: this.headers });
   }
 
-  private async executeLoyalty(params: any): Promise<void> {
+  private async executeLoyalty(params): Promise<void> {
     await axios.post(`${SERVICES.loyalty}/grant`, params, { headers: this.headers });
   }
 
-  private async executeKarma(params: any): Promise<void> {
+  private async executeKarma(params): Promise<void> {
     await axios.post(`${SERVICES.karma}/grant`, params, { headers: this.headers });
   }
 
-  private async executeCampaign(params: any): Promise<void> {
+  private async executeCampaign(params): Promise<void> {
     await axios.post(`${SERVICES.campaignHub}/trigger`, params, { headers: this.headers });
   }
 
-  private async executeCorpPerks(params: any): Promise<void> {
+  private async executeCorpPerks(params): Promise<void> {
     await axios.post(`${SERVICES.corpperks}/support/route`, params, { headers: this.headers });
   }
 
-  private async executePayment(params: any): Promise<void> {
+  private async executePayment(params): Promise<void> {
     // Payment-specific logic
   }
 
-  private async executeOrder(params: any): Promise<void> {
+  private async executeOrder(params): Promise<void> {
     // Order-specific logic
   }
 }

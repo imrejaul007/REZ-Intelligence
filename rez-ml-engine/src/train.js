@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * ML Model Training Script
  * Trains all ML models and saves to Model Registry
@@ -76,15 +78,15 @@ function generatePriceTrainingData(count = 500) {
 
 // Main training function
 async function trainModels(modelType = 'all') {
-  console.log('\n========================================');
-  console.log('   ReZ ML Model Training Pipeline');
-  console.log('========================================\n');
+  logger.info('\n========================================');
+  logger.info('   ReZ ML Model Training Pipeline');
+  logger.info('========================================\n');
 
   const results = {};
 
   // Train Fraud Detection Model
   if (modelType === 'all' || modelType === 'fraud') {
-    console.log('📦 Training: Fraud Detection Model\n');
+    logger.info('📦 Training: Fraud Detection Model\n');
     const fraudModel = new FraudModel();
     const fraudData = generateFraudTrainingData(1000);
     fraudModel.train(fraudData, { epochs: 500 });
@@ -106,10 +108,10 @@ async function trainModels(modelType = 'all') {
     };
 
     const fraudResult = fraudModel.predict(fraudTest);
-    console.log('🔍 Fraud Detection Test:');
-    console.log(`   Probability: ${(fraudResult.fraudProbability * 100).toFixed(1)}%`);
-    console.log(`   Risk Level: ${fraudResult.riskLevel}`);
-    console.log(`   Decision: ${fraudResult.isFraud ? 'BLOCK' : 'ALLOW'}\n`);
+    logger.info('🔍 Fraud Detection Test:');
+    logger.info(`   Probability: ${(fraudResult.fraudProbability * 100).toFixed(1)}%`);
+    logger.info(`   Risk Level: ${fraudResult.riskLevel}`);
+    logger.info(`   Decision: ${fraudResult.isFraud ? 'BLOCK' : 'ALLOW'}\n`);
 
     results.fraud = {
       model: fraudModel.export(),
@@ -119,7 +121,7 @@ async function trainModels(modelType = 'all') {
 
   // Train Recommendation Model
   if (modelType === 'all' || modelType === 'recommendation') {
-    console.log('📦 Training: Recommendation Model\n');
+    logger.info('📦 Training: Recommendation Model\n');
     const recModel = new RecommendationModel();
     const recData = generateRecommendationTrainingData(500);
     recModel.train(recData, { factors: 10, epochs: 100 });
@@ -133,11 +135,11 @@ async function trainModels(modelType = 'all') {
     }));
 
     const recResult = recModel.recommend(testUser, testItems, { limit: 5 });
-    console.log('🔍 Recommendation Test (User: ' + testUser + '):');
+    logger.info('🔍 Recommendation Test (User: ' + testUser + '):');
     recResult.recommendations.forEach((r, i) => {
-      console.log(`   ${i + 1}. ${r.itemName} - Score: ${(r.score * 100).toFixed(0)}%`);
+      logger.info(`   ${i + 1}. ${r.itemName} - Score: ${(r.score * 100).toFixed(0)}%`);
     });
-    console.log('');
+    logger.info('');
 
     results.recommendation = {
       model: recModel.export(),
@@ -147,7 +149,7 @@ async function trainModels(modelType = 'all') {
 
   // Train Price Optimization Model
   if (modelType === 'all' || modelType === 'price') {
-    console.log('📦 Training: Price Optimization Model\n');
+    logger.info('📦 Training: Price Optimization Model\n');
     const priceModel = new PriceModel();
     const priceData = generatePriceTrainingData(500);
     priceModel.train(priceData);
@@ -161,11 +163,11 @@ async function trainModels(modelType = 'all') {
       seasonality: 1.2
     });
 
-    console.log('🔍 Price Optimization Test:');
-    console.log(`   Recommended Price: ₹${priceResult.recommendedPrice}`);
-    console.log(`   Base Price: ₹${priceResult.basePrice}`);
-    console.log(`   Expected Demand: ${Math.round(priceResult.expectedDemand)}`);
-    console.log(`   Adjustment Reasons: ${priceResult.adjustmentReason.join(', ')}\n`);
+    logger.info('🔍 Price Optimization Test:');
+    logger.info(`   Recommended Price: ₹${priceResult.recommendedPrice}`);
+    logger.info(`   Base Price: ₹${priceResult.basePrice}`);
+    logger.info(`   Expected Demand: ${Math.round(priceResult.expectedDemand)}`);
+    logger.info(`   Adjustment Reasons: ${priceResult.adjustmentReason.join(', ')}\n`);
 
     results.price = {
       model: priceModel.export(),
@@ -186,7 +188,7 @@ async function trainModels(modelType = 'all') {
       `${modelsDir}/fraud-model-v1.0.0.json`,
       JSON.stringify(results.fraud.model, null, 2)
     );
-    console.log('✅ Saved: trained-models/fraud-model-v1.0.0.json');
+    logger.info('✅ Saved: trained-models/fraud-model-v1.0.0.json');
   }
 
   if (results.recommendation) {
@@ -194,7 +196,7 @@ async function trainModels(modelType = 'all') {
       `${modelsDir}/recommendation-model-v1.0.0.json`,
       JSON.stringify(results.recommendation.model, null, 2)
     );
-    console.log('✅ Saved: trained-models/recommendation-model-v1.0.0.json');
+    logger.info('✅ Saved: trained-models/recommendation-model-v1.0.0.json');
   }
 
   if (results.price) {
@@ -202,12 +204,12 @@ async function trainModels(modelType = 'all') {
       `${modelsDir}/price-model-v1.0.0.json`,
       JSON.stringify(results.price.model, null, 2)
     );
-    console.log('✅ Saved: trained-models/price-model-v1.0.0.json');
+    logger.info('✅ Saved: trained-models/price-model-v1.0.0.json');
   }
 
-  console.log('\n========================================');
-  console.log('   Training Complete!');
-  console.log('========================================\n');
+  logger.info('\n========================================');
+  logger.info('   Training Complete!');
+  logger.info('========================================\n');
 
   return results;
 }

@@ -471,9 +471,9 @@ router.get('/tags', async (req: Request, res: Response) => {
 router.get('/inbox/messages', async (req: Request, res: Response) => {
   try {
     const filters = {
-      channel: req.query.channel as any,
+      channel: req.query.channel as unknown,
       customerId: req.query.customerId as string,
-      status: req.query.status as any,
+      status: req.query.status as unknown,
       page: parseInt(req.query.page as string) || 1,
       limit: parseInt(req.query.limit as string) || 20,
     };

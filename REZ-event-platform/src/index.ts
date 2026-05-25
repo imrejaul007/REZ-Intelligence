@@ -98,7 +98,7 @@ webhookRouter.post('/merchant/order', async (req: Request, res: Response) => {
     const result = await eventEmitter.emitOrderCompleted({
       orderId: order_id,
       customerId: customer_id,
-      items: (items || []).map((i: any) => ({
+      items: (items || []).map((i) => ({
         productId: i.item_id,
         name: i.name || i.item_id,
         quantity: i.quantity,
@@ -151,7 +151,7 @@ webhookRouter.post('/consumer/order', async (req: Request, res: Response) => {
     const result = await eventEmitter.emitOrderCompleted({
       orderId: order_id,
       customerId: user_id,
-      items: (items || []).map((i: any) => ({
+      items: (items || []).map((i) => ({
         productId: i.item_id,
         name: i.name || i.item_id,
         quantity: i.quantity,

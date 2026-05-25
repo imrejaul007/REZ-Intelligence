@@ -143,7 +143,7 @@ worker.on('failed', async (job, error) => {
   }
 });
 
-worker.on('stalled', (job: any) => {
+worker.on('stalled', (job) => {
   const jobData = job?.data;
   logger.warn('Job stalled', { jobId: job?.id, executionId: jobData?.executionId });
 });
@@ -153,7 +153,7 @@ worker.on('error', (error) => {
 });
 
 // Progress tracking
-worker.on('progress', (job: any, progress) => {
+worker.on('progress', (job, progress) => {
   const jobData = job?.data;
   logger.debug('Job progress', {
     jobId: job?.id,

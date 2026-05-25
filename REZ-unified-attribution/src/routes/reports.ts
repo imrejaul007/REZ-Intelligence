@@ -29,7 +29,7 @@ reportRouter.get('/attribution', async (req: Request, res: Response) => {
     );
 
     res.json({ success: true, data: attribution });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Attribution report failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -43,7 +43,7 @@ reportRouter.get('/funnel', async (req: Request, res: Response) => {
   try {
     const { merchantId, startDate, endDate } = req.query;
 
-    const match: any = {};
+    const match: unknown = {};
     if (merchantId) match.merchantId = merchantId;
     if (startDate || endDate) {
       match.timestamp = {};
@@ -64,13 +64,13 @@ reportRouter.get('/funnel', async (req: Request, res: Response) => {
       stages: {} as Record<string, number>
     };
 
-    funnel.forEach((stage: any) => {
+    funnel.forEach((stage) => {
       funnelData.total += stage.count;
       funnelData.stages[stage._id] = stage.count;
     });
 
     res.json({ success: true, data: funnelData });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Funnel report failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -84,7 +84,7 @@ reportRouter.get('/dashboard', async (req: Request, res: Response) => {
   try {
     const { merchantId, startDate, endDate } = req.query;
 
-    const match: any = { status: ConversionStatus.COMPLETED };
+    const match: unknown = { status: ConversionStatus.COMPLETED };
     if (merchantId) match.merchantId = merchantId;
     if (startDate || endDate) {
       match.timestamp = {};
@@ -121,7 +121,7 @@ reportRouter.get('/dashboard', async (req: Request, res: Response) => {
         byChannel: byChannel
       }
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Dashboard report failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }

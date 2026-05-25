@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 import 'dotenv/config';
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -97,7 +99,7 @@ const tools = [
 
       // Try real API first if enabled
       if (USE_REAL_API) {
-        const result = await fetchFromAnalytics<any>(`/api/metrics/dashboard?period=${period}`);
+        const result = await fetchFromAnalytics<unknown>(`/api/metrics/dashboard?period=${period}`);
         if (result) {
           return {
             content: [{ type: "text", text: JSON.stringify({ ...result, source: 'remote' }, null, 2) }],
@@ -169,7 +171,7 @@ const tools = [
     handler: async (params?: { period?: string; source?: string }) => {
       // Try real API first if enabled
       if (USE_REAL_API) {
-        const result = await fetchFromAnalytics<any>(
+        const result = await fetchFromAnalytics<unknown>(
           `/api/analytics/funnel?period=${params?.period || 'month'}&source=${params?.source || 'all'}`
         );
         if (result) {
@@ -247,7 +249,7 @@ const tools = [
     handler: async (params?: { breakdown?: string; period?: string }) => {
       // Try real API first if enabled
       if (USE_REAL_API) {
-        const result = await fetchFromAnalytics<any>(
+        const result = await fetchFromAnalytics<unknown>(
           `/api/analytics/revenue?breakdown=${params?.breakdown || 'both'}&period=${params?.period || 'month'}`
         );
         if (result) {
@@ -319,7 +321,7 @@ const tools = [
     handler: async (params?: { period?: string; groupBy?: string }) => {
       // Try real API first if enabled
       if (USE_REAL_API) {
-        const result = await fetchFromAnalytics<any>(`/api/analytics/users?period=${params?.period || 'month'}`);
+        const result = await fetchFromAnalytics<unknown>(`/api/analytics/users?period=${params?.period || 'month'}`);
         if (result) {
           return {
             content: [{ type: "text", text: JSON.stringify({ ...result, source: 'remote' }, null, 2) }],
@@ -407,7 +409,7 @@ const tools = [
     handler: async (params?: { period?: string; sortBy?: string; limit?: number }) => {
       // Try real API first if enabled
       if (USE_REAL_API) {
-        const result = await fetchFromAnalytics<any>(
+        const result = await fetchFromAnalytics<unknown>(
           `/api/analytics/merchants?period=${params?.period || 'month'}&sortBy=${params?.sortBy || 'gmv'}&limit=${params?.limit || 10}`
         );
         if (result) {
@@ -527,9 +529,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 // Start server
 async function main() {
-  console.error("REZ Analytics MCP Server running on stdio");
-  console.error(`Analytics Service URL: ${ANALYTICS_SERVICE_URL}`);
-  console.error(`Real API: ${USE_REAL_API ? 'ENABLED' : 'DISABLED (set USE_REAL_ANALYTICS=true to enable)'}`);
+  logger.error("REZ Analytics MCP Server running on stdio");
+  logger.error(`Analytics Service URL: ${ANALYTICS_SERVICE_URL}`);
+  logger.error(`Real API: ${USE_REAL_API ? 'ENABLED' : 'DISABLED (set USE_REAL_ANALYTICS=true to enable)'}`);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);

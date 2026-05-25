@@ -19,7 +19,7 @@ const SendMessageSchema = z.object({
   userId: z.string().min(1),
   message: z.string().min(1).max(5000),
   sessionId: z.string().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.unknown()).optional(),
 });
 
 const SendPushSchema = z.object({
@@ -41,7 +41,7 @@ const SendNotificationSchema = z.object({
   body: z.string().min(1).max(500),
   type: z.enum(['info', 'success', 'warning', 'error', 'chat', 'order', 'payment', 'system']).default('info'),
   priority: z.enum(['low', 'normal', 'high']).default('normal'),
-  data: z.record(z.any()).optional(),
+  data: z.record(z.unknown()).optional(),
   actionUrl: z.string().url().optional(),
 });
 

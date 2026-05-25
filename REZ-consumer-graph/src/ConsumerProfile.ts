@@ -470,12 +470,12 @@ export class ConsumerProfile {
   // AI MEMORY MANAGEMENT
   // ============================================
 
-  setPreference(key: string, value: any): void {
+  setPreference(key: string, value): void {
     this.profile.ai_memory.preferences[key] = value;
     this.touch();
   }
 
-  getPreference(key: string): any {
+  getPreference(key: string): unknown {
     return this.profile.ai_memory.preferences[key];
   }
 
@@ -564,14 +564,14 @@ export class ConsumerProfile {
       if (value !== undefined && value !== null) {
         if (Array.isArray(value)) {
           // For arrays, we could merge or replace depending on strategy
-          (this.profile as any)[key] = value;
+          (this.profile as unknown)[key] = value;
         } else if (typeof value === 'object') {
-          (this.profile as any)[key] = {
-            ...(this.profile as any)[key],
+          (this.profile as unknown)[key] = {
+            ...(this.profile as unknown)[key],
             ...value,
           };
         } else {
-          (this.profile as any)[key] = value;
+          (this.profile as unknown)[key] = value;
         }
       }
     });

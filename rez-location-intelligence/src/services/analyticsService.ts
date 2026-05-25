@@ -175,7 +175,7 @@ export class AnalyticsService {
     const result: UserSegmentAnalytics[] = [];
 
     for (const [segment, stats] of segmentStats) {
-      const profilesForSegment = profiles.filter(p => p.segments.includes(segment as any));
+      const profilesForSegment = profiles.filter(p => p.segments.includes(segment as unknown));
       const userIds = profilesForSegment.slice(0, 50).map(p => p.userId);
 
       let primaryLocationType = 'other';

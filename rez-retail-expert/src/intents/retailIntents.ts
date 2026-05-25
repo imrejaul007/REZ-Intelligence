@@ -167,7 +167,7 @@ export const RETAIL_INTENTS: RetailIntent[] = [
       'customer reviews',
       'how is {product} rated',
       '{product} ratings',
-      'is this any good'
+      'is this unknown good'
     ],
     requiredEntities: ['product'],
     optionalEntities: [],

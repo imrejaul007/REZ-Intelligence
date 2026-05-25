@@ -43,7 +43,7 @@ interface ApiResponse<T = unknown> {
  * Add request ID to all requests
  */
 function requestIdMiddleware(req: Request, res: Response, next: NextFunction): void {
-  (req as any).requestId = req.headers['x-request-id'] || uuidv4();
+  (req as unknown).requestId = req.headers['x-request-id'] || uuidv4();
   next();
 }
 
@@ -68,7 +68,7 @@ function validateInternalToken(req: Request, res: Response, next: NextFunction):
         message: 'Invalid internal token'
       },
       meta: {
-        requestId: (req as any).requestId,
+        requestId: (req as unknown).requestId,
         timestamp: new Date().toISOString()
       }
     } as ApiResponse);
@@ -90,7 +90,7 @@ function createResponse<T>(
     success: true,
     data,
     meta: {
-      requestId: (res as any).requestId || uuidv4(),
+      requestId: (res as unknown).requestId || uuidv4(),
       timestamp: new Date().toISOString()
     }
   } as ApiResponse<T>);
@@ -110,7 +110,7 @@ function createErrorResponse(
     success: false,
     error: { code, message, details },
     meta: {
-      requestId: (res as any).requestId || uuidv4(),
+      requestId: (res as unknown).requestId || uuidv4(),
       timestamp: new Date().toISOString()
     }
   } as ApiResponse);
@@ -454,7 +454,7 @@ export function createBridgeRouter(): Router {
       if (active === 'true') {
         campaigns = await CampaignConfig.findActiveCampaigns(
           merchantId as string | undefined,
-          channel as any
+          channel as unknown
         );
       } else {
         const query: Record<string, unknown> = {};

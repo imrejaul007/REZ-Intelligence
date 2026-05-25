@@ -31,8 +31,8 @@ function extractCustomer(req: Request, res: Response, next: Function) {
     return res.status(401).json({ error: 'Customer ID required' });
   }
 
-  (req as any).customerId = customerId;
-  (req as any).userId = customerId;
+  (req as unknown).customerId = customerId;
+  (req as unknown).userId = customerId;
   next();
 }
 
@@ -50,7 +50,7 @@ const createTicketSchema = z.object({
 
 router.post('/tickets', extractCustomer, async (req: Request, res: Response) => {
   try {
-    const { userId } = req as any;
+    const { userId } = req as unknown;
     const parseResult = createTicketSchema.safeParse(req.body);
 
     if (!parseResult.success) {
@@ -97,7 +97,7 @@ router.post('/tickets', extractCustomer, async (req: Request, res: Response) => 
 
 router.get('/tickets', extractCustomer, async (req: Request, res: Response) => {
   try {
-    const { userId } = req as any;
+    const { userId } = req as unknown;
     const { status, limit = 20 } = req.query;
 
     // Mock tickets for demo
@@ -138,7 +138,7 @@ router.get('/tickets/:id', extractCustomer, async (req: Request, res: Response) 
       priority: 'high',
       subject: 'Payment issue',
       message: 'My payment failed',
-      customerId: req as any,
+      customerId: req as unknown,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       platform: 'mobile',
@@ -221,7 +221,7 @@ router.post('/csat', extractCustomer, async (req: Request, res: Response) => {
 
 router.get('/csat/pending', extractCustomer, async (req: Request, res: Response) => {
   try {
-    const { userId } = req as any;
+    const { userId } = req as unknown;
 
     res.json({
       success: true,

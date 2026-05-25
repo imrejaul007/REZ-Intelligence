@@ -17,7 +17,7 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; erro
       headers: { 'Authorization': `Bearer ${token}`, 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { valid: res.data.success };
-  } catch (error: any) {
+  } catch (error) {
     return { valid: false, error: error.message };
   }
 }
@@ -25,7 +25,7 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; erro
 /**
  * Publish targeting event
  */
-export async function publishTargetingEvent(eventType: string, data: Record<string, any>): Promise<{ success: boolean; error?: string }> {
+export async function publishTargetingEvent(eventType: string, data: Record<string, unknown>): Promise<{ success: boolean; error?: string }> {
   try {
     await axios.post(`${EVENT_BUS_URL}/api/events/publish`, {
       type: `targeting.${eventType}`,
@@ -35,7 +35,7 @@ export async function publishTargetingEvent(eventType: string, data: Record<stri
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }

@@ -156,7 +156,7 @@ export interface ITouchpoint extends Document {
   };
 
   // Metadata
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   timestamp: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -422,7 +422,7 @@ export interface IChannel extends Document {
   costPerThousand?: number;
 
   // Metadata
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 
   createdAt: Date;
   updatedAt: Date;
@@ -463,7 +463,7 @@ export interface ISpend extends Document {
   impressions?: number;
   clicks?: number;
   conversions?: number;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   createdAt: Date;
 }
 

@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ-unified-attribution → Commerce Graph Sync
  *
@@ -66,9 +68,9 @@ class AttributionCommerceSync {
           }
         }
       );
-      console.log(`[AttributionSync] Transaction synced: ${transaction.transactionId}`);
+      logger.info(`[AttributionSync] Transaction synced: ${transaction.transactionId}`);
     } catch (error) {
-      console.error(`[AttributionSync] Failed to sync transaction: ${error.message}`);
+      logger.error(`[AttributionSync] Failed to sync transaction: ${error.message}`);
     }
   }
 
@@ -95,9 +97,9 @@ class AttributionCommerceSync {
           }
         }
       );
-      console.log(`[AttributionSync] Conversion synced: ${conversion.orderId}`);
+      logger.info(`[AttributionSync] Conversion synced: ${conversion.orderId}`);
     } catch (error) {
-      console.error(`[AttributionSync] Failed to sync conversion: ${error.message}`);
+      logger.error(`[AttributionSync] Failed to sync conversion: ${error.message}`);
     }
   }
 
@@ -131,9 +133,9 @@ class AttributionCommerceSync {
           }
         }
       );
-      console.log(`[AttributionSync] DOOH attribution synced`);
+      logger.info(`[AttributionSync] DOOH attribution synced`);
     } catch (error) {
-      console.error(`[AttributionSync] Failed to sync DOOH attribution: ${error.message}`);
+      logger.error(`[AttributionSync] Failed to sync DOOH attribution: ${error.message}`);
     }
   }
 
@@ -167,9 +169,9 @@ class AttributionCommerceSync {
           }
         }
       );
-      console.log(`[AttributionSync] QR attribution synced`);
+      logger.info(`[AttributionSync] QR attribution synced`);
     } catch (error) {
-      console.error(`[AttributionSync] Failed to sync QR attribution: ${error.message}`);
+      logger.error(`[AttributionSync] Failed to sync QR attribution: ${error.message}`);
     }
   }
 
@@ -179,7 +181,7 @@ class AttributionCommerceSync {
   async getCustomerAttribution(userId: string, dateRange?: {
     start: Date;
     end: Date;
-  }): Promise<any> {
+  }): Promise<unknown> {
     try {
       const params = new URLSearchParams();
       if (dateRange) {
@@ -197,7 +199,7 @@ class AttributionCommerceSync {
       );
       return response.data.data;
     } catch (error) {
-      console.error(`[AttributionSync] Failed to get attribution: ${error.message}`);
+      logger.error(`[AttributionSync] Failed to get attribution: ${error.message}`);
       return null;
     }
   }
@@ -217,7 +219,7 @@ class AttributionCommerceSync {
       );
       return response.data.data?.channels || {};
     } catch (error) {
-      console.error(`[AttributionSync] Failed to get channel attribution: ${error.message}`);
+      logger.error(`[AttributionSync] Failed to get channel attribution: ${error.message}`);
       return {};
     }
   }

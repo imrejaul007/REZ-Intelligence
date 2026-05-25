@@ -9,7 +9,7 @@ const ANALYTICS_URL = process.env.ANALYTICS_SERVICE_URL || 'http://localhost:401
 const PROFILE_URL = process.env.PROFILE_SERVICE_URL || 'http://localhost:4013';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
-async function internalRequest(url: string, options: RequestInit = {}): Promise<any> {
+async function internalRequest(url: string, options: RequestInit = {}): Promise<unknown> {
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -231,7 +231,7 @@ export const analyticsOperations = {
   /**
    * Log prediction for ML observability
    */
-  async logPrediction(modelId: string, userId: string, prediction: any, latencyMs: number): Promise<void> {
+  async logPrediction(modelId: string, userId: string, prediction, latencyMs: number): Promise<void> {
     await internalRequest(`${ANALYTICS_URL}/api/track`, {
       method: 'POST',
       body: JSON.stringify({

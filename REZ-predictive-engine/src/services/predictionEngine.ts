@@ -282,7 +282,7 @@ export async function getBatchJobStatus(
     completed: job.completed,
     failed: job.failed,
     results: job.results as AnyPrediction[],
-    errors: (job as any).jobErrors?.length > 0 ? (job as any).jobErrors : undefined
+    errors: (job as unknown).jobErrors?.length > 0 ? (job as unknown).jobErrors : undefined
   };
 }
 

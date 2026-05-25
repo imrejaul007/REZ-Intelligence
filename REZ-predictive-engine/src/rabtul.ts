@@ -14,7 +14,7 @@ const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 /**
  * Verify token
  */
-export async function verifyToken(token: string): Promise<{ valid: boolean; user?: any; error?: string }> {
+export async function verifyToken(token: string): Promise<{ valid: boolean; user?; error?: string }> {
   try {
     const res = await axios.get(`${AUTH_URL}/api/auth/verify`, {
       headers: { 'Authorization': `Bearer ${token}`, 'X-Internal-Token': INTERNAL_TOKEN },
@@ -23,7 +23,7 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; user
       return { valid: true, user: res.data.user };
     }
     return { valid: false, error: 'Invalid token' };
-  } catch (error: any) {
+  } catch (error) {
     return { valid: false, error: error.message };
   }
 }
@@ -41,7 +41,7 @@ export async function publishChurnPrediction(userId: string, probability: number
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -59,7 +59,7 @@ export async function publishLTVUpdate(userId: string, ltv: number, tier: string
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -75,7 +75,7 @@ export async function rewardToPreventChurn(userId: string, amount: number): Prom
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -94,7 +94,7 @@ export async function notifyAtRiskUser(userId: string, offer: string): Promise<{
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }

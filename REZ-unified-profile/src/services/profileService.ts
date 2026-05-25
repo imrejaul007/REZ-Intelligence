@@ -82,7 +82,7 @@ export async function getProfile(userId: string): Promise<IUnifiedProfile | null
 }
 
 /**
- * Get profile by any identifier (userId, email, phone)
+ * Get profile by unknown identifier (userId, email, phone)
  */
 export async function getProfileByIdentifier(identifier: string): Promise<IUnifiedProfile | null> {
   logger.debug(`Fetching profile by identifier ${identifier}`);
@@ -113,7 +113,7 @@ export async function enrichProfile(
     return await createProfile(userId);
   }
 
-  const updateData: Record<string, any> = {
+  const updateData: Record<string, unknown> = {
     lastUpdated: new Date()
   };
 
@@ -213,7 +213,7 @@ export async function mergeProfiles(request: ProfileMergeRequest): Promise<IUnif
   }
 
   // Merge data based on strategy
-  const mergedData: Record<string, any> = {
+  const mergedData: Record<string, unknown> = {
     userId: primaryUserId,
     lastUpdated: new Date()
   };
@@ -223,7 +223,7 @@ export async function mergeProfiles(request: ProfileMergeRequest): Promise<IUnif
   const allPhones = new Set<string>();
   const allDevices = new Set<string>();
 
-  profiles.forEach((p: any) => {
+  profiles.forEach((p) => {
     p.identity?.emails?.forEach((e: string) => allEmails.add(e));
     p.identity?.phones?.forEach((ph: string) => allPhones.add(ph));
     p.identity?.devices?.forEach((d: string) => allDevices.add(d));
@@ -234,67 +234,67 @@ export async function mergeProfiles(request: ProfileMergeRequest): Promise<IUnif
     emails: Array.from(allEmails),
     phones: Array.from(allPhones),
     devices: Array.from(allDevices),
-    linkedAccounts: profiles.flatMap((p: any) => p.identity?.linkedAccounts || []),
-    trustScore: Math.max(...profiles.map((p: any) => p.identity?.trustScore || 0))
+    linkedAccounts: profiles.flatMap((p) => p.identity?.linkedAccounts || []),
+    trustScore: Math.max(...profiles.map((p) => p.identity?.trustScore || 0))
   };
 
   // Merge demographics (latest wins)
   if (strategy === 'latest-wins') {
-    const sorted = profiles.sort((a: any, b: any) =>
+    const sorted = profiles.sort((a, b) =>
       (b.lastUpdated?.getTime() || 0) - (a.lastUpdated?.getTime() || 0)
     );
     mergedData.demographics = sorted[0].demographics || {};
   } else {
-    mergedData.demographics = (primaryProfile as any).demographics || {};
+    mergedData.demographics = (primaryProfile as unknown).demographics || {};
   }
 
   // Merge signals (max values)
-  const pAny = primaryProfile as any;
+  const pAny = primaryProfile as unknown;
   mergedData.signals = {
     location: {
-      segments: [...new Set(profiles.flatMap((p: any) => p.signals?.location?.segments || []))],
-      patterns: [...new Set(profiles.flatMap((p: any) => p.signals?.location?.patterns || []))],
-      favoriteZones: [...new Set(profiles.flatMap((p: any) => p.signals?.location?.favoriteZones || []))],
-      confidence: Math.max(...profiles.map((p: any) => p.signals?.location?.confidence || 0))
+      segments: [...new Set(profiles.flatMap((p) => p.signals?.location?.segments || []))],
+      patterns: [...new Set(profiles.flatMap((p) => p.signals?.location?.patterns || []))],
+      favoriteZones: [...new Set(profiles.flatMap((p) => p.signals?.location?.favoriteZones || []))],
+      confidence: Math.max(...profiles.map((p) => p.signals?.location?.confidence || 0))
     },
     behavioral: {
       buyerType: pAny.signals?.behavioral?.buyerType || 'standard',
-      cashbackSensitivity: Math.max(...profiles.map((p: any) => p.signals?.behavioral?.cashbackSensitivity || 0)),
-      luxuryAffinity: Math.max(...profiles.map((p: any) => p.signals?.behavioral?.luxuryAffinity || 0)),
-      impulseScore: Math.max(...profiles.map((p: any) => p.signals?.behavioral?.impulseScore || 0)),
-      confidence: Math.max(...profiles.map((p: any) => p.signals?.behavioral?.confidence || 0))
+      cashbackSensitivity: Math.max(...profiles.map((p) => p.signals?.behavioral?.cashbackSensitivity || 0)),
+      luxuryAffinity: Math.max(...profiles.map((p) => p.signals?.behavioral?.luxuryAffinity || 0)),
+      impulseScore: Math.max(...profiles.map((p) => p.signals?.behavioral?.impulseScore || 0)),
+      confidence: Math.max(...profiles.map((p) => p.signals?.behavioral?.confidence || 0))
     },
     social: {
       influenceTier: pAny.signals?.social?.influenceTier || 'low',
-      referralCount: Math.max(...profiles.map((p: any) => p.signals?.social?.referralCount || 0)),
-      sharingRate: Math.max(...profiles.map((p: any) => p.signals?.social?.sharingRate || 0)),
-      confidence: Math.max(...profiles.map((p: any) => p.signals?.social?.confidence || 0))
+      referralCount: Math.max(...profiles.map((p) => p.signals?.social?.referralCount || 0)),
+      sharingRate: Math.max(...profiles.map((p) => p.signals?.social?.sharingRate || 0)),
+      confidence: Math.max(...profiles.map((p) => p.signals?.social?.confidence || 0))
     },
     competitor: {
-      loyaltyScore: Math.max(...profiles.map((p: any) => p.signals?.competitor?.loyaltyScore || 0)),
+      loyaltyScore: Math.max(...profiles.map((p) => p.signals?.competitor?.loyaltyScore || 0)),
       switchRisk: pAny.signals?.competitor?.switchRisk || 'low',
-      winBackPotential: Math.max(...profiles.map((p: any) => p.signals?.competitor?.winBackPotential || 0)),
-      confidence: Math.max(...profiles.map((p: any) => p.signals?.competitor?.confidence || 0))
+      winBackPotential: Math.max(...profiles.map((p) => p.signals?.competitor?.winBackPotential || 0)),
+      confidence: Math.max(...profiles.map((p) => p.signals?.competitor?.confidence || 0))
     },
-    overall: Math.max(...profiles.map((p: any) => p.signals?.overall || 0))
+    overall: Math.max(...profiles.map((p) => p.signals?.overall || 0))
   };
 
   // Merge segments
-  mergedData.segments = [...new Set(profiles.flatMap((p: any) => p.segments || []))];
+  mergedData.segments = [...new Set(profiles.flatMap((p) => p.segments || []))];
 
   // Merge lifetime (sum for orders/spend, max for dates)
   mergedData.lifetime = {
-    tenureDays: Math.max(...profiles.map((p: any) => p.lifetime?.tenureDays || 0)),
-    totalOrders: profiles.reduce((sum, p: any) => sum + (p.lifetime?.totalOrders || 0), 0),
-    totalSpend: profiles.reduce((sum, p: any) => sum + (p.lifetime?.totalSpend || 0), 0),
+    tenureDays: Math.max(...profiles.map((p) => p.lifetime?.tenureDays || 0)),
+    totalOrders: profiles.reduce((sum, p) => sum + (p.lifetime?.totalOrders || 0), 0),
+    totalSpend: profiles.reduce((sum, p) => sum + (p.lifetime?.totalSpend || 0), 0),
     avgOrderValue: 0, // Will be recalculated
     lastOrderDate: new Date(Math.max(
-      ...profiles.map((p: any) => p.lifetime?.lastOrderDate?.getTime() || 0)
+      ...profiles.map((p) => p.lifetime?.lastOrderDate?.getTime() || 0)
     )) || undefined,
     firstOrderDate: new Date(Math.min(
-      ...profiles.filter((p: any) => p.lifetime?.firstOrderDate).map((p: any) => p.lifetime!.firstOrderDate!.getTime())
+      ...profiles.filter((p) => p.lifetime?.firstOrderDate).map((p) => p.lifetime!.firstOrderDate!.getTime())
     )) || undefined,
-    predictedLTV: Math.max(...profiles.map((p: any) => p.lifetime?.predictedLTV || 0))
+    predictedLTV: Math.max(...profiles.map((p) => p.lifetime?.predictedLTV || 0))
   };
 
   // Recalculate avg order value
@@ -305,29 +305,29 @@ export async function mergeProfiles(request: ProfileMergeRequest): Promise<IUnif
   // Merge activity (sum)
   mergedData.activity = {
     last30Days: {
-      orders: profiles.reduce((sum, p: any) => sum + (p.activity?.last30Days?.orders || 0), 0),
-      spend: profiles.reduce((sum, p: any) => sum + (p.activity?.last30Days?.spend || 0), 0),
-      visits: profiles.reduce((sum, p: any) => sum + (p.activity?.last30Days?.visits || 0), 0),
-      sessions: profiles.reduce((sum, p: any) => sum + (p.activity?.last30Days?.sessions || 0), 0)
+      orders: profiles.reduce((sum, p) => sum + (p.activity?.last30Days?.orders || 0), 0),
+      spend: profiles.reduce((sum, p) => sum + (p.activity?.last30Days?.spend || 0), 0),
+      visits: profiles.reduce((sum, p) => sum + (p.activity?.last30Days?.visits || 0), 0),
+      sessions: profiles.reduce((sum, p) => sum + (p.activity?.last30Days?.sessions || 0), 0)
     },
     last90Days: {
-      orders: profiles.reduce((sum, p: any) => sum + (p.activity?.last90Days?.orders || 0), 0),
-      spend: profiles.reduce((sum, p: any) => sum + (p.activity?.last90Days?.spend || 0), 0),
-      visits: profiles.reduce((sum, p: any) => sum + (p.activity?.last90Days?.visits || 0), 0),
-      sessions: profiles.reduce((sum, p: any) => sum + (p.activity?.last90Days?.sessions || 0), 0)
+      orders: profiles.reduce((sum, p) => sum + (p.activity?.last90Days?.orders || 0), 0),
+      spend: profiles.reduce((sum, p) => sum + (p.activity?.last90Days?.spend || 0), 0),
+      visits: profiles.reduce((sum, p) => sum + (p.activity?.last90Days?.visits || 0), 0),
+      sessions: profiles.reduce((sum, p) => sum + (p.activity?.last90Days?.sessions || 0), 0)
     },
     engagement: {
-      recencyScore: Math.max(...profiles.map((p: any) => p.activity?.engagement?.recencyScore || 0)),
-      frequencyScore: Math.max(...profiles.map((p: any) => p.activity?.engagement?.frequencyScore || 0)),
-      monetaryScore: Math.max(...profiles.map((p: any) => p.activity?.engagement?.monetaryScore || 0)),
-      engagementIndex: Math.max(...profiles.map((p: any) => p.activity?.engagement?.engagementIndex || 0))
+      recencyScore: Math.max(...profiles.map((p) => p.activity?.engagement?.recencyScore || 0)),
+      frequencyScore: Math.max(...profiles.map((p) => p.activity?.engagement?.frequencyScore || 0)),
+      monetaryScore: Math.max(...profiles.map((p) => p.activity?.engagement?.monetaryScore || 0)),
+      engagementIndex: Math.max(...profiles.map((p) => p.activity?.engagement?.engagementIndex || 0))
     }
   };
 
   // Merge preferences (union)
   mergedData.preferences = {
-    categories: [...new Set(profiles.flatMap((p: any) => p.preferences?.categories || []))],
-    brands: [...new Set(profiles.flatMap((p: any) => p.preferences?.brands || []))],
+    categories: [...new Set(profiles.flatMap((p) => p.preferences?.categories || []))],
+    brands: [...new Set(profiles.flatMap((p) => p.preferences?.brands || []))],
     priceRange: pAny.preferences?.priceRange || { min: 0, max: 10000 },
     notifications: pAny.preferences?.notifications || { email: true, sms: true, push: true },
     communicationFrequency: pAny.preferences?.communicationFrequency || 'weekly'
@@ -357,7 +357,7 @@ export async function mergeProfiles(request: ProfileMergeRequest): Promise<IUnif
 export async function searchProfiles(query: ProfileSearchQuery): Promise<IUnifiedProfile[]> {
   logger.debug('Searching profiles', query);
 
-  const filter: Record<string, any> = {};
+  const filter: Record<string, unknown> = {};
 
   if (query.email) {
     filter['identity.emails'] = query.email;
@@ -424,7 +424,7 @@ export async function getSegmentStats(): Promise<Record<string, number>> {
   ]);
 
   const stats: Record<string, number> = {};
-  result.forEach((item: any) => {
+  result.forEach((item) => {
     stats[item._id] = item.count;
   });
 

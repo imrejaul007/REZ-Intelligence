@@ -1,6 +1,6 @@
 /**
  * REZ Flow Runtime - Dead Letter Queue Service
- * Handles failed workflow executions that need manual intervention
+ * Handles failed workflow executions with proper Redis SCAN, distributed locks, and idempotency
  */
 
 import { Queue, Worker, Job } from 'bullmq';
@@ -8,6 +8,70 @@ import Redis from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
 import { DLQMessage, WorkflowDefinition, ExecutionContext, NodeData } from '../types/workflow';
 import logger from './logger';
+
+// ==================== CONSTANTS ====================
+
+const LOCK_TTL_MS = 60000; // 1 minute for DLQ operations
+
+// ==================== UTILITIES ====================
+
+function safeJsonParse<T = unknown>(
+  data: string | null,
+  fallback: T | null = null
+): T | null {
+  if (!data) return fallback;
+  try {
+    return JSON.parse(data) as T;
+  } catch {
+    logger.error('Failed to parse JSON', { data: data?.substring(0, 100) });
+    return fallback;
+  }
+}
+
+async function scanKeys(
+  redis: Redis,
+  pattern: string,
+  count: number = 100
+): Promise<string[]> {
+  const allKeys: string[] = [];
+  let cursor = '0';
+
+  do {
+    const [newCursor, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', count);
+    cursor = newCursor;
+    allKeys.push(...keys);
+  } while (cursor !== '0');
+
+  return allKeys;
+}
+
+async function acquireLock(
+  redis: Redis,
+  key: string,
+  ttlMs: number = LOCK_TTL_MS
+): Promise<string | null> {
+  const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const result = await redis.set(`lock:${key}`, token, 'PX', ttlMs, 'NX');
+  return result === 'OK' ? token : null;
+}
+
+async function releaseLock(
+  redis: Redis,
+  key: string,
+  token: string
+): Promise<boolean> {
+  const script = `
+    if redis.call("get", KEYS[1]) == ARGV[1] then
+      return redis.call("del", KEYS[1])
+    else
+      return 0
+    end
+  `;
+  const result = await redis.eval(script, 1, `lock:${key}`, token);
+  return result === 1;
+}
+
+// ==================== CONFIG ====================
 
 interface DLQConfig {
   redisUrl?: string;
@@ -20,9 +84,9 @@ interface DLQConfig {
 const DEFAULT_CONFIG: Required<DLQConfig> = {
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
   maxRetries: 5,
-  retryDelay: 60000, // 1 minute
-  ttl: 7 * 24 * 60 * 60 * 1000, // 7 days
-  cleanupInterval: 60 * 60 * 1000 // 1 hour
+  retryDelay: 60000,
+  ttl: 7 * 24 * 60 * 60 * 1000,
+  cleanupInterval: 60 * 60 * 1000
 };
 
 class DLQService {
@@ -32,17 +96,16 @@ class DLQService {
   private config: Required<DLQConfig>;
   private cleanupTimer: NodeJS.Timeout | null = null;
   private isConnected: boolean = false;
+  private processingLocks = new Map<string, NodeJS.Timeout>();
 
   constructor(config: DLQConfig = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
 
-    // Initialize Redis connection
     this.redis = new Redis(this.config.redisUrl, {
       maxRetriesPerRequest: null,
       enableReadyCheck: false
     });
 
-    // Initialize queue
     this.queue = new Queue<DLQMessage>('rez-flow-dlq', {
       connection: this.redis,
       defaultJobOptions: {
@@ -59,20 +122,13 @@ class DLQService {
     this.setupEventHandlers();
   }
 
-  /**
-   * Connect to Redis and start processing
-   */
   async connect(): Promise<void> {
     if (this.isConnected) return;
 
     try {
-      // Test connection
       await this.redis.ping();
       this.isConnected = true;
-
-      // Start cleanup timer
       this.startCleanup();
-
       logger.info('DLQ service connected', { redisUrl: this.config.redisUrl });
     } catch (error) {
       logger.error('Failed to connect DLQ service', { error });
@@ -80,9 +136,6 @@ class DLQService {
     }
   }
 
-  /**
-   * Disconnect from Redis
-   */
   async disconnect(): Promise<void> {
     if (this.cleanupTimer) {
       clearInterval(this.cleanupTimer);
@@ -96,19 +149,30 @@ class DLQService {
 
     await this.queue.close();
     await this.redis.quit();
-
     this.isConnected = false;
     logger.info('DLQ service disconnected');
   }
 
   /**
-   * Add a failed execution to the DLQ
+   * Add a failed execution to the DLQ with idempotency check
    */
   async addToQueue(message: DLQMessage): Promise<string> {
     const jobId = `${message.executionId}-${message.nodeId}-${Date.now()}`;
 
     try {
-      // Store in Redis with TTL for fast access
+      // Check for duplicate using idempotency key
+      const idempotencyKey = `dlq:idem:${message.executionId}:${message.nodeId}`;
+      const existing = await this.redis.get(idempotencyKey);
+
+      if (existing) {
+        logger.info('Duplicate DLQ entry ignored', {
+          executionId: message.executionId,
+          nodeId: message.nodeId
+        });
+        return existing;
+      }
+
+      // Store in Redis with TTL
       const dlqKey = `dlq:${jobId}`;
       await this.redis.setex(
         dlqKey,
@@ -116,7 +180,10 @@ class DLQService {
         JSON.stringify(message)
       );
 
-      // Add to BullMQ queue for retry processing
+      // Mark as processed for idempotency
+      await this.redis.setex(idempotencyKey, this.config.ttl, jobId);
+
+      // Add to BullMQ queue
       await this.queue.add('failed-node', message, {
         jobId,
         removeOnComplete: false,
@@ -132,24 +199,14 @@ class DLQService {
     }
   }
 
-  /**
-   * Get DLQ message by ID
-   */
   async getMessage(jobId: string): Promise<DLQMessage | null> {
     const dlqKey = `dlq:${jobId}`;
     const data = await this.redis.get(dlqKey);
-
-    if (!data) return null;
-
-    try {
-      return JSON.parse(data) as DLQMessage;
-    } catch {
-      return null;
-    }
+    return safeJsonParse<DLQMessage>(data);
   }
 
   /**
-   * Get all DLQ messages with pagination
+   * List all DLQ messages with pagination using SCAN (non-blocking)
    */
   async listMessages(options: {
     page?: number;
@@ -164,13 +221,12 @@ class DLQService {
   }> {
     const { page = 1, limit = 20 } = options;
 
-    const keys = await this.redis.keys('dlq:*');
+    // Use SCAN instead of KEYS
+    const keys = await scanKeys(this.redis, 'dlq:[^i]*', 100);
     const total = keys.length;
 
-    // Sort by most recent (assuming keys have timestamp suffix)
     keys.sort().reverse();
 
-    // Paginate
     const start = (page - 1) * limit;
     const end = start + limit;
     const pageKeys = keys.slice(start, end);
@@ -185,17 +241,9 @@ class DLQService {
       }
     }
 
-    return {
-      messages,
-      total,
-      page,
-      limit
-    };
+    return { messages, total, page, limit };
   }
 
-  /**
-   * Get DLQ statistics
-   */
   async getStats(): Promise<{
     totalMessages: number;
     byWorkflow: Record<string, number>;
@@ -207,7 +255,8 @@ class DLQService {
       failed: number;
     };
   }> {
-    const keys = await this.redis.keys('dlq:*');
+    // Use SCAN instead of KEYS
+    const keys = await scanKeys(this.redis, 'dlq:[^i]*', 100);
 
     const byWorkflow: Record<string, number> = {};
     let oldestMessage: Date | null = null;
@@ -215,27 +264,25 @@ class DLQService {
 
     for (const key of keys) {
       const data = await this.redis.get(key);
-      if (data) {
-        try {
-          const message = JSON.parse(data) as DLQMessage;
-          byWorkflow[message.workflowId] = (byWorkflow[message.workflowId] || 0) + 1;
+      const message = safeJsonParse<DLQMessage>(data);
 
-          const failedAt = new Date(message.failedAt);
-          if (!oldestMessage || failedAt < oldestMessage) {
-            oldestMessage = failedAt;
-          }
-          if (!newestMessage || failedAt > newestMessage) {
-            newestMessage = failedAt;
-          }
-        } catch {
-          // Skip invalid entries
+      if (message) {
+        byWorkflow[message.workflowId] = (byWorkflow[message.workflowId] || 0) + 1;
+
+        const failedAt = new Date(message.failedAt);
+        if (!oldestMessage || failedAt < oldestMessage) {
+          oldestMessage = failedAt;
+        }
+        if (!newestMessage || failedAt > newestMessage) {
+          newestMessage = failedAt;
         }
       }
     }
 
-    // Get retry stats from BullMQ
-    const completed = await this.queue.getCompletedCount();
-    const failed = await this.queue.getFailedCount();
+    const [completed, failed] = await Promise.all([
+      this.queue.getCompletedCount(),
+      this.queue.getFailedCount()
+    ]);
 
     return {
       totalMessages: keys.length,
@@ -251,18 +298,25 @@ class DLQService {
   }
 
   /**
-   * Retry a specific DLQ message
+   * Retry a specific DLQ message with distributed lock
    */
   async retryMessage(jobId: string): Promise<boolean> {
-    const message = await this.getMessage(jobId);
-
-    if (!message) {
-      logger.warn(`DLQ message not found: ${jobId}`);
+    // Acquire lock to prevent duplicate processing
+    const lockToken = await acquireLock(this.redis, `dlq:retry:${jobId}`);
+    if (!lockToken) {
+      logger.warn('Could not acquire DLQ retry lock', { jobId });
       return false;
     }
 
     try {
-      // Re-add to queue
+      const message = await this.getMessage(jobId);
+
+      if (!message) {
+        logger.warn('DLQ message not found', { jobId });
+        return false;
+      }
+
+      // Create new job with unique ID
       await this.queue.add('retry', message, {
         jobId: `retry-${jobId}-${Date.now()}`,
         removeOnComplete: true,
@@ -275,24 +329,27 @@ class DLQService {
     } catch (error) {
       logger.error('Failed to retry DLQ message', { jobId, error });
       return false;
+    } finally {
+      await releaseLock(this.redis, `dlq:retry:${jobId}`, lockToken);
     }
   }
 
-  /**
-   * Discard a DLQ message (permanent removal)
-   */
   async discardMessage(jobId: string, reason: string): Promise<boolean> {
-    const message = await this.getMessage(jobId);
-
-    if (!message) {
+    const lockToken = await acquireLock(this.redis, `dlq:discard:${jobId}`);
+    if (!lockToken) {
       return false;
     }
 
     try {
-      // Remove from Redis
-      await this.redis.del(`dlq:${jobId}`);
+      const message = await this.getMessage(jobId);
 
-      // Remove from BullMQ if exists
+      if (!message) {
+        return false;
+      }
+
+      await this.redis.del(`dlq:${jobId}`);
+      await this.redis.del(`dlq:idem:${message.executionId}:${message.nodeId}`);
+
       const job = await this.queue.getJob(jobId);
       if (job) {
         await job.remove();
@@ -304,29 +361,24 @@ class DLQService {
     } catch (error) {
       logger.error('Failed to discard DLQ message', { jobId, error });
       return false;
+    } finally {
+      await releaseLock(this.redis, `dlq:discard:${jobId}`, lockToken);
     }
   }
 
-  /**
-   * Retry all DLQ messages for a specific execution
-   */
   async retryExecution(executionId: string): Promise<number> {
-    const keys = await this.redis.keys('dlq:*');
+    // Use SCAN instead of KEYS
+    const keys = await scanKeys(this.redis, 'dlq:[^i]*', 100);
     let retried = 0;
 
     for (const key of keys) {
       const data = await this.redis.get(key);
-      if (data) {
-        try {
-          const message = JSON.parse(data) as DLQMessage;
-          if (message.executionId === executionId) {
-            const jobId = key.replace('dlq:', '');
-            const success = await this.retryMessage(jobId);
-            if (success) retried++;
-          }
-        } catch {
-          // Skip invalid entries
-        }
+      const message = safeJsonParse<DLQMessage>(data);
+
+      if (message && message.executionId === executionId) {
+        const jobId = key.replace('dlq:', '');
+        const success = await this.retryMessage(jobId);
+        if (success) retried++;
       }
     }
 
@@ -334,12 +386,11 @@ class DLQService {
   }
 
   /**
-   * Clean up expired DLQ messages
+   * Clean up expired DLQ messages using SCAN
    */
   async cleanup(): Promise<number> {
-    const keys = await this.redis.keys('dlq:*');
+    const keys = await scanKeys(this.redis, 'dlq:[^i]*', 100);
     let cleaned = 0;
-    const now = Date.now();
 
     for (const key of keys) {
       const ttl = await this.redis.ttl(key);
@@ -350,15 +401,12 @@ class DLQService {
     }
 
     if (cleaned > 0) {
-      logger.info(`DLQ cleanup completed`, { cleaned, remaining: keys.length - cleaned });
+      logger.info('DLQ cleanup completed', { cleaned, remaining: keys.length - cleaned });
     }
 
     return cleaned;
   }
 
-  /**
-   * Start automatic cleanup
-   */
   private startCleanup(): void {
     this.cleanupTimer = setInterval(() => {
       this.cleanup().catch(error => {
@@ -367,9 +415,6 @@ class DLQService {
     }, this.config.cleanupInterval);
   }
 
-  /**
-   * Setup event handlers
-   */
   private setupEventHandlers(): void {
     this.queue.on('error', (error) => {
       logger.error('DLQ queue error', { error });
@@ -380,9 +425,6 @@ class DLQService {
     });
   }
 
-  /**
-   * Start worker to process retries
-   */
   async startWorker(
     processor: (message: DLQMessage) => Promise<boolean>
   ): Promise<void> {
@@ -410,6 +452,7 @@ class DLQService {
 
           // Remove from DLQ on success
           await this.redis.del(`dlq:${job.id}`);
+          await this.redis.del(`dlq:idem:${message.executionId}:${message.nodeId}`);
         } catch (error) {
           logger.error('DLQ processing failed', {
             executionId: message.executionId,
@@ -433,6 +476,49 @@ class DLQService {
       logger.error('DLQ job failed', { jobId: job?.id, error: error.message });
     });
   }
+}
+
+// ==================== LOGGER EXTENSIONS ====================
+
+declare module './logger' {
+  interface Logger {
+    dlq?: {
+      added?: (executionId: string, nodeId: string, error: string, message: string) => void;
+      retried?: (executionId: string, nodeId: string, retryCount: number) => void;
+      discarded?: (executionId: string, nodeId: string, reason: string) => void;
+    };
+  }
+}
+
+const originalLogger = logger;
+if (!originalLogger.dlq) {
+  (originalLogger as unknown).dlq = {
+    added: (executionId: string, nodeId: string, error: string, message: string) => {
+      originalLogger.info('DLQ entry added', {
+        executionId,
+        nodeId,
+        error,
+        message,
+        event: 'dlq_added'
+      });
+    },
+    retried: (executionId: string, nodeId: string, retryCount: number) => {
+      originalLogger.info('DLQ message retried', {
+        executionId,
+        nodeId,
+        retryCount,
+        event: 'dlq_retried'
+      });
+    },
+    discarded: (executionId: string, nodeId: string, reason: string) => {
+      originalLogger.info('DLQ message discarded', {
+        executionId,
+        nodeId,
+        reason,
+        event: 'dlq_discarded'
+      });
+    }
+  };
 }
 
 // Export singleton instance

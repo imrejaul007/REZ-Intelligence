@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -18,11 +20,11 @@ export class IdentityResolver {
 
   async connect() {
     // Identity resolver uses the userGraph's connections
-    console.log('IdentityResolver initialized');
+    logger.info('IdentityResolver initialized');
   }
 
   async disconnect() {
-    console.log('IdentityResolver disconnected');
+    logger.info('IdentityResolver disconnected');
   }
 
   // ============ IDENTITY RESOLUTION ============
@@ -323,7 +325,7 @@ export class IdentityResolver {
         };
       }
     } catch (error) {
-      console.warn(`Intent Graph resolution failed: ${error.message}`);
+      logger.warn(`Intent Graph resolution failed: ${error.message}`);
     }
     return null;
   }
@@ -347,7 +349,7 @@ export class IdentityResolver {
         };
       }
     } catch (error) {
-      console.warn(`Consumer Graph resolution failed: ${error.message}`);
+      logger.warn(`Consumer Graph resolution failed: ${error.message}`);
     }
     return null;
   }
@@ -371,7 +373,7 @@ export class IdentityResolver {
         };
       }
     } catch (error) {
-      console.warn(`Wallet resolution failed: ${error.message}`);
+      logger.warn(`Wallet resolution failed: ${error.message}`);
     }
     return null;
   }
@@ -391,7 +393,7 @@ export class IdentityResolver {
         return response.data.data;
       }
     } catch (error) {
-      console.warn(`CDP lookup failed: ${error.message}`);
+      logger.warn(`CDP lookup failed: ${error.message}`);
     }
     return null;
   }

@@ -150,14 +150,14 @@ export interface SelfServiceAction {
   description: string;
   eligible: boolean;
   eligibilityReason?: string;
-  actionData?: Record<string, any>;
+  actionData?: Record<string, unknown>;
 }
 
 export interface SelfServiceResult {
   success: boolean;
   action: string;
   message: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 }
 
 export interface AutoTicket {

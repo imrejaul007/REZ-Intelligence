@@ -19,7 +19,7 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; user
       headers: { 'Authorization': `Bearer ${token}`, 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { valid: true, userId: res.data.user?.id };
-  } catch (error: any) {
+  } catch (error) {
     return { valid: false, error: error.message };
   }
 }
@@ -33,7 +33,7 @@ export async function freezeUserWallet(userId: string, reason: string): Promise<
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -47,7 +47,7 @@ export async function unfreezeUserWallet(userId: string): Promise<{ success: boo
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -55,7 +55,7 @@ export async function unfreezeUserWallet(userId: string): Promise<{ success: boo
 /**
  * Notify security team of fraud
  */
-export async function notifySecurityTeam(fraudType: string, userId: string, details: Record<string, any>): Promise<{ success: boolean; error?: string }> {
+export async function notifySecurityTeam(fraudType: string, userId: string, details: Record<string, unknown>): Promise<{ success: boolean; error?: string }> {
   try {
     await axios.post(`${NOTIFICATION_URL}/api/notifications/push`, {
       userId: 'security_team',
@@ -66,7 +66,7 @@ export async function notifySecurityTeam(fraudType: string, userId: string, deta
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -74,7 +74,7 @@ export async function notifySecurityTeam(fraudType: string, userId: string, deta
 /**
  * Publish fraud event to event bus
  */
-export async function publishFraudEvent(eventType: string, data: Record<string, any>): Promise<{ success: boolean; error?: string }> {
+export async function publishFraudEvent(eventType: string, data: Record<string, unknown>): Promise<{ success: boolean; error?: string }> {
   try {
     await axios.post(`${EVENT_BUS_URL}/api/events/publish`, {
       type: `fraud.${eventType}`,
@@ -85,7 +85,7 @@ export async function publishFraudEvent(eventType: string, data: Record<string, 
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -99,7 +99,7 @@ export async function getWalletBalance(userId: string): Promise<{ balance: numbe
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { balance: res.data.balance || 0, frozen: res.data.frozen || false };
-  } catch (error: any) {
+  } catch (error) {
     return { balance: 0, frozen: false, error: error.message };
   }
 }

@@ -398,8 +398,8 @@ export class EducationIntentParser {
     return maxConfidence;
   }
 
-  private extractEntities(message: string): Record<string, any> {
-    const entities: Record<string, any> = {};
+  private extractEntities(message: string): Record<string, unknown> {
+    const entities: Record<string, unknown> = {};
 
     const skillKeywords = [
       'python', 'javascript', 'react', 'node', 'aws', 'docker', 'kubernetes',
@@ -430,8 +430,8 @@ export class EducationIntentParser {
     return entities;
   }
 
-  private extractParameters(message: string, handler?: IntentHandler): Record<string, any> {
-    const params: Record<string, any> = {};
+  private extractParameters(message: string, handler?: IntentHandler): Record<string, unknown> {
+    const params: Record<string, unknown> = {};
 
     if (handler) {
       try {

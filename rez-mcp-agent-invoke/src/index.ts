@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 import 'dotenv/config';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -298,7 +300,7 @@ async function handleInvokeAgent(args: Record<string, unknown>): Promise<string>
         reasoning = result.reasoning || 'Real agent analysis';
         source = 'real';
       } catch (error) {
-        console.error(`Real agent failed, falling back to mock: ${error}`);
+        logger.error(`Real agent failed, falling back to mock: ${error}`);
         // Fall through to mock
       }
     }
@@ -654,9 +656,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function main() {
-  console.error('REZ Agent Invoke MCP running on stdio');
-  console.error(`Agent Orchestrator URL: ${AGENT_ORCHESTRATOR_URL}`);
-  console.error(`Real Agents: ${USE_REAL_AGENTS ? 'ENABLED' : 'DISABLED (set USE_REAL_AGENTS=true to enable)'}`);
+  logger.error('REZ Agent Invoke MCP running on stdio');
+  logger.error(`Agent Orchestrator URL: ${AGENT_ORCHESTRATOR_URL}`);
+  logger.error(`Real Agents: ${USE_REAL_AGENTS ? 'ENABLED' : 'DISABLED (set USE_REAL_AGENTS=true to enable)'}`);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);

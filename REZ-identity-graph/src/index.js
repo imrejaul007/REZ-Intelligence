@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 'use strict';
 
 require('dotenv').config();
@@ -26,7 +28,7 @@ function timingSafeEqual(a, b) {
 const REQUIRED_ENV = ['MONGODB_URI', 'REDIS_URL', 'INTERNAL_SERVICE_TOKEN'];
 for (const env of REQUIRED_ENV) {
   if (!process.env[env]) {
-    console.error(`FATAL: ${env} is required`);
+    logger.error(`FATAL: ${env} is required`);
     process.exit(1);
   }
 }
@@ -348,7 +350,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').filter(Boolean) || [];
 
 if (isProduction && allowedOrigins.length === 0) {
-  console.error('FATAL: ALLOWED_ORIGINS environment variable is required in production');
+  logger.error('FATAL: ALLOWED_ORIGINS environment variable is required in production');
   process.exit(1);
 }
 

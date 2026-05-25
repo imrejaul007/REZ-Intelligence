@@ -577,7 +577,7 @@ router.post('/chat', async (req: Request, res: Response) => {
 
     const intent = intentParser.parseIntent(params.message);
 
-    let response: any = {
+    let response: unknown = {
       intent: intent.type,
       confidence: intent.confidence,
       message: ''
@@ -600,7 +600,7 @@ router.post('/chat', async (req: Request, res: Response) => {
       case IntentType.LEARNING_PATH:
         const path = await expertiseService.createLearningPath(
           intent.entities.skills || params.context?.interests || [],
-          params.context?.skillLevel as any || 'beginner',
+          params.context?.skillLevel as unknown || 'beginner',
           'part-time'
         );
         response.data = path;

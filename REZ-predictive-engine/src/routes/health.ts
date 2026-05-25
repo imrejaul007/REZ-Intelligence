@@ -2,6 +2,10 @@ import { Router, Request, Response } from 'express';
 import mongoose from 'mongoose';
 import os from 'os';
 import logger from '../utils/logger';
+import {
+  generatePrometheusMetrics,
+  getMetricsSnapshot
+} from '../middleware/metrics';
 
 const router = Router();
 
@@ -131,6 +135,25 @@ router.get('/detailed', async (_req: Request, res: Response) => {
  */
 router.get('/ping', (_req: Request, res: Response) => {
   res.send('pong');
+});
+
+/**
+ * GET /health/metrics
+ * Prometheus metrics endpoint
+ */
+router.get('/metrics', (_req: Request, res: Response) => {
+  const metrics = generatePrometheusMetrics();
+
+  res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
+  res.send(metrics);
+});
+
+/**
+ * GET /health/metrics/json
+ * JSON format metrics for debugging
+ */
+router.get('/metrics/json', (_req: Request, res: Response) => {
+  res.json(getMetricsSnapshot());
 });
 
 /**

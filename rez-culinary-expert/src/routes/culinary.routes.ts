@@ -216,7 +216,7 @@ router.post('/chat', async (req: Request, res: Response) => {
               formatMenuItemText(item, tone)
             ).join('\n\n');
           } else {
-            response = `I couldn't find any items matching "${message}". Try searching for a specific dish or ingredient!`;
+            response = `I couldn't find unknown items matching "${message}". Try searching for a specific dish or ingredient!`;
           }
         } else {
           response = "I need a restaurant ID to search the menu. Which restaurant are you at?";
@@ -270,7 +270,7 @@ router.post('/chat', async (req: Request, res: Response) => {
           for (const restriction of restrictions) {
             await dietaryService.addRestriction(userId, restriction as Parameters<typeof dietaryService.addRestriction>[1]);
           }
-          response = `I've noted your dietary requirements: ${restrictions.join(', ')}. I'll keep these in mind for all recommendations and will flag any dishes that may not be suitable.`;
+          response = `I've noted your dietary requirements: ${restrictions.join(', ')}. I'll keep these in mind for all recommendations and will flag unknown dishes that may not be suitable.`;
         } else if (classified.entities.isAllergy && classified.entities.allergens) {
           const allergens = classified.entities.allergens as string[];
           for (const allergen of allergens) {
@@ -281,9 +281,9 @@ router.post('/chat', async (req: Request, res: Response) => {
             name: a,
             severity: 'severe' as const,
           })));
-          response += "\n\nYour allergy information has been saved. I'll flag any dishes containing these allergens.";
+          response += "\n\nYour allergy information has been saved. I'll flag unknown dishes containing these allergens.";
         } else {
-          response = "I want to make sure I understand your dietary needs correctly. Could you tell me about any allergies or dietary restrictions?";
+          response = "I want to make sure I understand your dietary needs correctly. Could you tell me about unknown allergies or dietary restrictions?";
         }
         break;
 

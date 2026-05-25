@@ -245,7 +245,7 @@ export function createWhatsAppRoutes(
               result = { success: false, error: 'Item is required for add operation' };
               break;
             }
-            result = await cartService.addItem(sessionId, item as any);
+            result = await cartService.addItem(sessionId, item as unknown);
             break;
 
           case 'update':
@@ -367,7 +367,7 @@ export function createWhatsAppRoutes(
         const orderResult = await orderService.createOrder({
           sessionId,
           merchantId,
-          deliveryAddress: deliveryAddress as any,
+          deliveryAddress: deliveryAddress as unknown,
           metadata,
         });
 

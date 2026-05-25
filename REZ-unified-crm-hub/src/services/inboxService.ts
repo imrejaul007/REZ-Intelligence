@@ -303,7 +303,7 @@ export class InboxService {
   private async sendWhatsApp(
     customerId: string,
     content: string,
-    metadata: any
+    metadata: unknown
   ): Promise<InboxMessage | null> {
     // Would call WhatsApp service
     logger.info('Sending WhatsApp message', { customerId, content });
@@ -313,7 +313,7 @@ export class InboxService {
   private async sendSMS(
     customerId: string,
     content: string,
-    metadata: any
+    metadata: unknown
   ): Promise<InboxMessage | null> {
     // Would call SMS service
     logger.info('Sending SMS', { customerId, content });
@@ -323,7 +323,7 @@ export class InboxService {
   private async sendEmail(
     customerId: string,
     content: string,
-    metadata: any
+    metadata: unknown
   ): Promise<InboxMessage | null> {
     // Would call email service
     logger.info('Sending email', { customerId, content });

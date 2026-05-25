@@ -227,7 +227,7 @@ class AmenitiesIntentHandler implements IntentHandler {
       confidence: 0.85,
       suggestedActions: ['Pool Information', 'Spa & Wellness', 'Fitness Center', 'Kids Club'],
       quickReplies: ['When does the pool open?', 'Book a spa treatment', 'Gym information', 'Kids activities'],
-      followUp: 'Are you interested in any particular amenities during your stay?',
+      followUp: 'Are you interested in unknown particular amenities during your stay?',
     };
   }
 
@@ -273,7 +273,7 @@ class SpaWellnessIntentHandler implements IntentHandler {
       confidence: 0.88,
       suggestedActions: ['View Treatment Menu', 'Book Appointment', 'Spa Packages', 'Fitness Classes'],
       quickReplies: ['What treatments do you offer?', 'Book a massage', 'Couples spa package', 'Gym hours'],
-      followUp: 'Are you interested in any specific treatment or would you like recommendations?',
+      followUp: 'Are you interested in unknown specific treatment or would you like recommendations?',
     };
   }
 

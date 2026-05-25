@@ -27,8 +27,8 @@ router.get('/footfall', authMiddleware, async (req: Request, res: Response, next
       startDate: startDate ? new Date(startDate as string) : undefined,
       endDate: endDate ? new Date(endDate as string) : undefined,
       zone: zone as string | undefined,
-      locationType: locationType as any,
-      granularity: granularity as any
+      locationType: locationType as unknown,
+      granularity: granularity as unknown
     });
 
     res.json({
@@ -89,7 +89,7 @@ router.get('/dwell-time', authMiddleware, async (req: Request, res: Response, ne
     const analytics = await locationService.getDwellTimeAnalytics({
       locationId: locationId as string | undefined,
       zone: zone as string | undefined,
-      locationType: locationType as any,
+      locationType: locationType as unknown,
       limit: parseInt(limit as string)
     });
 
@@ -186,7 +186,7 @@ router.get('/analytics/trends', authMiddleware, async (req: Request, res: Respon
 
     const trends = await analyticsService.getTrendAnalysis(
       zone as string | undefined,
-      metrics ? (metrics as string).split(',') as any : undefined
+      metrics ? (metrics as string).split(',') as unknown : undefined
     );
 
     res.json({

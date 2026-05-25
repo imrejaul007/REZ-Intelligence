@@ -36,7 +36,7 @@ vi.mock('ioredis', () => {
 vi.mock('mongoose', async () => {
   const actual = await vi.importActual('mongoose');
   return {
-    ...actual as any,
+    ...actual as unknown,
     connect: vi.fn().mockResolvedValue(undefined),
     disconnect: vi.fn().mockResolvedValue(undefined),
     connection: {

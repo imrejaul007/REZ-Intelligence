@@ -420,7 +420,7 @@ export class VoiceAdapter implements ChannelAdapter {
     <Pause length="10"/>
   </Gather>
   <Say voice="Polly.Joanna">
-    I didn't receive any input. Please try again.
+    I didn't receive unknown input. Please try again.
   </Say>
   <Redirect>/webhooks/voice/gather</Redirect>
 </Response>`;

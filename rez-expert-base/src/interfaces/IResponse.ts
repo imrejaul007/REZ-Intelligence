@@ -358,7 +358,7 @@ export interface ResponseAnalytics {
   intentId: string;
   /** Generated at */
   generatedAt: Date;
-  /** User feedback if any */
+  /** User feedback if unknown */
   feedback?: {
     rating?: number;
     helpful?: boolean;

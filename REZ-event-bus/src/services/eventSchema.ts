@@ -480,7 +480,7 @@ export const GenericEventPayloadSchema = z.object({
   sessionId: z.string().optional(),
   deviceId: z.string().optional(),
   locationId: z.string().optional(),
-  data: z.record(z.any()).optional(),
+  data: z.record(z.unknown()).optional(),
   timestamp: z.string().datetime().optional(),
 });
 
@@ -520,7 +520,7 @@ export const EnrichedEventSchema = z.object({
   sessionId: z.string().optional(),
   deviceId: z.string().optional(),
   locationId: z.string().optional(),
-  data: z.record(z.any()),
+  data: z.record(z.unknown()),
   timestamp: z.string().datetime(),
   metadata: z.object({
     ip: z.string().optional(),
@@ -539,7 +539,7 @@ export const eventValidationSchema = z.object({
   attributionSource: z.enum(Object.values(AttributionSource) as [string, ...string[]]).optional(),
   userId: z.string().optional(),
   merchantId: z.string().optional(),
-  data: z.record(z.any()),
+  data: z.record(z.unknown()),
   timestamp: z.string().datetime().optional(),
   metadata: z.object({
     ip: z.string().optional(),

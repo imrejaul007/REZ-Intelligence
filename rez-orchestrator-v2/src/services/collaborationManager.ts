@@ -21,7 +21,7 @@ import { appConfig } from '../config';
 import { logger } from '../utils/logger';
 
 export class CollaborationManager {
-  private agentRegistry: any;
+  private agentRegistry;
   private agentSwitcher: AgentSwitcher;
   private defaultConfig: CollaborationConfig;
 
@@ -39,7 +39,7 @@ export class CollaborationManager {
     };
   }
 
-  setAgentRegistry(registry: any): void {
+  setAgentRegistry(registry): void {
     this.agentRegistry = registry;
   }
 

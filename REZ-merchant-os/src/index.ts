@@ -1,5 +1,6 @@
 import 'dotenv/config';
-import express, { Request, Response } from 'express';
+import express, { Request, Response } import logger from './utils/logger';
+import from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -19,7 +20,7 @@ import {
 const REQUIRED_ENV = ['MONGODB_URI', 'INTERNAL_SERVICE_TOKEN'];
 for (const env of REQUIRED_ENV) {
   if (!process.env[env]) {
-    console.error(`FATAL: ${env} is required`);
+    logger.error(`FATAL: ${env} is required`);
     process.exit(1);
   }
 }

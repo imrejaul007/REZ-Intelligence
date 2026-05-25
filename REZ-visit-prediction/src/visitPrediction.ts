@@ -81,8 +81,8 @@ class VisitProbabilityCalculator {
   calculate(
     userId: string,
     merchantId: string,
-    userProfile: any,
-    merchantProfile: any
+    userProfile,
+    merchantProfile: unknown
   ): VisitPrediction {
     const factors: { factor: string; contribution: number }[] = [];
     let baseProbability = 0.5;
@@ -195,7 +195,7 @@ class VisitProbabilityCalculator {
   /**
    * Build visit profile for user
    */
-  buildVisitProfile(userId: string, visitHistory: any[]): VisitProfile {
+  buildVisitProfile(userId: string, visitHistory: unknown[]): VisitProfile {
     if (visitHistory.length === 0) {
       return {
         userId,
@@ -248,7 +248,7 @@ class VisitProbabilityCalculator {
   /**
    * Forecast visits for merchant
    */
-  forecastMerchantVisits(merchantId: string, history: any[]): MerchantForecast {
+  forecastMerchantVisits(merchantId: string, history: unknown[]): MerchantForecast {
     const today = new Date();
     const forecasts = [];
 
@@ -307,7 +307,7 @@ class VisitProbabilityCalculator {
     return R * c;
   }
 
-  private calculateConfidence(profile: any): number {
+  private calculateConfidence(profile): number {
     let score = 0.5;
     if (profile?.patterns?.visits > 10) score += 0.2;
     if (profile?.patterns?.lastVisit) score += 0.15;
@@ -322,7 +322,7 @@ class VisitProbabilityCalculator {
     return 'no_action';
   }
 
-  private groupBy(items: any[], key: string): Record<string, number> {
+  private groupBy(items: unknown[], key: string): Record<string, number> {
     return items.reduce((acc, item) => {
       const value = item[key];
       acc[value] = (acc[value] || 0) + 1;
@@ -330,7 +330,7 @@ class VisitProbabilityCalculator {
     }, {});
   }
 
-  private calculateSeasonality(history: any[]): number {
+  private calculateSeasonality(history: unknown[]): number {
     // Simple seasonality: compare weekday vs weekend visits
     const weekdayVisits = history.filter(v => v.dayOfWeek >= 1 && v.dayOfWeek <= 5).length;
     const weekendVisits = history.filter(v => v.dayOfWeek === 0 || v.dayOfWeek === 6).length;
@@ -339,18 +339,18 @@ class VisitProbabilityCalculator {
     return weekendAvg > weekdayAvg ? 1.2 : 0.9;
   }
 
-  private getAverageVisits(history: any[], dayOfWeek: number): number {
+  private getAverageVisits(history: unknown[], dayOfWeek: number): number {
     const dayHistory = history.filter(v => v.dayOfWeek === dayOfWeek);
     const weekCount = Math.max(1, Math.ceil(history.length / 7));
     return dayHistory.length / weekCount;
   }
 
-  private getAverageSpend(history: any[]): number {
+  private getAverageSpend(history: unknown[]): number {
     if (history.length === 0) return 300;
     return history.reduce((sum, v) => sum + (v.spend || 300), 0) / history.length;
   }
 
-  private getHourlyDistribution(history: any[]): { hour: number; visits: number }[] {
+  private getHourlyDistribution(history: unknown[]): { hour: number; visits: number }[] {
     const hours: Record<number, number> = {};
     for (let i = 0; i < 24; i++) hours[i] = 0;
     history.forEach(v => {
@@ -359,7 +359,7 @@ class VisitProbabilityCalculator {
     return Object.entries(hours).map(([hour, visits]) => ({ hour: Number(hour), visits }));
   }
 
-  private identifyRiskFactors(history: any[]): VisitProfile['riskFactors'] {
+  private identifyRiskFactors(history: unknown[]): VisitProfile['riskFactors'] {
     const risks: VisitProfile['riskFactors'] = [];
 
     if (history.length === 0) {
@@ -377,7 +377,7 @@ class VisitProbabilityCalculator {
     return risks;
   }
 
-  private generateRecommendations(forecasts: any[], busyHours: number[]): string[] {
+  private generateRecommendations(forecasts: unknown[], busyHours: number[]): string[] {
     const recs = [];
 
     const peakHour = busyHours.find(h => h.visits === Math.max(...busyHours.map(h => h.visits)));

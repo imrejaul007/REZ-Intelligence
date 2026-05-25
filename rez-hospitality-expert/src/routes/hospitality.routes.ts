@@ -91,8 +91,8 @@ router.post(
       };
 
       // Store Core Brain session for later use
-      (context as any).coreBrainSession = userContext.session;
-      (context as any).loyaltyProfile = userContext.loyalty;
+      (context as unknown).coreBrainSession = userContext.session;
+      (context as unknown).loyaltyProfile = userContext.loyalty;
     }
 
     // Add user message to history
@@ -343,7 +343,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const { category } = req.query;
     const amenities = expertiseService.getAmenityInfo(
-      category as string as any
+      category as string as unknown
     );
 
     res.json({
@@ -434,10 +434,10 @@ router.get('/intents', (req: Request, res: Response) => {
  * Load user context from Core Brain
  */
 async function loadCoreBrainContext(userId: string, sessionId?: string): Promise<{
-  session: any;
-  preferences: any;
-  loyalty: any;
-  memories: any[];
+  session;
+  preferences;
+  loyalty;
+  memories: unknown[];
   context: Record<string, unknown>;
 } | null> {
   try {
@@ -460,7 +460,7 @@ async function createSession(
   const context: ConversationContext = {
     sessionId,
     guest: guestId ? { id: guestId, name: 'Guest' } : undefined,
-    reservation: reservationId ? { id: reservationId } as any : undefined,
+    reservation: reservationId ? { id: reservationId } as unknown : undefined,
     currentIntent: undefined,
     conversationHistory: [],
     recentRequests: [],

@@ -59,7 +59,7 @@ app.use((req, res, next) => {
     const logLevel = res.statusCode >= 400 ? 'warn' : 'info';
 
     logger[logLevel](`${req.method} ${req.path}`, {
-      requestId: (req as any).requestId,
+      requestId: (req as unknown).requestId,
       statusCode: res.statusCode,
       duration: `${duration}ms`,
       ip: req.ip,

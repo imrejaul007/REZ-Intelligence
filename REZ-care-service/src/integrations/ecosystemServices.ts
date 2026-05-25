@@ -35,7 +35,7 @@ export interface TimelineEvent {
   eventType: 'ticket' | 'chat' | 'refund' | 'payment' | 'order' | 'loyalty' | 'delivery' | 'support' | 'compensation';
   source: string;
   timestamp?: Date;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   sentiment?: number;
   intent?: string;
   category?: string;
@@ -69,7 +69,7 @@ export interface UnifiedCustomerProfile {
 export interface WorkflowTrigger {
   workflowName: string;
   customerId: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 }
 
 // Vector Search
@@ -79,7 +79,7 @@ export interface KnowledgeSearchResult {
   title: string;
   category: string;
   similarity: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // ============================================
@@ -116,7 +116,7 @@ class MemoryLayerService {
       });
 
       return { success: true, eventId: response.data.eventId };
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[Memory] Failed to add timeline event', {
         customerId: event.customerId,
         error: error.message,
@@ -138,7 +138,7 @@ class MemoryLayerService {
       });
 
       return { events: response.data.events || [] };
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[Memory] Failed to get timeline', {
         customerId,
         error: error.message,
@@ -159,7 +159,7 @@ class MemoryLayerService {
     try {
       const response = await this.client.get(`/api/timeline/${customerId}/summary`);
       return response.data;
-    } catch (error: any) {
+    } catch (error) {
       return { total: 0, byType: {}, error: error.message };
     }
   }
@@ -175,7 +175,7 @@ class MemoryLayerService {
     try {
       const response = await this.client.get(`/api/timeline/${customerId}/patterns`);
       return response.data;
-    } catch (error: any) {
+    } catch (error) {
       return { patterns: [], insights: [], error: error.message };
     }
   }
@@ -233,7 +233,7 @@ class UnifiedProfileService {
       };
 
       return { profile };
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[Profile] Failed to get unified profile', {
         customerId,
         error: error.message,
@@ -252,7 +252,7 @@ class UnifiedProfileService {
     try {
       await this.client.patch(`/api/profiles/${customerId}`, updates);
       return { success: true };
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[Profile] Failed to update profile', {
         customerId,
         error: error.message,
@@ -271,7 +271,7 @@ class UnifiedProfileService {
     try {
       const response = await this.client.get(`/api/profiles/${customerId}/segments`);
       return { segments: response.data.segments || [] };
-    } catch (error: any) {
+    } catch (error) {
       return { segments: [], error: error.message };
     }
   }
@@ -286,7 +286,7 @@ class UnifiedProfileService {
     try {
       const response = await this.client.get(`/api/profiles/${customerId}/signals`);
       return { scores: response.data || { engagement: 0, loyalty: 0, risk: 0 } };
-    } catch (error: any) {
+    } catch (error) {
       return { scores: { engagement: 0, loyalty: 0, risk: 0 }, error: error.message };
     }
   }
@@ -325,7 +325,7 @@ class WorkflowBuilderService {
   /**
    * Trigger workflow by name
    */
-  async triggerWorkflow(workflowName: string, customerId: string, data?: Record<string, any>): Promise<{
+  async triggerWorkflow(workflowName: string, customerId: string, data?: Record<string, unknown>): Promise<{
     success: boolean;
     executionId?: string;
     error?: string;
@@ -343,7 +343,7 @@ class WorkflowBuilderService {
       });
 
       return { success: true, executionId: response.data.executionId };
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[Workflow] Failed to trigger', {
         workflowName,
         customerId,
@@ -358,13 +358,13 @@ class WorkflowBuilderService {
    */
   async getWorkflowStatus(executionId: string): Promise<{
     status: string;
-    result?: any;
+    result?;
     error?: string;
   }> {
     try {
       const response = await this.client.get(`/api/workflows/executions/${executionId}`);
       return { status: response.data.status, result: response.data.result };
-    } catch (error: any) {
+    } catch (error) {
       return { status: 'unknown', error: error.message };
     }
   }
@@ -376,7 +376,7 @@ class WorkflowBuilderService {
     try {
       await this.client.post(`/api/workflows/executions/${executionId}/cancel`);
       return { success: true };
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message };
     }
   }
@@ -431,7 +431,7 @@ class VectorSearchService {
       });
 
       return { results: response.data.results || [] };
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[Vector] Semantic search failed', {
         query,
         error: error.message,
@@ -448,12 +448,12 @@ class VectorSearchService {
     title: string;
     content: string;
     category: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }): Promise<{ success: boolean; error?: string }> {
     try {
       await this.client.post('/api/documents', document);
       return { success: true };
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[Vector] Index failed', {
         docId: document.id,
         error: error.message,
@@ -483,7 +483,7 @@ class VectorSearchService {
         context: response.data.context || '',
         sources: response.data.sources || [],
       };
-    } catch (error: any) {
+    } catch (error) {
       return { context: '', sources: [], error: error.message };
     }
   }
@@ -557,7 +557,7 @@ export async function recordSupportInteraction(
   customerId: string,
   interaction: {
     type: 'ticket' | 'chat' | 'refund' | 'compensation';
-    data: Record<string, any>;
+    data: Record<string, unknown>;
     sentiment?: number;
     intent?: string;
     category?: string;

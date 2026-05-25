@@ -36,7 +36,7 @@ import {
 } from '@/lib/api';
 
 // Stat Card Component
-function StatCard({ title, value, change, changeType, icon: Icon }: any) {
+function StatCard({ title, value, change, changeType, icon: Icon }) {
   const isPositive = changeType === 'positive';
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
@@ -261,7 +261,7 @@ export default function CRMDashboard() {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id as unknown)}
                 className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'border-purple-600 text-purple-600'

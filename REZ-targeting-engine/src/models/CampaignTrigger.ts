@@ -14,7 +14,7 @@ export interface ICampaignTrigger extends Document {
   cost: number;
   revenue?: number;
   error?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_at: Date;
   updated_at: Date;
 }

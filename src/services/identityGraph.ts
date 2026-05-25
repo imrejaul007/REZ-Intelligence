@@ -32,6 +32,7 @@ export interface ProfileAttributes {
   name?: string;
   phone?: string;
   email?: string;
+  deviceId?: string;
   age?: number;
   gender?: string;
   location?: { lat: number; lng: number; city?: string };

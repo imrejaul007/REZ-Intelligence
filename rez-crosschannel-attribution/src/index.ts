@@ -21,7 +21,7 @@ interface Touchpoint {
   source: string;
   campaign?: string;
   timestamp: Date;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   weight: number;
 }
 
@@ -348,7 +348,7 @@ app.get('/api/attribution/channel/:channel', async (req: Request, res: Response)
 app.get('/api/attribution/roi', async (req: Request, res: Response) => {
   try {
     const channels: Channel[] = ['ad', 'offer', 'qr', 'notification', 'location', 'referral', 'search'];
-    const roiData: Record<string, any> = {};
+    const roiData: Record<string, unknown> = {};
 
     for (const channel of channels) {
       const campaigns = await CampaignAttributionModel.find({ channel });

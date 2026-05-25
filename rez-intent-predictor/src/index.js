@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -137,7 +139,7 @@ const startServer = async () => {
     await connectDB();
 
     app.listen(PORT, () => {
-      console.log(`
+      logger.info(`
 ========================================
   ReZ Intent Predictor Service
 ========================================

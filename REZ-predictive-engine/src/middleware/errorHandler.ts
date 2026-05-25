@@ -54,14 +54,14 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ): void {
-  const requestId = (req as any).requestId || 'unknown';
+  const requestId = (req as unknown).requestId || 'unknown';
 
   // Log the error
   logger.logError('API Error', err, {
     requestId,
     path: req.path,
     method: req.method,
-    userId: (req as any).params?.userId
+    userId: (req as unknown).params?.userId
   });
 
   // Handle known API errors
@@ -109,7 +109,7 @@ export function errorHandler(
   }
 
   // Handle duplicate key errors
-  if ((err as any).code === 11000) {
+  if ((err as unknown).code === 11000) {
     res.status(409).json({
       success: false,
       error: {
@@ -150,7 +150,7 @@ export function notFoundHandler(req: Request, res: Response): void {
       message: `Route ${req.method} ${req.path} not found`
     },
     timestamp: new Date().toISOString(),
-    requestId: (req as any).requestId || 'unknown'
+    requestId: (req as unknown).requestId || 'unknown'
   });
 }
 
@@ -170,9 +170,9 @@ export function asyncHandler(
  */
 export function validateRequest<T>(
   schema: {
-    params?: Record<string, any>;
-    query?: Record<string, any>;
-    body?: Record<string, any>;
+    params?: Record<string, unknown>;
+    query?: Record<string, unknown>;
+    body?: Record<string, unknown>;
   },
   source: 'params' | 'query' | 'body' = 'body'
 ) {

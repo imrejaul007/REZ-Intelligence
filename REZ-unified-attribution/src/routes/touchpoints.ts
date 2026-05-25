@@ -16,7 +16,7 @@ touchpointRouter.get('/', async (req: Request, res: Response) => {
   try {
     const { merchantId, customerId, channel, sessionId, startDate, endDate, limit = 100 } = req.query;
 
-    const query: any = {};
+    const query: unknown = {};
     if (merchantId) query.merchantId = merchantId;
     if (customerId) query.customerId = customerId;
     if (channel) query.channel = channel;
@@ -32,7 +32,7 @@ touchpointRouter.get('/', async (req: Request, res: Response) => {
       .limit(Number(limit));
 
     res.json({ success: true, data: touchpoints, count: touchpoints.length });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Touchpoints fetch failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -46,7 +46,7 @@ touchpointRouter.get('/stats', async (req: Request, res: Response) => {
   try {
     const { merchantId, startDate, endDate } = req.query;
 
-    const match: any = {};
+    const match: unknown = {};
     if (merchantId) match.merchantId = merchantId;
     if (startDate || endDate) {
       match.timestamp = {};
@@ -63,7 +63,7 @@ touchpointRouter.get('/stats', async (req: Request, res: Response) => {
     ]);
 
     res.json({ success: true, data: stats });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Touchpoint stats failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -77,7 +77,7 @@ touchpointRouter.get('/distribution', async (req: Request, res: Response) => {
   try {
     const { merchantId, startDate, endDate } = req.query;
 
-    const match: any = {};
+    const match: unknown = {};
     if (merchantId) match.merchantId = merchantId;
     if (startDate || endDate) {
       match.timestamp = {};
@@ -94,17 +94,17 @@ touchpointRouter.get('/distribution', async (req: Request, res: Response) => {
       { $sort: { count: -1 } }
     ]);
 
-    const total = distribution.reduce((sum: number, d: any) => sum + d.count, 0);
+    const total = distribution.reduce((sum: number, d) => sum + d.count, 0);
 
     res.json({
       success: true,
-      data: distribution.map((d: any) => ({
+      data: distribution.map((d) => ({
         channel: d._id,
         count: d.count,
         percentage: total > 0 ? (d.count / total * 100).toFixed(2) : 0
       }))
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Touchpoint distribution failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }

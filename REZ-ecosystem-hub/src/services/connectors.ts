@@ -41,7 +41,7 @@ const SERVICES = {
 // HTTP Client
 // ============================================
 
-async function request<T = any>(
+async function request<T = unknown>(
   service: keyof typeof SERVICES,
   endpoint: string,
   options: {

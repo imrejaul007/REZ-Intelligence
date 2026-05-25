@@ -112,7 +112,7 @@ export class BroadcastService {
       return { success: false, error: 'Broadcast not found' };
     }
 
-    if (!(broadcast as any).canStart()) {
+    if (!(broadcast as unknown).canStart()) {
       return { success: false, error: 'Cannot start broadcast in current state' };
     }
 
@@ -125,7 +125,7 @@ export class BroadcastService {
       }
 
       // Initialize broadcast with recipients
-      (broadcast as any).start(recipients);
+      (broadcast as unknown).start(recipients);
 
       // Get template for sending
       const template = await Template.findOne({ templateId: broadcast.templateId });
@@ -329,7 +329,7 @@ export class BroadcastService {
     return {
       success: true,
       broadcast,
-      progress: (broadcast as any).getProgress?.() || broadcast.progress,
+      progress: (broadcast as unknown).getProgress?.() || broadcast.progress,
     };
   }
 
@@ -541,14 +541,14 @@ export class BroadcastService {
     avgDeliveryRate: number;
     avgReadRate: number;
   }> {
-    return (Broadcast as any).getBroadcastStats?.(merchantId) || { total: 0, byStatus: {}, avgDeliveryRate: 0, avgReadRate: 0 };
+    return (Broadcast as unknown).getBroadcastStats?.(merchantId) || { total: 0, byStatus: {}, avgDeliveryRate: 0, avgReadRate: 0 };
   }
 
   /**
    * Process scheduled broadcasts
    */
   async processScheduledBroadcasts(): Promise<number> {
-    const scheduled = await (Broadcast as any).findScheduled?.() || [];
+    const scheduled = await (Broadcast as unknown).findScheduled?.() || [];
     let processed = 0;
 
     for (const broadcast of scheduled) {

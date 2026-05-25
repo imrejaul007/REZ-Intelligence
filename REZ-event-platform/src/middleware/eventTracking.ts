@@ -376,12 +376,12 @@ export function trackEventMiddleware() {
     const startTime = Date.now();
 
     // Store start time on request for later use
-    (req as any)._eventTrackingStartTime = startTime;
-    (req as any)._eventTrackingId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    (req as unknown)._eventTrackingStartTime = startTime;
+    (req as unknown)._eventTrackingId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     // Hook into response to track completion
     res.on('finish', async () => {
-      const trackingId = (req as any)._eventTrackingId;
+      const trackingId = (req as unknown)._eventTrackingId;
       const eventId = res.get('X-Event-Id') || trackingId;
 
       try {

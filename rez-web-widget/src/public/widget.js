@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ Web Widget - Embeddable Chat Bubble
  * Version: 1.0.0
@@ -18,7 +20,7 @@
 
   // Prevent multiple initializations
   if (window.ReZWidget && window.ReZWidget.initialized) {
-    console.warn('ReZWidget already initialized');
+    logger.warn('ReZWidget already initialized');
     return;
   }
 
@@ -462,7 +464,7 @@
       });
     }
 
-    console.log('ReZWidget: Connected');
+    logger.info('ReZWidget: Connected');
   }
 
   /**
@@ -531,7 +533,7 @@
    */
   function emitMessage(message) {
     if (!state.socket || !state.connected) {
-      console.warn('ReZWidget: Cannot send message, not connected');
+      logger.warn('ReZWidget: Cannot send message, not connected');
       return;
     }
 

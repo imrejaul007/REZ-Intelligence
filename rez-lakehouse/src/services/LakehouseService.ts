@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ Lakehouse - Lakehouse Service
  * Data lakehouse with tables, ETL, and analytics
@@ -28,7 +30,7 @@ export class LakehouseService {
     };
 
     // In production: create table in Delta Lake / Iceberg
-    console.log(`Created table: ${name} at ${table.location}`);
+    logger.info(`Created table: ${name} at ${table.location}`);
 
     return table;
   }
@@ -54,7 +56,7 @@ export class LakehouseService {
     };
 
     // In production: register job in scheduler
-    console.log(`Created ETL job: ${name}`);
+    logger.info(`Created ETL job: ${name}`);
 
     return job;
   }
@@ -66,7 +68,7 @@ export class LakehouseService {
     // In production: execute extraction, transformation, loading
     const rowsProcessed = Math.floor(Math.random() * 10000);
 
-    console.log(`ETL Job ${jobId} completed: ${rowsProcessed} rows`);
+    logger.info(`ETL Job ${jobId} completed: ${rowsProcessed} rows`);
 
     return { success: true, rowsProcessed };
   }
@@ -76,7 +78,7 @@ export class LakehouseService {
    */
   async query(sql: string): Promise<unknown[]> {
     // In production: use Trino, Athena, or Spark SQL
-    console.log(`Executing SQL: ${sql}`);
+    logger.info(`Executing SQL: ${sql}`);
     return [];
   }
 
@@ -89,7 +91,7 @@ export class LakehouseService {
     refreshSchedule: string
   ): Promise<void> {
     // In production: create materialized view
-    console.log(`Created analytics view: ${name}`);
+    logger.info(`Created analytics view: ${name}`);
   }
 
   /**

@@ -33,6 +33,7 @@ import {
   PlatformStats,
   StatsBySource
 } from './types.js';
+import { NotFoundError } from '../../../shared/rez-errors/src/index.js';
 import {
   resolveIdentitySchema,
   linkIdentitySchema,
@@ -214,7 +215,7 @@ class IdentityResolver {
   }
 
   /**
-   * Find by any identifier value
+   * Find by unknown identifier value
    */
   async findByValue(type: IdentityType, value: string): Promise<IIdentity | null> {
     return Identity.findOne({
@@ -257,7 +258,7 @@ class IdentityResolver {
   ): Promise<IIdentity> {
     const identity = await Identity.findOne({ unifiedId });
     if (!identity) {
-      throw new Error('Unified identity not found');
+      throw new NotFoundError('Identity', unifiedId);
     }
 
     // Check if already linked
@@ -394,7 +395,7 @@ class IdentityResolver {
     ]);
 
     if (!source || !target) {
-      throw new Error('One or both identities not found');
+      throw new NotFoundError('Identity');
     }
 
     // Merge identities
@@ -477,13 +478,6 @@ class AuthenticationError extends AppError {
   constructor(message: string = 'Authentication required') {
     super(message, 401, 'AUTHENTICATION_ERROR');
     this.name = 'AuthenticationError';
-  }
-}
-
-class NotFoundError extends AppError {
-  constructor(message: string = 'Resource not found') {
-    super(message, 404, 'NOT_FOUND');
-    this.name = 'NotFoundError';
   }
 }
 

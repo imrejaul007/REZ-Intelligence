@@ -1,8 +1,10 @@
+import { logger } from './utils/logger';
+
 /**
  * Event Bus Integration for REZ Intelligence Services
  *
  * This module provides easy Event Bus integration for all intelligence services.
- * Import and use in any service to emit events.
+ * Import and use in unknown service to emit events.
  */
 
 import axios from 'axios';
@@ -23,7 +25,7 @@ export interface REZEvent {
   userId?: string;
   merchantId?: string;
   correlationId?: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   timestamp?: string;
 }
 
@@ -66,9 +68,9 @@ export class EventEmitter {
         }
       );
 
-      console.log(`[${this.serviceName}] Event emitted: ${event.type}`);
+      logger.info(`[${this.serviceName}] Event emitted: ${event.type}`);
       return response.data;
-    } catch (error: any) {
+    } catch (error) {
       console.error(`[${this.serviceName}] Failed to emit event ${event.type}:`, error.message);
       return null;
     }

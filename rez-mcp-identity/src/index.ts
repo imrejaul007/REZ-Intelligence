@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 import 'dotenv/config';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -451,7 +453,7 @@ async function resolveIdentity(params: {
 
   // Try real API first if enabled
   if (USE_REAL_API) {
-    const result = await fetchFromIdentityService<any>(
+    const result = await fetchFromIdentityService<unknown>(
       `/api/identity/resolve?identifier=${encodeURIComponent(identifier)}&type=${type || ''}`
     );
     if (result) {
@@ -1085,9 +1087,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 // Start server
 async function main() {
-  console.error('REZ Identity Resolution MCP Server running on stdio');
-  console.error(`Identity Service URL: ${IDENTITY_SERVICE_URL}`);
-  console.error(`Real API: ${USE_REAL_API ? 'ENABLED' : 'DISABLED (set USE_REAL_IDENTITY=true to enable)'}`);
+  logger.error('REZ Identity Resolution MCP Server running on stdio');
+  logger.error(`Identity Service URL: ${IDENTITY_SERVICE_URL}`);
+  logger.error(`Real API: ${USE_REAL_API ? 'ENABLED' : 'DISABLED (set USE_REAL_IDENTITY=true to enable)'}`);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);

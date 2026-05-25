@@ -13,7 +13,7 @@ export const validateRequest = (
       error: {
         message: 'Validation failed',
         details: errors.array().map(err => ({
-          field: (err as any).path,
+          field: (err as unknown).path,
           message: err.msg
         }))
       }

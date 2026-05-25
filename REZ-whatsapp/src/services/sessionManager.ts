@@ -10,20 +10,64 @@ import {
 } from '../types/whatsapp';
 import { logger } from '../utils/logger';
 
+// ==================== CONSTANTS ====================
+
+const LOCK_TTL_MS = 5000; // 5 second lock for cart operations
+const LOCK_RETRY_COUNT = 3;
+const LOCK_RETRY_DELAY_MS = 100;
+
 export class SessionManager {
   private redis: Redis;
   private defaultTimeout: number;
   private readonly SESSION_PREFIX = 'whatsapp:session:';
   private readonly CONTEXT_PREFIX = 'whatsapp:context:';
+  private readonly LOCK_PREFIX = 'lock:session:';
 
   constructor(redis: Redis, defaultTimeoutHours: number = 24) {
     this.redis = redis;
-    this.defaultTimeout = defaultTimeoutHours * 60 * 60; // Convert to seconds
+    this.defaultTimeout = defaultTimeoutHours * 60 * 60;
   }
 
-  /**
-   * Create a new WhatsApp session
-   */
+  // ==================== DISTRIBUTED LOCK ====================
+
+  private async acquireLock(sessionId: string): Promise<string | null> {
+    const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+    for (let i = 0; i < LOCK_RETRY_COUNT; i++) {
+      const result = await this.redis.set(
+        `${this.LOCK_PREFIX}${sessionId}`,
+        token,
+        'PX',
+        LOCK_TTL_MS,
+        'NX'
+      );
+
+      if (result === 'OK') {
+        return token;
+      }
+
+      if (i < LOCK_RETRY_COUNT - 1) {
+        await new Promise(resolve => setTimeout(resolve, LOCK_RETRY_DELAY_MS * Math.pow(2, i)));
+      }
+    }
+
+    return null;
+  }
+
+  private async releaseLock(sessionId: string, token: string): Promise<boolean> {
+    const script = `
+      if redis.call("get", KEYS[1]) == ARGV[1] then
+        return redis.call("del", KEYS[1])
+      else
+        return 0
+      end
+    `;
+    const result = await this.redis.eval(script, 1, `${this.LOCK_PREFIX}${sessionId}`, token);
+    return result === 1;
+  }
+
+  // ==================== SESSION OPERATIONS ====================
+
   async createSession(input: SessionCreateInput): Promise<ISession> {
     const sessionId = uuidv4();
     const now = new Date();
@@ -49,7 +93,6 @@ export class SessionManager {
       },
     });
 
-    // Cache session state in Redis for fast access
     await this.cacheSession(session);
 
     logger.info('Session created', {
@@ -61,17 +104,12 @@ export class SessionManager {
     return session;
   }
 
-  /**
-   * Get session by sessionId
-   */
   async getSession(sessionId: string): Promise<ISession | null> {
-    // Try Redis cache first
     const cached = await this.getCachedSession(sessionId);
     if (cached) {
       return cached;
     }
 
-    // Fall back to MongoDB
     const session = await Session.findOne({ sessionId });
     if (session) {
       await this.cacheSession(session);
@@ -80,13 +118,7 @@ export class SessionManager {
     return session;
   }
 
-  /**
-   * Get session by userId
-   */
-  async getSessionByUser(
-    userId: string,
-    merchantId?: string
-  ): Promise<ISession | null> {
+  async getSessionByUser(userId: string, merchantId?: string): Promise<ISession | null> {
     const query: Record<string, unknown> = {
       userId,
       expiresAt: { $gt: new Date() },
@@ -98,221 +130,255 @@ export class SessionManager {
     return Session.findOne(query).sort({ lastActivity: -1 });
   }
 
-  /**
-   * Update session state with state machine validation
-   */
   async updateSessionState(
     sessionId: string,
     newState: SessionState
   ): Promise<ISession | null> {
-    const session = await this.getSession(sessionId);
-    if (!session) {
-      logger.warn('Session not found for state update', { sessionId });
+    // Acquire lock for state updates
+    const lockToken = await this.acquireLock(sessionId);
+    if (!lockToken) {
+      logger.warn('Could not acquire lock for state update', { sessionId });
       return null;
     }
 
-    // Validate state transition
-    const validTransitions = this.getValidTransitions(session.state);
-    if (!validTransitions.includes(newState)) {
-      logger.warn('Invalid state transition', {
-        sessionId,
-        from: session.state,
-        to: newState,
-      });
-      // Allow the transition but log warning
+    try {
+      const session = await this.getSession(sessionId);
+      if (!session) {
+        logger.warn('Session not found for state update', { sessionId });
+        return null;
+      }
+
+      // Validate state transition (warning only)
+      const validTransitions = this.getValidTransitions(session.state);
+      if (!validTransitions.includes(newState)) {
+        logger.warn('Invalid state transition', {
+          sessionId,
+          from: session.state,
+          to: newState,
+        });
+      }
+
+      session.state = newState;
+      session.lastActivity = new Date();
+      await session.save();
+      await this.cacheSession(session);
+
+      logger.info('Session state updated', { sessionId, newState });
+      return session;
+    } finally {
+      await this.releaseLock(sessionId, lockToken);
     }
-
-    session.state = newState;
-    session.lastActivity = new Date();
-    await session.save();
-
-    await this.cacheSession(session);
-
-    logger.info('Session state updated', {
-      sessionId,
-      newState,
-    });
-
-    return session;
   }
 
-  /**
-   * Get valid state transitions from current state
-   */
   private getValidTransitions(currentState: SessionState): SessionState[] {
     const transitions: Record<SessionState, SessionState[]> = {
-      [SessionState.IDLE]: [
-        SessionState.BROWSING,
-        SessionState.SEARCHING,
-        SessionState.SUPPORT,
-      ],
-      [SessionState.BROWSING]: [
-        SessionState.VIEWING_PRODUCT,
-        SessionState.SEARCHING,
-        SessionState.CART_REVIEW,
-        SessionState.IDLE,
-      ],
-      [SessionState.SEARCHING]: [
-        SessionState.BROWSING,
-        SessionState.VIEWING_PRODUCT,
-        SessionState.IDLE,
-      ],
-      [SessionState.VIEWING_PRODUCT]: [
-        SessionState.ADDING_TO_CART,
-        SessionState.BROWSING,
-        SessionState.CART_REVIEW,
-        SessionState.CHECKOUT,
-      ],
-      [SessionState.ADDING_TO_CART]: [
-        SessionState.CART_REVIEW,
-        SessionState.VIEWING_PRODUCT,
-      ],
-      [SessionState.CART_REVIEW]: [
-        SessionState.CHECKOUT,
-        SessionState.BROWSING,
-        SessionState.VIEWING_PRODUCT,
-      ],
-      [SessionState.CHECKOUT]: [
-        SessionState.PAYMENT_PENDING,
-        SessionState.CART_REVIEW,
-      ],
-      [SessionState.PAYMENT_PENDING]: [
-        SessionState.ORDER_CONFIRMED,
-        SessionState.CHECKOUT,
-      ],
-      [SessionState.ORDER_CONFIRMED]: [
-        SessionState.TRACKING,
-        SessionState.IDLE,
-      ],
+      [SessionState.IDLE]: [SessionState.BROWSING, SessionState.SEARCHING, SessionState.SUPPORT],
+      [SessionState.BROWSING]: [SessionState.VIEWING_PRODUCT, SessionState.SEARCHING, SessionState.CART_REVIEW, SessionState.IDLE],
+      [SessionState.SEARCHING]: [SessionState.BROWSING, SessionState.VIEWING_PRODUCT, SessionState.IDLE],
+      [SessionState.VIEWING_PRODUCT]: [SessionState.ADDING_TO_CART, SessionState.BROWSING, SessionState.CART_REVIEW, SessionState.CHECKOUT],
+      [SessionState.ADDING_TO_CART]: [SessionState.CART_REVIEW, SessionState.VIEWING_PRODUCT],
+      [SessionState.CART_REVIEW]: [SessionState.CHECKOUT, SessionState.BROWSING, SessionState.VIEWING_PRODUCT],
+      [SessionState.CHECKOUT]: [SessionState.PAYMENT_PENDING, SessionState.CART_REVIEW],
+      [SessionState.PAYMENT_PENDING]: [SessionState.ORDER_CONFIRMED, SessionState.CHECKOUT],
+      [SessionState.ORDER_CONFIRMED]: [SessionState.TRACKING, SessionState.IDLE],
       [SessionState.SUPPORT]: [SessionState.IDLE],
       [SessionState.TRACKING]: [SessionState.IDLE, SessionState.ORDER_CONFIRMED],
       [SessionState.COMPLETED]: [SessionState.IDLE],
       [SessionState.EXPIRED]: [SessionState.IDLE],
     };
-
     return transitions[currentState] || [SessionState.IDLE];
   }
 
+  // ==================== CART OPERATIONS WITH DISTRIBUTED LOCK ====================
+
   /**
-   * Add item to cart
+   * Add item to cart - thread-safe with distributed lock
    */
-  async addToCart(
-    sessionId: string,
-    item: CartItem
-  ): Promise<ISession | null> {
-    const session = await this.getSession(sessionId);
-    if (!session) {
-      return null;
+  async addToCart(sessionId: string, item: CartItem): Promise<{ success: boolean; session?: ISession | null; error?: string }> {
+    const lockToken = await this.acquireLock(sessionId);
+    if (!lockToken) {
+      return { success: false, error: 'Cart is being modified, please retry' };
     }
 
-    session.addToCart(item);
-    session.state = SessionState.ADDING_TO_CART;
-    session.lastActivity = new Date();
-    await session.save();
+    try {
+      const session = await Session.findOne({ sessionId });
+      if (!session) {
+        return { success: false, error: 'Session not found' };
+      }
 
-    await this.cacheSession(session);
+      // Read current cart
+      const cart = session.context?.cart || [];
+      const existingIndex = cart.findIndex(i => i.productId === item.productId);
 
-    logger.info('Item added to cart', {
-      sessionId,
-      productId: item.productId,
-      quantity: item.quantity,
-    });
+      if (existingIndex >= 0) {
+        cart[existingIndex].quantity += item.quantity;
+      } else {
+        cart.push(item);
+      }
 
-    return session;
+      // Update session atomically
+      await Session.updateOne(
+        { sessionId },
+        {
+          $set: {
+            'context.cart': cart,
+            state: SessionState.ADDING_TO_CART,
+            lastActivity: new Date(),
+          },
+        }
+      );
+
+      // Invalidate cache
+      await this.redis.del(`${this.SESSION_PREFIX}${sessionId}`);
+
+      logger.info('Item added to cart', {
+        sessionId,
+        productId: item.productId,
+        quantity: item.quantity,
+      });
+
+      const updatedSession = await this.getSession(sessionId);
+      return { success: true, session: updatedSession };
+    } finally {
+      await this.releaseLock(sessionId, lockToken);
+    }
   }
 
   /**
-   * Update cart item quantity
+   * Update cart item - thread-safe with distributed lock
    */
   async updateCartItem(
     sessionId: string,
     productId: string,
     quantity: number
-  ): Promise<ISession | null> {
-    const session = await this.getSession(sessionId);
-    if (!session) {
-      return null;
+  ): Promise<{ success: boolean; session?: ISession | null; error?: string }> {
+    const lockToken = await this.acquireLock(sessionId);
+    if (!lockToken) {
+      return { success: false, error: 'Cart is being modified, please retry' };
     }
 
-    (session as any).updateCartItem?.(productId, quantity);
-    await session.save();
-    return session;
+    try {
+      const session = await Session.findOne({ sessionId });
+      if (!session) {
+        return { success: false, error: 'Session not found' };
+      }
 
-    session.lastActivity = new Date();
-    await session.save();
+      const cart = session.context?.cart || [];
+      const existingIndex = cart.findIndex(i => i.productId === productId);
 
-    await this.cacheSession(session);
+      if (existingIndex < 0) {
+        return { success: false, error: 'Item not found in cart' };
+      }
 
-    logger.info('Cart item updated', {
-      sessionId,
-      productId,
-      quantity,
-    });
+      if (quantity <= 0) {
+        cart.splice(existingIndex, 1);
+      } else {
+        cart[existingIndex].quantity = quantity;
+      }
 
-    return session;
+      await Session.updateOne(
+        { sessionId },
+        {
+          $set: {
+            'context.cart': cart,
+            lastActivity: new Date(),
+          },
+        }
+      );
+
+      await this.redis.del(`${this.SESSION_PREFIX}${sessionId}`);
+
+      logger.info('Cart item updated', { sessionId, productId, quantity });
+
+      const updatedSession = await this.getSession(sessionId);
+      return { success: true, session: updatedSession };
+    } finally {
+      await this.releaseLock(sessionId, lockToken);
+    }
   }
 
   /**
-   * Remove item from cart
+   * Remove item from cart - thread-safe with distributed lock
    */
   async removeFromCart(
     sessionId: string,
     productId: string
-  ): Promise<ISession | null> {
-    const session = await this.getSession(sessionId);
-    if (!session) {
-      return null;
+  ): Promise<{ success: boolean; session?: ISession | null; error?: string }> {
+    const lockToken = await this.acquireLock(sessionId);
+    if (!lockToken) {
+      return { success: false, error: 'Cart is being modified, please retry' };
     }
 
-    session.removeFromCart(productId);
-    session.lastActivity = new Date();
-    await session.save();
+    try {
+      const session = await Session.findOne({ sessionId });
+      if (!session) {
+        return { success: false, error: 'Session not found' };
+      }
 
-    await this.cacheSession(session);
+      const cart = session.context?.cart || [];
+      const newCart = cart.filter(i => i.productId !== productId);
 
-    logger.info('Item removed from cart', {
-      sessionId,
-      productId,
-    });
+      await Session.updateOne(
+        { sessionId },
+        {
+          $set: {
+            'context.cart': newCart,
+            lastActivity: new Date(),
+          },
+        }
+      );
 
-    return session;
+      await this.redis.del(`${this.SESSION_PREFIX}${sessionId}`);
+
+      logger.info('Item removed from cart', { sessionId, productId });
+
+      const updatedSession = await this.getSession(sessionId);
+      return { success: true, session: updatedSession };
+    } finally {
+      await this.releaseLock(sessionId, lockToken);
+    }
   }
 
   /**
-   * Clear cart
+   * Clear cart - thread-safe with distributed lock
    */
-  async clearCart(sessionId: string): Promise<ISession | null> {
-    const session = await this.getSession(sessionId);
-    if (!session) {
-      return null;
+  async clearCart(sessionId: string): Promise<{ success: boolean; session?: ISession | null; error?: string }> {
+    const lockToken = await this.acquireLock(sessionId);
+    if (!lockToken) {
+      return { success: false, error: 'Cart is being modified, please retry' };
     }
 
-    session.clearCart();
-    session.state = SessionState.IDLE;
-    session.lastActivity = new Date();
-    await session.save();
+    try {
+      await Session.updateOne(
+        { sessionId },
+        {
+          $set: {
+            'context.cart': [],
+            state: SessionState.IDLE,
+            lastActivity: new Date(),
+          },
+        }
+      );
 
-    await this.cacheSession(session);
+      await this.redis.del(`${this.SESSION_PREFIX}${sessionId}`);
 
-    logger.info('Cart cleared', { sessionId });
+      logger.info('Cart cleared', { sessionId });
 
-    return session;
+      const updatedSession = await this.getSession(sessionId);
+      return { success: true, session: updatedSession };
+    } finally {
+      await this.releaseLock(sessionId, lockToken);
+    }
   }
 
-  /**
-   * Get cart total
-   */
   async getCartTotal(sessionId: string): Promise<number> {
     const session = await this.getSession(sessionId);
-    if (!session) {
-      return 0;
-    }
-    return (session as any).getCartTotal?.() || 0;
+    if (!session) return 0;
+    return (session as unknown).getCartTotal?.() || 0;
   }
 
-  /**
-   * Add message to conversation history
-   */
+  // ==================== MESSAGE OPERATIONS ====================
+
   async addMessage(
     sessionId: string,
     role: 'user' | 'assistant' | 'system',
@@ -320,146 +386,111 @@ export class SessionManager {
     messageId: string
   ): Promise<void> {
     const session = await this.getSession(sessionId);
-    if (!session) {
-      return;
-    }
+    if (!session) return;
 
-    (session as any).addMessage?.(role, content, messageId);
+    (session as unknown).addMessage?.(role, content, messageId);
     session.lastActivity = new Date();
     await session.save();
-
     await this.cacheSession(session);
   }
 
-  /**
-   * Extend session expiration
-   */
-  async extendSession(
-    sessionId: string,
-    additionalHours?: number
-  ): Promise<ISession | null> {
-    const session = await this.getSession(sessionId);
-    if (!session) {
-      return null;
-    }
-
-    const hours = additionalHours || Math.floor(this.defaultTimeout / 3600);
-    session.expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000);
-    session.lastActivity = new Date();
-    await session.save();
-
-    await this.cacheSession(session);
-
-    logger.info('Session extended', {
-      sessionId,
-      newExpiry: session.expiresAt,
-    });
-
-    return session;
-  }
-
-  /**
-   * End session gracefully
-   */
-  async endSession(sessionId: string): Promise<ISession | null> {
-    const session = await this.getSession(sessionId);
-    if (!session) {
-      return null;
-    }
-
-    session.state = SessionState.COMPLETED;
-    session.lastActivity = new Date();
-    await session.save();
-
-    // Remove from cache
-    await this.redis.del(`${this.SESSION_PREFIX}${sessionId}`);
-
-    logger.info('Session ended', { sessionId });
-
-    return session;
-  }
-
-  /**
-   * Mark session as expired
-   */
-  async expireSession(sessionId: string): Promise<void> {
-    const session = await this.getSession(sessionId);
-    if (!session) {
-      return;
-    }
-
-    session.state = SessionState.EXPIRED;
-    session.expiresAt = new Date();
-    await session.save();
-
-    await this.redis.del(`${this.SESSION_PREFIX}${sessionId}`);
-
-    logger.info('Session expired', { sessionId });
-  }
-
-  /**
-   * Cache session in Redis
-   */
-  private async cacheSession(session: ISession): Promise<void> {
-    const cacheKey = `${this.SESSION_PREFIX}${session.sessionId}`;
-    const cacheData = {
-      sessionId: session.sessionId,
-      userId: session.userId,
-      merchantId: session.merchantId,
-      state: session.state,
-      lastActivity: session.lastActivity.toISOString(),
-    };
-
-    // Cache for slightly less than MongoDB expiry for consistency
-    const ttl = Math.floor(this.defaultTimeout * 0.95);
-    await this.redis.setex(cacheKey, ttl, JSON.stringify(cacheData));
-  }
-
-  /**
-   * Get cached session from Redis
-   */
-  private async getCachedSession(
-    sessionId: string
-  ): Promise<ISession | null> {
-    const cached = await this.redis.get(`${this.SESSION_PREFIX}${sessionId}`);
-    if (!cached) {
-      return null;
-    }
+  async extendSession(sessionId: string, additionalHours?: number): Promise<ISession | null> {
+    const lockToken = await this.acquireLock(sessionId);
+    if (!lockToken) return null;
 
     try {
-      const data = JSON.parse(cached);
-      // Return the full session from MongoDB with fresh data
-      return Session.findOne({ sessionId: data.sessionId });
-    } catch (error) {
-      logger.error('Failed to parse cached session', { sessionId, error });
+      const session = await this.getSession(sessionId);
+      if (!session) return null;
+
+      const hours = additionalHours || Math.floor(this.defaultTimeout / 3600);
+      session.expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000);
+      session.lastActivity = new Date();
+      await session.save();
+      await this.cacheSession(session);
+
+      logger.info('Session extended', { sessionId, newExpiry: session.expiresAt });
+      return session;
+    } finally {
+      await this.releaseLock(sessionId, lockToken);
+    }
+  }
+
+  async endSession(sessionId: string): Promise<ISession | null> {
+    const lockToken = await this.acquireLock(sessionId);
+    if (!lockToken) return null;
+
+    try {
+      const session = await this.getSession(sessionId);
+      if (!session) return null;
+
+      session.state = SessionState.COMPLETED;
+      session.lastActivity = new Date();
+      await session.save();
+      await this.redis.del(`${this.SESSION_PREFIX}${sessionId}`);
+
+      logger.info('Session ended', { sessionId });
+      return session;
+    } finally {
+      await this.releaseLock(sessionId, lockToken);
+    }
+  }
+
+  async expireSession(sessionId: string): Promise<void> {
+    const lockToken = await this.acquireLock(sessionId);
+    if (!lockToken) return;
+
+    try {
+      await Session.updateOne(
+        { sessionId },
+        {
+          $set: {
+            state: SessionState.EXPIRED,
+            expiresAt: new Date(),
+          },
+        }
+      );
+      await this.redis.del(`${this.SESSION_PREFIX}${sessionId}`);
+      logger.info('Session expired', { sessionId });
+    } finally {
+      await this.releaseLock(sessionId, lockToken);
+    }
+  }
+
+  // ==================== CACHE OPERATIONS ====================
+
+  private async cacheSession(session: ISession): Promise<void> {
+    const cacheKey = `${this.SESSION_PREFIX}${session.sessionId}`;
+    const ttl = Math.floor(this.defaultTimeout * 0.95);
+    await this.redis.setex(cacheKey, ttl, JSON.stringify({
+      sessionId: session.sessionId,
+      userId: session.userId,
+      state: session.state,
+      lastActivity: session.lastActivity.toISOString(),
+    }));
+  }
+
+  private async getCachedSession(sessionId: string): Promise<ISession | null> {
+    const cached = await this.redis.get(`${this.SESSION_PREFIX}${sessionId}`);
+    if (!cached) return null;
+
+    try {
+      return await Session.findOne({ sessionId });
+    } catch {
+      logger.error('Failed to parse cached session', { sessionId });
       return null;
     }
   }
 
-  /**
-   * Cleanup expired sessions
-   */
   async cleanupExpiredSessions(): Promise<number> {
     const result = await Session.updateMany(
-      {
-        expiresAt: { $lt: new Date() },
-        state: { $ne: SessionState.EXPIRED },
-      },
-      {
-        $set: { state: SessionState.EXPIRED },
-      }
+      { expiresAt: { $lt: new Date() }, state: { $ne: SessionState.EXPIRED } },
+      { $set: { state: SessionState.EXPIRED } }
     );
 
-    logger.info('Expired sessions cleaned up', {
-      count: result.modifiedCount,
-    });
-
+    logger.info('Expired sessions cleaned up', { count: result.modifiedCount });
     return result.modifiedCount;
   }
 
-  /**
-   * Get session statistics
-   */
   async getStats(merchantId?: string): Promise<{
     total: number;
     active: number;
@@ -467,19 +498,12 @@ export class SessionManager {
     avgCartValue: number;
   }> {
     const matchStage: Record<string, unknown> = {};
-    if (merchantId) {
-      matchStage.merchantId = merchantId;
-    }
+    if (merchantId) matchStage.merchantId = merchantId;
     matchStage.expiresAt = { $gt: new Date() };
 
     const stats = await Session.aggregate([
       { $match: matchStage },
-      {
-        $group: {
-          _id: '$state',
-          count: { $sum: 1 },
-        },
-      },
+      { $group: { _id: '$state', count: { $sum: 1 } } },
     ]);
 
     const byState: Record<string, number> = {};
@@ -489,36 +513,10 @@ export class SessionManager {
       total += s.count;
     });
 
-    // Calculate average cart value
     const cartStats = await Session.aggregate([
-      {
-        $match: {
-          ...matchStage,
-          'context.cart': { $ne: [] },
-        },
-      },
-      {
-        $project: {
-          cartTotal: {
-            $reduce: {
-              input: '$context.cart',
-              initialValue: 0,
-              in: {
-                $add: [
-                  '$$value',
-                  { $multiply: ['$$this.price', '$$this.quantity'] },
-                ],
-              },
-            },
-          },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          avgCartValue: { $avg: '$cartTotal' },
-        },
-      },
+      { $match: { ...matchStage, 'context.cart': { $ne: [] } } },
+      { $project: { cartTotal: { $sum: { $map: { input: '$context.cart', as: 'i', in: { $multiply: ['$$i.price', '$$i.quantity'] } } } } } },
+      { $group: { _id: null, avgCartValue: { $avg: '$cartTotal' } } },
     ]);
 
     return {

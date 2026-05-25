@@ -12,7 +12,7 @@ import {
   AgentMessage,
   OrchestrationGoal,
   RecommendedAction,
-  conflictResolution,
+  ConflictResolution,
   AgentHealth,
   AgentCapability,
 } from '../types';
@@ -357,8 +357,8 @@ export class AgentOrchestrator {
   /**
    * Handle conflicts between tasks
    */
-  detectAndResolveConflicts(): conflictResolution[] {
-    const conflicts: conflictResolution[] = [];
+  detectAndResolveConflicts(): ConflictResolution[] {
+    const conflicts: ConflictResolution[] = [];
 
     // Find tasks that might conflict
     for (let i = 0; i < this.taskQueue.length; i++) {
@@ -385,7 +385,7 @@ export class AgentOrchestrator {
   /**
    * Check if two tasks conflict
    */
-  private checkConflict(task1: Task, task2: Task): conflictResolution | null {
+  private checkConflict(task1: Task, task2: Task): ConflictResolution | null {
     // Budget conflicts
     const budget1 = task1.context.metadata?.budget;
     const budget2 = task2.context.metadata?.budget;
@@ -420,8 +420,8 @@ export class AgentOrchestrator {
    * Resolve budget conflicts
    */
   private resolveBudgetConflict(task1: Task, task2: Task): 'priority_based' | 'cost_based' | 'manual' | 'defer' {
-    const budget1 = task1.context.metadata?.budget || 0;
-    const budget2 = task2.context.metadata?.budget || 0;
+    const budget1 = (task1.context.metadata?.budget as number) || 0;
+    const budget2 = (task2.context.metadata?.budget as number) || 0;
     const total = budget1 + budget2;
 
     // Check if within constraints

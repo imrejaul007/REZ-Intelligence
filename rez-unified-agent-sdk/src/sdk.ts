@@ -762,7 +762,7 @@ export class UnifiedAgentSDK {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private getConnector(service: string): any {
+  private getConnector(service: string): unknown {
     switch (service) {
       case 'payment':
         return this.payment;

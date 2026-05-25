@@ -203,7 +203,7 @@ export class SupportMetricsService {
       );
 
       const alerts = response.data.data || [];
-      const critical = alerts.filter((a: any) => a.severity === 'P1' && a.status === 'active').length;
+      const critical = alerts.filter((a) => a.severity === 'P1' && a.status === 'active').length;
 
       return {
         active: alerts.length,
@@ -265,7 +265,7 @@ export class SupportMetricsService {
     return Math.round(((current - previous) / previous) * 100);
   }
 
-  private async sendDailyReport(metrics: any): Promise<void> {
+  private async sendDailyReport(metrics): Promise<void> {
     // Send to Slack
     try {
       await axios.post(process.env.SLACK_WEBHOOK_URL || '', {
@@ -289,7 +289,7 @@ export class SupportMetricsService {
             type: 'section',
             text: {
               type: 'mrkdwn',
-              text: `*Top Issues:*\n${metrics.topIssues?.map((i: any) => `• ${i.type}: ${i.count}`).join('\n') || 'None'}`
+              text: `*Top Issues:*\n${metrics.topIssues?.map((i) => `• ${i.type}: ${i.count}`).join('\n') || 'None'}`
             }
           }
         ]

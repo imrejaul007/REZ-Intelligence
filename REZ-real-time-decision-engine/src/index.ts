@@ -260,7 +260,7 @@ const bootstrap = async () => {
       }
 
       const results = await Promise.all(
-        decisions.map((d: any) => services.decisionRouter.route(d, req.headers))
+        decisions.map((d) => services.decisionRouter.route(d, req.headers))
       );
 
       res.json({

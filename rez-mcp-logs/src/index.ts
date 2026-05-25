@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ Log Aggregator MCP Server
  *
@@ -953,7 +955,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("REZ Log Aggregator MCP Server running on stdio");
+  logger.error("REZ Log Aggregator MCP Server running on stdio");
 }
 
 main().catch(console.error);

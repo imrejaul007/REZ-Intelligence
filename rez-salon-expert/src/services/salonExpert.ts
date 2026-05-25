@@ -316,7 +316,7 @@ export class SalonExpert {
       entities.budget = parseInt(priceMatch[1]);
     }
 
-    if (message.toLowerCase().includes('any') || message.toLowerCase().includes('no preference')) {
+    if (message.toLowerCase().includes('unknown') || message.toLowerCase().includes('no preference')) {
       entities.flexible = true;
     }
 
@@ -353,7 +353,7 @@ export class SalonExpert {
     }
 
     if (service.allergens && service.allergens.length > 0) {
-      responseMessage += `\n**Please note:** This service may involve ${service.allergens.join(', ')}. Please inform us of any allergies before your appointment.\n`;
+      responseMessage += `\n**Please note:** This service may involve ${service.allergens.join(', ')}. Please inform us of unknown allergies before your appointment.\n`;
     }
 
     responseMessage += `\nWould you like me to find available times for this service?`;
@@ -574,7 +574,7 @@ export class SalonExpert {
       responseMessage += `Duration: ${service.duration} min\n\n`;
     }
 
-    responseMessage += "Would you like to book any of these, or would you like more specific recommendations?";
+    responseMessage += "Would you like to book unknown of these, or would you like more specific recommendations?";
 
     return {
       success: true,
@@ -658,7 +658,7 @@ export class SalonExpert {
     if (appointments.length === 0) {
       return {
         success: true,
-        message: "I don't see any appointments to reschedule. Would you like to book a new service?",
+        message: "I don't see unknown appointments to reschedule. Would you like to book a new service?",
         actions: [
           { type: 'book_service', data: {} },
           { type: 'show_services', data: {} }
@@ -696,7 +696,7 @@ export class SalonExpert {
     if (!service) {
       return {
         success: true,
-        message: "To help you understand any potential allergens in our services, could you tell me which service you're interested in?\n\nAlternatively, here are common allergens used in salon services:\n\n**Hair:** Ammonia, PPD (in hair color), Formaldehyde (in keratin treatments)\n\n**Nails:** Methacrylate, HEMA (in gel/acrylic), Acetone\n\n**Skincare:** Alpha Hydroxy Acids, Retinoids, Essential oils\n\n**General:** Latex (gloves), Fragrances",
+        message: "To help you understand unknown potential allergens in our services, could you tell me which service you're interested in?\n\nAlternatively, here are common allergens used in salon services:\n\n**Hair:** Ammonia, PPD (in hair color), Formaldehyde (in keratin treatments)\n\n**Nails:** Methacrylate, HEMA (in gel/acrylic), Acetone\n\n**Skincare:** Alpha Hydroxy Acids, Retinoids, Essential oils\n\n**General:** Latex (gloves), Fragrances",
         actions: [
           { type: 'check_service_allergens', data: {} },
           { type: 'show_allergen_free_options', data: {} }
@@ -711,7 +711,7 @@ export class SalonExpert {
       for (const allergen of service.allergens) {
         responseMessage += `• ${allergen}\n`;
       }
-      responseMessage += `\nPlease inform us of any allergies before your appointment.\n`;
+      responseMessage += `\nPlease inform us of unknown allergies before your appointment.\n`;
     } else {
       responseMessage += `This service has no common allergens to note.\n`;
     }
@@ -759,13 +759,13 @@ export class SalonExpert {
       responseMessage += `**Day of:**\n`;
       responseMessage += `• Don't wash your hair before coming\n`;
       responseMessage += `• Wear a shirt you can change out of easily\n`;
-      responseMessage += `• Remove any hair clips or elastics\n`;
+      responseMessage += `• Remove unknown hair clips or elastics\n`;
     } else if (service.category === 'skincare') {
       responseMessage += `**Before your appointment:**\n`;
       responseMessage += `• Avoid retinoids and exfoliants for 3-5 days\n`;
       responseMessage += `• Stay hydrated\n`;
       responseMessage += `• Remove makeup before arriving if possible\n`;
-      responseMessage += `• Inform us of any skin changes since your last visit\n\n`;
+      responseMessage += `• Inform us of unknown skin changes since your last visit\n\n`;
       responseMessage += `**Day of:**\n`;
       responseMessage += `• Arrive with clean skin if possible\n`;
       responseMessage += `• Wear comfortable clothing\n`;
@@ -787,7 +787,7 @@ export class SalonExpert {
       responseMessage += `• For bridal, schedule a trial 2-4 weeks before the event\n\n`;
       responseMessage += `**Day of:**\n`;
       responseMessage += `• Wear a button-down or loose top\n`;
-      responseMessage += `• Don't apply any makeup\n`;
+      responseMessage += `• Don't apply unknown makeup\n`;
       responseMessage += `• Have blotting papers ready for events\n`;
     }
 

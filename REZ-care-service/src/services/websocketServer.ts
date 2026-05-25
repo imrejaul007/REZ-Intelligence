@@ -197,8 +197,8 @@ class WebSocketServer {
     this.io.to('tickets').emit('ticket:new', ticket);
 
     // Emit to assigned agent
-    if ((ticket as any).assignedTo) {
-      this.io.to(`agent:${(ticket as any).assignedTo}`).emit('ticket:assigned', ticket);
+    if ((ticket as unknown).assignedTo) {
+      this.io.to(`agent:${(ticket as unknown).assignedTo}`).emit('ticket:assigned', ticket);
     }
 
     // P1 tickets to critical
@@ -248,7 +248,7 @@ class WebSocketServer {
    */
   emitCustomerEvent(customerId: string, event: {
     type: string;
-    data: any;
+    data;
     timestamp: Date;
   }) {
     this.io.to(`customer:${customerId}`).emit('customer:event', event);
@@ -257,14 +257,14 @@ class WebSocketServer {
   /**
    * Emit to specific agent
    */
-  emitToAgent(agentId: string, event: string, data: any) {
+  emitToAgent(agentId: string, event: string, data) {
     this.io.to(`agent:${agentId}`).emit(event, data);
   }
 
   /**
    * Emit to all connected clients
    */
-  broadcast(event: string, data: any) {
+  broadcast(event: string, data) {
     this.io.emit(event, data);
   }
 

@@ -8,7 +8,8 @@
  * Karma Action → Karma Score → REZ Coins → Tier Progress → More Benefits
  */
 
-import express, { Request, Response } from 'express';
+import express, { Request, Response } import logger from './utils/logger';
+import from 'express';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '4098', 10);
@@ -334,22 +335,22 @@ function getNextTierInfo(
 // ============================================
 
 app.listen(PORT, () => {
-  console.log(`REZ Karma-Loyalty Bridge running on port ${PORT}`);
-  console.log('');
-  console.log('Features:');
-  console.log('  • Karma points → REZ Coins conversion');
-  console.log('  • Tier-based multipliers');
-  console.log('  • Karma score bonuses');
-  console.log('  • Batch processing');
-  console.log('');
-  console.log('Conversion Rates:');
+  logger.info(`REZ Karma-Loyalty Bridge running on port ${PORT}`);
+  logger.info('');
+  logger.info('Features:');
+  logger.info('  • Karma points → REZ Coins conversion');
+  logger.info('  • Tier-based multipliers');
+  logger.info('  • Karma score bonuses');
+  logger.info('  • Batch processing');
+  logger.info('');
+  logger.info('Conversion Rates:');
   Object.entries(config.conversionRates).forEach(([action, rate]) => {
-    console.log(`  ${action}: ${(rate * 100).toFixed(1)}% (10 karma = ${rate * 100} coins)`);
+    logger.info(`  ${action}: ${(rate * 100).toFixed(1)}% (10 karma = ${rate * 100} coins)`);
   });
-  console.log('');
-  console.log('Tier Multipliers:');
+  logger.info('');
+  logger.info('Tier Multipliers:');
   Object.entries(config.tierMultipliers).forEach(([tier, mult]) => {
-    console.log(`  ${tier}: ${mult}x`);
+    logger.info(`  ${tier}: ${mult}x`);
   });
 });
 

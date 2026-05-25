@@ -17,14 +17,14 @@ channelRouter.get('/', async (req: Request, res: Response) => {
   try {
     const { merchantId, type, active } = req.query;
 
-    const query: any = {};
+    const query: unknown = {};
     if (merchantId) query.merchantId = merchantId;
     if (type) query.type = type;
     if (active !== undefined) query.isActive = active === 'true';
 
     const channels = await Channel.find(query);
     res.json({ success: true, data: channels });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Channels fetch failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -50,7 +50,7 @@ channelRouter.post('/', async (req: Request, res: Response) => {
     });
 
     res.json({ success: true, data: channel });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Channel create failed', { error: error.message });
     res.status(400).json({ success: false, error: error.message });
   }
@@ -66,7 +66,7 @@ channelRouter.get('/stats', async (req: Request, res: Response) => {
 
     const channels = await Channel.find(merchantId ? { merchantId } : {});
 
-    const stats = channels.reduce((acc: any, ch: any) => {
+    const stats = channels.reduce((acc, ch) => {
       if (!acc[ch.type]) {
         acc[ch.type] = { count: 0, active: 0 };
       }
@@ -76,7 +76,7 @@ channelRouter.get('/stats', async (req: Request, res: Response) => {
     }, {});
 
     res.json({ success: true, data: stats });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Channel stats failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }

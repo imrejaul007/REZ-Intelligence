@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * Swarm Orchestrator - Coordinates multiple AI agents
  * Routes voice requests to the right agents
@@ -99,7 +101,7 @@ class SwarmOrchestrator {
    * Multi-agent coordination for complex requests
    */
   async coordinate(request, context = {}) {
-    console.log(`[${this.name}] Coordinated request`);
+    logger.info(`[${this.name}] Coordinated request`);
 
     // For complex requests, run multiple agents
     const results = await Promise.allSettled([

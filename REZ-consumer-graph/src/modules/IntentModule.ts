@@ -418,7 +418,7 @@ export class IntentModule {
   /**
    * Detect seasonal patterns
    */
-  async detectSeasonalPatterns(userId: string): Promise<Record<string, any>> {
+  async detectSeasonalPatterns(userId: string): Promise<Record<string, unknown>> {
     const signals = this.signals.get(userId) || [];
     const seasonalPatterns: Record<string, { month: number; spend: number; count: number }> = {};
 

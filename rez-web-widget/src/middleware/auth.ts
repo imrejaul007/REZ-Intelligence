@@ -1,4 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } import logger from './utils/logger';
+import from 'express';
 
 interface AuthenticatedRequest extends Request {
   serviceName?: string;
@@ -13,7 +14,7 @@ function getInternalTokens(): Record<string, string> {
   try {
     return JSON.parse(tokensJson);
   } catch {
-    console.warn('Failed to parse INTERNAL_SERVICE_TOKENS_JSON, using empty map');
+    logger.warn('Failed to parse INTERNAL_SERVICE_TOKENS_JSON, using empty map');
     return {};
   }
 }

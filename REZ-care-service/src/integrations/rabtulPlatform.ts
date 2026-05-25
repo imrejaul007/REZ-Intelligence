@@ -11,10 +11,38 @@ const ANALYTICS_URL = process.env.ANALYTICS_SERVICE_URL || 'https://rez-analytic
 const EVENT_BUS_URL = process.env.EVENT_BUS_URL || 'http://localhost:4025';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
-/**
- * Make authenticated internal API request
- */
-async function internalRequest(url: string, options: RequestInit = {}) {
+// ============================================
+// TYPES
+// ============================================
+
+interface NotificationParams {
+  userId: string;
+  channel?: string;
+  type?: string;
+  title?: string;
+  message?: string;
+  data?: Record<string, unknown>;
+}
+
+interface EventContext {
+  source?: string;
+  userId?: string;
+  [key: string]: unknown;
+}
+
+interface EventFilters {
+  type?: string;
+  category?: string;
+  source?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+// ============================================
+// INTERNAL REQUEST
+// ============================================
+
+async function internalRequest(url: string, options: RequestInit = {}): Promise<unknown> {
   const headers = options.headers as Record<string, string> || {};
   const response = await fetch(url, {
     ...options,
@@ -30,7 +58,7 @@ async function internalRequest(url: string, options: RequestInit = {}) {
   }
 
   const data = await response.json();
-  return data as any;
+  return data as unknown;
 }
 
 // ============================================
@@ -38,23 +66,23 @@ async function internalRequest(url: string, options: RequestInit = {}) {
 // ============================================
 
 export const authOperations = {
-  async verify(token) {
+  async verify(token: string): Promise<unknown> {
     try {
       const res = await internalRequest(`${AUTH_URL}/api/auth/verify`, {
         method: 'POST',
         body: JSON.stringify({ token }),
-      });
+      }) as { success?: boolean; user?: unknown };
       return res.success ? res.user : null;
     } catch {
       return null;
     }
   },
 
-  async validateInternalToken() {
+  async validateInternalToken(): Promise<boolean> {
     try {
       const res = await internalRequest(`${AUTH_URL}/api/auth/internal/validate`, {
         headers: { 'X-Internal-Token': INTERNAL_TOKEN },
-      });
+      }) as { valid?: boolean };
       return res.valid ?? false;
     } catch {
       return false;
@@ -67,16 +95,16 @@ export const authOperations = {
 // ============================================
 
 export const walletOperations = {
-  async getBalance(userId) {
+  async getBalance(userId: string): Promise<number> {
     try {
-      const res = await internalRequest(`${WALLET_URL}/api/wallet/${userId}/balance`);
+      const res = await internalRequest(`${WALLET_URL}/api/wallet/${userId}/balance`) as { balance?: number };
       return res.balance || 0;
     } catch {
       return 0;
     }
   },
 
-  async addCoins(userId, amount, reason, metadata = {}) {
+  async addCoins(userId: string, amount: number, reason: string, metadata: Record<string, unknown> = {}): Promise<boolean> {
     try {
       await internalRequest(`${WALLET_URL}/api/wallet/add`, {
         method: 'POST',
@@ -88,7 +116,7 @@ export const walletOperations = {
     }
   },
 
-  async deductCoins(userId, amount, reason, metadata = {}) {
+  async deductCoins(userId: string, amount: number, reason: string, metadata: Record<string, unknown> = {}): Promise<boolean> {
     try {
       await internalRequest(`${WALLET_URL}/api/wallet/deduct`, {
         method: 'POST',
@@ -100,9 +128,9 @@ export const walletOperations = {
     }
   },
 
-  async getTransactions(userId, limit = 20) {
+  async getTransactions(userId: string, limit: number = 20): Promise<unknown[]> {
     try {
-      const res = await internalRequest(`${WALLET_URL}/api/wallet/${userId}/transactions?limit=${limit}`);
+      const res = await internalRequest(`${WALLET_URL}/api/wallet/${userId}/transactions?limit=${limit}`) as { transactions?: unknown[] };
       return res.transactions || [];
     } catch {
       return [];
@@ -115,7 +143,7 @@ export const walletOperations = {
 // ============================================
 
 export const notificationOperations = {
-  async send(params) {
+  async send(params: NotificationParams): Promise<boolean> {
     try {
       await internalRequest(`${NOTIFICATION_URL}/api/notifications/send`, {
         method: 'POST',
@@ -134,7 +162,7 @@ export const notificationOperations = {
     }
   },
 
-  async sendBulk(notifications) {
+  async sendBulk(notifications: NotificationParams[]): Promise<boolean> {
     try {
       await internalRequest(`${NOTIFICATION_URL}/api/notifications/send/batch`, {
         method: 'POST',
@@ -152,7 +180,7 @@ export const notificationOperations = {
 // ============================================
 
 export const analyticsOperations = {
-  async track(event, properties = {}) {
+  async track(event: string, properties: Record<string, unknown> = {}): Promise<boolean> {
     try {
       await internalRequest(`${ANALYTICS_URL}/api/track`, {
         method: 'POST',
@@ -174,7 +202,7 @@ export const analyticsOperations = {
 // ============================================
 
 export const eventBusOperations = {
-  async publish(type, category, data, context = {}) {
+  async publish(type: string, category: string, data: unknown, context: EventContext = {}): Promise<boolean> {
     try {
       await internalRequest(`${EVENT_BUS_URL}/api/events`, {
         method: 'POST',
@@ -194,12 +222,12 @@ export const eventBusOperations = {
     }
   },
 
-  async queryEvents(filters, limit = 100) {
+  async queryEvents(filters: EventFilters, limit: number = 100): Promise<unknown[]> {
     try {
       const res = await internalRequest(`${EVENT_BUS_URL}/api/events/query`, {
         method: 'POST',
         body: JSON.stringify({ filters, limit }),
-      });
+      }) as { events?: unknown[] };
       return res.events || [];
     } catch {
       return [];

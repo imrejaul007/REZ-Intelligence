@@ -14,7 +14,7 @@ export async function getProfile(userId: string) {
   try { const r = await axios.get(`${PROFILE}/api/profiles/${userId}`, { headers: { 'X-Internal-Token': TOKEN } }); return { profile: r.data }; }
   catch { return { profile: null }; }
 }
-export async function updateProfile(userId: string, updates: Record<string, any>) {
+export async function updateProfile(userId: string, updates: Record<string, unknown>) {
   try { await axios.patch(`${PROFILE}/api/profiles/${userId}`, updates, { headers: { 'Content-Type': 'application/json', 'X-Internal-Token': TOKEN } }); return { success: true }; }
   catch { return { success: false }; }
 }

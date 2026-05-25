@@ -28,7 +28,7 @@ const sendSchema = z.object({
 const templateSendSchema = z.object({
   to: z.string().min(10),
   template: z.enum(['order_confirmed', 'order_placed', 'help_response', 'status_update', 'verification']),
-  data: z.record(z.any()),
+  data: z.record(z.unknown()),
 });
 
 let redisClient: RedisClientType | null = null;

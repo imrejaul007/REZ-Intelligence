@@ -8,7 +8,7 @@ const SEGMENTS_URL = process.env.REALTIME_SEGMENTS_URL || 'http://localhost:4126
 const SIGNAL_URL = process.env.SIGNAL_AGGREGATOR_URL || 'http://localhost:4121';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
-async function request(url: string, options: RequestInit = {}): Promise<any> {
+async function request(url: string, options: RequestInit = {}): Promise<unknown> {
   const res = await fetch(url, {
     ...options,
     headers: {
@@ -48,7 +48,7 @@ export const segments = {
 };
 
 export const signals = {
-  record: async (signal: any) =>
+  record: async (signal) =>
     request(`${SIGNAL_URL}/api/signals`, {
       method: 'POST',
       body: JSON.stringify(signal),

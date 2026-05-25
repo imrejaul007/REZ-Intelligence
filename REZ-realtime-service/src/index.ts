@@ -3,7 +3,8 @@
  * WebSocket server for live activities, merchant data, and social proof
  */
 
-import express from 'express';
+import express import logger from './utils/logger';
+import from 'express';
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import cors from 'cors';
@@ -98,7 +99,7 @@ setupSocketHandlers(io, liveActivityStore);
 const PORT = config.port;
 
 httpServer.listen(PORT, () => {
-  console.log(`
+  logger.info(`
 ╔══════════════════════════════════════════════════════════════╗
 ║           REZ Real-time Service                             ║
 ║                                                              ║
@@ -116,10 +117,10 @@ httpServer.listen(PORT, () => {
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully...');
+  logger.info('SIGTERM received, shutting down gracefully...');
   io.close(() => {
     httpServer.close(() => {
-      console.log('Server closed');
+      logger.info('Server closed');
       process.exit(0);
     });
   });

@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * Configuration Module
  * Centralized configuration management with environment variables
@@ -12,7 +14,7 @@ dotenv.config();
 const requiredEnvVars = ['REDIS_URL'];
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
-    console.warn(`Warning: ${envVar} not set, using default`);
+    logger.warn(`Warning: ${envVar} not set, using default`);
   }
 }
 
@@ -81,7 +83,7 @@ function parseServiceTokens(json: string): Record<string, string> {
   try {
     return JSON.parse(json);
   } catch {
-    console.error('Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+    logger.error('Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
     return {};
   }
 }

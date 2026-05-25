@@ -9,7 +9,7 @@ const ANALYTICS_URL = process.env.ANALYTICS_SERVICE_URL || 'http://localhost:401
 const PROFILE_URL = process.env.PROFILE_SERVICE_URL || 'http://localhost:4013';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
-async function internalRequest(url: string, options: RequestInit = {}): Promise<any> {
+async function internalRequest(url: string, options: RequestInit = {}): Promise<unknown> {
   const response = await fetch(url, {
     ...options,
     headers: {

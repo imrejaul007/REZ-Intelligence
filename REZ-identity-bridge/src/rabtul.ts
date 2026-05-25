@@ -12,7 +12,7 @@ const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 /**
  * Verify token and get user identity
  */
-export async function verifyAndGetIdentity(token: string): Promise<{ valid: boolean; identity?: any; error?: string }> {
+export async function verifyAndGetIdentity(token: string): Promise<{ valid: boolean; identity?; error?: string }> {
   try {
     const res = await axios.get(`${AUTH_URL}/api/auth/verify`, {
       headers: { 'Authorization': `Bearer ${token}`, 'X-Internal-Token': INTERNAL_TOKEN },
@@ -21,7 +21,7 @@ export async function verifyAndGetIdentity(token: string): Promise<{ valid: bool
       return { valid: true, identity: res.data.user };
     }
     return { valid: false, error: 'Invalid token' };
-  } catch (error: any) {
+  } catch (error) {
     return { valid: false, error: error.message };
   }
 }
@@ -29,13 +29,13 @@ export async function verifyAndGetIdentity(token: string): Promise<{ valid: bool
 /**
  * Link identity to unified profile
  */
-export async function linkToUnifiedProfile(userId: string, identityData: Record<string, any>): Promise<{ success: boolean; error?: string }> {
+export async function linkToUnifiedProfile(userId: string, identityData: Record<string, unknown>): Promise<{ success: boolean; error?: string }> {
   try {
     await axios.post(`${PROFILE_URL}/api/identities/link`, { userId, ...identityData }, {
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -43,13 +43,13 @@ export async function linkToUnifiedProfile(userId: string, identityData: Record<
 /**
  * Get unified profile
  */
-export async function getUnifiedProfile(userId: string): Promise<{ profile: any; error?: string }> {
+export async function getUnifiedProfile(userId: string): Promise<{ profile; error?: string }> {
   try {
     const res = await axios.get(`${PROFILE_URL}/api/profiles/${userId}`, {
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { profile: res.data };
-  } catch (error: any) {
+  } catch (error) {
     return { profile: null, error: error.message };
   }
 }
@@ -57,13 +57,13 @@ export async function getUnifiedProfile(userId: string): Promise<{ profile: any;
 /**
  * Update unified profile
  */
-export async function updateUnifiedProfile(userId: string, updates: Record<string, any>): Promise<{ success: boolean; error?: string }> {
+export async function updateUnifiedProfile(userId: string, updates: Record<string, unknown>): Promise<{ success: boolean; error?: string }> {
   try {
     await axios.patch(`${PROFILE_URL}/api/profiles/${userId}`, updates, {
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -77,7 +77,7 @@ export async function resolveIdentity(identifier: string, type: 'phone' | 'email
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { userId: res.data.userId };
-  } catch (error: any) {
+  } catch (error) {
     return { error: error.message };
   }
 }

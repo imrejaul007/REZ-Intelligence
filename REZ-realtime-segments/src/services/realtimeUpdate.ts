@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
 import type { SegmentDefinition, SegmentEvaluationResult } from '../types/index.js';
@@ -75,7 +77,7 @@ class SegmentEventEmitter extends EventEmitter {
     }
 
     if (this.eventCount >= DEFAULT_CONFIG.maxEventsPerSecond) {
-      console.warn('Realtime update rate limit exceeded, dropping event');
+      logger.warn('Realtime update rate limit exceeded, dropping event');
       return false;
     }
 
@@ -124,7 +126,7 @@ export function startRealtimeService(): void {
     cleanupExpiredSubscribers();
   }, 5 * 60 * 1000);
 
-  console.log('Realtime update service started');
+  logger.info('Realtime update service started');
 }
 
 /**
@@ -141,7 +143,7 @@ export function stopRealtimeService(): void {
   userSubscriptions.clear();
   segmentSubscriptions.clear();
 
-  console.log('Realtime update service stopped');
+  logger.info('Realtime update service stopped');
 }
 
 /**
@@ -152,7 +154,7 @@ export function subscribe(
   callback: (event: SegmentChangeEvent) => void
 ): SubscriptionResponse | null {
   if (subscribers.size >= config.maxSubscribers) {
-    console.warn('Max subscribers reached, rejecting new subscription');
+    logger.warn('Max subscribers reached, rejecting new subscription');
     return null;
   }
 
@@ -490,7 +492,7 @@ function cleanupExpiredSubscribers(): void {
   }
 
   if (cleanedCount > 0) {
-    console.log(`Cleaned up ${cleanedCount} expired subscribers`);
+    logger.info(`Cleaned up ${cleanedCount} expired subscribers`);
   }
 }
 

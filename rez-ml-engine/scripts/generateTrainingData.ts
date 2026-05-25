@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ ML Engine - Training Data Generator
  *
@@ -23,7 +25,7 @@ interface IntentEvent {
   firstSeenAt: Date;
   lastSeenAt: Date;
   signalCount: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface TrainingSample {
@@ -66,15 +68,15 @@ const IntentSchema = new mongoose.Schema({
 }, { timestamps: true, collection: 'intents' });
 
 async function generateTrainingData(): Promise<TrainingSample[]> {
-  console.log('Connecting to MongoDB...');
+  logger.info('Connecting to MongoDB...');
   await mongoose.connect(MONGODB_URI);
 
   const Intent = mongoose.models.Intent || mongoose.model('Intent', IntentSchema);
 
-  console.log('Fetching all intents...');
+  logger.info('Fetching all intents...');
   const intents = await Intent.find({}).lean() as unknown as IntentEvent[];
 
-  console.log(`Found ${intents.length} intents`);
+  logger.info(`Found ${intents.length} intents`);
 
   // Group by user
   const userIntents = new Map<string, IntentEvent[]>();
@@ -86,7 +88,7 @@ async function generateTrainingData(): Promise<TrainingSample[]> {
     userIntents.get(userId)!.push(intent);
   }
 
-  console.log(`Processing ${userIntents.size} unique users...`);
+  logger.info(`Processing ${userIntents.size} unique users...`);
 
   const trainingData: TrainingSample[] = [];
 
@@ -149,12 +151,12 @@ async function generateTrainingData(): Promise<TrainingSample[]> {
     trainingData.push(sample);
   }
 
-  console.log(`Generated ${trainingData.length} training samples`);
+  logger.info(`Generated ${trainingData.length} training samples`);
 
   // Save to file
   const fs = await import('fs');
   fs.writeFileSync(OUTPUT_FILE, JSON.stringify(trainingData, null, 2));
-  console.log(`Saved to ${OUTPUT_FILE}`);
+  logger.info(`Saved to ${OUTPUT_FILE}`);
 
   // Print statistics
   const segments = new Map<string, number>();
@@ -163,9 +165,9 @@ async function generateTrainingData(): Promise<TrainingSample[]> {
     segments.set(seg, (segments.get(seg) || 0) + 1);
   }
 
-  console.log('\nSegment distribution:');
+  logger.info('\nSegment distribution:');
   for (const [segment, count] of segments) {
-    console.log(`  ${segment}: ${count} (${((count / trainingData.length) * 100).toFixed(1)}%)`);
+    logger.info(`  ${segment}: ${count} (${((count / trainingData.length) * 100).toFixed(1)}%)`);
   }
 
   await mongoose.disconnect();
@@ -176,7 +178,7 @@ async function generateTrainingData(): Promise<TrainingSample[]> {
 if (require.main === module) {
   generateTrainingData()
     .then(() => {
-      console.log('\nDone!');
+      logger.info('\nDone!');
       process.exit(0);
     })
     .catch(err => {

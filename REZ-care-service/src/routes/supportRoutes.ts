@@ -15,6 +15,7 @@ import { logger } from '../utils/logger';
 import { getAIIntegration } from '../services/aiIntegrationService';
 import { getExpertRouter } from '../services/expertRouter';
 import { validate, schemas, fallbackSentiment } from '../middleware/errorHandler';
+import { requireAuth, requireRole, optionalAuth, requireInternal } from '../middleware/auth';
 
 const router = express.Router();
 const aiIntegration = getAIIntegration();
@@ -60,7 +61,7 @@ router.post('/tickets', async (req: Request, res: Response) => {
     }
 
     // Check for similar issues with fallback
-    let similarIssues = [];
+    let similarIssues: unknown[] = [];
     try {
       similarIssues = await aiIntegration.searchKnowledge(message);
     } catch (error) {
@@ -100,11 +101,11 @@ router.post('/tickets', async (req: Request, res: Response) => {
     res.status(201).json({
       success: true,
       ticketNumber,
-      aiSuggestions: aiAnalysis?.suggestions || [],
+      aiSuggestions: (aiAnalysis && 'suggestions' in aiAnalysis) ? aiAnalysis.suggestions : [],
       similarIssues: similarIssues.slice(0, 3),
       message: 'Support ticket created successfully'
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to create ticket', error);
     res.status(500).json({ success: false, error: 'Failed to create ticket' });
   }
@@ -119,7 +120,7 @@ router.get('/tickets', async (req: Request, res: Response) => {
     const { userId, status, category, platform, page = 1, limit = 20 } = req.query;
 
     // In real implementation, this would query MongoDB
-    const tickets = [];
+    const tickets: unknown[] = [];
     const total = 0;
 
     res.json({
@@ -132,7 +133,7 @@ router.get('/tickets', async (req: Request, res: Response) => {
         pages: Math.ceil(total / Number(limit))
       }
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to list tickets', error);
     res.status(500).json({ success: false, error: 'Failed to list tickets' });
   }
@@ -157,7 +158,7 @@ router.get('/tickets/:ticketNumber', async (req: Request, res: Response) => {
       ticket: null,
       aiSuggestions: suggestions
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to get ticket', error);
     res.status(500).json({ success: false, error: 'Failed to get ticket' });
   }
@@ -186,17 +187,17 @@ router.post('/tickets/:ticketNumber/messages', async (req: Request, res: Respons
       message: 'Message added',
       sentiment
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to add message', error);
     res.status(500).json({ success: false, error: 'Failed to add message' });
   }
 });
 
 /**
- * Close ticket
+ * Close ticket (Agent only)
  * POST /api/support/tickets/:ticketNumber/close
  */
-router.post('/tickets/:ticketNumber/close', async (req: Request, res: Response) => {
+router.post('/tickets/:ticketNumber/close', requireAuth, async (req: Request, res: Response) => {
   try {
     const { ticketNumber } = req.params;
     const { resolution } = req.body;
@@ -206,17 +207,17 @@ router.post('/tickets/:ticketNumber/close', async (req: Request, res: Response) 
       message: 'Ticket closed',
       resolution
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to close ticket', error);
     res.status(500).json({ success: false, error: 'Failed to close ticket' });
   }
 });
 
 /**
- * Rate ticket
+ * Rate ticket (Customer)
  * POST /api/support/tickets/:ticketNumber/rate
  */
-router.post('/tickets/:ticketNumber/rate', async (req: Request, res: Response) => {
+router.post('/tickets/:ticketNumber/rate', optionalAuth, async (req: Request, res: Response) => {
   try {
     const { ticketNumber } = req.params;
     const { score, comment } = req.body;
@@ -226,7 +227,7 @@ router.post('/tickets/:ticketNumber/rate', async (req: Request, res: Response) =
       message: 'Rating submitted',
       score
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to rate ticket', error);
     res.status(500).json({ success: false, error: 'Failed to rate ticket' });
   }
@@ -249,7 +250,7 @@ router.get('/tickets/summary', async (req: Request, res: Response) => {
         byPriority: {}
       }
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to get summary', error);
     res.status(500).json({ success: false, error: 'Failed to get summary' });
   }
@@ -277,7 +278,7 @@ router.get('/faq', async (req: Request, res: Response) => {
       faqs: [],
       aiResults: results
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to get FAQs', error);
     res.status(500).json({ success: false, error: 'Failed to get FAQs' });
   }
@@ -302,7 +303,7 @@ router.get('/faq/search', async (req: Request, res: Response) => {
         confidence: r.confidence
       }))
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to search FAQs', error);
     res.status(500).json({ success: false, error: 'Failed to search FAQs' });
   }
@@ -334,7 +335,7 @@ router.post('/faq/:faqId/helpful', async (req: Request, res: Response) => {
   try {
     const { helpful } = req.body;
     res.json({ success: true, message: 'Feedback recorded' });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to mark FAQ helpful', error);
     res.status(500).json({ success: false, error: 'Failed to record feedback' });
   }
@@ -362,7 +363,7 @@ router.post('/callback', async (req: Request, res: Response) => {
       ticketNumber,
       message: 'Callback requested. Our team will call you within 30 minutes.'
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to request callback', error);
     res.status(500).json({ success: false, error: 'Failed to request callback' });
   }
@@ -373,76 +374,76 @@ router.post('/callback', async (req: Request, res: Response) => {
 // ============================================
 
 /**
- * Analyze sentiment
+ * Analyze sentiment (Agent only)
  * POST /api/support/ai/sentiment
  */
-router.post('/ai/sentiment', async (req: Request, res: Response) => {
+router.post('/ai/sentiment', requireAuth, async (req: Request, res: Response) => {
   try {
     const { message } = req.body;
     const analysis = await aiIntegration.analyzeSentiment(message);
     res.json({ success: true, analysis });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Sentiment analysis failed', error);
     res.status(500).json({ success: false, error: 'Analysis failed' });
   }
 });
 
 /**
- * Detect intent
+ * Detect intent (Agent only)
  * POST /api/support/ai/intent
  */
-router.post('/ai/intent', async (req: Request, res: Response) => {
+router.post('/ai/intent', requireAuth, async (req: Request, res: Response) => {
   try {
     const { message, context } = req.body;
     const intent = await aiIntegration.detectIntent(message, context);
     res.json({ success: true, intent });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Intent detection failed', error);
     res.status(500).json({ success: false, error: 'Intent detection failed' });
   }
 });
 
 /**
- * Get user history
+ * Get user history (Agent only)
  * GET /api/support/ai/user-history/:userId
  */
-router.get('/ai/user-history/:userId', async (req: Request, res: Response) => {
+router.get('/ai/user-history/:userId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     const history = await aiIntegration.getUserHistory(userId);
     res.json({ success: true, history });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('User history failed', error);
     res.status(500).json({ success: false, error: 'Failed to get user history' });
   }
 });
 
 /**
- * Get AI suggestions for ticket
+ * Get AI suggestions for ticket (Agent only)
  * GET /api/support/ai/suggestions/:ticketNumber
  */
-router.get('/ai/suggestions/:ticketNumber', async (req: Request, res: Response) => {
+router.get('/ai/suggestions/:ticketNumber', requireAuth, async (req: Request, res: Response) => {
   try {
     const { ticketNumber } = req.params;
     const customerId = req.headers['x-customer-id'] as string;
     const suggestions = await aiIntegration.getTicketSuggestions(ticketNumber, customerId);
     res.json({ success: true, suggestions });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('AI suggestions failed', error);
     res.status(500).json({ success: false, error: 'Failed to get suggestions' });
   }
 });
 
 /**
- * Unified customer view
+ * Unified customer view (Agent only)
  * GET /api/support/ai/unified/:userId
  */
-router.get('/ai/unified/:userId', async (req: Request, res: Response) => {
+router.get('/ai/unified/:userId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     const view = await aiIntegration.getUnifiedCustomerView(userId);
     res.json({ success: true, ...view });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Unified view failed', error);
     res.status(500).json({ success: false, error: 'Failed to get unified view' });
   }
@@ -460,7 +461,7 @@ router.get('/ai/unified/:userId', async (req: Request, res: Response) => {
  * - Industry Expert (hotel, salon, fitness, etc.)
  * - REZ-support-copilot (fallback)
  */
-router.post('/chat', async (req: Request, res: Response) => {
+router.post('/chat', requireAuth, async (req: Request, res: Response) => {
   try {
     const { message, context } = req.body;
     const customerId = req.headers['x-customer-id'] as string;
@@ -480,37 +481,37 @@ router.post('/chat', async (req: Request, res: Response) => {
     }
 
     res.json({
-      success: true,
-      ...response
+      ...response,
+      success: true
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Chat failed', error);
     res.status(500).json({
-      success: false,
-      response: "An error occurred. Please try again."
+      response: "An error occurred. Please try again.",
+      success: false
     });
   }
 });
 
 /**
- * Check Expert Health
+ * Check Expert Health (Internal)
  * GET /api/support/experts/health
  */
-router.get('/experts/health', async (req: Request, res: Response) => {
+router.get('/experts/health', requireInternal, async (req: Request, res: Response) => {
   try {
     const health = await expertRouter.checkExpertsHealth();
     res.json({ success: true, experts: health });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Expert health check failed', error);
     res.status(500).json({ success: false, error: 'Health check failed' });
   }
 });
 
 /**
- * Route to specific Expert
+ * Route to specific Expert (Agent only)
  * POST /api/support/experts/:expert/chat
  */
-router.post('/experts/:expert/chat', async (req: Request, res: Response) => {
+router.post('/experts/:expert/chat', requireAuth, async (req: Request, res: Response) => {
   try {
     const { expert } = req.params;
     const { message, context } = req.body;
@@ -523,12 +524,12 @@ router.post('/experts/:expert/chat', async (req: Request, res: Response) => {
     });
 
     res.json({
-      success: true,
-      ...response
+      ...response,
+      success: true
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Expert chat failed', error);
-    res.status(500).json({ success: false, error: 'Expert chat failed' });
+    res.status(500).json({ error: 'Expert chat failed', success: false });
   }
 });
 

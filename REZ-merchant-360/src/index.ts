@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ Merchant 360 - Unified Merchant Identity Service
  *
@@ -198,18 +200,18 @@ export function resetService(): void {
 // ============================================
 
 async function main() {
-  console.log('Starting REZ Merchant 360 Service...');
+  logger.info('Starting REZ Merchant 360 Service...');
 
   const service = createService();
 
   // Initialize
   await service.initialize();
 
-  console.log('Service initialized successfully');
+  logger.info('Service initialized successfully');
 
   // Handle graceful shutdown
   const shutdown = async () => {
-    console.log('Shutting down...');
+    logger.info('Shutting down...');
     await service.shutdown();
     process.exit(0);
   };

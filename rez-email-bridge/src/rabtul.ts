@@ -31,7 +31,7 @@ export async function sendEmail(params: {
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true, messageId: res.data.messageId };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -53,7 +53,7 @@ export async function sendBulkEmail(emails: Array<{
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true, sent: res.data.sent, failed: res.data.failed };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, sent: 0, failed: emails.length, error: error.message };
   }
 }
@@ -64,7 +64,7 @@ export async function sendBulkEmail(emails: Array<{
 export async function sendTransactionalEmail(params: {
   to: string;
   template: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 }): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     const res = await axios.post(`${NOTIFICATION_URL}/api/notifications/email/transactional`, {
@@ -76,7 +76,7 @@ export async function sendTransactionalEmail(params: {
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true, messageId: res.data.messageId };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -90,7 +90,7 @@ export async function getEmailStatus(messageId: string): Promise<{ status: strin
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { status: res.data.status };
-  } catch (error: any) {
+  } catch (error) {
     return { status: 'unknown', error: error.message };
   }
 }

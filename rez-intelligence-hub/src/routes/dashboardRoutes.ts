@@ -21,7 +21,7 @@ router.get('/stats', async (req: Request, res: Response) => {
     const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const stats: Record<string, any> = {
+    const stats: Record<string, unknown> = {
       timestamp: now.toISOString(),
       services: {
         intelligenceHub: { status: 'healthy', port: 4020 },
@@ -177,7 +177,7 @@ router.get('/dormancy', async (req: Request, res: Response) => {
  * Overall system health
  */
 router.get('/health', async (req: Request, res: Response) => {
-  const checks: Record<string, any> = {};
+  const checks: Record<string, unknown> = {};
   let overallHealthy = true;
 
   // Check MongoDB

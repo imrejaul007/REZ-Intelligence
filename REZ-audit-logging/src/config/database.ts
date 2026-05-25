@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
@@ -13,7 +15,7 @@ const MONGODB_OPTIONS = {
 export async function connectDatabase(): Promise<typeof mongoose> {
   try {
     const connection = await mongoose.connect(MONGODB_URI, MONGODB_OPTIONS);
-    console.log(`MongoDB connected: ${connection.connection.host}`);
+    logger.info(`MongoDB connected: ${connection.connection.host}`);
     return connection;
   } catch (error) {
     console.error('MongoDB connection error:', error);
@@ -24,7 +26,7 @@ export async function connectDatabase(): Promise<typeof mongoose> {
 export async function disconnectDatabase(): Promise<void> {
   try {
     await mongoose.disconnect();
-    console.log('MongoDB disconnected');
+    logger.info('MongoDB disconnected');
   } catch (error) {
     console.error('MongoDB disconnection error:', error);
     throw error;

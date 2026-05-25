@@ -267,7 +267,7 @@ async function fetchUserProfile(userId: string): Promise<UserProfile> {
   };
 }
 
-async function fetchOfferConfig(offerId: string): Promise<any> {
+async function fetchOfferConfig(offerId: string): Promise<unknown> {
   // In production, this would call Offer Service
   return {
     offerId,
@@ -280,7 +280,7 @@ async function fetchOfferConfig(offerId: string): Promise<any> {
 
 async function findAlternativeOffer(
   request: EligibilityCheckRequest,
-  originalOffer: any
+  originalOffer: unknown
 ): Promise<AlternativeOffer | undefined> {
   // Find a suitable alternative offer
   // In production, this would query the Offer Service

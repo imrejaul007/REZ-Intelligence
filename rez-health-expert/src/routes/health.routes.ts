@@ -134,7 +134,7 @@ router.post('/query', validateRequest(healthQuerySchema), async (req: Request, r
 
     if (detectedIntent) {
       const intentResponse = getResponseForIntent(detectedIntent);
-      const symptomInfos = symptoms?.map((s: any) => ({ ...s, category: 'general' as const })) || [];
+      const symptomInfos = symptoms?.map((s) => ({ ...s, category: 'general' as const })) || [];
 
       logger.info('Health intent detected', { sessionId, intent: detectedIntent });
 
@@ -159,10 +159,10 @@ router.post('/query', validateRequest(healthQuerySchema), async (req: Request, r
 
     let symptomInfos: SymptomInfo[] = [];
     if (symptoms && symptoms.length > 0) {
-      symptomInfos = symptoms.map((s: any) => ({
+      symptomInfos = symptoms.map((s) => ({
         name: s.name,
         duration: s.duration,
-        severity: s.severity as any,
+        severity: s.severity as unknown,
         additionalSymptoms: s.additionalSymptoms
       }));
     }
@@ -176,7 +176,7 @@ router.post('/query', validateRequest(healthQuerySchema), async (req: Request, r
     });
 
     if (symptomInfos.length > 0) {
-      response.recommendations = getRecommendationsForSymptom(symptomInfos) as any;
+      response.recommendations = getRecommendationsForSymptom(symptomInfos) as unknown;
     }
 
     res.json({
@@ -207,10 +207,10 @@ router.post('/symptoms', validateRequest(symptomQuerySchema), async (req: Reques
   try {
     const { symptoms } = req.body;
 
-    const symptomInfos: SymptomInfo[] = symptoms.map((s: any) => ({
+    const symptomInfos: SymptomInfo[] = symptoms.map((s) => ({
       name: s.name,
       duration: s.duration,
-      severity: s.severity as any,
+      severity: s.severity as unknown,
       additionalSymptoms: s.additionalSymptoms
     }));
 
@@ -273,10 +273,10 @@ router.post('/appointment', validateRequest(appointmentRequestSchema), async (re
 
     let symptomInfos: SymptomInfo[] = [];
     if (symptoms && symptoms.length > 0) {
-      symptomInfos = symptoms.map((s: any) => ({
+      symptomInfos = symptoms.map((s) => ({
         name: s.name,
         duration: s.duration,
-        severity: s.severity as any,
+        severity: s.severity as unknown,
         additionalSymptoms: s.additionalSymptoms
       }));
     }

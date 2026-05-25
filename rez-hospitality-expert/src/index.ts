@@ -228,7 +228,7 @@ async function startServer() {
         serviceName: serviceConfig.serviceName,
       });
 
-      console.log(`
+      logger.info(`
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
 ║   🏨  REZ HOSPITALITY EXPERT AGENT                          ║

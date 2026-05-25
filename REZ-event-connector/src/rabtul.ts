@@ -13,7 +13,7 @@ const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 export async function publishEvent(event: {
   type: string;
   source: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   userId?: string;
   sessionId?: string;
   timestamp?: string;
@@ -27,7 +27,7 @@ export async function publishEvent(event: {
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true, eventId: res.data.eventId };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -40,7 +40,7 @@ export const intelligenceEvents = {
   /**
    * Publish intent signal
    */
-  intentSignal: (userId: string, intent: string, confidence: number, context: Record<string, any>) =>
+  intentSignal: (userId: string, intent: string, confidence: number, context: Record<string, unknown>) =>
     publishEvent({ type: 'intelligence.intent', data: { userId, intent, confidence, context } }),
 
   /**

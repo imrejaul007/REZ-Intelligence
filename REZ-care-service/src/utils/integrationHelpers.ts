@@ -363,7 +363,7 @@ export async function sendNotification(
     channel: string;
     title: string;
     body: string;
-    data?: Record<string, any>;
+    data?: Record<string, unknown>;
   },
   notificationsUrl: string,
   token: string

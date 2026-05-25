@@ -268,10 +268,11 @@ export function asyncHandler(
 }
 
 /**
- * Generate unique request ID
+ * Generate unique request ID using crypto
  */
 function generateRequestId(): string {
-  return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const { randomUUID } = require('crypto');
+  return `req_${Date.now()}_${randomUUID().replace(/-/g, '').substring(0, 12)}`;
 }
 
 /**

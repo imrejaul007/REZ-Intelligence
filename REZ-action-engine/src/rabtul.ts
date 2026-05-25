@@ -13,7 +13,7 @@ const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 /**
  * Verify token
  */
-export async function verifyToken(token: string): Promise<{ valid: boolean; user?: any; error?: string }> {
+export async function verifyToken(token: string): Promise<{ valid: boolean; user?; error?: string }> {
   try {
     const res = await axios.get(`${AUTH_URL}/api/auth/verify`, {
       headers: { 'Authorization': `Bearer ${token}`, 'X-Internal-Token': INTERNAL_TOKEN },
@@ -22,7 +22,7 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; user
       return { valid: true, user: res.data.user };
     }
     return { valid: false, error: 'Invalid token' };
-  } catch (error: any) {
+  } catch (error) {
     return { valid: false, error: error.message };
   }
 }
@@ -36,7 +36,7 @@ export async function getWallet(userId: string): Promise<{ balance: number; erro
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { balance: res.data.balance || 0 };
-  } catch (error: any) {
+  } catch (error) {
     return { balance: 0, error: error.message };
   }
 }
@@ -50,7 +50,7 @@ export async function addCoins(userId: string, amount: number, reason: string): 
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -64,7 +64,7 @@ export async function deductCoins(userId: string, amount: number, reason: string
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -72,13 +72,13 @@ export async function deductCoins(userId: string, amount: number, reason: string
 /**
  * Send notification
  */
-export async function sendNotification(userId: string, title: string, body: string, data?: Record<string, any>): Promise<{ success: boolean; error?: string }> {
+export async function sendNotification(userId: string, title: string, body: string, data?: Record<string, unknown>): Promise<{ success: boolean; error?: string }> {
   try {
     await axios.post(`${NOTIFICATION_URL}/api/notifications/push`, { userId, title, body, data }, {
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -86,7 +86,7 @@ export async function sendNotification(userId: string, title: string, body: stri
 /**
  * Publish action event
  */
-export async function publishActionEvent(eventType: string, data: Record<string, any>): Promise<{ success: boolean; error?: string }> {
+export async function publishActionEvent(eventType: string, data: Record<string, unknown>): Promise<{ success: boolean; error?: string }> {
   try {
     await axios.post(`${EVENT_BUS_URL}/api/events/publish`, {
       type: `action.${eventType}`,
@@ -96,7 +96,7 @@ export async function publishActionEvent(eventType: string, data: Record<string,
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }

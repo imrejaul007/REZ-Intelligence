@@ -624,7 +624,7 @@ export const POLICIES: Policy[] = [
       'Safe sizes accommodate laptops and valuables',
       'Front desk storage for large valuables',
       'Lost key replacement: $25',
-      'Report any suspicious activity immediately',
+      'Report unknown suspicious activity immediately',
     ],
   },
   {

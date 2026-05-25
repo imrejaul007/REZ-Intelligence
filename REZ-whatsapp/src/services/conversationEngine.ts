@@ -406,7 +406,7 @@ export class ConversationEngine {
       let session = await Session.findOne({ userId: fromNumber });
 
       if (session) {
-        (session as any).addMessage?.('user', body, messageSid);
+        (session as unknown).addMessage?.('user', body, messageSid);
         await session.save();
       }
 
@@ -1007,7 +1007,7 @@ export class ConversationEngine {
 
     if (!currentOrder) {
       return {
-        message: "I don't see any active orders on your account. Would you like to start a new order?",
+        message: "I don't see unknown active orders on your account. Would you like to start a new order?",
         type: MessageType.TEXT,
         actions: [
           { type: 'reply', title: 'View Products', payload: 'view_products' },
@@ -1047,7 +1047,7 @@ export class ConversationEngine {
         "- Browse and search products\n" +
         "- Add items to cart and checkout\n" +
         "- Track your orders\n" +
-        "- Get support for any issues\n" +
+        "- Get support for unknown issues\n" +
         "- View promotional offers\n\n" +
         "What would you like to do?",
       type: MessageType.TEXT,
@@ -1118,8 +1118,8 @@ export class ConversationEngine {
     }
 
     // Add to conversation history
-    (session as any).addMessage?.('user', message, uuidv4());
-    (session as any).addMessage?.('assistant', response.message, uuidv4());
+    (session as unknown).addMessage?.('user', message, uuidv4());
+    (session as unknown).addMessage?.('assistant', response.message, uuidv4());
     await session.save();
 
     // Update or create conversation record

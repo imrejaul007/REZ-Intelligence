@@ -7,10 +7,11 @@
  * - Feature computation
  * - Feature monitoring
  * - Feature versioning
+ * - Domain-specific features (Z-Events, ReZ Ride, Commerce)
  */
 
 import express from 'express';
-import axios from 'axios';
+import { logger } from './utils/logger.js';
 
 const app = express();
 app.use(express.json());
@@ -22,7 +23,7 @@ app.use(express.json());
 interface Feature {
   name: string;
   description: string;
-  entity: string; // 'user', 'product', 'merchant'
+  entity: string; // 'user', 'product', 'merchant', 'event', 'zone'
   data_type: 'float' | 'int' | 'string' | 'bool';
   version: string;
   created_at: string;
@@ -34,7 +35,7 @@ interface Feature {
 interface FeatureValue {
   entity_id: string;
   feature_name: string;
-  value: any;
+  value: unknown;
   version: string;
   timestamp: string;
 }
@@ -47,11 +48,300 @@ interface FeatureGroup {
   created_at: string;
 }
 
+// ============================================
+// DEFAULT DOMAIN-SPECIFIC FEATURES
+// ============================================
+
+const DEFAULT_FEATURES: Feature[] = [
+  // Z-EVENTS: User Event Behavior
+  {
+    name: 'user_total_events_attended_30d',
+    description: 'Total events attended in last 30 days',
+    entity: 'user',
+    data_type: 'int',
+    version: 'v1.0.0',
+    created_at: new Date().toISOString(),
+    computed_from: ['tickets', 'checkins'],
+    transformation: 'COUNT(event_id) WHERE checkin_at > NOW() - 30d',
+    freshness: 'daily',
+  },
+  {
+    name: 'user_total_event_spend_30d',
+    description: 'Total spending on events in last 30 days (INR)',
+    entity: 'user',
+    data_type: 'float',
+    version: 'v1.0.0',
+    created_at: new Date().toISOString(),
+    computed_from: ['tickets', 'payments'],
+    transformation: 'SUM(total_amount) WHERE booked_at > NOW() - 30d',
+    freshness: 'daily',
+  },
+  {
+    name: 'user_avg_ticket_price',
+    description: 'Average ticket price user pays',
+    entity: 'user',
+    data_type: 'float',
+    version: 'v1.0.0',
+    created_at: new Date().toISOString(),
+    computed_from: ['tickets'],
+    transformation: 'AVG(total_amount / quantity)',
+    freshness: 'weekly',
+  },
+  {
+    name: 'user_event_affinity_music',
+    description: 'Affinity score for music events (0-1)',
+    entity: 'user',
+    data_type: 'float',
+    version: 'v1.0.0',
+    created_at: new Date().toISOString(),
+    computed_from: ['tickets', 'events'],
+    transformation: 'COUNT(category=music) / COUNT(*)',
+    freshness: 'weekly',
+  },
+  {
+    name: 'user_event_affinity_sports',
+    description: 'Affinity score for sports events (0-1)',
+    entity: 'user',
+    data_type: 'float',
+    version: 'v1.0.0',
+    created_at: new Date().toISOString(),
+    computed_from: ['tickets', 'events'],
+    transformation: 'COUNT(category=sports) / COUNT(*)',
+    freshness: 'weekly',
+  },
+  {
+    name: 'user_event_affinity_comedy',
+    description: 'Affinity score for comedy events (0-1)',
+    entity: 'user',
+    data_type: 'float',
+    version: 'v1.0.0',
+    created_at: new Date().toISOString(),
+    computed_from: ['tickets', 'events'],
+    transformation: 'COUNT(category=comedy) / COUNT(*)',
+    freshness: 'weekly',
+  },
+  {
+    name: 'user_group_booking_ratio',
+    description: 'Ratio of group bookings vs solo (0-1)',
+    entity: 'user',
+    data_type: 'float',
+    version: 'v1.0.0',
+    created_at: new Date().toISOString(),
+    computed_from: ['tickets'],
+    transformation: 'COUNT(quantity > 2) / COUNT(*)',
+    freshness: 'weekly',
+  },
+  {
+    name: 'user_advance_booking_days',
+    description: 'Average days in advance user books',
+    entity: 'user',
+    data_type: 'float',
+    version: 'v1.0.0',
+    created_at: new Date().toISOString(),
+    computed_from: ['tickets', 'events'],
+    transformation: 'AVG(event_start_date - booked_at) / 86400000',
+    freshness: 'daily',
+  },
+  {
+    name: 'user_event_likelihood_7d',
+    description: 'Likelihood to book event in next 7 days (0-1)',
+    entity: 'user',
+    data_type: 'float',
+    version: 'v1.0.0',
+    created_at: new Date().toISOString(),
+    computed_from: ['user_event_affinity_*', 'user_total_events_attended_30d'],
+    transformation: 'ML_MODEL_PREDICTION',
+    freshness: 'daily',
+  },
+
+  // Z-EVENTS: Event Features
+  {
+    name: 'event_predicted_attendance',
+    description: 'Predicted attendance for event',
+    entity: 'event',
+    data_type: 'int',
+    version: 'v1.0.0',
+    created_at: new Date().toISOString(),
+    computed_from: ['tickets', 'historical_events'],
+    transformation: 'ML_MODEL_PREDICTION',
+    freshness: 'hourly',
+  },
+  {
+    name: 'event_spillover_score',
+    description: 'Spillover effect score (0-1)',
+    entity: 'event',
+    data_type: 'float',
+    version: 'v1.0.0',
+    created_at: new Date().toISOString(),
+    computed_from: ['event_location', 'merchant_density'],
+    transformation: 'CALCULATE_SPILLOVER',
+    freshness: 'daily',
+  },
+  {
+    name: 'event_ride_demand_boost',
+    description: 'Expected ride demand increase multiplier',
+    entity: 'event',
+    data_type: 'float',
+    version: 'v1.0.0',
+    created_at: new Date().toISOString(),
+    computed_from: ['event_attendance', 'event_category'],
+    transformation: 'attendance * category_multiplier',
+    freshness: 'realtime',
+  },
+
+  // REZ RIDE: User Mobility
+  {
+    name: 'user_ride_frequency_weekly',
+    description: 'Average rides per week',
+    entity: 'user',
+    data_type: 'float',
+    version: 'v1.0.0',
+    created_at: new Date().toISOString(),
+    computed_from: ['rides'],
+    transformation: 'COUNT(rides) / 7',
+    freshness: 'daily',
+  },
+  {
+    name: 'user_peak_hour_ride_ratio',
+    description: 'Ratio of rides during peak hours (0-1)',
+    entity: 'user',
+    data_type: 'float',
+    version: 'v1.0.0',
+    created_at: new Date().toISOString(),
+    computed_from: ['rides'],
+    transformation: 'COUNT(hour BETWEEN 7-9 OR 17-21) / COUNT(*)',
+    freshness: 'weekly',
+  },
+
+  // ZONE FEATURES
+  {
+    name: 'zone_demand_index',
+    description: 'Synthetic demand index for zone (0-100)',
+    entity: 'zone',
+    data_type: 'float',
+    version: 'v1.0.0',
+    created_at: new Date().toISOString(),
+    computed_from: ['rides', 'orders', 'events', 'footfall'],
+    transformation: 'COMPOSITE_DEMAND_INDEX',
+    freshness: 'realtime',
+  },
+  {
+    name: 'zone_event_heat_score',
+    description: 'Event-driven demand heat (0-100)',
+    entity: 'zone',
+    data_type: 'float',
+    version: 'v1.0.0',
+    created_at: new Date().toISOString(),
+    computed_from: ['events', 'ticket_sales'],
+    transformation: 'EVENT_IMPACT_CALCULATION',
+    freshness: 'hourly',
+  },
+
+  // CROSS-APP FEATURES
+  {
+    name: 'user_cross_app_score',
+    description: 'Cross-app engagement score (0-100)',
+    entity: 'user',
+    data_type: 'float',
+    version: 'v1.0.0',
+    created_at: new Date().toISOString(),
+    computed_from: ['events', 'rides', 'orders'],
+    transformation: 'WEIGHTED_AGGREGATION',
+    freshness: 'daily',
+  },
+  {
+    name: 'user_ltv_estimate',
+    description: 'Estimated lifetime value (INR)',
+    entity: 'user',
+    data_type: 'float',
+    version: 'v1.0.0',
+    created_at: new Date().toISOString(),
+    computed_from: ['orders', 'tickets', 'rides'],
+    transformation: 'LTV_MODEL_PREDICTION',
+    freshness: 'weekly',
+  },
+];
+
+// DEFAULT FEATURE GROUPS
+const DEFAULT_FEATURE_GROUPS: FeatureGroup[] = [
+  {
+    name: 'user_event_behavior_v1',
+    entity: 'user',
+    features: [
+      'user_total_events_attended_30d',
+      'user_total_event_spend_30d',
+      'user_avg_ticket_price',
+      'user_event_affinity_music',
+      'user_event_affinity_sports',
+      'user_event_affinity_comedy',
+      'user_group_booking_ratio',
+      'user_advance_booking_days',
+      'user_event_likelihood_7d',
+    ],
+    freshness: 'daily',
+    created_at: new Date().toISOString(),
+  },
+  {
+    name: 'user_mobility_v1',
+    entity: 'user',
+    features: [
+      'user_ride_frequency_weekly',
+      'user_peak_hour_ride_ratio',
+    ],
+    freshness: 'daily',
+    created_at: new Date().toISOString(),
+  },
+  {
+    name: 'event_intelligence_v1',
+    entity: 'event',
+    features: [
+      'event_predicted_attendance',
+      'event_spillover_score',
+      'event_ride_demand_boost',
+    ],
+    freshness: 'hourly',
+    created_at: new Date().toISOString(),
+  },
+  {
+    name: 'zone_demand_v1',
+    entity: 'zone',
+    features: [
+      'zone_demand_index',
+      'zone_event_heat_score',
+    ],
+    freshness: 'realtime',
+    created_at: new Date().toISOString(),
+  },
+  {
+    name: 'user_engagement_v1',
+    entity: 'user',
+    features: [
+      'user_cross_app_score',
+      'user_ltv_estimate',
+    ],
+    freshness: 'weekly',
+    created_at: new Date().toISOString(),
+  },
+];
+
 // In-memory stores
 const features = new Map<string, Feature>();
 const featureValues = new Map<string, FeatureValue[]>();
 const featureGroups = new Map<string, FeatureGroup>();
-const featureMetrics = new Map<string, any>();
+const featureMetrics = new Map<string, unknown>();
+
+// Initialize with default features
+function initializeDefaultFeatures(): void {
+  for (const feature of DEFAULT_FEATURES) {
+    features.set(feature.name, feature);
+  }
+  for (const group of DEFAULT_FEATURE_GROUPS) {
+    featureGroups.set(group.name, group);
+  }
+  logger.info(`Initialized ${DEFAULT_FEATURES.length} default features and ${DEFAULT_FEATURE_GROUPS.length} feature groups`);
+}
+
+initializeDefaultFeatures();
 
 // ============================================
 // FEATURE REGISTRATION
@@ -92,7 +382,7 @@ app.post('/api/features', async (req, res) => {
  * List all features
  */
 app.get('/api/features', (req, res) => {
-  const { entity, freshness } = req.query;
+  const { entity, freshness, domain } = req.query;
 
   let list = Array.from(features.values());
 
@@ -104,7 +394,52 @@ app.get('/api/features', (req, res) => {
     list = list.filter(f => f.freshness === freshness);
   }
 
+  // NEW: Filter by domain prefix
+  if (domain) {
+    const prefix = `user_${domain}`; // e.g., 'event' -> 'user_event_*'
+    list = list.filter(f => f.name.startsWith(prefix));
+  }
+
   res.json({ features: list, count: list.length });
+});
+
+/**
+ * GET /api/features/domains
+ * List available feature domains (NEW)
+ */
+app.get('/api/features/domains', (_req, res) => {
+  const domains = new Map<string, { prefix: string; count: number; entities: string[] }>();
+
+  for (const feature of features.values()) {
+    const parts = feature.name.split('_');
+    if (parts.length >= 2) {
+      // Extract domain from feature name pattern
+      let domain = '';
+      if (feature.name.startsWith('user_')) {
+        // user_event_*, user_ride_*, etc.
+        domain = parts.slice(1, 3).join('_');
+      } else if (parts[0] === 'event' || parts[0] === 'zone') {
+        domain = parts[0];
+      }
+
+      if (domain) {
+        if (!domains.has(domain)) {
+          domains.set(domain, { prefix: domain, count: 0, entities: [] });
+        }
+        const d = domains.get(domain)!;
+        d.count++;
+        if (!d.entities.includes(feature.entity)) {
+          d.entities.push(feature.entity);
+        }
+      }
+    }
+  }
+
+  res.json({
+    domains: Array.from(domains.values()),
+    total_features: features.size,
+    total_groups: featureGroups.size,
+  });
 });
 
 /**
@@ -212,7 +547,7 @@ app.post('/api/serving/online', async (req, res) => {
   }
 
   // Fetch feature values
-  const values: Record<string, any> = {};
+  const values: Record<string, unknown> = {};
 
   for (const featureName of featuresToFetch) {
     const key = `${entity_id}:${featureName}`;
@@ -251,7 +586,7 @@ app.post('/api/serving/online/batch', async (req, res) => {
   const results = [];
 
   for (const entityId of entities) {
-    const values: Record<string, any> = {};
+    const values: Record<string, unknown> = {};
 
     for (const featureName of featuresToFetch) {
       const key = `${entityId}:${featureName}`;
@@ -287,7 +622,7 @@ app.post('/api/serving/offline', async (req, res) => {
 
   const allFeatures = featureNames || Array.from(features.keys());
 
-  const values: any[] = [];
+  const values: unknown[] = [];
 
   for (const featureName of allFeatures) {
     const key = `${entity_id}:${featureName}`;
@@ -463,7 +798,7 @@ app.get('/api/compute/:job_id', (req, res) => {
 app.post('/api/monitor/features', async (req, res) => {
   const { features: featureNames } = req.body;
 
-  const stats: Record<string, any> = {};
+  const stats: Record<string, unknown> = {};
 
   for (const featureName of featureNames || []) {
     const feature = features.get(featureName);
@@ -528,7 +863,7 @@ app.get('/api/monitor/drift', async (req, res) => {
 // HELPERS
 // ============================================
 
-function getDefaultValue(feature?: Feature): any {
+function getDefaultValue(feature?: Feature): unknown {
   if (!feature) return null;
 
   switch (feature.data_type) {
@@ -563,7 +898,7 @@ app.get('/health', (req, res) => {
 
 const PORT = process.env.PORT || 4128;
 app.listen(PORT, () => {
-  console.log(`REZ Feature Store running on port ${PORT}`);
+  logger.info(`REZ Feature Store running on port ${PORT}`);
 });
 
 export default app;

@@ -7,6 +7,7 @@
 
 import mongoose, { Schema } from 'mongoose';
 import { logger } from '../utils/logger';
+import { generateAgentId } from '../utils/idGenerator';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-care';
 
@@ -141,10 +142,10 @@ export class AgentManagementService {
     platforms?: string[];
     languages?: string[];
     maxConcurrentTickets?: number;
-  }): Promise<any> {
+  }): Promise<unknown> {
     await this.connect();
 
-    const agentId = `AGENT-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+    const agentId = generateAgentId();
 
     const newAgent = new AgentModel({
       agentId,
@@ -177,7 +178,7 @@ export class AgentManagementService {
   }): Promise<IAgent[]> {
     await this.connect();
 
-    const query: any = {};
+    const query: unknown = {};
 
     if (filters?.status) query.status = filters.status;
     if (filters?.role) query.role = filters.role;
@@ -189,10 +190,10 @@ export class AgentManagementService {
       ];
     }
 
-    return AgentModel.find(query).sort({ level: -1, 'performance.csatScore': -1 }) as any;
+    return AgentModel.find(query).sort({ level: -1, 'performance.csatScore': -1 }) as unknown;
   }
 
-  async updateAgent(agentId: string, updates: Partial<any>): Promise<IAgent | null> {
+  async updateAgent(agentId: string, updates: Partial<unknown>): Promise<IAgent | null> {
     await this.connect();
     const agent = await AgentModel.findOneAndUpdate(
       { agentId },
@@ -203,7 +204,7 @@ export class AgentManagementService {
       agent.lastActiveAt = new Date();
       await agent.save();
     }
-    return agent as any;
+    return agent as unknown;
   }
 
   async deleteAgent(agentId: string): Promise<boolean> {
@@ -222,7 +223,7 @@ export class AgentManagementService {
       { agentId },
       { $set: { status, lastActiveAt: new Date() } },
       { new: true }
-    ) as any;
+    ) as unknown;
   }
 
   async goOnline(agentId: string): Promise<IAgent | null> {
@@ -266,7 +267,7 @@ export class AgentManagementService {
     priority?: string;
     language?: string;
     customerId?: string;
-  }): Promise<any | null> {
+  }): Promise<unknown | null> {
     await this.connect();
 
     // Find online agents
@@ -280,7 +281,7 @@ export class AgentManagementService {
     // Filter by skills and platform
     let candidates = onlineAgents.filter(agent => {
       // Check platform
-      if (ticket.platform && !agent.platforms.includes('all') && !agent.platforms.includes(ticket.platform as any)) {
+      if (ticket.platform && !agent.platforms.includes('all') && !agent.platforms.includes(ticket.platform as unknown)) {
         return false;
       }
       return true;
@@ -322,7 +323,7 @@ export class AgentManagementService {
       }
 
       // Performance bonus
-      if (agent.performance.csatScore > 4) score += 10;
+      if (agent.performance?.csatScore && agent.performance.csatScore > 4) score += 10;
 
       return { agent, score };
     });
@@ -342,7 +343,7 @@ export class AgentManagementService {
     platform?: string;
     priority?: string;
     customerId?: string;
-  }): Promise<{ agent: IAgent; assignment: any } | null> {
+  }): Promise<{ agent: IAgent; assignment: unknown } | null> {
     const agent = await this.findBestAgent(ticket);
 
     if (!agent) {
@@ -425,14 +426,14 @@ export class AgentManagementService {
       escalationAgent = await AgentModel.findOne({
         agentId: currentAgent.escalationTarget,
         status: 'online'
-      }) as any;
+      }) as unknown;
     } else {
       // Find higher level agent
       escalationAgent = await AgentModel.findOne({
         level: { $gt: currentAgent.level },
         status: 'online',
         role: { $in: ['senior_agent', 'team_lead', 'supervisor'] }
-      }).sort({ level: 1 }) as any;
+      }).sort({ level: 1 }) as unknown;
     }
 
     if (escalationAgent) {
@@ -465,6 +466,13 @@ export class AgentManagementService {
     const agent = await AgentModel.findOne({ agentId });
     if (!agent) return;
 
+    // Initialize performance if missing
+    if (!agent.performance) {
+      agent.performance = {
+        ticketsResolved: 0,
+      };
+    }
+
     // Update resolution time (rolling average)
     if (metrics.resolutionTime !== undefined) {
       const current = agent.performance.avgResolutionTime || metrics.resolutionTime;
@@ -496,7 +504,7 @@ export class AgentManagementService {
   /**
    * Get agent performance metrics
    */
-  async getAgentPerformance(agentId: string): Promise<any | null> {
+  async getAgentPerformance(agentId: string): Promise<unknown | null> {
     const agent = await AgentModel.findOne({ agentId });
     if (!agent) return null;
 
@@ -517,7 +525,7 @@ export class AgentManagementService {
    * Get team performance
    */
   async getTeamPerformance(): Promise<{
-    agents: any[];
+    agents: unknown[];
     avgResolutionTime: number;
     avgCsat: number;
     totalResolved: number;
@@ -533,10 +541,10 @@ export class AgentManagementService {
       tickets: a.currentTicketCount
     }));
 
-    const avgResolutionTime = agents.reduce((sum, a) => sum + (a.performance.avgResolutionTime || 0), 0) / agents.length;
-    const avgCsat = agents.reduce((sum, a) => sum + (a.performance.csatScore || 0), 0) / agents.length;
-    const totalResolved = agents.reduce((sum, a) => sum + (a.performance.ticketsResolved || 0), 0);
-    const avgFCR = agents.reduce((sum, a) => sum + (a.performance.firstContactResolution || 0), 0) / agents.length;
+    const avgResolutionTime = agents.reduce((sum, a) => sum + (a.performance?.avgResolutionTime || 0), 0) / agents.length;
+    const avgCsat = agents.reduce((sum, a) => sum + (a.performance?.csatScore || 0), 0) / agents.length;
+    const totalResolved = agents.reduce((sum, a) => sum + (a.performance?.ticketsResolved || 0), 0);
+    const avgFCR = agents.reduce((sum, a) => sum + (a.performance?.firstContactResolution || 0), 0) / agents.length;
 
     return {
       agents: performance,
@@ -582,6 +590,6 @@ export class AgentManagementService {
       }
 
       return true;
-    }) as any;
+    }) as unknown;
   }
 }

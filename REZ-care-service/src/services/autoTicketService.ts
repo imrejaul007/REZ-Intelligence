@@ -9,6 +9,7 @@ import mongoose from 'mongoose';
 import axios from 'axios';
 import { AutoTicket } from '../types';
 import { logger } from '../utils/logger';
+import { generateAutoTicketId } from '../utils/idGenerator';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-care';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || 'rez-internal-token';
@@ -238,7 +239,7 @@ export class AutoTicketService {
   }): Promise<AutoTicket[]> {
     await this.connect();
 
-    const query: any = {};
+    const query: unknown = {};
     if (filters?.status) query.status = filters.status;
     if (filters?.severity) query.severity = filters.severity;
     if (filters?.type) query.type = filters.type;
@@ -248,7 +249,7 @@ export class AutoTicketService {
       .sort({ detectedAt: -1 })
       .limit(filters?.limit || 50);
 
-    return tickets.map(t => t.toObject() as any);
+    return tickets.map(t => t.toObject() as unknown);
   }
 
   /**
@@ -258,7 +259,7 @@ export class AutoTicketService {
     await this.connect();
 
     const ticket = await AutoTicketModel.findOne({ ticketId });
-    return ticket ? (ticket.toObject() as any) : null;
+    return ticket ? (ticket.toObject() as unknown) : null;
   }
 
   /**
@@ -272,7 +273,7 @@ export class AutoTicketService {
     customerId?: string;
     merchantId?: string;
     orderId?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }): Promise<AutoTicket> {
     await this.connect();
 
@@ -280,7 +281,7 @@ export class AutoTicketService {
     const rule = TICKET_RULES.find(r => r.id === data.ruleId);
 
     // Generate ticket ID
-    const ticketId = `AUTO-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+    const ticketId = generateAutoTicketId();
 
     // Create ticket
     const ticket = new AutoTicketModel({
@@ -304,7 +305,7 @@ export class AutoTicketService {
     if (rule) {
       for (const action of rule.autoActions) {
         const result = await this.executeAutoAction(ticket, action);
-        (ticket as any).autoActions.push({
+        (ticket as unknown).autoActions.push({
           type: action,
           timestamp: new Date(),
           result
@@ -322,7 +323,7 @@ export class AutoTicketService {
 
     logger.info('Auto-ticket created', { ticketId, type: data.type, severity: data.severity });
 
-    return ticket.toObject() as any;
+    return ticket.toObject() as unknown;
   }
 
   /**
@@ -341,13 +342,13 @@ export class AutoTicketService {
     ticket.status = 'resolved';
     ticket.resolvedAt = new Date();
     ticket.resolution = resolution || 'Resolved';
-    (ticket as any).resolvedBy = resolvedBy || 'system';
+    (ticket as unknown).resolvedBy = resolvedBy || 'system';
 
     await ticket.save();
 
     logger.info('Auto-ticket resolved', { ticketId, resolvedBy });
 
-    return ticket.toObject() as any;
+    return ticket.toObject() as unknown;
   }
 
   /**
@@ -362,9 +363,9 @@ export class AutoTicketService {
     ticket.status = 'auto_resolved';
     ticket.resolvedAt = new Date();
     ticket.resolution = resolution;
-    (ticket as any).resolvedBy = 'system';
+    (ticket as unknown).resolvedBy = 'system';
 
-    (ticket as any).autoActions.push({
+    (ticket as unknown).autoActions.push({
       type: 'auto_resolve',
       timestamp: new Date(),
       result: resolution
@@ -379,7 +380,7 @@ export class AutoTicketService {
 
     logger.info('Auto-ticket auto-resolved', { ticketId, resolution });
 
-    return ticket.toObject() as any;
+    return ticket.toObject() as unknown;
   }
 
   /**
@@ -412,7 +413,7 @@ export class AutoTicketService {
   // PRIVATE METHODS
   // ============================================
 
-  private async executeAutoAction(ticket: any, action: string): Promise<string> {
+  private async executeAutoAction(ticket, action: string): Promise<string> {
     switch (action) {
       case 'notify_team':
         await this.notifyTeam(ticket);
@@ -453,7 +454,7 @@ export class AutoTicketService {
     }
   }
 
-  private async notifyTeam(ticket: any): Promise<void> {
+  private async notifyTeam(ticket): Promise<void> {
     try {
       await axios.post(
         `${SERVICE_URLS.notifications}/api/notifications/send`,
@@ -471,7 +472,7 @@ export class AutoTicketService {
     }
   }
 
-  private async pageOncall(ticket: any): Promise<void> {
+  private async pageOncall(ticket): Promise<void> {
     try {
       await axios.post(
         `${SERVICE_URLS.notifications}/api/notifications/send`,
@@ -489,7 +490,7 @@ export class AutoTicketService {
     }
   }
 
-  private async notifyMerchant(merchantId: string, ticket: any): Promise<void> {
+  private async notifyMerchant(merchantId: string, ticket): Promise<void> {
     try {
       await axios.post(
         `${process.env.MERCHANT_SERVICE_URL || 'https://rez-merchant-service.onrender.com'}/api/notifications/merchant/${merchantId}`,
@@ -505,7 +506,7 @@ export class AutoTicketService {
     }
   }
 
-  private async notifyCustomer(customerId: string, ticket: any): Promise<void> {
+  private async notifyCustomer(customerId: string, ticket): Promise<void> {
     try {
       await axios.post(
         `${SERVICE_URLS.notifications}/api/notifications/send`,
@@ -550,7 +551,7 @@ export class AutoTicketService {
     }
   }
 
-  private async createIncident(ticket: any): Promise<void> {
+  private async createIncident(ticket): Promise<void> {
     try {
       await axios.post(
         `${process.env.INCIDENT_SERVICE_URL || 'https://incident-service.onrender.com'}/api/incidents`,
@@ -568,12 +569,12 @@ export class AutoTicketService {
     }
   }
 
-  private async gatherLogs(ticket: any): Promise<void> {
+  private async gatherLogs(ticket): Promise<void> {
     // In production, this would gather actual logs
     logger.info('Gathering logs for ticket', { ticketId: ticket.ticketId });
   }
 
-  private async createSupportTicket(ticket: any, rule?: TicketRule): Promise<void> {
+  private async createSupportTicket(ticket, rule?: TicketRule): Promise<void> {
     try {
       await axios.post(
         `${SERVICE_URLS.support}/api/tickets`,

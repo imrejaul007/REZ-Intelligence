@@ -9,7 +9,7 @@ const ANALYTICS_URL = process.env.ANALYTICS_SERVICE_URL || 'http://localhost:401
 const EVENT_BUS_URL = process.env.EVENT_BUS_URL || 'http://localhost:4025';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
-async function request(url: string, options: RequestInit = {}): Promise<any> {
+async function request(url: string, options: RequestInit = {}): Promise<unknown> {
   const res = await fetch(url, {
     ...options,
     headers: {
@@ -47,7 +47,7 @@ export const notifications = {
 };
 
 export const analytics = {
-  track: async (event: string, properties: Record<string, any> = {}) =>
+  track: async (event: string, properties: Record<string, unknown> = {}) =>
     request(`${ANALYTICS_URL}/api/track`, {
       method: 'POST',
       body: JSON.stringify({ event, properties }),
@@ -55,7 +55,7 @@ export const analytics = {
 };
 
 export const events = {
-  publish: async (type: string, category: string, data: any) =>
+  publish: async (type: string, category: string, data) =>
     request(`${EVENT_BUS_URL}/api/events`, {
       method: 'POST',
       body: JSON.stringify({ type, category, data, source: 'REZ-memory-layer' }),

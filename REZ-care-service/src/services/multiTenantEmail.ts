@@ -99,7 +99,7 @@ class MultiTenantEmail {
   async processEmailForClient(rawEmail: EmailMessage): Promise<{
     email: EmailMessage;
     client: ClientConfig;
-    parsed: any;
+    parsed;
     actions: string[];
   }> {
     // Find the client
@@ -165,7 +165,7 @@ class MultiTenantEmail {
   /**
    * Apply client-specific routing rules
    */
-  private applyRoutingRules(parsed: any, client: ClientConfig): string[] {
+  private applyRoutingRules(parsed, client: ClientConfig): string[] {
     const actions: string[] = [];
 
     if (!client.routingRules) return actions;
@@ -191,7 +191,7 @@ class MultiTenantEmail {
   /**
    * Generate client-specific auto-response
    */
-  generateClientResponse(parsed: any, client: ClientConfig): {
+  generateClientResponse(parsed, client: ClientConfig): {
     to: string;
     subject: string;
     body: string;

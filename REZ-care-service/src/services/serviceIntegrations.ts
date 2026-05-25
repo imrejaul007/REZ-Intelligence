@@ -36,7 +36,7 @@ const SERVICES = {
   },
 };
 
-interface ServiceResponse<T = any> {
+interface ServiceResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -47,7 +47,7 @@ async function callService<T>(
   path: string,
   options: {
     method?: 'GET' | 'POST' | 'PATCH';
-    body?: Record<string, any>;
+    body?: Record<string, unknown>;
     params?: Record<string, string>;
   } = {}
 ): Promise<ServiceResponse<T>> {
@@ -74,7 +74,7 @@ async function callService<T>(
     });
 
     return { success: true, data: response.data };
-  } catch (error: any) {
+  } catch (error) {
     logger.warn(`Service ${serviceName} call failed: ${path}`, {
       error: error.message,
       status: error.response?.status,
@@ -95,12 +95,12 @@ export async function getSupportHistory(userId: string): Promise<{
   openTickets: number;
   avgResolutionTime: number;
   sentiment: string;
-  lastTicket?: any;
+  lastTicket?;
 }> {
   const result = await callService('supportCopilot', `/user/${userId}/history`);
 
   if (result.success && result.data) {
-    const data = result.data as any;
+    const data = result.data as unknown;
     return {
       totalTickets: data.totalTickets || 0,
       openTickets: data.openTickets || 0,
@@ -124,12 +124,12 @@ export async function getSupportHistory(userId: string): Promise<{
  */
 export async function getTicketSuggestions(ticketId: string): Promise<{
   suggestions: string[];
-  similarTickets: any[];
+  similarTickets: unknown[];
 }> {
   const result = await callService('supportCopilot', `/ticket/${ticketId}/suggestions`);
 
   if (result.success && result.data) {
-    const data = result.data as any;
+    const data = result.data as unknown;
     return {
       suggestions: data.suggestions || [],
       similarTickets: data.similarTickets || [],
@@ -158,7 +158,7 @@ export async function getSentimentAnalysis(text: string): Promise<{
 
   if (result.success && result.data) {
     return {
-      sentiment: result.data.sentiment as any,
+      sentiment: result.data.sentiment as unknown,
       score: result.data.score || 3,
       keywords: result.data.keywords || [],
     };
@@ -212,13 +212,13 @@ export async function getMerchantDashboard(merchantId: string): Promise<{
     repeatRate: number;
   };
   segments: Record<string, number>;
-  predictions: any;
-  recommendations: any[];
+  predictions;
+  recommendations: unknown[];
 }> {
   const result = await callService('merchantIntelligence', `/merchant/${merchantId}/dashboard`);
 
   if (result.success && result.data) {
-    return result.data as any;
+    return result.data as unknown;
   }
 
   return {
@@ -236,10 +236,10 @@ export async function getMerchantCustomers(merchantId: string, options?: {
   limit?: number;
   segment?: string;
 }): Promise<{
-  customers: any[];
+  customers: unknown[];
   total: number;
 }> {
-  const result = await callService<{ customers: any[]; total: number }>(
+  const result = await callService<{ customers: unknown[]; total: number }>(
     'merchantIntelligence',
     `/merchant/${merchantId}/customers`,
     { params: options as Record<string, string> }
@@ -277,10 +277,10 @@ export async function getCustomerPredictions(merchantId: string, customerId: str
  * Get merchant recommendations
  */
 export async function getMerchantRecommendations(merchantId: string): Promise<{
-  recommendations: any[];
+  recommendations: unknown[];
   priority: string[];
 }> {
-  const result = await callService<{ recommendations: any[]; priority: string[] }>(
+  const result = await callService<{ recommendations: unknown[]; priority: string[] }>(
     'merchantIntelligence',
     `/merchant/${merchantId}/recommendations`
   );
@@ -303,13 +303,13 @@ export async function searchKnowledgeBase(query: string, options?: {
   category?: string;
   limit?: number;
 }): Promise<{
-  articles: any[];
+  articles: unknown[];
   suggestions: string[];
 }> {
-  const result = await callService<{ articles: any[]; suggestions: string[] }>(
+  const result = await callService<{ articles: unknown[]; suggestions: string[] }>(
     'knowledgeBase',
     '/search',
-    { params: { q: query, limit: options.limit, category: options.category } as any }
+    { params: { q: query, limit: options?.limit, category: options?.category } as unknown }
   );
 
   if (result.success && result.data) {
@@ -322,7 +322,7 @@ export async function searchKnowledgeBase(query: string, options?: {
 /**
  * Get KB article
  */
-export async function getKBArticle(articleId: string): Promise<any | null> {
+export async function getKBArticle(articleId: string): Promise<unknown | null> {
   const result = await callService('knowledgeBase', `/articles/${articleId}`);
 
   if (result.success && result.data) {
@@ -336,9 +336,9 @@ export async function getKBArticle(articleId: string): Promise<any | null> {
  * Get FAQ for category
  */
 export async function getFAQs(category: string): Promise<{
-  faqs: any[];
+  faqs: unknown[];
 }> {
-  const result = await callService<{ faqs: any[] }>('knowledgeBase', `/faq/${category}`);
+  const result = await callService<{ faqs: unknown[] }>('knowledgeBase', `/faq/${category}`);
 
   if (result.success && result.data) {
     return result.data;
@@ -351,14 +351,14 @@ export async function getFAQs(category: string): Promise<{
  * Get merchant KB
  */
 export async function getMerchantKB(merchantId: string): Promise<{
-  faqs: any[];
-  policies: any[];
-  menu: any;
+  faqs: unknown[];
+  policies: unknown[];
+  menu;
 }> {
   const result = await callService<{
-    faqs: any[];
-    policies: any[];
-    menu: any;
+    faqs: unknown[];
+    policies: unknown[];
+    menu;
   }>('knowledgeBase', `/merchants/${merchantId}`);
 
   if (result.success && result.data) {
@@ -385,7 +385,7 @@ export async function getUnifiedCustomerView(customerId: string, phone?: string)
     totalMerchants: number;
     repeatMerchants: number;
   };
-  kbSuggestions: any[];
+  kbSuggestions: unknown[];
 }> {
   const [supportHistory, merchantCustomers, kbSearch] = await Promise.all([
     phone ? getSupportHistory(phone) : Promise.resolve({ totalTickets: 0, openTickets: 0, avgResolutionTime: 0, sentiment: 'neutral' }),

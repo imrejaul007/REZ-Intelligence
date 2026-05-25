@@ -12,9 +12,9 @@ export interface SelectionResult {
 }
 
 export class ExpertSelector {
-  private agentRegistry: any; // Forward reference to avoid circular dependency
+  private agentRegistry; // Forward reference to avoid circular dependency
 
-  setAgentRegistry(registry: any): void {
+  setAgentRegistry(registry): void {
     this.agentRegistry = registry;
   }
 

@@ -66,8 +66,22 @@ Real-time data streaming service using Kafka for event processing. Enables real-
 ## Status
 
 - [x] Service foundation
-- [ ] Kafka integration
-- [ ] Event processing
-- [ ] Real-time analytics
-- [ ] Stateful processing
+- [x] Kafka integration
+- [x] Event processing
+- [x] Real-time analytics
+- [x] Stateful processing
 - [ ] ML streaming
+
+## Kafka Topics
+
+| Topic | Purpose |
+|-------|---------|
+| `commerce.orders` | Order events |
+| `commerce.payments` | Payment events |
+| `identity.events` | User identity events |
+| `engagement.events` | User engagement events |
+| `intelligence.signals` | AI/ML signals |
+| `geo.events` | Geo location events |
+| `notification.events` | Notification events |
+| `zevents.bookings` | Z-Events bookings |
+| `zevents.checkins` | Z-Events check-ins |

@@ -65,7 +65,7 @@ const PaginationQuerySchema = z.object({
 });
 
 const EvaluateUserBodySchema = z.object({
-  userData: z.any().optional(),
+  userData: z.unknown().optional(),
 });
 
 const CreateSegmentBodySchema = z.object({

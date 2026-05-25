@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 import { v4 as uuidv4 } from 'uuid';
 import {
   AppointmentRequest,
@@ -14,7 +16,7 @@ export function validateEnv(): void {
   const missing = required.filter(key => !process.env[key]);
 
   if (missing.length > 0) {
-    console.warn(`Warning: Missing environment variables: ${missing.join(', ')}`);
+    logger.warn(`Warning: Missing environment variables: ${missing.join(', ')}`);
   }
 }
 
@@ -200,13 +202,13 @@ export function getAppointmentPreparationInstructions(appointmentType: Appointme
       'Fasting if blood work is scheduled (12 hours)',
       'ID and insurance card',
       'List of questions for your doctor',
-      'Updates on any changes since your last visit',
+      'Updates on unknown changes since your last visit',
       'Comfortable clothing for examination'
     ],
     [AppointmentType.FOLLOW_UP]: [
       'Previous test results or imaging',
-      'List of any new symptoms',
-      'Medication list with any changes',
+      'List of unknown new symptoms',
+      'Medication list with unknown changes',
       'Questions about your treatment plan',
       'ID and insurance card'
     ]

@@ -188,7 +188,7 @@ export class LoyaltyModule {
     action: string,
     amount: number,
     description: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<{ success: boolean; points_earned: number; new_balance: number }> {
     const profile = this.consumerGraph.getConsumer(userId);
     if (!profile) {

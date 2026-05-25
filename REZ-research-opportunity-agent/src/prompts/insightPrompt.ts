@@ -39,7 +39,7 @@ export const INSIGHT_USER_PROMPT = `Answer the following business question based
 Please provide a clear, concise response that:
 1. Directly answers the question
 2. Cites relevant data points
-3. Explains any implications
+3. Explains unknown implications
 4. Suggests actionable next steps if applicable
 
 If the available data is insufficient to answer the question, indicate what additional information would be needed.`;

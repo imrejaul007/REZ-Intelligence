@@ -238,7 +238,7 @@ class SmartUpsellEngine {
             id: `complement_${product.id}`,
             type: 'complementary',
             title: `Pairs great with: ${product.name}`,
-            description: product.description,
+            description: product.description || '',
             product,
             reason: `Frequently bought with ${context.category || 'similar products'}`,
             confidence: 0.7,
@@ -326,7 +326,7 @@ class SmartUpsellEngine {
       });
       if (res.ok) {
         const data = await res.json();
-        return (data as any).products || [];
+        return (data as unknown).products || [];
       }
     } catch {
       // Use mock data
@@ -366,7 +366,7 @@ class SmartUpsellEngine {
             id: `vip_${product.id}`,
             type: 'premium',
             title: `Exclusive for VIP: ${product.name}`,
-            description: product.description,
+            description: product.description || '',
             product,
             reason: 'Premium products for valued customers',
             confidence: 0.9,
@@ -401,14 +401,14 @@ class SmartUpsellEngine {
   /**
    * Generate agent suggestions for conversation
    */
-  generateAgentSuggestions(offers: any): string {
+  generateAgentSuggestions(offers): string {
     let message = '\n\n📦 **UPSELL SUGGESTIONS FOR THIS CUSTOMER:**\n\n';
 
     const allOffers = [
-      ...(offers.upgrades || []).map((o: any) => ({ ...o, priority: 1 })),
-      ...(offers.accessories || []).map((o: any) => ({ ...o, priority: 2 })),
-      ...(offers.complementary || []).map((o: any) => ({ ...o, priority: 3 })),
-    ].sort((a: any, b: any) => b.confidence - a.confidence).slice(0, 3);
+      ...(offers.upgrades || []).map((o) => ({ ...o, priority: 1 })),
+      ...(offers.accessories || []).map((o) => ({ ...o, priority: 2 })),
+      ...(offers.complementary || []).map((o) => ({ ...o, priority: 3 })),
+    ].sort((a, b) => b.confidence - a.confidence).slice(0, 3);
 
     if (allOffers.length === 0) {
       return '';

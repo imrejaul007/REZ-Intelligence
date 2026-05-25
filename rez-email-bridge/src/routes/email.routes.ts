@@ -22,7 +22,7 @@ const sendEmailSchema = z.object({
 const sendTemplateSchema = z.object({
   to: z.string().email(),
   template: z.enum(['welcome', 'order_confirmation', 'payment_success', 'support_ticket']),
-  data: z.record(z.any())
+  data: z.record(z.unknown())
 });
 
 // POST /api/email/send - Send email
@@ -50,7 +50,7 @@ router.post('/email/send', async (req: Request, res: Response) => {
         error: result.error
       });
     }
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Send email error', { error: error.message });
     res.status(500).json({
       success: false,
@@ -84,7 +84,7 @@ router.post('/email/send-template', async (req: Request, res: Response) => {
         error: result.error
       });
     }
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Send template error', { error: error.message });
     res.status(500).json({
       success: false,
@@ -118,7 +118,7 @@ router.post('/email/send-attachment', async (req: Request, res: Response) => {
       messageId: result.messageId,
       error: result.error
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Send attachment error', { error: error.message });
     res.status(500).json({
       success: false,
@@ -166,7 +166,7 @@ router.post('/email/inbound', async (req: Request, res: Response) => {
     });
 
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Inbound email error', { error: error.message });
     res.status(500).json({
       success: false,

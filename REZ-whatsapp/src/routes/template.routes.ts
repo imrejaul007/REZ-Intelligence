@@ -28,7 +28,7 @@ export function createTemplateRoutes(
         const result = await templateManager.listTemplates({
           merchantId,
           status,
-          category: category as any,
+          category: category as unknown,
           language,
           page,
           limit,
@@ -129,7 +129,7 @@ export function createTemplateRoutes(
           name,
           category,
           language,
-          components: components as any,
+          components: components as unknown,
           merchantId,
           metadata,
         });

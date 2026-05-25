@@ -4,7 +4,8 @@
  * Uses RABTUL Auth Service for internal service authentication.
  */
 
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } import logger from './utils/logger';
+import from 'express';
 import crypto from 'crypto';
 
 const INTERNAL_SERVICE_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
@@ -61,9 +62,9 @@ function verifyInternalToken(token: string): boolean {
  */
 export function requireInternalAuth(req: Request, res: Response, next: NextFunction): void {
   if (NODE_ENV !== 'production' && !INTERNAL_SERVICE_TOKEN && Object.keys(serviceTokens).length === 0) {
-    console.warn('[AUTH] Running in development mode without authentication');
-    (req as any).isInternalService = true;
-    (req as any).serviceName = 'development';
+    logger.warn('[AUTH] Running in development mode without authentication');
+    (req as unknown).isInternalService = true;
+    (req as unknown).serviceName = 'development';
     return next();
   }
 
@@ -101,8 +102,8 @@ export function requireInternalAuth(req: Request, res: Response, next: NextFunct
     });
   }
 
-  (req as any).isInternalService = true;
-  (req as any).serviceName = 'internal-service';
+  (req as unknown).isInternalService = true;
+  (req as unknown).serviceName = 'internal-service';
 
   next();
 }

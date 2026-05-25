@@ -2,9 +2,25 @@
 // These models provide advanced ML-based predictions using weighted feature engineering
 // Replace with actual XGBoost/Prophet models in production
 
+import crypto from 'crypto';
 import { IUserProfile } from '../models/userProfile';
 import { ChurnRisk, CustomerTier } from '../types';
 import logger from '../utils/logger';
+
+/**
+ * Cryptographically secure random number generator
+ * Uses crypto.randomBytes for secure random values
+ */
+function secureRandom(): number {
+  return parseInt(crypto.randomBytes(4).toString('hex'), 16) / 0xFFFFFFFF;
+}
+
+/**
+ * Generate secure random number with bounded range
+ */
+function secureRandomRange(min: number, max: number): number {
+  return min + secureRandom() * (max - min);
+}
 
 /**
  * User features extracted for ML predictions
@@ -106,7 +122,7 @@ export interface HistoricalUser {
  */
 interface MLModel {
   name: string;
-  predict(user: UserFeatures, ...args: any[]): number | object | PropensityScore;
+  predict(user: UserFeatures, ...args: unknown[]): number | object | PropensityScore;
   train?(data: HistoricalUser[]): void;
 }
 
@@ -283,7 +299,7 @@ class NextPurchaseModel implements MLModel {
 
     // Estimated order value (with variance)
     const variance = 0.1;
-    const estimatedValue = user.avgOrderValue * (1 + (Math.random() * variance * 2 - variance));
+    const estimatedValue = user.avgOrderValue * (1 + (secureRandom() * variance * 2 - variance));
 
     // Calculate confidence based on data quality
     const confidence = this.calculateConfidence(user);

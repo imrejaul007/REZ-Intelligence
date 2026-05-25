@@ -7,7 +7,7 @@ import { getActionsByTrigger } from '../rules/action-registry';
 import { ActionRequest } from '../types/action-levels';
 import { handleDormantFinanceUser, handleEMIDueReminder } from '../handlers/financeHandler';
 
-type EventHandler = (data: any) => Promise<void>;
+type EventHandler = (data) => Promise<void>;
 
 interface Subscription {
   eventType: string;

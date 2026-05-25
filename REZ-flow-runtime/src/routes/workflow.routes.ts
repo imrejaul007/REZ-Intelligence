@@ -23,8 +23,8 @@ const RegisterWorkflowSchema = z.object({
     description: z.string().optional(),
     version: z.number().min(1).default(1),
     status: z.enum(['draft', 'published', 'archived']).default('draft'),
-    nodes: z.array(z.any()).min(1),
-    edges: z.array(z.any()).default([]),
+    nodes: z.array(z.unknown()).min(1),
+    edges: z.array(z.unknown()).default([]),
     entryNodeId: z.string().min(1),
     variables: z.record(z.unknown()).optional(),
     metadata: z.object({

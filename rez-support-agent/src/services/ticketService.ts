@@ -57,7 +57,7 @@ class TicketService {
       status: ticketData.status || TicketStatus.OPEN,
       priority: ticketData.priority || TicketPriority.MEDIUM,
       category: ticketData.category || TicketCategory.GENERAL,
-      source: ticketData.source || 'chat' as any,
+      source: ticketData.source || 'chat' as unknown,
       customerId: ticketData.customerId || 'anonymous',
       customerName: ticketData.customerName || 'Anonymous',
       customerEmail: ticketData.customerEmail || 'unknown@example.com',

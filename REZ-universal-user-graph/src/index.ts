@@ -35,8 +35,8 @@ const identityResolver = new IdentityResolver(userGraph);
 userGraph.connect().then(() => {
   if (userGraph.db) {
     careerGraphService.setDatabase(userGraph.db);
-    if ((userGraph as any).redis) {
-      careerGraphService.setRedis((userGraph as any).redis);
+    if ((userGraph as unknown).redis) {
+      careerGraphService.setRedis((userGraph as unknown).redis);
     }
     careerGraphService.createIndexes();
     logger.info('Career Graph service initialized');

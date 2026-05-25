@@ -11,8 +11,8 @@ export interface AuditEvent {
   ipAddress?: string;
   userAgent?: string;
   status: 'success' | 'failure' | 'warning';
-  details?: Record<string, any>;
-  metadata?: Record<string, any>;
+  details?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
   correlationId?: string;
 }
 
@@ -27,8 +27,8 @@ export interface CreateAuditEventInput {
   ipAddress?: string;
   userAgent?: string;
   status: 'success' | 'failure' | 'warning';
-  details?: Record<string, any>;
-  metadata?: Record<string, any>;
+  details?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
   correlationId?: string;
 }
 

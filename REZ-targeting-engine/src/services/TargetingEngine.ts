@@ -82,7 +82,7 @@ class TargetingEngine {
 
       if (segmentMatch.matched.length === 0) {
         result.eligible = false;
-        result.exclusion_reasons.push('User does not match any required segments');
+        result.exclusion_reasons.push('User does not match unknown required segments');
         return result;
       }
     }
@@ -150,7 +150,7 @@ class TargetingEngine {
   }
 
   /**
-   * Check if user belongs to any of the required segments
+   * Check if user belongs to unknown of the required segments
    */
   checkSegmentInclusion(userContext: UserContext, requiredSegments: string[]): {
     matched: string[];
@@ -174,7 +174,7 @@ class TargetingEngine {
       // Evaluate predefined segment criteria
       const isMatch = this.evaluateSegmentCriteria(
         userContext.attributes,
-        segmentDef.criteria as any
+        segmentDef.criteria as unknown
       );
 
       if (isMatch) {
@@ -187,7 +187,7 @@ class TargetingEngine {
   }
 
   /**
-   * Check if user belongs to any excluded segments
+   * Check if user belongs to unknown excluded segments
    */
   checkExclusions(userContext: UserContext, excludedSegments: string[]): {
     excluded: string[];
@@ -208,7 +208,7 @@ class TargetingEngine {
       // Evaluate predefined segment criteria
       const isMatch = this.evaluateSegmentCriteria(
         userContext.attributes,
-        segmentDef.criteria as any
+        segmentDef.criteria as unknown
       );
 
       if (isMatch) {
@@ -238,7 +238,7 @@ class TargetingEngine {
    * Evaluate a single condition
    */
   evaluateCondition(attributes: UserAttributes, condition: SegmentCondition): boolean {
-    const value = (attributes as any)[condition.field];
+    const value = (attributes as unknown)[condition.field];
 
     if (value === undefined || value === null) {
       return false;
@@ -320,7 +320,7 @@ class TargetingEngine {
   /**
    * Check custom conditions
    */
-  checkCustomConditions(attributes: UserAttributes, conditions: Record<string, any>): {
+  checkCustomConditions(attributes: UserAttributes, conditions: Record<string, unknown>): {
     pass: boolean;
     reason?: string;
     reasons: string[];
@@ -328,7 +328,7 @@ class TargetingEngine {
     const reasons: string[] = [];
 
     for (const [field, condition] of Object.entries(conditions)) {
-      const fieldValue = (attributes as any)[field];
+      const fieldValue = (attributes as unknown)[field];
       if (fieldValue === undefined) {
         return { pass: false, reason: `Unknown field: ${field}`, reasons: [] };
       }
@@ -402,14 +402,14 @@ class TargetingEngine {
     channel: string,
     campaignId?: string
   ): Promise<FrequencyCheckResult> {
-    const result = await (FrequencyCap as any).canImpress(userId, channel, campaignId);
+    const result = await (FrequencyCap as unknown).canImpress(userId, channel, campaignId);
     return {
       allowed: result.allowed,
       reason: result.reason,
       current_counts: {
-        daily: (result.current_counts as any).daily || 0,
-        weekly: (result.current_counts as any).weekly || 0,
-        lifetime: (result.current_counts as any).lifetime || 0
+        daily: (result.current_counts as unknown).daily || 0,
+        weekly: (result.current_counts as unknown).weekly || 0,
+        lifetime: (result.current_counts as unknown).lifetime || 0
       }
     };
   }
@@ -422,7 +422,7 @@ class TargetingEngine {
     channel: string,
     campaignId?: string
   ): Promise<void> {
-    await (FrequencyCap as any).recordImpression(userId, channel, campaignId);
+    await (FrequencyCap as unknown).recordImpression(userId, channel, campaignId);
   }
 
   /**
@@ -434,10 +434,10 @@ class TargetingEngine {
     dailyLimit: number,
     lifetimeLimit?: number
   ): Promise<BudgetCheckResult> {
-    const result = await (BudgetPacing as any).canSpend(campaignId, costPerImpression, dailyLimit, lifetimeLimit);
+    const result = await (BudgetPacing as unknown).canSpend(campaignId, costPerImpression, dailyLimit, lifetimeLimit);
 
-    const dailyRemaining = (result.remaining_budget as any).daily || 0;
-    const lifetimeRemaining = (result.remaining_budget as any).lifetime || Infinity;
+    const dailyRemaining = (result.remaining_budget as unknown).daily || 0;
+    const lifetimeRemaining = (result.remaining_budget as unknown).lifetime || Infinity;
 
     return {
       allowed: result.allowed,
@@ -457,7 +457,7 @@ class TargetingEngine {
     dailyLimit: number,
     lifetimeLimit?: number
   ): Promise<void> {
-    await (BudgetPacing as any).recordSpend(campaignId, amount, dailyLimit, lifetimeLimit);
+    await (BudgetPacing as unknown).recordSpend(campaignId, amount, dailyLimit, lifetimeLimit);
   }
 
   /**
@@ -468,7 +468,7 @@ class TargetingEngine {
     dailyLimit: number,
     currentHour?: number
   ): number {
-    return (BudgetPacing as any).calculatePacingAmount(pacingMode, dailyLimit, currentHour);
+    return (BudgetPacing as unknown).calculatePacingAmount(pacingMode, dailyLimit, currentHour);
   }
 
   /**

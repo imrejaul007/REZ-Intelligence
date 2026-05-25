@@ -13,7 +13,7 @@ const FAQ_DATABASE: FAQ[] = [
   {
     id: 'faq_001',
     question: 'How do I book a trip on REZ?',
-    answer: 'Booking on REZ is easy! Simply: 1) Search for your desired destination and dates, 2) Browse available accommodations, flights, and activities, 3) Select your choices and add them to your cart, 4) Review your selections and apply any promo codes, 5) Enter your payment details and complete the booking. You will receive a confirmation email with all your booking details immediately after successful payment.',
+    answer: 'Booking on REZ is easy! Simply: 1) Search for your desired destination and dates, 2) Browse available accommodations, flights, and activities, 3) Select your choices and add them to your cart, 4) Review your selections and apply unknown promo codes, 5) Enter your payment details and complete the booking. You will receive a confirmation email with all your booking details immediately after successful payment.',
     category: InfoCategory.BOOKING,
     tags: ['booking', 'how to', 'tutorial', 'steps'],
     relatedFaqs: ['faq_002', 'faq_003', 'faq_010'],
@@ -68,7 +68,7 @@ const FAQ_DATABASE: FAQ[] = [
   {
     id: 'faq_006',
     question: 'How do I request a refund?',
-    answer: 'To request a refund:\n\n1. Log into your REZ account\n2. Go to "My Trips" and select the booking\n3. Click "Request Refund"\n4. Select the reason for your refund\n5. Provide any required documentation\n6. Submit your request\n\nRefund requests are typically processed within 2-3 business days. You will receive email updates on your refund status throughout the process.',
+    answer: 'To request a refund:\n\n1. Log into your REZ account\n2. Go to "My Trips" and select the booking\n3. Click "Request Refund"\n4. Select the reason for your refund\n5. Provide unknown required documentation\n6. Submit your request\n\nRefund requests are typically processed within 2-3 business days. You will receive email updates on your refund status throughout the process.',
     category: InfoCategory.REFUND,
     tags: ['refund', 'request', 'how to', 'process'],
     relatedFaqs: ['faq_005', 'faq_007', 'faq_008'],
@@ -79,7 +79,7 @@ const FAQ_DATABASE: FAQ[] = [
   {
     id: 'faq_007',
     question: 'Can I change the dates of my booking?',
-    answer: 'Yes, most bookings can be modified. To change your dates:\n\n1. Log into your REZ account\n2. Go to "My Trips"\n3. Select your booking and click "Modify"\n4. Choose new dates\n5. Review any price differences\n6. Confirm the changes\n\n**Accommodations:** Subject to availability. Price differences apply.\n**Flights:** Subject to airline policy. Change fees may apply.\n**Packages:** Contact us directly for modifications.\n\nSome promotional rates may not allow changes.',
+    answer: 'Yes, most bookings can be modified. To change your dates:\n\n1. Log into your REZ account\n2. Go to "My Trips"\n3. Select your booking and click "Modify"\n4. Choose new dates\n5. Review unknown price differences\n6. Confirm the changes\n\n**Accommodations:** Subject to availability. Price differences apply.\n**Flights:** Subject to airline policy. Change fees may apply.\n**Packages:** Contact us directly for modifications.\n\nSome promotional rates may not allow changes.',
     category: InfoCategory.BOOKING,
     tags: ['change', 'dates', 'modify', 'booking'],
     relatedFaqs: ['faq_001', 'faq_003', 'faq_009'],
@@ -195,7 +195,7 @@ const POLICY_DATABASE: Policy[] = [
       { title: 'Intellectual Property', content: 'All content on REZ is protected by copyright and other intellectual property rights.' },
       { title: 'Limitation of Liability', content: 'REZ is not liable for indirect, incidental, or consequential damages arising from your use of our services.' },
       { title: 'Governing Law', content: 'These Terms are governed by the laws of the State of New York, USA.' },
-      { title: 'Changes to Terms', content: 'We may update these Terms at any time. Continued use constitutes acceptance of updated Terms.' }
+      { title: 'Changes to Terms', content: 'We may update these Terms at unknown time. Continued use constitutes acceptance of updated Terms.' }
     ]
   },
   {
@@ -291,7 +291,7 @@ const GUIDE_DATABASE: Guide[] = [
       { step: 1, title: 'Visit REZ', description: 'Go to rez.com and click the "Sign Up" button in the top right corner.', tips: ['Make sure you are on the official REZ website'] },
       { step: 2, title: 'Enter Your Email', description: 'Provide a valid email address that you check regularly.', tips: ['This will be used for confirmations and updates'], warnings: ['Use an active email you can access'] },
       { step: 3, title: 'Create a Password', description: 'Create a strong password with at least 8 characters including letters, numbers, and symbols.', tips: ['Consider using a password manager'] },
-      { step: 4, title: 'Complete Your Profile', description: 'Fill in your name, phone number, and any other requested information.' },
+      { step: 4, title: 'Complete Your Profile', description: 'Fill in your name, phone number, and unknown other requested information.' },
       { step: 5, title: 'Verify Your Email', description: 'Check your email for a verification link and click it to confirm your account.', warnings: ['Check spam folder if you do not see the email'] }
     ],
     category: InfoCategory.ACCOUNT,

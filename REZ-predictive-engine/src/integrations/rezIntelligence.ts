@@ -8,7 +8,7 @@ const SEGMENTS_URL = process.env.REALTIME_SEGMENTS_URL || 'http://localhost:4126
 const IDENTITY_URL = process.env.IDENTITY_URL || 'http://localhost:4050';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
-async function intelligenceRequest(url: string, options: RequestInit = {}): Promise<any> {
+async function intelligenceRequest(url: string, options: RequestInit = {}): Promise<unknown> {
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -37,7 +37,7 @@ export const signalIntegration = {
     userId: string,
     predictionType: string,
     score: number,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<void> {
     await intelligenceRequest(`${SIGNAL_URL}/api/signals`, {
       method: 'POST',
@@ -58,14 +58,14 @@ export const signalIntegration = {
   /**
    * Enrich prediction with user signals
    */
-  async getUserSignals(userId: string): Promise<any[]> {
+  async getUserSignals(userId: string): Promise<unknown[]> {
     return intelligenceRequest(`${SIGNAL_URL}/api/signals/${userId}`);
   },
 
   /**
    * Query behavioral signals
    */
-  async querySignals(filters: Record<string, any>): Promise<any[]> {
+  async querySignals(filters: Record<string, unknown>): Promise<unknown[]> {
     return intelligenceRequest(`${SIGNAL_URL}/api/signals/query`, {
       method: 'POST',
       body: JSON.stringify(filters),
@@ -128,7 +128,7 @@ export const identityIntegration = {
   /**
    * Get unified user profile from identity graph
    */
-  async getUnifiedProfile(userId: string): Promise<any> {
+  async getUnifiedProfile(userId: string): Promise<unknown> {
     return intelligenceRequest(`${IDENTITY_URL}/api/identity/${userId}/profile`);
   },
 
@@ -165,7 +165,7 @@ export const featureEnrichment = {
   ): Promise<Record<string, number | string | boolean>> {
     // Get user signals for the last 30 days
     const signals = await signalIntegration.getUserSignals(userId);
-    const recentSignals = signals.filter((s: any) => {
+    const recentSignals = signals.filter((s) => {
       const signalDate = new Date(s.timestamp);
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       return signalDate > thirtyDaysAgo;
@@ -197,7 +197,7 @@ export const featureEnrichment = {
   /**
    * Get segment-level features for batch predictions
    */
-  async getSegmentFeatures(segmentName: string): Promise<any> {
+  async getSegmentFeatures(segmentName: string): Promise<unknown> {
     return intelligenceRequest(`${SEGMENTS_URL}/api/segments/${segmentName}/features`);
   },
 };
@@ -211,10 +211,10 @@ export const predictionPipeline = {
    * Full prediction pipeline with enrichment
    */
   async runFullPipeline(userId: string): Promise<{
-    churn: any;
-    ltv: any;
-    revisit: any;
-    features: Record<string, any>;
+    churn;
+    ltv;
+    revisit;
+    features: Record<string, unknown>;
     segments: string[];
   }> {
     // Run enrichment first

@@ -3,36 +3,9 @@
  * Unified customer timeline type definitions
  */
 
-// Event source types - all possible sources of events
-export type EventSource =
-  | 'whatsapp'
-  | 'support'
-  | 'order'
-  | 'payment'
-  | 'loyalty'
-  | 'campaign'
-  | 'qr'
-  | 'ai'
-  | 'push'
-  | 'auth'
-  | 'catalog'
-  | 'search'
-  | 'delivery'
-  | 'booking'
-  | 'dooh';
+export type EventSource = string;
+export type EventCategory = string;
 
-// Event type categories
-export type EventCategory =
-  | 'commerce'
-  | 'engagement'
-  | 'identity'
-  | 'loyalty'
-  | 'intelligence'
-  | 'support'
-  | 'marketing'
-  | 'notification';
-
-// Core event type - represents any event in the system
 export interface TimelineEvent {
   id: string;
   userId: string;
@@ -40,8 +13,8 @@ export interface TimelineEvent {
   category: EventCategory;
   source: EventSource;
   timestamp: Date;
-  data: Record<string, unknown>;
-  metadata: EventMetadata;
+  data;
+  metadata;
 }
 
 export interface EventMetadata {
@@ -148,7 +121,7 @@ export interface ComputedPreferences {
   categories: CategoryPreference[];
   brands: BrandPreference[];
   priceRanges: PriceRangePreference[];
-  channels: ChannelPreference[];
+  channels: unknown[];
   timePatterns: TimePattern[];
 }
 
@@ -175,7 +148,7 @@ export interface PriceRangePreference {
 export interface ChannelPreference {
   channel: string;
   score: number;
-  interactionCount: number;
+  
 }
 
 export interface TimePattern {
@@ -206,15 +179,15 @@ export interface TimelineSummary {
 }
 
 export interface EventBreakdown {
-  byCategory: Record<EventCategory, number>;
-  bySource: Record<EventSource, number>;
+  byCategory: Record<string, number>;
+  bySource: Record<string, number>;
   last24Hours: number;
   last7Days: number;
   last30Days: number;
 }
 
 export interface CategoryStats {
-  category: EventCategory;
+  category: string;
   count: number;
   percentage: number;
 }
@@ -238,7 +211,7 @@ export interface ActivityMetrics {
     avgEventsPerDay: number;
     peakActivityHour: number;
     mostActiveDay: string;
-    categoryDistribution: Record<EventCategory, number>;
+    categoryDistribution: Record<string, number>;
     engagementScore: number;
     purchaseFrequency: number;
     averageSessionDuration: number;
@@ -249,7 +222,7 @@ export interface ActivityMetrics {
 export interface EventIngestionRequest {
   userId: string;
   type: string;
-  category: EventCategory;
+  category: string;
   source: EventSource;
   data: Record<string, unknown>;
   metadata?: Partial<EventMetadata>;
@@ -283,7 +256,7 @@ export interface TimelineQueryOptions {
   startDate?: Date;
   endDate?: Date;
   sources?: EventSource[];
-  categories?: EventCategory[];
+  categories?: string[];
   types?: string[];
   limit?: number;
   offset?: number;
@@ -317,7 +290,7 @@ export interface ApiResponse<T> {
 export interface NormalizedEvent {
   userId: string;
   type: string;
-  category: EventCategory;
+  category: string;
   source: EventSource;
   timestamp: Date;
   data: Record<string, unknown>;

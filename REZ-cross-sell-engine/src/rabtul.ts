@@ -20,7 +20,7 @@ export async function notifyUser(userId: string, title: string, body: string) {
   try { await axios.post(`${NOTIFY}/api/notifications/push`, { userId, title, body }, { headers: { 'X-Internal-Token': TOKEN } }); return { success: true }; }
   catch { return { success: false }; }
 }
-export async function publishEvent(type: string, data: Record<string, any>) {
+export async function publishEvent(type: string, data: Record<string, unknown>) {
   try { await axios.post(`${EVENT}/api/events/publish`, { type: `commerce.${type}`, source: 'REZ-cross-sell-engine', data }, { headers: { 'X-Internal-Token': TOKEN } }); return { success: true }; }
   catch { return { success: false }; }
 }

@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * Text-to-Speech Service
  * Converts text to audio using ElevenLabs or fallback
@@ -54,7 +56,7 @@ class TextToSpeechService {
 
     try {
       if (!this.initialized && !this.fallbackEndpoint) {
-        console.log('[TTS] Running in mock mode');
+        logger.info('[TTS] Running in mock mode');
         return this.mockSynthesize(text);
       }
 

@@ -221,7 +221,7 @@ export class ProfileUnification {
         await this.profileManager.updateProfile(source.id, {
           status: 'merged',
           attributes: { _mergedInto: primaryProfile.id }
-        } as any);
+        } as unknown);
       }
 
       // Link identities
@@ -267,7 +267,7 @@ export class ProfileUnification {
       // Update total LTV
       await this.profileManager.updateProfile(primaryProfile.id, {
         attributes: { lifetimeValue: totalLTV }
-      } as any);
+      } as unknown);
 
       this.logger.info('Profiles merged', {
         mergeId,

@@ -151,7 +151,7 @@ async function registerDefaultExpert(): Promise<void> {
     industry: 'general',
     version: '1.0.0',
     description: 'A base expert template for the REZ platform',
-    tone: (process.env.EXPERT_TONE as any) || 'professional',
+    tone: (process.env.EXPERT_TONE as unknown) || 'professional',
     expertiseLevel: 'intermediate',
     capabilities: [
       {
@@ -188,7 +188,7 @@ async function registerDefaultExpert(): Promise<void> {
   const { ExpertAgent } = await import('./base/ExpertAgent');
 
   class DefaultExpert extends ExpertAgent {
-    protected async processIntentCore(intent: any, context: any) {
+    protected async processIntentCore(intent, context) {
       return {
         content: `Hello! I am the REZ Base Expert. You asked: "${intent.input}". This is a template response - extend me to add real functionality.`,
         confidence: 'high' as const,
@@ -199,7 +199,7 @@ async function registerDefaultExpert(): Promise<void> {
       };
     }
 
-    protected canHandleCore(intent: any): boolean {
+    protected canHandleCore(intent): boolean {
       return true; // Accept all intents in base expert
     }
   }

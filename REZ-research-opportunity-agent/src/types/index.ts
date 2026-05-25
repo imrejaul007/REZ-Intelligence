@@ -65,7 +65,7 @@ export const OpportunitySchema = z.object({
   description: z.string().min(1),
   expectedImpact: z.nativeEnum(ExpectedImpact),
   confidence: z.number().min(0).max(100),
-  data: z.record(z.any()),
+  data: z.record(z.unknown()),
   recommendations: z.array(RecommendationSchema),
   createdAt: z.date(),
   status: z.nativeEnum(OpportunityStatus),

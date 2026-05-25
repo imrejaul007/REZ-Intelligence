@@ -130,7 +130,7 @@ class EmailPoller {
 
     try {
       // Search for unseen emails since last UID
-      const searchCriteria: any[] = ['UNSEEN'];
+      const searchCriteria: unknown[] = ['UNSEEN'];
       if (this.lastUid > 0) {
         searchCriteria.push(['UID', `${this.lastUid + 1}:*`]);
       }
@@ -165,7 +165,7 @@ class EmailPoller {
 
           msg.on('body', async (stream) => {
             try {
-              const parsed = await simpleParser(stream as any);
+              const parsed = await simpleParser(stream as unknown);
               const email = this.convertToEmailMessage(parsed, uid);
 
               logger.info('[EmailPoller] Processing email', {
@@ -201,14 +201,14 @@ class EmailPoller {
   /**
    * Convert mailparser parsed email to EmailMessage
    */
-  private convertToEmailMessage(parsed: any, uid?: number | null): EmailMessage {
+  private convertToEmailMessage(parsed, uid?: number | null): EmailMessage {
     return {
       from: parsed.from?.value?.[0]?.text || parsed.from?.text || '',
       to: parsed.to?.value?.[0]?.text || parsed.to?.text || '',
       subject: parsed.subject || '',
       body: parsed.text || parsed.textAsHtml || '',
       html: parsed.html || undefined,
-      attachments: parsed.attachments?.map((a: any) => a.filename) || [],
+      attachments: parsed.attachments?.map((a) => a.filename) || [],
       date: parsed.date?.toISOString() || new Date().toISOString(),
       messageId: parsed.messageId || `imap-${uid || Date.now()}`,
       inReplyTo: parsed.inReplyTo || undefined,

@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 import 'dotenv/config';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -18,7 +20,7 @@ interface Event {
   source: string;
   userId?: string;
   merchantId?: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   timestamp: string;
   status: 'published' | 'processing' | 'processed' | 'failed';
 }
@@ -172,7 +174,7 @@ async function handleListEventTypes(): Promise<string> {
   }, null, 2);
 }
 
-async function handleGetEvents(args: any): Promise<string> {
+async function handleGetEvents(args): Promise<string> {
   // Try real API first if enabled
   if (USE_REAL_API) {
     const params = new URLSearchParams();
@@ -230,7 +232,7 @@ async function handleGetEvents(args: any): Promise<string> {
   }, null, 2);
 }
 
-async function handlePublishEvent(args: any): Promise<string> {
+async function handlePublishEvent(args): Promise<string> {
   const event: Event = {
     id: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     type: args.type,
@@ -269,7 +271,7 @@ async function handlePublishEvent(args: any): Promise<string> {
   }, null, 2);
 }
 
-async function handleGetEventFlow(args: any): Promise<string> {
+async function handleGetEventFlow(args): Promise<string> {
   // Try real API first if enabled
   if (USE_REAL_API) {
     const result = await fetchFromEventBus<{ events: Event[] }>(
@@ -296,7 +298,7 @@ async function handleGetEventFlow(args: any): Promise<string> {
   // Fall back to local event store
   const entityField = args.entityType + 'Id';
   const events = eventStore
-    .filter(e => (e as any)[entityField] === args.entityId)
+    .filter(e => (e as unknown)[entityField] === args.entityId)
     .filter(e => {
       const eventTime = new Date(e.timestamp).getTime();
       const hoursAgo = Date.now() - (args.hours * 60 * 60 * 1000);
@@ -328,7 +330,7 @@ function summarizeEvent(event: Event): string {
   }
 }
 
-async function handleGetDLQEvents(args: any): Promise<string> {
+async function handleGetDLQEvents(args): Promise<string> {
   // Try real API first if enabled
   if (USE_REAL_API) {
     const result = await fetchFromEventBus<{ events: DLQEvent[] }>(`/api/events/dlq?limit=${args.limit || 50}`);
@@ -359,7 +361,7 @@ async function handleGetDLQEvents(args: any): Promise<string> {
   }, null, 2);
 }
 
-async function handleRetryDLQEvent(args: any): Promise<string> {
+async function handleRetryDLQEvent(args): Promise<string> {
   // Try real API first if enabled
   if (USE_REAL_API) {
     const result = await fetchFromEventBus<Event>(`/api/events/dlq/${args.eventId}/retry`, {
@@ -392,7 +394,7 @@ async function handleRetryDLQEvent(args: any): Promise<string> {
   }, null, 2);
 }
 
-async function handleGetEventStats(args: any): Promise<string> {
+async function handleGetEventStats(args): Promise<string> {
   // Try real API first if enabled
   if (USE_REAL_API) {
     const result = await fetchFromEventBus<{ totalEvents: number; byType: Record<string, number>; byStatus: Record<string, number> }>(
@@ -497,9 +499,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function main() {
-  console.error('REZ Event Bus MCP running on stdio');
-  console.error(`Event Bus URL: ${EVENT_BUS_URL}`);
-  console.error(`Real API: ${USE_REAL_API ? 'ENABLED' : 'DISABLED (set USE_REAL_EVENT_BUS=true to enable)'}`);
+  logger.error('REZ Event Bus MCP running on stdio');
+  logger.error(`Event Bus URL: ${EVENT_BUS_URL}`);
+  logger.error(`Real API: ${USE_REAL_API ? 'ENABLED' : 'DISABLED (set USE_REAL_EVENT_BUS=true to enable)'}`);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);

@@ -217,7 +217,7 @@ export class InventoryModule {
       );
       this.cache.delete(`inventory:${merchantId}`);
       return { success: true, reserved_ids: response.data.reserved_ids };
-    } catch (error: any) {
+    } catch (error) {
       return {
         success: false,
         error: error.response?.data?.message || 'Reservation failed',

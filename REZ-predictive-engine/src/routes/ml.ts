@@ -8,6 +8,17 @@ import {
   ltvToTier,
   UserFeatures
 } from '../services/mlModels';
+import {
+  predictChurnML,
+  predictLTVML,
+  predictNextPurchaseML,
+  predictBatchChurnML,
+  predictBatchLTVML,
+  getMLServiceStatus,
+  MLChurnResult,
+  ML_LTVResult,
+  MLNextPurchaseResult
+} from '../services/mlService';
 import { UserProfile } from '../models/userProfile';
 import { NotFoundError } from '../middleware/errorHandler';
 import logger from '../utils/logger';
@@ -35,7 +46,7 @@ const batchPropensitySchema = z.object({
 const segmentSchema = z.enum(['at-risk', 'champion', 'loyal', 'new', 'standard']);
 
 // Helper function to convert user profile to features
-function convertToFeatures(user: any): UserFeatures {
+function convertToFeatures(user): UserFeatures {
   return {
     daysSinceOrder: user.lastOrderDate
       ? Math.floor((Date.now() - new Date(user.lastOrderDate).getTime()) / (1000 * 60 * 60 * 24))
@@ -60,6 +71,7 @@ function convertToFeatures(user: any): UserFeatures {
 /**
  * GET /ml/:userId/churn
  * ML-based churn prediction for a single user
+ * Tries ML service first, falls back to RFM heuristics
  */
 router.get('/:userId/churn', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -73,26 +85,33 @@ router.get('/:userId/churn', async (req: Request, res: Response, next: NextFunct
     }
 
     const features = convertToFeatures(user);
-    const churnScore = mlModels.churn.predict(features);
-    const riskLevel = scoreToRiskLevel(churnScore);
+
+    // Try ML service first, fallback to RFM
+    const mlResult = await predictChurnML(features);
+
+    // Convert to internal risk level format
+    const riskMap: Record<string, 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'> = {
+      'high': 'HIGH',
+      'medium': 'MEDIUM',
+      'low': 'LOW'
+    };
 
     res.json({
       success: true,
       data: {
         userId,
-        model: mlModels.churn.name,
-        score: Math.round(churnScore),
-        risk: riskLevel,
-        confidence: 0.82,
-        factors: [
-          { name: 'Days Since Order', impact: 0.3, value: `${features.daysSinceOrder} days` },
-          { name: 'Order Frequency', impact: 0.25, value: `${features.orderFrequency} orders` },
-          { name: 'Engagement', impact: 0.2, value: `${features.engagementScore}/100` }
-        ],
+        model: mlResult.method === 'ml' ? 'churn-xgboost-ml' : 'churn-xgboost-rfm',
+        method: mlResult.method,
+        score: Math.round(mlResult.churn_probability * 100),
+        probability: mlResult.churn_probability,
+        risk: riskMap[mlResult.risk] || 'MEDIUM',
+        willChurn: mlResult.will_churn,
+        confidence: mlResult.confidence,
+        factors: mlResult.factors,
         timestamp: new Date().toISOString()
       },
       timestamp: new Date().toISOString(),
-      requestId: (req as any).requestId
+      requestId: (req as unknown).requestId
     });
   } catch (error) {
     next(error);
@@ -102,6 +121,7 @@ router.get('/:userId/churn', async (req: Request, res: Response, next: NextFunct
 /**
  * GET /ml/:userId/ltv
  * ML-based LTV prediction for a single user
+ * Tries ML service first, falls back to RFM heuristics
  */
 router.get('/:userId/ltv', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -115,20 +135,37 @@ router.get('/:userId/ltv', async (req: Request, res: Response, next: NextFunctio
     }
 
     const features = convertToFeatures(user);
-    const ltvPrediction = mlModels.ltv.predict(features);
-    const tier = ltvToTier(ltvPrediction.ltv365);
+
+    // Try ML service first, fallback to RFM
+    const mlResult = await predictLTVML(features);
+
+    // Convert segment to tier
+    const tierMap: Record<string, 'PLATINUM' | 'GOLD' | 'SILVER' | 'BRONZE'> = {
+      'premium': 'PLATINUM',
+      'high': 'GOLD',
+      'medium': 'SILVER',
+      'low': 'BRONZE'
+    };
 
     res.json({
       success: true,
       data: {
         userId,
-        model: mlModels.ltv.name,
-        ltv: ltvPrediction,
-        tier,
+        model: mlResult.method === 'ml' ? 'ltv-prophet-ml' : 'ltv-prophet-rfm',
+        method: mlResult.method,
+        ltv: {
+          ltv30: mlResult.ltv30,
+          ltv90: mlResult.ltv90,
+          ltv365: mlResult.ltv365,
+        },
+        tier: tierMap[mlResult.ltv_segment] || 'BRONZE',
+        segment: mlResult.ltv_segment,
+        confidence: mlResult.confidence,
+        currency: mlResult.currency,
         timestamp: new Date().toISOString()
       },
       timestamp: new Date().toISOString(),
-      requestId: (req as any).requestId
+      requestId: (req as unknown).requestId
     });
   } catch (error) {
     next(error);
@@ -138,6 +175,7 @@ router.get('/:userId/ltv', async (req: Request, res: Response, next: NextFunctio
 /**
  * GET /ml/:userId/next-purchase
  * ML-based next purchase prediction
+ * Tries ML service first, falls back to heuristics
  */
 router.get('/:userId/next-purchase', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -151,18 +189,25 @@ router.get('/:userId/next-purchase', async (req: Request, res: Response, next: N
     }
 
     const features = convertToFeatures(user);
-    const prediction = mlModels.nextPurchase.predict(features);
+
+    // Try ML service first, fallback to heuristics
+    const prediction = await predictNextPurchaseML(features);
 
     res.json({
       success: true,
       data: {
         userId,
-        model: mlModels.nextPurchase.name,
-        prediction,
+        model: prediction.method === 'ml' ? 'next-purchase-gradient-boost-ml' : 'next-purchase-gradient-boost-heuristic',
+        method: prediction.method,
+        daysUntilNextPurchase: prediction.days_until_next_purchase,
+        predictedCategories: prediction.predicted_categories,
+        estimatedOrderValue: prediction.estimated_order_value,
+        confidence: prediction.confidence,
+        optimalChannel: prediction.optimal_channel,
         timestamp: new Date().toISOString()
       },
       timestamp: new Date().toISOString(),
-      requestId: (req as any).requestId
+      requestId: (req as unknown).requestId
     });
   } catch (error) {
     next(error);
@@ -197,7 +242,7 @@ router.get('/:userId/propensity/:action', async (req: Request, res: Response, ne
         timestamp: new Date().toISOString()
       },
       timestamp: new Date().toISOString(),
-      requestId: (req as any).requestId
+      requestId: (req as unknown).requestId
     });
   } catch (error) {
     next(error);
@@ -231,7 +276,7 @@ router.get('/:userId/propensity', async (req: Request, res: Response, next: Next
         timestamp: new Date().toISOString()
       },
       timestamp: new Date().toISOString(),
-      requestId: (req as any).requestId
+      requestId: (req as unknown).requestId
     });
   } catch (error) {
     next(error);
@@ -266,7 +311,7 @@ router.get('/:userId/segment', async (req: Request, res: Response, next: NextFun
         timestamp: new Date().toISOString()
       },
       timestamp: new Date().toISOString(),
-      requestId: (req as any).requestId
+      requestId: (req as unknown).requestId
     });
   } catch (error) {
     next(error);
@@ -276,6 +321,7 @@ router.get('/:userId/segment', async (req: Request, res: Response, next: NextFun
 /**
  * POST /ml/batch/churn
  * Batch churn predictions for multiple users
+ * Uses ML service for bulk processing with RFM fallback
  */
 router.post('/batch/churn', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -284,39 +330,63 @@ router.post('/batch/churn', async (req: Request, res: Response, next: NextFuncti
     logger.info('ML batch churn prediction requested', { userCount: userIds.length });
 
     const jobId = uuidv4();
-    const results: Array<{ userId: string; score: number; risk: string; error?: string }> = [];
 
-    for (const userId of userIds) {
-      try {
-        const user = await UserProfile.findOne({ userId });
-        if (!user) {
-          results.push({ userId, score: 50, risk: 'MEDIUM', error: 'User not found' });
-          continue;
-        }
+    // Fetch all users in one query
+    const users = await UserProfile.find({ userId: { $in: userIds } }).lean();
+    const userMap = new Map(users.map(u => [u.userId, u]));
 
-        const features = convertToFeatures(user);
-        const score = mlModels.churn.predict(features);
-        const risk = scoreToRiskLevel(score);
-        results.push({ userId, score: Math.round(score), risk });
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-        results.push({ userId, score: 50, risk: 'MEDIUM', error: errorMsg });
+    const features = userIds.map(userId => {
+      const user = userMap.get(userId);
+      return user ? convertToFeatures(user) : null;
+    });
+
+    // Get ML predictions (batched)
+    const validFeatures = features.filter((f): f is UserFeatures => f !== null);
+    const mlResults = await predictBatchChurnML(validFeatures);
+
+    // Build results array
+    const results: Array<{ userId: string; score: number; risk: string; method?: string; error?: string }> = [];
+    let mlResultIdx = 0;
+
+    for (let i = 0; i < userIds.length; i++) {
+      const userId = userIds[i];
+      const user = userMap.get(userId);
+
+      if (!user || !features[i]) {
+        results.push({ userId, score: 50, risk: 'MEDIUM', error: 'User not found' });
+        continue;
       }
+
+      const mlResult = mlResults[mlResultIdx++];
+      const riskMap: Record<string, string> = {
+        'high': 'HIGH',
+        'medium': 'MEDIUM',
+        'low': 'LOW'
+      };
+
+      results.push({
+        userId,
+        score: Math.round(mlResult.churn_probability * 100),
+        risk: riskMap[mlResult.risk] || 'MEDIUM',
+        method: mlResult.method
+      });
     }
 
     res.json({
       success: true,
       data: {
         jobId,
-        model: mlModels.churn.name,
+        model: 'churn-xgboost-ml',
         total: userIds.length,
         completed: results.filter(r => !r.error).length,
         failed: results.filter(r => r.error).length,
+        mlUsed: results.filter(r => r.method === 'ml').length,
+        fallbackUsed: results.filter(r => r.method === 'rfm_fallback').length,
         results,
         timestamp: new Date().toISOString()
       },
       timestamp: new Date().toISOString(),
-      requestId: (req as any).requestId
+      requestId: (req as unknown).requestId
     });
   } catch (error) {
     next(error);
@@ -326,6 +396,7 @@ router.post('/batch/churn', async (req: Request, res: Response, next: NextFuncti
 /**
  * POST /ml/batch/ltv
  * Batch LTV predictions for multiple users
+ * Uses ML service for bulk processing with RFM fallback
  */
 router.post('/batch/ltv', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -334,39 +405,65 @@ router.post('/batch/ltv', async (req: Request, res: Response, next: NextFunction
     logger.info('ML batch LTV prediction requested', { userCount: userIds.length });
 
     const jobId = uuidv4();
-    const results: Array<{ userId: string; ltv365: number; tier: string; error?: string }> = [];
 
-    for (const userId of userIds) {
-      try {
-        const user = await UserProfile.findOne({ userId });
-        if (!user) {
-          results.push({ userId, ltv365: 0, tier: 'BRONZE', error: 'User not found' });
-          continue;
-        }
+    // Fetch all users in one query
+    const users = await UserProfile.find({ userId: { $in: userIds } }).lean();
+    const userMap = new Map(users.map(u => [u.userId, u]));
 
-        const features = convertToFeatures(user);
-        const prediction = mlModels.ltv.predict(features);
-        const tier = ltvToTier(prediction.ltv365);
-        results.push({ userId, ltv365: Math.round(prediction.ltv365), tier });
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-        results.push({ userId, ltv365: 0, tier: 'BRONZE', error: errorMsg });
+    const features = userIds.map(userId => {
+      const user = userMap.get(userId);
+      return user ? convertToFeatures(user) : null;
+    });
+
+    // Get ML predictions (batched)
+    const validFeatures = features.filter((f): f is UserFeatures => f !== null);
+    const mlResults = await predictBatchLTVML(validFeatures);
+
+    // Build results array
+    const results: Array<{ userId: string; ltv365: number; tier: string; method?: string; error?: string }> = [];
+    let mlResultIdx = 0;
+
+    const tierMap: Record<string, string> = {
+      'premium': 'PLATINUM',
+      'high': 'GOLD',
+      'medium': 'SILVER',
+      'low': 'BRONZE'
+    };
+
+    for (let i = 0; i < userIds.length; i++) {
+      const userId = userIds[i];
+      const user = userMap.get(userId);
+
+      if (!user || !features[i]) {
+        results.push({ userId, ltv365: 0, tier: 'BRONZE', error: 'User not found' });
+        continue;
       }
+
+      const mlResult = mlResults[mlResultIdx++];
+
+      results.push({
+        userId,
+        ltv365: mlResult.ltv365,
+        tier: tierMap[mlResult.ltv_segment] || 'BRONZE',
+        method: mlResult.method
+      });
     }
 
     res.json({
       success: true,
       data: {
         jobId,
-        model: mlModels.ltv.name,
+        model: 'ltv-prophet-ml',
         total: userIds.length,
         completed: results.filter(r => !r.error).length,
         failed: results.filter(r => r.error).length,
+        mlUsed: results.filter(r => r.method === 'ml').length,
+        fallbackUsed: results.filter(r => r.method === 'rfm_fallback').length,
         results,
         timestamp: new Date().toISOString()
       },
       timestamp: new Date().toISOString(),
-      requestId: (req as any).requestId
+      requestId: (req as unknown).requestId
     });
   } catch (error) {
     next(error);
@@ -431,7 +528,7 @@ router.post('/batch/propensity', async (req: Request, res: Response, next: NextF
         timestamp: new Date().toISOString()
       },
       timestamp: new Date().toISOString(),
-      requestId: (req as any).requestId
+      requestId: (req as unknown).requestId
     });
   } catch (error) {
     next(error);
@@ -482,7 +579,7 @@ router.get('/segments/:segment', async (req: Request, res: Response, next: NextF
         timestamp: new Date().toISOString()
       },
       timestamp: new Date().toISOString(),
-      requestId: (req as any).requestId
+      requestId: (req as unknown).requestId
     });
   } catch (error) {
     next(error);
@@ -493,10 +590,19 @@ router.get('/segments/:segment', async (req: Request, res: Response, next: NextF
  * GET /ml/models
  * Get available ML models and their capabilities
  */
-router.get('/models', (_req: Request, res: Response) => {
+router.get('/models', async (_req: Request, res: Response) => {
+  // Get ML service status
+  const mlStatus = await getMLServiceStatus();
+
   res.json({
     success: true,
     data: {
+      mlService: {
+        available: mlStatus.available,
+        url: mlStatus.url,
+        fallbackMode: mlStatus.fallbackMode,
+        endpoints: mlStatus.endpoints
+      },
       models: [
         {
           name: mlModels.churn.name,

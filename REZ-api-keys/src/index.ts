@@ -1,4 +1,5 @@
-import express, { Express, Request, Response, NextFunction } from 'express';
+import express, { Express, Request, Response, NextFunction } import logger from './utils/logger';
+import from 'express';
 import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 import crypto from 'crypto';
 import helmet from 'helmet';
@@ -552,7 +553,7 @@ async function start(): Promise<void> {
     logger.info('Connected to MongoDB');
 
     app.listen(PORT, () => {
-      console.log(`API Key Service running on port ${PORT}`);
+      logger.info(`API Key Service running on port ${PORT}`);
     });
   } catch (err) {
     const error = err as Error;

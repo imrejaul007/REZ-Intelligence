@@ -27,7 +27,7 @@ roiRouter.get('/', async (req: Request, res: Response) => {
     );
 
     res.json({ success: true, data: roi });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('ROI fetch failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -41,7 +41,7 @@ roiRouter.get('/summary', async (req: Request, res: Response) => {
   try {
     const { merchantId, startDate, endDate } = req.query;
 
-    const match: any = {};
+    const match: unknown = {};
     if (merchantId) match.merchantId = merchantId;
     if (startDate || endDate) {
       match.date = {};
@@ -67,7 +67,7 @@ roiRouter.get('/summary', async (req: Request, res: Response) => {
         }
       }
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('ROI summary failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }

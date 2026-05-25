@@ -453,23 +453,14 @@ class DemandSignalAgent extends BaseAgent {
 
       demandSignals = { ...demandSignals, trends };
     } catch (err) {
-      logger.warn('DemandSignalAgent: Using simulated fallback - DATABASE UNAVAILABLE', { error: (err as Error).message });
-      demandSignals = {
-        timestamp: new Date(),
-        totalDemand: seededInt(500, 1000),
-        byCategory: {
-          restaurant: seededInt(200, 500),
-          hotel: seededInt(50, 200),
-          retail: seededInt(100, 300)
-        },
-        trends: [
-          { category: 'biryani', trend: 'up', velocity: 0.8 },
-          { category: 'pizza', trend: 'stable', velocity: 0.5 }
-        ],
-        merchants: [],
-        source: 'simulated_fallback',
-        warning: '⚠️ SIMULATED DATA - MongoDB unavailable. This is NOT real demand data.'
-      };
+      // CRITICAL: Do NOT silently fall back to fake data
+      logger.error('DemandSignalAgent: CRITICAL - Failed to fetch real demand data', {
+        error: (err as Error).message,
+        timestamp: new Date().toISOString(),
+      });
+
+      // Throw error so upstream can handle gracefully
+      throw new Error('DEMAND_SIGNALS_UNAVAILABLE: Unable to retrieve real demand signals. Service degraded.');
     }
 
     return demandSignals;

@@ -192,13 +192,13 @@ router.get('/tickets', validateRequest(ticketFilterSchema), async (req: Request,
   const filter: TicketFilter = {};
 
   if (req.query.status) {
-    filter.status = Array.isArray(req.query.status) ? req.query.status as any : [req.query.status as any];
+    filter.status = Array.isArray(req.query.status) ? req.query.status as unknown : [req.query.status as unknown];
   }
   if (req.query.priority) {
-    filter.priority = Array.isArray(req.query.priority) ? req.query.priority as any : [req.query.priority as any];
+    filter.priority = Array.isArray(req.query.priority) ? req.query.priority as unknown : [req.query.priority as unknown];
   }
   if (req.query.category) {
-    filter.category = Array.isArray(req.query.category) ? req.query.category as any : [req.query.category as any];
+    filter.category = Array.isArray(req.query.category) ? req.query.category as unknown : [req.query.category as unknown];
   }
   if (req.query.customerId) filter.customerId = req.query.customerId as string;
   if (req.query.assignedTo) filter.assignedTo = req.query.assignedTo as string;

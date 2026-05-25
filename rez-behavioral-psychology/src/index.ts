@@ -123,7 +123,7 @@ const UserPsychologyModel = mongoose.model<UserPsychology>('UserPsychology', psy
 // Scoring Algorithms
 // ============================================
 
-function calculateCashbackSensitivity(events: any[]): number {
+function calculateCashbackSensitivity(events: unknown[]): number {
   const cashbackEvents = events.filter(e => e.eventType.includes('cashback'));
   const discountEvents = events.filter(e => e.eventType.includes('discount'));
 
@@ -135,7 +135,7 @@ function calculateCashbackSensitivity(events: any[]): number {
   ));
 }
 
-function calculateConveniencePreference(events: any[]): number {
+function calculateConveniencePreference(events: unknown[]): number {
   const convenienceEvents = events.filter(e => e.eventType.includes('convenience'));
   const fastDeliveryEvents = events.filter(e => e.eventType.includes('fast'));
 
@@ -143,7 +143,7 @@ function calculateConveniencePreference(events: any[]): number {
   return Math.min(100, Math.round(rate * 80 + fastDeliveryEvents.length * 10));
 }
 
-function calculateLuxuryAffinity(events: any[]): number {
+function calculateLuxuryAffinity(events: unknown[]): number {
   const premiumEvents = events.filter(e => e.eventType.includes('premium'));
   const highValueEvents = events.filter(e => (e.amount || 0) > 500);
 
@@ -153,7 +153,7 @@ function calculateLuxuryAffinity(events: any[]): number {
   ));
 }
 
-function calculateImpulseScore(events: any[]): number {
+function calculateImpulseScore(events: unknown[]): number {
   const lateNightEvents = events.filter(e => {
     const hour = new Date(e.timestamp).getHours();
     return hour >= 21 || hour <= 5;

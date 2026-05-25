@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 import { AdTemplate, IAdTemplate } from '../models';
 import { AdTemplate as AdTemplateType, TemplateContent, TemplateDesign } from '../types';
 import { CHANNEL_CONFIG } from '../config/constants';
@@ -61,7 +63,7 @@ class AdTemplateService {
    * Update template
    */
   async updateTemplate(templateId: string, input: UpdateTemplateInput): Promise<IAdTemplate | null> {
-    const updateData: any = {};
+    const updateData: unknown = {};
 
     if (input.name) updateData.name = input.name;
     if (input.content) {
@@ -99,7 +101,7 @@ class AdTemplateService {
     limit?: number;
     offset?: number;
   }): Promise<{ templates: IAdTemplate[]; total: number }> {
-    const filter: any = {};
+    const filter: unknown = {};
 
     if (options.channel) filter.channel = options.channel;
     if (options.is_active !== undefined) filter.is_active = options.is_active;
@@ -148,7 +150,7 @@ class AdTemplateService {
       preferred_categories?: string[];
       last_order_item?: string;
       loyalty_tier?: string;
-      [key: string]: any;
+      [key: string];
     }
   ): Promise<TemplateContent | null> {
     const template = await this.getTemplate(templateId);
@@ -182,7 +184,7 @@ class AdTemplateService {
     channel: AdTemplateType['channel']
   ): Promise<{
     success: boolean;
-    rendered: any;
+    rendered;
     errors?: string[];
   }> {
     const template = await this.getTemplate(templateId);
@@ -208,7 +210,7 @@ class AdTemplateService {
     }
 
     // Render based on channel
-    let rendered: any = {
+    let rendered: unknown = {
       template_id: template.template_id,
       channel,
       content: { ...template.content },
@@ -309,7 +311,7 @@ class AdTemplateService {
 
     // Channel-specific validation
     if (channel === 'sms' && content.body.length > 160) {
-      console.warn(`SMS body exceeds recommended 160 character limit (${content.body.length} characters)`);
+      logger.warn(`SMS body exceeds recommended 160 character limit (${content.body.length} characters)`);
     }
   }
 
@@ -330,7 +332,7 @@ class AdTemplateService {
   /**
    * Interpolate variables in content
    */
-  private interpolateVariables(text: string, data: Record<string, any>): string {
+  private interpolateVariables(text: string, data: Record<string, unknown>): string {
     return text.replace(/\{\{(\w+)\}\}/g, (match, key) => {
       return data[key] !== undefined ? String(data[key]) : match;
     });

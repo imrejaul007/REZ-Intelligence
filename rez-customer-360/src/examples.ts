@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * Customer 360 Usage Examples
  * Demonstrates all major features of the Customer 360 module
@@ -30,7 +32,7 @@ async function basicUsageExample() {
   });
 
   customer360.on('ltv:recalculated', (ltv) => {
-    console.log(`LTV recalculated: $${ltv.totalRevenue.toFixed(2)}`);
+    logger.info(`LTV recalculated: $${ltv.totalRevenue.toFixed(2)}`);
   });
 
   // Create a unified profile
@@ -185,7 +187,7 @@ async function basicUsageExample() {
   const supportInteractions = customer360.getInteractionHistory({
     type: 'support_ticket',
   });
-  console.log(`Support tickets: ${supportInteractions.total}`);
+  logger.info(`Support tickets: ${supportInteractions.total}`);
 
   // Get interaction stats
   const stats = customer360.getInteractionStats();
@@ -258,7 +260,7 @@ async function analyticsExample() {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   const recentInteractions = customer360.getInteractionsByDateRange(thirtyDaysAgo, new Date());
-  console.log(`Interactions in last 30 days: ${recentInteractions.length}`);
+  logger.info(`Interactions in last 30 days: ${recentInteractions.length}`);
 
   // Get channel breakdown
   const allStats = customer360.getInteractionStats();
@@ -277,7 +279,7 @@ async function analyticsExample() {
   }
 
   const expensiveOrders = customer360.getTransactions({ minAmount: 150 });
-  console.log(`Orders over $150: ${expensiveOrders.total}`);
+  logger.info(`Orders over $150: ${expensiveOrders.total}`);
 
   return customer360;
 }
@@ -328,7 +330,7 @@ async function eventsExample() {
     status: 'completed',
   });
 
-  console.log(`Total events triggered: ${eventLog.length}`);
+  logger.info(`Total events triggered: ${eventLog.length}`);
   console.log('Event types:', eventLog.map((e) => e.event).join(', '));
 
   return customer360;
@@ -339,16 +341,16 @@ async function eventsExample() {
 // ============================================================================
 
 async function main() {
-  console.log('=== Customer 360 Basic Usage ===');
+  logger.info('=== Customer 360 Basic Usage ===');
   await basicUsageExample();
 
-  console.log('\n=== Analytics Example ===');
+  logger.info('\n=== Analytics Example ===');
   await analyticsExample();
 
-  console.log('\n=== Events Example ===');
+  logger.info('\n=== Events Example ===');
   await eventsExample();
 
-  console.log('\n=== All examples completed successfully ===');
+  logger.info('\n=== All examples completed successfully ===');
 }
 
 main().catch(console.error);

@@ -40,7 +40,7 @@ interface Variant {
   experiment_id: string;
   name: string;
   description: string;
-  config: any; // The actual variant content
+  config; // The actual variant content
   impressions: number;
   conversions: number;
   conversions_value: number;
@@ -469,7 +469,7 @@ function calculateStats(experiment: Experiment) {
   return { variants: stats };
 }
 
-function determineWinner(stats: any): { variant_id: string; lift: number } | null {
+function determineWinner(stats): { variant_id: string; lift: number } | null {
   if (!stats.variants || stats.variants.length < 2) return null;
 
   const control = stats.variants[0];
@@ -492,7 +492,7 @@ function determineWinner(stats: any): { variant_id: string; lift: number } | nul
   };
 }
 
-function getRecommendations(stats: any, experiment: Experiment): string[] {
+function getRecommendations(stats, experiment: Experiment): string[] {
   const recommendations: string[] = [];
 
   if (stats.running && stats.variants) {
@@ -536,7 +536,7 @@ function calculatePValue(zScore: number): number {
   return Math.exp(-0.5 * zScore * zScore) / Math.sqrt(2 * Math.PI);
 }
 
-async function publishEvent(eventType: string, data: any): Promise<void> {
+async function publishEvent(eventType: string, data): Promise<void> {
   try {
     await axios.post(`${EVENT_BUS_URL}/events`, {
       event_type: eventType,

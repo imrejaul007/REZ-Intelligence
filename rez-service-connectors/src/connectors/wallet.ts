@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * Wallet Service Connector
  *
@@ -274,7 +276,7 @@ function getInternalToken(): string {
     const tokens = JSON.parse(tokensJson);
     return tokens.orchestrator || tokens.wallet || '';
   } catch {
-    console.warn('[WalletConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+    logger.warn('[WalletConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
     return '';
   }
 }

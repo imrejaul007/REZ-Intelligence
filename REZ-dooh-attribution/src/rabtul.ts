@@ -15,7 +15,7 @@ export async function addCoins(userId: string, amount: number, reason: string) {
   try { await axios.post(`${WALLET}/api/wallet/add`, { userId, amount, reason }, { headers: { 'Content-Type': 'application/json', 'X-Internal-Token': TOKEN } }); return { success: true }; }
   catch { return { success: false }; }
 }
-export async function publishEvent(type: string, data: Record<string, any>) {
+export async function publishEvent(type: string, data: Record<string, unknown>) {
   try { await axios.post(`${EVENT}/api/events/publish`, { type: `dooh.${type}`, source: 'REZ-dooh-attribution', data }, { headers: { 'X-Internal-Token': TOKEN } }); return { success: true }; }
   catch { return { success: false }; }
 }

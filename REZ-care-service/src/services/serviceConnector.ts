@@ -78,7 +78,7 @@ const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || 'rez-internal-token
 // ============================================
 
 class ServiceConnector {
-  private http: AxiosInstance;
+  private http: AxiosInstance | null = null;
   private headers: Record<string, string>;
 
   constructor() {
@@ -88,6 +88,16 @@ class ServiceConnector {
     };
   }
 
+  private getHttp(): AxiosInstance {
+    if (!this.http) {
+      this.http = axios.create({
+        headers: this.headers,
+        timeout: 10000,
+      });
+    }
+    return this.http;
+  }
+
   // ============================================
   // RABTUL SERVICES
   // ============================================
@@ -95,7 +105,7 @@ class ServiceConnector {
   /**
    * Verify customer authentication
    */
-  async verifyCustomer(token: string): Promise<{ valid: boolean; customerId?: string; profile?: any }> {
+  async verifyCustomer(token: string): Promise<{ valid: boolean; customerId?: string; profile?: unknown }> {
     try {
       const res = await axios.post(
         `${SERVICE_URLS.auth}/api/auth/verify`,
@@ -112,7 +122,7 @@ class ServiceConnector {
   /**
    * Get customer profile
    */
-  async getCustomerProfile(customerId: string): Promise<any> {
+  async getCustomerProfile(customerId: string): Promise<unknown> {
     try {
       const res = await axios.get(
         `${SERVICE_URLS.profile}/api/profile/${customerId}`,
@@ -144,7 +154,7 @@ class ServiceConnector {
   /**
    * Get order details
    */
-  async getOrder(orderId: string): Promise<any> {
+  async getOrder(orderId: string): Promise<unknown> {
     try {
       const res = await axios.get(
         `${SERVICE_URLS.order}/api/orders/${orderId}`,
@@ -159,7 +169,7 @@ class ServiceConnector {
   /**
    * Get product details
    */
-  async getProduct(productId: string): Promise<any> {
+  async getProduct(productId: string): Promise<unknown> {
     try {
       const res = await axios.get(
         `${SERVICE_URLS.catalog}/api/products/${productId}`,
@@ -205,7 +215,7 @@ class ServiceConnector {
   /**
    * Send notification
    */
-  async sendNotification(customerId: string, type: string, message: string, data?: any): Promise<boolean> {
+  async sendNotification(customerId: string, type: string, message: string, data?): Promise<boolean> {
     try {
       await axios.post(
         `${SERVICE_URLS.notifications}/api/send`,
@@ -221,7 +231,7 @@ class ServiceConnector {
   /**
    * Get booking details
    */
-  async getBooking(bookingId: string): Promise<any> {
+  async getBooking(bookingId: string): Promise<unknown> {
     try {
       const res = await axios.get(
         `${SERVICE_URLS.booking}/api/bookings/${bookingId}`,
@@ -291,7 +301,7 @@ class ServiceConnector {
   /**
    * Get merchant insights
    */
-  async getMerchantInsights(merchantId: string): Promise<any> {
+  async getMerchantInsights(merchantId: string): Promise<unknown> {
     try {
       const res = await axios.get(
         `${SERVICE_URLS.merchantBrain}/insights/${merchantId}`,
@@ -306,7 +316,7 @@ class ServiceConnector {
   /**
    * Predict next best action
    */
-  async getNextBestAction(customerId: string, context: any): Promise<{ action: string; reason: string } | null> {
+  async getNextBestAction(customerId: string, context): Promise<{ action: string; reason: string } | null> {
     try {
       const res = await axios.post(
         `${SERVICE_URLS.predictiveEngine}/next-best-action`,
@@ -409,7 +419,7 @@ class ServiceConnector {
   /**
    * Get employee info (CorpPerks)
    */
-  async getEmployeeInfo(employeeId: string): Promise<any> {
+  async getEmployeeInfo(employeeId: string): Promise<unknown> {
     try {
       const res = await axios.get(
         `${SERVICE_URLS.corpperks}/employees/${employeeId}`,
@@ -502,7 +512,7 @@ class ServiceConnector {
   /**
    * Enrich ticket with all available data
    */
-  async enrichTicket(customerId: string, ticket: any): Promise<any> {
+  async enrichTicket(customerId: string, ticket): Promise<unknown> {
     const [profile, churn, ltv, sentiment] = await Promise.all([
       this.getCustomerProfile(customerId),
       this.getChurnRisk(customerId),
@@ -522,7 +532,7 @@ class ServiceConnector {
   }
 
   // NEW: Additional connections
-  async getRecommendations(customerId: string): Promise<any[]> {
+  async getRecommendations(customerId: string): Promise<unknown[]> {
     try {
       const res = await axios.get(`${SERVICE_URLS.recommendationEngine}/customer/${customerId}/recommendations`, { headers: this.headers, timeout: 5000 });
       return res.data?.products || [];
@@ -536,7 +546,7 @@ class ServiceConnector {
     } catch { return { segment: 'unknown', tags: [] }; }
   }
 
-  async getCartAbandonment(customerId: string): Promise<{ abandoned: boolean; items: any[] }> {
+  async getCartAbandonment(customerId: string): Promise<{ abandoned: boolean; items: unknown[] }> {
     try {
       const res = await axios.get(`${SERVICE_URLS.cartAbandonment}/customer/${customerId}`, { headers: this.headers, timeout: 5000 });
       return res.data || { abandoned: false, items: [] };

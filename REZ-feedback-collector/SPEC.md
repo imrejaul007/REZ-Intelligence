@@ -68,7 +68,25 @@ Unified feedback collection and conversion attribution service. Collects feedbac
 ## Status
 
 - [x] Service foundation
-- [ ] Multi-channel collection
-- [ ] Sentiment analysis
-- [ ] Attribution tracking
-- [ ] Trend detection
+- [x] Multi-channel collection
+- [x] Attribution tracking
+- [x] Trend detection
+- [x] Kafka integration
+
+## Feedback Types
+
+| Type | Events | Attribution |
+|------|--------|-------------|
+| Conversion | track | Track nudge → conversion |
+| Recommendation | click, view, purchase, dismiss | A/B testing |
+| Model | prediction feedback | ML accuracy |
+| Nudge | sent, delivered, clicked, converted | Campaign ROI |
+
+## Kafka Topics
+
+| Topic | Purpose |
+|-------|---------|
+| `commerce.conversions` | Conversion events |
+| `intelligence.recommendation-feedback` | Recommendation clicks/purchases |
+| `intelligence.model-feedback` | Model prediction accuracy |
+| `engagement.nudge-feedback` | Nudge engagement funnel |

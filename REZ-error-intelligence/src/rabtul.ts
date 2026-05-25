@@ -17,7 +17,7 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; erro
       headers: { 'Authorization': `Bearer ${token}`, 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { valid: res.data.success };
-  } catch (error: any) {
+  } catch (error) {
     return { valid: false, error: error.message };
   }
 }
@@ -36,7 +36,7 @@ export async function notifyDevTeam(title: string, error: string, severity: stri
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }

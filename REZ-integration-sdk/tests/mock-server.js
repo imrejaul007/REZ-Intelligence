@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * Mock Server for Integration Tests
  *
@@ -310,7 +312,7 @@ const server = http.createServer(async (req, res) => {
 function start(port = 3001) {
   return new Promise(resolve => {
     server.listen(port, () => {
-      console.log(`Mock server running on port ${port}`);
+      logger.info(`Mock server running on port ${port}`);
       resolve(server);
     });
   });

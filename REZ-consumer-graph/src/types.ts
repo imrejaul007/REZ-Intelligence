@@ -175,7 +175,7 @@ export interface LoyaltyProfile {
 export type LoyaltyTier = 'bronze' | 'silver' | 'gold' | 'platinum' | 'vip';
 
 export interface AIMemoryProfile {
-  preferences: Record<string, any>;
+  preferences: Record<string, unknown>;
   conversation_history: ConversationSummary[];
   taste_profile: TasteProfile;
   interaction_patterns: InteractionPattern[];
@@ -262,7 +262,7 @@ export interface CrossPlatformLink {
 export interface GraphNode {
   id: string;
   labels: string[];
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
@@ -271,7 +271,7 @@ export interface GraphRelationship {
   type: string;
   source: string;
   target: string;
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
   weight?: number;
 }
 
@@ -321,7 +321,7 @@ export interface LoyaltyEvent {
   points: number;
   description: string;
   timestamp: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface DOOHEngagement {

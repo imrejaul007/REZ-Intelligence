@@ -1,7 +1,7 @@
 /**
  * REZ Care Service - Event Emitter Utility
  *
- * Can be added to any service to emit events to REZ-care-service.
+ * Can be added to unknown service to emit events to REZ-care-service.
  * Usage: Import and call emitEvent() when issues occur.
  */
 
@@ -46,7 +46,7 @@ export interface CareEvent {
   category?: string;
   description?: string;
   severity?: 'low' | 'medium' | 'high' | 'critical';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -69,7 +69,7 @@ export async function emitCareEvent(event: CareEvent): Promise<boolean> {
     });
 
     return response.data?.success === true;
-  } catch (error: any) {
+  } catch (error) {
     console.warn('[CareEvent] Failed to emit event:', event.eventType, error.message);
     return false;
   }
@@ -101,7 +101,7 @@ export async function emitPaymentFailed(params: {
     merchantId: params.merchantId,
     orderId: params.orderId,
     transactionId: params.transactionId,
-    platform: params.platform as any,
+    platform: params.platform as unknown,
     severity: params.amount && params.amount > 1000 ? 'high' : 'medium',
     description: params.errorMessage || `Payment failed: ${params.errorCode}`,
     metadata: {
@@ -130,7 +130,7 @@ export async function emitQRScanFailed(params: {
     customerPhone: params.customerPhone,
     merchantId: params.merchantId,
     orderId: params.orderId,
-    platform: params.platform as any,
+    platform: params.platform as unknown,
     severity: 'medium',
     description: `QR scan failed: ${params.reason || 'Unknown reason'}`,
     metadata: {
@@ -188,7 +188,7 @@ export async function emitOrderIssue(params: {
     customerPhone: params.customerPhone,
     merchantId: params.merchantId,
     orderId: params.orderId,
-    platform: params.platform as any,
+    platform: params.platform as unknown,
     category: params.issueType,
     severity: params.severity || 'medium',
     description: params.description
@@ -267,7 +267,7 @@ export async function emitRefundInitiated(params: {
     customerPhone: params.customerPhone,
     orderId: params.orderId,
     transactionId: params.transactionId,
-    platform: params.platform as any,
+    platform: params.platform as unknown,
     category: 'refund',
     severity: params.amount > 5000 ? 'high' : 'medium',
     description: `Refund initiated: ₹${params.amount} - ${params.reason}`,
@@ -299,7 +299,7 @@ export async function emitDeliveryDelay(params: {
     customerPhone: params.customerPhone,
     merchantId: params.merchantId,
     orderId: params.orderId,
-    platform: params.platform as any,
+    platform: params.platform as unknown,
     category: 'delivery',
     severity: delay > 30 ? 'high' : 'medium',
     description: `Delivery delayed by ${delay} minutes`,
@@ -345,12 +345,12 @@ export async function emitTicketResolved(params: {
 /**
  * Express middleware to automatically emit events
  */
-export function careEventMiddleware(req: any, res: any, next: any) {
+export function careEventMiddleware(req, res, next) {
   // Store original json method
   const originalJson = res.json.bind(res);
 
   // Override json to emit events on certain responses
-  res.json = function(body: any) {
+  res.json = function(body) {
     // Emit payment failed
     if (req.path.includes('/payments') && res.statusCode >= 400) {
       emitPaymentFailed({

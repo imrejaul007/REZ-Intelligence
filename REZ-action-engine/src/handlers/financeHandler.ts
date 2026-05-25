@@ -6,7 +6,7 @@ import { processFinanceNudge } from '../nudges/financeNudges';
 /**
  * Handle dormant user with finance intent
  */
-export async function handleDormantFinanceUser(user: any): Promise<void> {
+export async function handleDormantFinanceUser(user): Promise<void> {
   // Check if user's last intent was financial
   if (user.lastIntent.includes('loan') ||
       user.lastIntent.includes('credit') ||
@@ -21,7 +21,7 @@ export async function handleDormantFinanceUser(user: any): Promise<void> {
 /**
  * Handle loan EMI due reminder
  */
-export async function handleEMIDueReminder(user: any): Promise<void> {
+export async function handleEMIDueReminder(user): Promise<void> {
   if (user.nextEMIAmount && user.nextEMIDueDate) {
     await processFinanceNudge(user);
   }
@@ -30,7 +30,7 @@ export async function handleEMIDueReminder(user: any): Promise<void> {
 /**
  * Handle credit score improvement
  */
-export async function handleScoreImprovement(user: any): Promise<void> {
+export async function handleScoreImprovement(user): Promise<void> {
   if (user.previousScore && user.newScore && user.newScore > user.previousScore) {
     await processFinanceNudge({
       ...user,
@@ -42,7 +42,7 @@ export async function handleScoreImprovement(user: any): Promise<void> {
 /**
  * Handle loan approval - send congratulations
  */
-export async function handleLoanApproval(userId: string, loan: any): Promise<void> {
+export async function handleLoanApproval(userId: string, loan): Promise<void> {
   await processFinanceNudge({
     userId,
     event: 'loan_approved',
@@ -54,7 +54,7 @@ export async function handleLoanApproval(userId: string, loan: any): Promise<voi
 /**
  * Handle payment overdue
  */
-export async function handlePaymentOverdue(userId: string, data: any): Promise<void> {
+export async function handlePaymentOverdue(userId: string, data): Promise<void> {
   await processFinanceNudge({
     userId,
     event: 'payment_overdue',

@@ -9,7 +9,8 @@
  *                    → Milestone → Cross-brand reward
  */
 
-import express, { Request, Response } from 'express';
+import express, { Request, Response } import logger from './utils/logger';
+import from 'express';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '4099', 10);
@@ -394,18 +395,18 @@ app.get('/api/v1/analytics/:employeeId', (req: Request, res: Response) => {
 // ============================================
 
 app.listen(PORT, () => {
-  console.log(`CorpPerks Bridge running on port ${PORT}`);
-  console.log('');
-  console.log('Features:');
-  console.log('  • Employee sync from CorpPerks');
-  console.log('  • Event processing');
-  console.log('  • Cross-brand rewards');
-  console.log('  • Corporate offers');
-  console.log('  • Analytics');
-  console.log('');
-  console.log('Connected Services:');
+  logger.info(`CorpPerks Bridge running on port ${PORT}`);
+  logger.info('');
+  logger.info('Features:');
+  logger.info('  • Employee sync from CorpPerks');
+  logger.info('  • Event processing');
+  logger.info('  • Cross-brand rewards');
+  logger.info('  • Corporate offers');
+  logger.info('  • Analytics');
+  logger.info('');
+  logger.info('Connected Services:');
   Object.entries(SERVICES).forEach(([name, url]) => {
-    console.log(`  ${name}: ${url}`);
+    logger.info(`  ${name}: ${url}`);
   });
 });
 

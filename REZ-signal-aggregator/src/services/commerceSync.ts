@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ-signal-aggregator → Commerce Graph Sync
  *
@@ -19,7 +21,7 @@ interface Signal {
   category?: string;
   merchantId?: string;
   productId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   timestamp: Date;
 }
 
@@ -57,7 +59,7 @@ class SignalCommerceSync {
         }
       );
     } catch (error) {
-      console.error(`[SignalSync] Failed to sync signal: ${error.message}`);
+      logger.error(`[SignalSync] Failed to sync signal: ${error.message}`);
     }
   }
 
@@ -67,7 +69,7 @@ class SignalCommerceSync {
   async syncBatch(batch: SignalBatch): Promise<void> {
     try {
       await axios.post(
-        `${COMMENCE_GRAPH_URL}/api/signals/batch`,
+        `${COMMERCE_GRAPH_URL}/api/signals/batch`,
         {
           signals: batch.signals.map(s => ({
             customerId: s.userId,
@@ -87,9 +89,9 @@ class SignalCommerceSync {
           }
         }
       );
-      console.log(`[SignalSync] Batch synced ${batch.signals.length} signals`);
+      logger.info(`[SignalSync] Batch synced ${batch.signals.length} signals`);
     } catch (error) {
-      console.error(`[SignalSync] Failed to sync batch: ${error.message}`);
+      logger.error(`[SignalSync] Failed to sync batch: ${error.message}`);
     }
   }
 
@@ -102,7 +104,7 @@ class SignalCommerceSync {
   }): Promise<void> {
     try {
       await axios.patch(
-        `${COMMENCE_GRAPH_URL}/api/customers/${userId}/signals`,
+        `${COMMERCE_GRAPH_URL}/api/customers/${userId}/signals`,
         {
           categoryIntents: intents.categoryIntents,
           merchantIntents: intents.merchantIntents,
@@ -115,19 +117,19 @@ class SignalCommerceSync {
           }
         }
       );
-      console.log(`[SignalSync] Intents updated for ${userId}`);
+      logger.info(`[SignalSync] Intents updated for ${userId}`);
     } catch (error) {
-      console.error(`[SignalSync] Failed to update intents: ${error.message}`);
+      logger.error(`[SignalSync] Failed to update intents: ${error.message}`);
     }
   }
 
   /**
    * Get moment triggers based on signals
    */
-  async getMomentTriggers(userId: string): Promise<any[]> {
+  async getMomentTriggers(userId: string): Promise<unknown[]> {
     try {
       const response = await axios.get(
-        `${COMMENCE_GRAPH_URL}/api/customers/${userId}/moments`,
+        `${COMMERCE_GRAPH_URL}/api/customers/${userId}/moments`,
         {
           headers: {
             'X-Internal-Token': INTERNAL_TOKEN
@@ -136,7 +138,7 @@ class SignalCommerceSync {
       );
       return response.data.data?.moments || [];
     } catch (error) {
-      console.error(`[SignalSync] Failed to get moments: ${error.message}`);
+      logger.error(`[SignalSync] Failed to get moments: ${error.message}`);
       return [];
     }
   }
@@ -144,10 +146,10 @@ class SignalCommerceSync {
   /**
    * Get cross-sell opportunities based on signals
    */
-  async getCrossSellOpportunities(userId: string): Promise<any[]> {
+  async getCrossSellOpportunities(userId: string): Promise<unknown[]> {
     try {
       const response = await axios.get(
-        `${COMMENCE_GRAPH_URL}/api/customers/${userId}/cross-sells`,
+        `${COMMERCE_GRAPH_URL}/api/customers/${userId}/cross-sells`,
         {
           headers: {
             'X-Internal-Token': INTERNAL_TOKEN
@@ -156,7 +158,7 @@ class SignalCommerceSync {
       );
       return response.data.data?.recommendations || [];
     } catch (error) {
-      console.error(`[SignalSync] Failed to get cross-sells: ${error.message}`);
+      logger.error(`[SignalSync] Failed to get cross-sells: ${error.message}`);
       return [];
     }
   }
@@ -171,7 +173,7 @@ class SignalCommerceSync {
   }): Promise<void> {
     try {
       await axios.post(
-        `${COMMENCE_GRAPH_URL}/api/intent-predictions`,
+        `${COMMERCE_GRAPH_URL}/api/intent-predictions`,
         {
           customerId: userId,
           ...prediction,
@@ -185,7 +187,7 @@ class SignalCommerceSync {
         }
       );
     } catch (error) {
-      console.error(`[SignalSync] Failed to record intent: ${error.message}`);
+      logger.error(`[SignalSync] Failed to record intent: ${error.message}`);
     }
   }
 }

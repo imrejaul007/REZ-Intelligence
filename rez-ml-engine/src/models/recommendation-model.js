@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * Recommendation Engine ML Model
  * Uses Collaborative Filtering + Content-Based hybrid approach
@@ -46,17 +48,17 @@ class RecommendationModel {
       epochs = 100
     } = options;
 
-    console.log('🧠 Training Recommendation Model...');
-    console.log(`   Interactions: ${interactions.length}`);
-    console.log(`   Latent factors: ${factors}`);
-    console.log(`   Epochs: ${epochs}`);
+    logger.info('🧠 Training Recommendation Model...');
+    logger.info(`   Interactions: ${interactions.length}`);
+    logger.info(`   Latent factors: ${factors}`);
+    logger.info(`   Epochs: ${epochs}`);
 
     // Initialize user and item factors
     const userIds = [...new Set(interactions.map(i => i.userId))];
     const itemIds = [...new Set(interactions.map(i => i.itemId))];
 
-    console.log(`   Unique users: ${userIds.length}`);
-    console.log(`   Unique items: ${itemIds.length}`);
+    logger.info(`   Unique users: ${userIds.length}`);
+    logger.info(`   Unique items: ${itemIds.length}`);
 
     for (const userId of userIds) {
       this.userFactors[userId] = {};
@@ -116,12 +118,12 @@ class RecommendationModel {
 
       if (epoch % 20 === 0) {
         const rmse = Math.sqrt(totalError / interactions.length);
-        console.log(`   Epoch ${epoch}: RMSE=${rmse.toFixed(4)}`);
+        logger.info(`   Epoch ${epoch}: RMSE=${rmse.toFixed(4)}`);
       }
     }
 
     this.isTrained = true;
-    console.log('✅ Recommendation Model trained successfully!\n');
+    logger.info('✅ Recommendation Model trained successfully!\n');
 
     return this;
   }

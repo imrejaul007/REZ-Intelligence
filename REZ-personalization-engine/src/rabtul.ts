@@ -11,7 +11,7 @@ const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 /**
  * Verify token
  */
-export async function verifyToken(token: string): Promise<{ valid: boolean; user?: any; error?: string }> {
+export async function verifyToken(token: string): Promise<{ valid: boolean; user?; error?: string }> {
   try {
     const res = await axios.get(`${AUTH_URL}/api/auth/verify`, {
       headers: { 'Authorization': `Bearer ${token}`, 'X-Internal-Token': INTERNAL_TOKEN },
@@ -20,7 +20,7 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; user
       return { valid: true, user: res.data.user };
     }
     return { valid: false, error: 'Invalid token' };
-  } catch (error: any) {
+  } catch (error) {
     return { valid: false, error: error.message };
   }
 }
@@ -28,7 +28,7 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; user
 /**
  * Publish personalization event
  */
-export async function publishPersonalization(userId: string, type: string, data: Record<string, any>): Promise<{ success: boolean; error?: string }> {
+export async function publishPersonalization(userId: string, type: string, data: Record<string, unknown>): Promise<{ success: boolean; error?: string }> {
   try {
     await axios.post(`${EVENT_BUS_URL}/api/events/publish`, {
       type: 'commerce.personalization',
@@ -38,7 +38,7 @@ export async function publishPersonalization(userId: string, type: string, data:
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }

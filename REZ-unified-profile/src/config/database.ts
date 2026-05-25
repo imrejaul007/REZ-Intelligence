@@ -48,7 +48,7 @@ export async function connectDatabase(): Promise<void> {
       isConnected = true;
     });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to connect to MongoDB', { error: error.message });
     isConnected = false;
     throw error;
@@ -66,7 +66,7 @@ async function handleDisconnect(): Promise<void> {
       await mongoose.connect(MONGODB_URI);
       isConnected = true;
       logger.info('Reconnected to MongoDB successfully');
-    } catch (error: any) {
+    } catch (error) {
       logger.error(`Reconnection attempt ${retryCount} failed`, { error: error.message });
     }
   }
@@ -85,7 +85,7 @@ export async function disconnectDatabase(): Promise<void> {
     await mongoose.connection.close();
     isConnected = false;
     logger.info('Disconnected from MongoDB');
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error disconnecting from MongoDB', { error: error.message });
     throw error;
   }

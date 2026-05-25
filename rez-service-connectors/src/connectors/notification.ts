@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * Notification Service Connector
  *
@@ -401,7 +403,7 @@ function getInternalToken(): string {
     const tokens = JSON.parse(tokensJson);
     return tokens.orchestrator || tokens.notification || '';
   } catch {
-    console.warn('[NotificationConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+    logger.warn('[NotificationConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
     return '';
   }
 }

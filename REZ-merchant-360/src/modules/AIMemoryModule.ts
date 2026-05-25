@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * AIMemoryModule.ts - AI Memory & Preferences for Merchant360
  * Integrates with AgentDB for intelligent merchant memory
@@ -424,7 +426,7 @@ export class AIMemoryModule {
     } = {}
   ): Promise<SemanticSearchResult[]> {
     if (!this.agentDBClient) {
-      console.warn('AgentDB not configured, falling back to basic search');
+      logger.warn('AgentDB not configured, falling back to basic search');
       return this.basicSearch(merchantId, query, options);
     }
 
@@ -455,7 +457,7 @@ export class AIMemoryModule {
     metadata: Record<string, unknown> = {}
   ): Promise<boolean> {
     if (!this.agentDBClient) {
-      console.warn('AgentDB not configured, memory not stored');
+      logger.warn('AgentDB not configured, memory not stored');
       return false;
     }
 

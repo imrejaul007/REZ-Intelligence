@@ -17,9 +17,9 @@ import { mlIntelligence } from '../services/mlIntelligence';
 const router = express.Router();
 
 // In-memory stores (replace with MongoDB in production)
-const merchantTickets: Map<string, any[]> = new Map();
-const merchantFAQs: Map<string, any[]> = new Map();
-const merchantTeams: Map<string, any[]> = new Map();
+const merchantTickets: Map<string, unknown[]> = new Map();
+const merchantFAQs: Map<string, unknown[]> = new Map();
+const merchantTeams: Map<string, unknown[]> = new Map();
 
 // ============================================
 // MERCHANT TICKETS
@@ -58,7 +58,7 @@ router.get('/:merchantId/tickets', async (req: Request, res: Response) => {
       page: Number(page),
       pages: Math.ceil(tickets.length / Number(limit)),
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to get tickets', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -80,7 +80,7 @@ router.get('/:merchantId/tickets/:ticketId', async (req: Request, res: Response)
     }
 
     res.json({ success: true, ticket });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to get ticket', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -137,7 +137,7 @@ router.post('/:merchantId/tickets', async (req: Request, res: Response) => {
       ticket,
       message: 'Your support request has been submitted. We will respond soon.',
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to create ticket', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -178,7 +178,7 @@ router.post('/:merchantId/tickets/:ticketId/respond', async (req: Request, res: 
     logger.info('[Merchant] Ticket responded', { merchantId, ticketId });
 
     res.json({ success: true, message: 'Response sent' });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to respond', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -211,7 +211,7 @@ router.post('/:merchantId/tickets/:ticketId/resolve', async (req: Request, res: 
     merchantTickets.set(merchantId, tickets);
 
     res.json({ success: true, message: 'Ticket resolved' });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to resolve', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -250,7 +250,7 @@ router.get('/:merchantId/kb', async (req: Request, res: Response) => {
     faqs = faqs.filter(f => f.isPublished);
 
     res.json({ success: true, faqs });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to get FAQs', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -285,7 +285,7 @@ router.post('/:merchantId/kb', async (req: Request, res: Response) => {
     merchantFAQs.set(merchantId, faqs);
 
     res.status(201).json({ success: true, id: faq.id });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to create FAQ', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -312,7 +312,7 @@ router.put('/:merchantId/kb/:faqId', async (req: Request, res: Response) => {
     merchantFAQs.set(merchantId, faqs);
 
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to update FAQ', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -331,7 +331,7 @@ router.delete('/:merchantId/kb/:faqId', async (req: Request, res: Response) => {
     merchantFAQs.set(merchantId, filtered);
 
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to delete FAQ', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -441,7 +441,7 @@ router.get('/:merchantId/stats', async (req: Request, res: Response) => {
         byStatus,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to get stats', error);
     res.status(500).json({ success: false, error: error.message });
   }

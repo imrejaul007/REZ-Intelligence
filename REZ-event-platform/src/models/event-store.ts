@@ -219,7 +219,7 @@ export async function retryDeadLetterEvent(eventId: string): Promise<boolean> {
     }
 
     const { publish } = await import('../events/emitter');
-    const result = await publish(event.event as any);
+    const result = await publish(event.event as unknown);
 
     if (result.success) {
       event.status = 'replayed';

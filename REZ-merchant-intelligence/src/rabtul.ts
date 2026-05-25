@@ -13,7 +13,7 @@ const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 /**
  * Verify merchant token
  */
-export async function verifyMerchantToken(token: string): Promise<{ valid: boolean; merchant?: any; error?: string }> {
+export async function verifyMerchantToken(token: string): Promise<{ valid: boolean; merchant?; error?: string }> {
   try {
     const res = await axios.get(`${AUTH_URL}/api/auth/verify`, {
       headers: { 'Authorization': `Bearer ${token}`, 'X-Internal-Token': INTERNAL_TOKEN },
@@ -22,7 +22,7 @@ export async function verifyMerchantToken(token: string): Promise<{ valid: boole
       return { valid: true, merchant: res.data.user };
     }
     return { valid: false, error: 'Invalid token' };
-  } catch (error: any) {
+  } catch (error) {
     return { valid: false, error: error.message };
   }
 }
@@ -30,13 +30,13 @@ export async function verifyMerchantToken(token: string): Promise<{ valid: boole
 /**
  * Get merchant wallet
  */
-export async function getMerchantWallet(merchantId: string): Promise<{ wallet: any; error?: string }> {
+export async function getMerchantWallet(merchantId: string): Promise<{ wallet; error?: string }> {
   try {
     const res = await axios.get(`${WALLET_URL}/api/wallet/${merchantId}/balance`, {
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { wallet: res.data };
-  } catch (error: any) {
+  } catch (error) {
     return { wallet: null, error: error.message };
   }
 }
@@ -50,7 +50,7 @@ export async function addEarnings(merchantId: string, amount: number, reason: st
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -64,7 +64,7 @@ export async function notifyMerchant(merchantId: string, title: string, body: st
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -72,7 +72,7 @@ export async function notifyMerchant(merchantId: string, title: string, body: st
 /**
  * Publish merchant event
  */
-export async function publishMerchantEvent(eventType: string, data: Record<string, any>): Promise<{ success: boolean; error?: string }> {
+export async function publishMerchantEvent(eventType: string, data: Record<string, unknown>): Promise<{ success: boolean; error?: string }> {
   try {
     await axios.post(`${EVENT_BUS_URL}/api/events/publish`, {
       type: `merchant.${eventType}`,
@@ -82,7 +82,7 @@ export async function publishMerchantEvent(eventType: string, data: Record<strin
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }

@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ Intelligence Hub - Dormancy Detection Cron Job
  *
@@ -184,25 +186,25 @@ async function triggerReEngagement(user: DormantUser): Promise<boolean> {
 }
 
 async function runDormancyDetection(): Promise<void> {
-  console.log('[Dormancy Detection] Starting...');
+  logger.info('[Dormancy Detection] Starting...');
 
   await mongoose.connect(MONGODB_URI);
-  console.log('[Dormancy Detection] Connected to MongoDB');
+  logger.info('[Dormancy Detection] Connected to MongoDB');
 
   const totalDetected: Record<string, number> = {};
   const totalTriggered: Record<string, number> = {};
 
   // Check each threshold level
   for (const [level, days] of Object.entries(DORMANCY_THRESHOLDS)) {
-    console.log(`\n[${level}] Checking users inactive for ${days}+ days...`);
+    logger.info(`\n[${level}] Checking users inactive for ${days}+ days...`);
 
     const dormantUsers = await detectDormantUsers(days);
-    console.log(`[${level}] Found ${dormantUsers.length} dormant users`);
+    logger.info(`[${level}] Found ${dormantUsers.length} dormant users`);
 
     if (dormantUsers.length > 0) {
       // Save reports
       const saved = await saveDormancyReports(dormantUsers);
-      console.log(`[${level}] Saved ${saved} dormancy reports`);
+      logger.info(`[${level}] Saved ${saved} dormancy reports`);
 
       // Trigger re-engagement (only for severe cases in production)
       if (level === 'SEVERE' || process.env.ENABLE_ALL_RE_ENGAGEMENT === 'true') {
@@ -211,7 +213,7 @@ async function runDormancyDetection(): Promise<void> {
           const success = await triggerReEngagement(user);
           if (success) triggered++;
         }
-        console.log(`[${level}] Triggered ${triggered} re-engagement campaigns`);
+        logger.info(`[${level}] Triggered ${triggered} re-engagement campaigns`);
         totalTriggered[level] = triggered;
       }
     }
@@ -219,12 +221,12 @@ async function runDormancyDetection(): Promise<void> {
     totalDetected[level] = dormantUsers.length;
   }
 
-  console.log('\n[Dormancy Detection] Summary:');
+  logger.info('\n[Dormancy Detection] Summary:');
   console.log('Detected:', totalDetected);
   console.log('Triggered:', totalTriggered);
 
   await mongoose.disconnect();
-  console.log('[Dormancy Detection] Done!');
+  logger.info('[Dormancy Detection] Done!');
 }
 
 // Run if called directly

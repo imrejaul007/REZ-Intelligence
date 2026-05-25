@@ -16,7 +16,7 @@ conversionRouter.get('/', async (req: Request, res: Response) => {
   try {
     const { merchantId, customerId, type, status, startDate, endDate, limit = 100 } = req.query;
 
-    const query: any = {};
+    const query: unknown = {};
     if (merchantId) query.merchantId = merchantId;
     if (customerId) query.customerId = customerId;
     if (type) query.type = type;
@@ -32,7 +32,7 @@ conversionRouter.get('/', async (req: Request, res: Response) => {
       .limit(Number(limit));
 
     res.json({ success: true, data: conversions, count: conversions.length });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Conversions fetch failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -46,7 +46,7 @@ conversionRouter.get('/summary', async (req: Request, res: Response) => {
   try {
     const { merchantId, startDate, endDate } = req.query;
 
-    const match: any = { status: ConversionStatus.COMPLETED };
+    const match: unknown = { status: ConversionStatus.COMPLETED };
     if (merchantId) match.merchantId = merchantId;
     if (startDate || endDate) {
       match.timestamp = {};
@@ -72,7 +72,7 @@ conversionRouter.get('/summary', async (req: Request, res: Response) => {
         avgOrderValue: 0
       }
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Conversion summary failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -86,7 +86,7 @@ conversionRouter.get('/breakdown', async (req: Request, res: Response) => {
   try {
     const { merchantId, startDate, endDate } = req.query;
 
-    const match: any = { status: ConversionStatus.COMPLETED };
+    const match: unknown = { status: ConversionStatus.COMPLETED };
     if (merchantId) match.merchantId = merchantId;
     if (startDate || endDate) {
       match.timestamp = {};
@@ -105,18 +105,18 @@ conversionRouter.get('/breakdown', async (req: Request, res: Response) => {
       { $sort: { revenue: -1 } }
     ]);
 
-    const totalRevenue = breakdown.reduce((sum: number, b: any) => sum + b.revenue, 0);
+    const totalRevenue = breakdown.reduce((sum: number, b) => sum + b.revenue, 0);
 
     res.json({
       success: true,
-      data: breakdown.map((b: any) => ({
+      data: breakdown.map((b) => ({
         channel: b._id,
         conversions: b.count,
         revenue: b.revenue,
         percentage: totalRevenue > 0 ? (b.revenue / totalRevenue * 100).toFixed(2) : 0
       }))
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Conversion breakdown failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }

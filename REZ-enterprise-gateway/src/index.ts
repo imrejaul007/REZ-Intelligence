@@ -3,7 +3,8 @@
  * CorpPerks + RABTUL Integration
  */
 
-import express, { Request, Response } from 'express';
+import express, { Request, Response } import logger from './utils/logger';
+import from 'express';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '4102', 10);
@@ -270,10 +271,10 @@ app.get('/api/services/health', (_req: Request, res: Response) => {
 // ============================================
 
 app.listen(PORT, () => {
-  console.log(`REZ Enterprise Gateway running on port ${PORT}`);
-  console.log('Connected RABTUL Services:');
+  logger.info(`REZ Enterprise Gateway running on port ${PORT}`);
+  logger.info('Connected RABTUL Services:');
   Object.entries(RABTUL_SERVICES).forEach(([name, url]) => {
-    console.log(`  - ${name}: ${url}`);
+    logger.info(`  - ${name}: ${url}`);
   });
 });
 

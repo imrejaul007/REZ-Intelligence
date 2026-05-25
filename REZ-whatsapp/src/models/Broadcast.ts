@@ -35,7 +35,7 @@ export interface IBroadcast extends Document {
 }
 
 export interface IBroadcastModel extends mongoose.Model<IBroadcast> {
-  getBroadcastStats(merchantId?: string): Promise<any>;
+  getBroadcastStats(merchantId?: string): Promise<unknown>;
   findScheduled(): Promise<IBroadcast[]>;
 }
 

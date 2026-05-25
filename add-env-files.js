@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 #!/usr/bin/env node
 /**
  * Add .env.example to Services Missing It
@@ -42,18 +44,18 @@ for (const service of services) {
   }
 }
 
-console.log('==========================================');
-console.log('Adding .env.example to missing services');
-console.log('==========================================');
-console.log('');
-console.log(`Found ${missing.length} services missing .env.example:`);
+logger.info('==========================================');
+logger.info('Adding .env.example to missing services');
+logger.info('==========================================');
+logger.info('');
+logger.info(`Found ${missing.length} services missing .env.example:`);
 
 missing.forEach(service => {
   const content = TEMPLATE.replace(/SERVICE_NAME/g, service);
   const envPath = path.join(service, '.env.example');
   fs.writeFileSync(envPath, content);
-  console.log(`  ✓ ${service}`);
+  logger.info(`  ✓ ${service}`);
 });
 
-console.log('');
-console.log(`✓ Added .env.example to ${missing.length} services`);
+logger.info('');
+logger.info(`✓ Added .env.example to ${missing.length} services`);

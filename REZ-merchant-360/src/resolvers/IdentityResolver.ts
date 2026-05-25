@@ -134,7 +134,7 @@ export class IdentityResolver {
       );
 
       return { success: true, merged_merchant: validated };
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message || 'Merge failed' };
     }
   }
@@ -163,7 +163,7 @@ export class IdentityResolver {
       );
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message };
     }
   }

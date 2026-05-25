@@ -32,7 +32,7 @@ const sendSmsSchema = z.object({
 const sendTemplateSchema = z.object({
   to: z.string().min(10, 'Phone number must be at least 10 characters'),
   template: z.enum(['order_confirmed', 'order_placed', 'help_response', 'status_update', 'verification']),
-  data: z.record(z.any()),
+  data: z.record(z.unknown()),
 });
 
 // Health check

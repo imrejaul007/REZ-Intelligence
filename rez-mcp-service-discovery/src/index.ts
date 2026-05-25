@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 import 'dotenv/config';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -1365,7 +1367,7 @@ const tools = [
 ];
 
 // Tool handlers
-async function handleListServices(args: any): Promise<string> {
+async function handleListServices(args): Promise<string> {
   let services = Object.values(serviceRegistry);
 
   if (args.category) {
@@ -1399,7 +1401,7 @@ async function handleListServices(args: any): Promise<string> {
   }, null, 2);
 }
 
-async function handleGetService(args: any): Promise<string> {
+async function handleGetService(args): Promise<string> {
   const service = serviceRegistry[args.name];
 
   if (!service) {
@@ -1421,7 +1423,7 @@ async function handleGetService(args: any): Promise<string> {
   return JSON.stringify(service, null, 2);
 }
 
-async function handleGetServiceHealth(args: any): Promise<string> {
+async function handleGetServiceHealth(args): Promise<string> {
   const service = serviceRegistry[args.name];
 
   if (!service) {
@@ -1464,7 +1466,7 @@ async function handleGetServiceHealth(args: any): Promise<string> {
   }, null, 2);
 }
 
-async function handleGetServiceLogs(args: any): Promise<string> {
+async function handleGetServiceLogs(args): Promise<string> {
   const service = serviceRegistry[args.name];
 
   if (!service) {
@@ -1513,7 +1515,7 @@ async function handleGetServiceLogs(args: any): Promise<string> {
   }, null, 2);
 }
 
-async function handleFindServices(args: any): Promise<string> {
+async function handleFindServices(args): Promise<string> {
   const query = args.query.toLowerCase();
 
   const matches = Object.values(serviceRegistry).filter(s =>
@@ -1553,7 +1555,7 @@ async function handleRefreshHealthChecks(): Promise<string> {
   }, null, 2);
 }
 
-async function handleGetServiceCount(args: any): Promise<string> {
+async function handleGetServiceCount(args): Promise<string> {
   const byCategory = Object.values(serviceRegistry).reduce((acc, s) => {
     acc[s.category] = (acc[s.category] || 0) + 1;
     return acc;
@@ -1630,8 +1632,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 // Start server
 async function main() {
-  console.error(`REZ Service Discovery MCP running on stdio with ${Object.keys(serviceRegistry).length} services`);
-  console.error(`Real health checks: ${REAL_HEALTH_CHECK ? 'ENABLED' : 'DISABLED (set REAL_HEALTH_CHECK=true to enable)'}`);
+  logger.error(`REZ Service Discovery MCP running on stdio with ${Object.keys(serviceRegistry).length} services`);
+  logger.error(`Real health checks: ${REAL_HEALTH_CHECK ? 'ENABLED' : 'DISABLED (set REAL_HEALTH_CHECK=true to enable)'}`);
 
   // Initial health check if enabled
   if (REAL_HEALTH_CHECK) {

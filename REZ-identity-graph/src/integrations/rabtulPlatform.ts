@@ -3,6 +3,8 @@
  * Connects service to RABTUL infrastructure
  */
 
+import { ServiceUnavailableError } from '../../../../shared/rez-errors/src/index.js';
+
 const AUTH_URL = process.env.AUTH_SERVICE_URL || 'https://rez-auth-service.onrender.com';
 const PAYMENT_URL = process.env.PAYMENT_SERVICE_URL || 'https://rez-payment-service.onrender.com';
 const WALLET_URL = process.env.WALLET_SERVICE_URL || 'https://rez-wallet-service-36vo.onrender.com';
@@ -25,7 +27,7 @@ async function internalRequest(url, options = {}) {
   });
 
   if (!response.ok) {
-    throw new Error(`Platform API error: ${response.status}`);
+    throw new ServiceUnavailableError('RABTUL Platform', `HTTP ${response.status}`);
   }
 
   return response.json();

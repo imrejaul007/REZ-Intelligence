@@ -1,4 +1,5 @@
-import express, { Express, Request, Response, NextFunction } from 'express';
+import express, { Express, Request, Response, NextFunction } import logger from './utils/logger';
+import from 'express';
 import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 import axios from 'axios';
 import cors from 'cors';
@@ -67,7 +68,7 @@ const ResolveIdentitySchema = z.object({
 const LinkAccountSchema = z.object({
   appId: z.string().min(1).max(50),
   userId: z.string().min(1),
-  identifiers: z.record(z.any()).optional()
+  identifiers: z.record(z.unknown()).optional()
 });
 
 const ListIdentitiesSchema = z.object({
@@ -539,7 +540,7 @@ async function start(): Promise<void> {
           console.error(error);
           process.exit(1);
         } else {
-          console.warn(`[WARN] ${error} - using fallback (development only)`);
+          logger.warn(`[WARN] ${error} - using fallback (development only)`);
         }
       }
     }
@@ -562,7 +563,7 @@ async function start(): Promise<void> {
     logger.info('Connected to MongoDB with write concern: majority');
 
     app.listen(PORT, () => {
-      console.log(`Identity Bridge running on port ${PORT}`);
+      logger.info(`Identity Bridge running on port ${PORT}`);
     });
   } catch (err) {
     const error = err as Error;

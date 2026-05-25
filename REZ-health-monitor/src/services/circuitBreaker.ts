@@ -308,7 +308,7 @@ export class CircuitBreakerRegistry {
   }
 
   /**
-   * Check if any circuit is open for a service
+   * Check if unknown circuit is open for a service
    */
   isAvailable(serviceName: string): boolean {
     const circuit = this.circuits.get(serviceName);

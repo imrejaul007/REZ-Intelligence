@@ -1,4 +1,5 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response, NextFunction } import logger from './utils/logger';
+import from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -371,7 +372,7 @@ app.use(express.json());
 
 // Request logging middleware
 app.use((req: Request, _res: Response, next: NextFunction) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  logger.info(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
 });
 
@@ -821,7 +822,7 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 // =============================================================================
 
 app.listen(PORT, () => {
-  console.log(`
+  logger.info(`
 ╔═══════════════════════════════════════════════════════════╗
 ║     REZ Merchant Intelligence Service                       ║
 ║     ─────────────────────────────────────────────────────   ║

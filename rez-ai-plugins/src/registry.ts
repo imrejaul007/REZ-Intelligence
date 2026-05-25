@@ -1,6 +1,8 @@
+import logger from './utils/logger';
+
 /**
  * ReZ AI Plugin Registry
- * Modular AI services that can be plugged into any vertical
+ * Modular AI services that can be plugged into unknown vertical
  */
 
 import { EventEmitter } from 'events';
@@ -30,7 +32,7 @@ export interface AIPluginConfig {
   redis: RedisConfig;
   mongodb: MongoConfig;
   eventBus: EventEmitter;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
 }
 
 // Redis Config
@@ -60,23 +62,23 @@ export interface AIRequest {
   method: string;
   path: string;
   headers: Record<string, string>;
-  body: any;
+  body;
   params: Record<string, string>;
   query: Record<string, string>;
 }
 
 export interface AIResponse {
   status(code: number): AIResponse;
-  json(data: any): void;
+  json(data): void;
   send(data: string): void;
 }
 
 // Predictions
 export interface Prediction {
   model: string;
-  prediction: any;
+  prediction;
   confidence: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // Recommendations
@@ -84,7 +86,7 @@ export interface Recommendation {
   id: string;
   type: string;
   score: number;
-  data: any;
+  data;
   reason: string;
 }
 
@@ -99,7 +101,7 @@ export class AIPluginRegistry {
 
   // Register a plugin
   async register(plugin: AIPlugin): Promise<void> {
-    console.log(`[AI Registry] Registering plugin: ${plugin.name} v${plugin.version}`);
+    logger.info(`[AI Registry] Registering plugin: ${plugin.name} v${plugin.version}`);
 
     // Initialize plugin
     await plugin.init({
@@ -126,12 +128,12 @@ export class AIPluginRegistry {
     // Store plugin
     this.plugins.set(plugin.name, plugin);
 
-    console.log(`[AI Registry] Plugin registered: ${plugin.name}`);
+    logger.info(`[AI Registry] Plugin registered: ${plugin.name}`);
   }
 
   // Handle an event for a plugin
-  private async handleEvent(plugin: AIPlugin, event: string, data: any): Promise<void> {
-    console.log(`[AI Registry] ${plugin.name} handling event: ${event}`);
+  private async handleEvent(plugin: AIPlugin, event: string, data): Promise<void> {
+    logger.info(`[AI Registry] ${plugin.name} handling event: ${event}`);
     // Events are handled internally by plugins
   }
 
@@ -151,7 +153,7 @@ export class AIPluginRegistry {
   }
 
   // Get prediction from any plugin
-  async predict(plugin: string, model: string, input: any): Promise<Prediction | null> {
+  async predict(plugin: string, model: string, input): Promise<Prediction | null> {
     const p = this.getPlugin(plugin);
     if (!p) return null;
 
@@ -168,7 +170,7 @@ export class AIPluginRegistry {
       query: {}
     };
 
-    let result: any = null;
+    let result: unknown = null;
     const res: AIResponse = {
       status: () => res,
       json: (data) => { result = data; }
@@ -179,14 +181,14 @@ export class AIPluginRegistry {
   }
 
   // Get recommendations from any plugin
-  async recommend(plugin: string, userId: string, context: any): Promise<Recommendation[]> {
+  async recommend(plugin: string, userId: string, context): Promise<Recommendation[]> {
     const p = this.getPlugin(plugin);
     if (!p) return [];
 
     const handler = p.api['/recommend'];
     if (!handler) return [];
 
-    let result: any = [];
+    let result: unknown = [];
     const res: AIResponse = {
       status: () => res,
       json: (data) => { result = data; }
@@ -208,7 +210,7 @@ export class AIPluginRegistry {
   }
 
   // Emit event to all plugins
-  emitEvent(event: string, data: any): void {
+  emitEvent(event: string, data): void {
     this.eventBus.emit(event, data);
   }
 
@@ -226,7 +228,7 @@ export const aiRegistry = new AIPluginRegistry();
 
 // Decorator for plugin registration
 export function registerPlugin(name: string, version: string, events: string[], models: string[]) {
-  return function <T extends { new (...args: any[]): AIPlugin }>(constructor: T) {
+  return function <T extends { new (...args: unknown[]): AIPlugin }>(constructor: T) {
     return class extends constructor {
       name = name;
       version = version;

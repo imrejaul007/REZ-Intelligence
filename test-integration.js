@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 #!/usr/bin/env node
 /**
  * REZ Intelligence - Integration Test
@@ -78,31 +80,31 @@ async function test(name, fn) {
   process.stdout.write(`  ${name}... `);
   try {
     await fn();
-    console.log('✓');
+    logger.info('✓');
     return true;
   } catch (err) {
-    console.log(`✗ (${err.message})`);
+    logger.info(`✗ (${err.message})`);
     return false;
   }
 }
 
 async function runTests() {
-  console.log('\n═══════════════════════════════════════════════════════════');
-  console.log('REZ Intelligence - Integration Test');
-  console.log('═══════════════════════════════════════════════════════════\n');
+  logger.info('\n═══════════════════════════════════════════════════════════');
+  logger.info('REZ Intelligence - Integration Test');
+  logger.info('═══════════════════════════════════════════════════════════\n');
 
   let passed = 0;
   let failed = 0;
 
   // Test 1: Health Check
-  console.log('Health Checks:');
+  logger.info('Health Checks:');
   if (await test('Integration SDK Health', async () => {
     const res = await httpGet('/health');
     if (res.status !== 200) throw new Error(`Status ${res.status}`);
   })) passed++; else failed++;
 
   // Test 2: Identity Resolution
-  console.log('\nIdentity:');
+  logger.info('\nIdentity:');
   if (await test('Resolve New User', async () => {
     const res = await httpPost('/resolve', {
       phone: '+919876543210',
@@ -110,7 +112,7 @@ async function runTests() {
       sourceUserId: 'test_user_1'
     });
     if (!res.data.unifiedId) throw new Error('No unified ID returned');
-    console.log(`    Unified ID: ${res.data.unifiedId}`);
+    logger.info(`    Unified ID: ${res.data.unifiedId}`);
   })) passed++; else failed++;
 
   if (await test('Get User Profile', async () => {
@@ -121,7 +123,7 @@ async function runTests() {
   })) passed++; else failed++;
 
   // Test 3: Event Tracking
-  console.log('\nEvent Tracking:');
+  logger.info('\nEvent Tracking:');
   if (await test('Track QR Scan', async () => {
     const res = await httpPost('/api/events/track', {
       eventType: 'qr_scan',
@@ -145,14 +147,14 @@ async function runTests() {
   })) passed++; else failed++;
 
   // Test 4: Recommendations
-  console.log('\nRecommendations:');
+  logger.info('\nRecommendations:');
   if (await test('Get Recommendations', async () => {
     const res = await httpGet('/api/recommendations/test_user_1?types=reorder&limit=5');
     if (res.status !== 200) throw new Error(`Status ${res.status}`);
   })) passed++; else failed++;
 
   // Test 5: Feedback
-  console.log('\nFeedback:');
+  logger.info('\nFeedback:');
   if (await test('Track Conversion', async () => {
     const res = await httpPost('/api/feedback/conversion', {
       nudgeId: 'nudge_test_1',
@@ -165,9 +167,9 @@ async function runTests() {
   })) passed++; else failed++;
 
   // Summary
-  console.log('\n═══════════════════════════════════════════════════════════');
-  console.log(`Results: ${passed} passed, ${failed} failed`);
-  console.log('═══════════════════════════════════════════════════════════\n');
+  logger.info('\n═══════════════════════════════════════════════════════════');
+  logger.info(`Results: ${passed} passed, ${failed} failed`);
+  logger.info('═══════════════════════════════════════════════════════════\n');
 
   return failed === 0;
 }

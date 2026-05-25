@@ -14,7 +14,7 @@ const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 /**
  * Verify token
  */
-export async function verifyToken(token: string): Promise<{ valid: boolean; user?: any; error?: string }> {
+export async function verifyToken(token: string): Promise<{ valid: boolean; user?; error?: string }> {
   try {
     const res = await axios.get(`${AUTH_URL}/api/auth/verify`, {
       headers: { 'Authorization': `Bearer ${token}`, 'X-Internal-Token': INTERNAL_TOKEN },
@@ -23,7 +23,7 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; user
       return { valid: true, user: res.data.user };
     }
     return { valid: false, error: 'Invalid token' };
-  } catch (error: any) {
+  } catch (error) {
     return { valid: false, error: error.message };
   }
 }
@@ -39,7 +39,7 @@ export async function rewardRFMTier(userId: string, tier: string, amount: number
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -57,7 +57,7 @@ export async function notifyTierUpgrade(userId: string, newTier: string): Promis
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -65,7 +65,7 @@ export async function notifyTierUpgrade(userId: string, newTier: string): Promis
 /**
  * Publish RFM event
  */
-export async function publishRFMEvent(eventType: string, data: Record<string, any>): Promise<{ success: boolean; error?: string }> {
+export async function publishRFMEvent(eventType: string, data: Record<string, unknown>): Promise<{ success: boolean; error?: string }> {
   try {
     await axios.post(`${EVENT_BUS_URL}/api/events/publish`, {
       type: `rfm.${eventType}`,
@@ -75,7 +75,7 @@ export async function publishRFMEvent(eventType: string, data: Record<string, an
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }

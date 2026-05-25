@@ -8,7 +8,7 @@ const PREDICT_URL = process.env.PREDICTIVE_ENGINE_URL || 'http://localhost:4123'
 const IDENTITY_URL = process.env.IDENTITY_URL || 'http://localhost:4050';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
-async function intelligenceRequest(url: string, options: RequestInit = {}): Promise<any> {
+async function intelligenceRequest(url: string, options: RequestInit = {}): Promise<unknown> {
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -31,7 +31,7 @@ async function intelligenceRequest(url: string, options: RequestInit = {}): Prom
 
 const signalConfig = { baseUrl: SIGNAL_URL, token: INTERNAL_TOKEN };
 
-async function signalRequest(path: string, options: RequestInit = {}): Promise<any> {
+async function signalRequest(path: string, options: RequestInit = {}): Promise<unknown> {
   const response = await fetch(`${signalConfig.baseUrl}${path}`, {
     ...options,
     headers: {
@@ -101,7 +101,7 @@ export const signalIntegration = {
 
 const predictConfig = { baseUrl: PREDICT_URL, token: INTERNAL_TOKEN };
 
-async function predictRequest(path: string, options: RequestInit = {}): Promise<any> {
+async function predictRequest(path: string, options: RequestInit = {}): Promise<unknown> {
   const response = await fetch(`${predictConfig.baseUrl}${path}`, {
     ...options,
     headers: {
@@ -170,7 +170,7 @@ export const predictiveIntegration = {
 
 const identityConfig = { baseUrl: IDENTITY_URL, token: INTERNAL_TOKEN };
 
-async function identityRequest(path: string, options: RequestInit = {}): Promise<any> {
+async function identityRequest(path: string, options: RequestInit = {}): Promise<unknown> {
   const response = await fetch(`${identityConfig.baseUrl}${path}`, {
     ...options,
     headers: {
@@ -191,7 +191,7 @@ export const identityIntegration = {
   /**
    * Get user profile for segment evaluation
    */
-  async getUserProfileForSegments(userId: string): Promise<any> {
+  async getUserProfileForSegments(userId: string): Promise<unknown> {
     return identityRequest(`/api/identity/${userId}/profile`);
   },
 

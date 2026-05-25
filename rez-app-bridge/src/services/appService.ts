@@ -8,7 +8,7 @@ const MessageSchema = z.object({
   userId: z.string().min(1),
   message: z.string().min(1).max(5000),
   sessionId: z.string().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.unknown()).optional(),
 });
 
 const InAppNotificationSchema = z.object({
@@ -17,7 +17,7 @@ const InAppNotificationSchema = z.object({
   body: z.string().min(1).max(500),
   type: z.enum(['info', 'success', 'warning', 'error', 'chat', 'order', 'payment', 'system']),
   priority: z.enum(['low', 'normal', 'high']).default('normal'),
-  data: z.record(z.any()).optional(),
+  data: z.record(z.unknown()).optional(),
   actionUrl: z.string().url().optional(),
   expiresAt: z.date().optional(),
 });
@@ -288,8 +288,8 @@ export class AppService {
   private emitNotification(userId: string, notification: InAppNotification & { id: string; createdAt: Date; read: boolean }): void {
     // This will be implemented by WebSocketService
     // We use a simple event emitter pattern here
-    if (typeof global !== 'undefined' && (global as any).emitNotification) {
-      (global as any).emitNotification(userId, notification);
+    if (typeof global !== 'undefined' && (global as unknown).emitNotification) {
+      (global as unknown).emitNotification(userId, notification);
     }
   }
 

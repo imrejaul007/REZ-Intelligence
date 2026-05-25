@@ -129,7 +129,7 @@ async function gracefulShutdown(signal: string): Promise<void> {
     const { disconnectDatabase } = await import('./config/database.js');
     await disconnectDatabase();
     logger.info('Database connection closed');
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error closing database', { error: error.message });
   }
 
@@ -175,7 +175,7 @@ async function startServer(): Promise<void> {
       logger.info(`API base: http://localhost:${PORT}/api`);
     });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to start server', { error: error.message });
     process.exit(1);
   }

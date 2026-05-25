@@ -14,23 +14,23 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; erro
       headers: { 'Authorization': `Bearer ${token}`, 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { valid: res.data.success };
-  } catch (error: any) {
+  } catch (error) {
     return { valid: false, error: error.message };
   }
 }
 
-export async function getProfile(userId: string): Promise<{ profile: any; error?: string }> {
+export async function getProfile(userId: string): Promise<{ profile; error?: string }> {
   try {
     const res = await axios.get(`${PROFILE_URL}/api/profiles/${userId}`, {
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { profile: res.data };
-  } catch (error: any) {
+  } catch (error) {
     return { profile: null, error: error.message };
   }
 }
 
-export async function updateProfile(userId: string, updates: Record<string, any>): Promise<{ success: boolean }> {
+export async function updateProfile(userId: string, updates: Record<string, unknown>): Promise<{ success: boolean }> {
   try {
     await axios.patch(`${PROFILE_URL}/api/profiles/${userId}`, updates, {
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },

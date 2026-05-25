@@ -23,8 +23,8 @@ export const UnifiedProfileSchema = z.object({
   dateOfBirth: z.string().datetime().optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']).optional(),
   addresses: z.array(AddressSchema).optional(),
-  preferences: z.record(z.any()).optional(),
-  metadata: z.record(z.any()).optional(),
+  preferences: z.record(z.unknown()).optional(),
+  metadata: z.record(z.unknown()).optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -150,7 +150,7 @@ export type CustomerOverview = z.infer<typeof CustomerOverviewSchema>;
 // API Response Types
 export const ApiResponseSchema = z.object({
   success: z.boolean(),
-  data: z.any().optional(),
+  data: z.unknown().optional(),
   error: z.string().optional(),
   message: z.string().optional(),
 });

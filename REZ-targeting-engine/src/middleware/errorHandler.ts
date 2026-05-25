@@ -40,9 +40,9 @@ export class NotFoundError extends AppError {
 }
 
 export class ValidationError extends AppError {
-  errors: any[];
+  errors: unknown[];
 
-  constructor(message: string, errors: any[] = []) {
+  constructor(message: string, errors: unknown[] = []) {
     super(message, 400);
     this.errors = errors;
   }
@@ -95,7 +95,7 @@ export const errorHandler = (
 };
 
 export const asyncHandler = (
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<any>
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>
 ) => {
   return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);

@@ -142,7 +142,7 @@ export class FinanceIntelligenceService {
     };
   }
 
-  private async getUserIntents(userId: string): Promise<any[]> {
+  private async getUserIntents(userId: string): Promise<unknown[]> {
     // In production, fetch from Intent Graph service
     return [];
   }
@@ -151,7 +151,7 @@ export class FinanceIntelligenceService {
     return [];
   }
 
-  private calculateIntentStrength(intents: any[]): number {
+  private calculateIntentStrength(intents: unknown[]): number {
     if (intents.length === 0) return 0;
 
     const weights: Record<string, number> = {

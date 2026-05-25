@@ -10,7 +10,7 @@ const PUSH_SERVICE_URL = process.env.PUSH_SERVICE_URL || 'https://rez-notificati
 export interface FinanceNudge {
   id: string;
   trigger: 'dormant_finance' | 'emi_due' | 'score_check' | 'loan_ready' | 'bnpl_reminder';
-  condition: (user: any) => boolean;
+  condition: (user) => boolean;
   action: 'push' | 'whatsapp' | 'both';
   templates: {
     title: string;
@@ -110,7 +110,7 @@ export const financeNudges: FinanceNudge[] = [
 /**
  * Process finance nudges for a user
  */
-export async function processFinanceNudge(user: any): Promise<void> {
+export async function processFinanceNudge(user): Promise<void> {
   for (const nudge of financeNudges) {
     if (nudge.condition(user)) {
       await sendFinanceNudge(user, nudge);
@@ -121,7 +121,7 @@ export async function processFinanceNudge(user: any): Promise<void> {
 /**
  * Send finance nudge via push/whatsapp
  */
-async function sendFinanceNudge(user: any, nudge: FinanceNudge): Promise<void> {
+async function sendFinanceNudge(user, nudge: FinanceNudge): Promise<void> {
   // Personalize message
   const message = personalizeTemplate(nudge.templates, user);
 
@@ -134,7 +134,7 @@ async function sendFinanceNudge(user: any, nudge: FinanceNudge): Promise<void> {
   }
 }
 
-function personalizeTemplate(template: any, user: any): any {
+function personalizeTemplate(template, user): unknown {
   const personalized = { ...template };
 
   // Replace placeholders with user data
@@ -153,7 +153,7 @@ function personalizeTemplate(template: any, user: any): any {
   return personalized;
 }
 
-async function sendPush(userId: string, message: any, nudgeId: string): Promise<void> {
+async function sendPush(userId: string, message, nudgeId: string): Promise<void> {
   try {
     await axios.post(`${PUSH_SERVICE_URL}/api/push/send`, {
       userId,
@@ -166,7 +166,7 @@ async function sendPush(userId: string, message: any, nudgeId: string): Promise<
   }
 }
 
-async function sendWhatsApp(userId: string, message: any): Promise<void> {
+async function sendWhatsApp(userId: string, message): Promise<void> {
   try {
     await axios.post(`${PUSH_SERVICE_URL}/api/whatsapp/send`, {
       userId,

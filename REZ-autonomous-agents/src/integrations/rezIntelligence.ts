@@ -20,7 +20,7 @@ const config: IntelligenceConfig = {
   token: INTERNAL_TOKEN,
 };
 
-async function intelligenceRequest(path: string, options: RequestInit = {}): Promise<any> {
+async function intelligenceRequest(path: string, options: RequestInit = {}): Promise<unknown> {
   const response = await fetch(`${config.baseUrl}${path}`, {
     ...options,
     headers: {
@@ -45,7 +45,7 @@ export const intentPrediction = {
   /**
    * Predict user intent
    */
-  async predict(userId: string, context?: Record<string, any>): Promise<{
+  async predict(userId: string, context?: Record<string, unknown>): Promise<{
     intents: { intent: string; confidence: number }[];
     primaryIntent: string;
     confidence: number;
@@ -64,7 +64,7 @@ export const intentPrediction = {
     signalType: 'search' | 'view' | 'click' | 'add_to_cart' | 'purchase' | 'wishlist';
     entityType: string;
     entityId: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }): Promise<void> {
     await intelligenceRequest('/api/intent/capture', {
       method: 'POST',
@@ -75,7 +75,7 @@ export const intentPrediction = {
   /**
    * Get active intents for user
    */
-  async getActiveIntents(userId: string): Promise<any> {
+  async getActiveIntents(userId: string): Promise<unknown> {
     return intelligenceRequest(`/api/intent/active/${userId}`);
   },
 };
@@ -89,7 +89,7 @@ const predictConfig: IntelligenceConfig = {
   token: INTERNAL_TOKEN,
 };
 
-async function predictRequest(path: string, options: RequestInit = {}): Promise<any> {
+async function predictRequest(path: string, options: RequestInit = {}): Promise<unknown> {
   const response = await fetch(`${predictConfig.baseUrl}${path}`, {
     ...options,
     headers: {
@@ -164,7 +164,7 @@ const segmentsConfig: IntelligenceConfig = {
   token: INTERNAL_TOKEN,
 };
 
-async function segmentsRequest(path: string, options: RequestInit = {}): Promise<any> {
+async function segmentsRequest(path: string, options: RequestInit = {}): Promise<unknown> {
   const response = await fetch(`${segmentsConfig.baseUrl}${path}`, {
     ...options,
     headers: {
@@ -213,7 +213,7 @@ const signalConfig: IntelligenceConfig = {
   token: INTERNAL_TOKEN,
 };
 
-async function signalRequest(path: string, options: RequestInit = {}): Promise<any> {
+async function signalRequest(path: string, options: RequestInit = {}): Promise<unknown> {
   const response = await fetch(`${signalConfig.baseUrl}${path}`, {
     ...options,
     headers: {
@@ -238,7 +238,7 @@ export const signalAggregator = {
     userId: string;
     type: string;
     source: string;
-    properties?: Record<string, any>;
+    properties?: Record<string, unknown>;
   }): Promise<void> {
     await signalRequest('/api/signals', {
       method: 'POST',
@@ -249,7 +249,7 @@ export const signalAggregator = {
   /**
    * Get user signals
    */
-  async getUserSignals(userId: string, limit = 50): Promise<any[]> {
+  async getUserSignals(userId: string, limit = 50): Promise<unknown[]> {
     return signalRequest(`/api/signals/${userId}`, {
       method: 'GET',
     });
@@ -258,7 +258,7 @@ export const signalAggregator = {
   /**
    * Query signals
    */
-  async querySignals(filters: Record<string, any>): Promise<any[]> {
+  async querySignals(filters: Record<string, unknown>): Promise<unknown[]> {
     return signalRequest('/api/signals/query', {
       method: 'POST',
       body: JSON.stringify(filters),
@@ -275,7 +275,7 @@ const identityConfig: IntelligenceConfig = {
   token: INTERNAL_TOKEN,
 };
 
-async function identityRequest(path: string, options: RequestInit = {}): Promise<any> {
+async function identityRequest(path: string, options: RequestInit = {}): Promise<unknown> {
   const response = await fetch(`${identityConfig.baseUrl}${path}`, {
     ...options,
     headers: {
@@ -392,7 +392,7 @@ export const agentHelpers = {
       type: 'low_inventory',
     });
 
-    return signals.map((s: any) => ({
+    return signals.map((s) => ({
       productId: s.properties?.productId,
       name: s.properties?.productName,
       ratio: s.properties?.ratio || 0,

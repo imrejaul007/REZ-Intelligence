@@ -192,7 +192,7 @@ export class AttributionListener {
         currency: event.value.currency,
         channels: event.channels,
         campaignId: event.campaignId,
-        attributionModel: event.attributionModel as any,
+        attributionModel: event.attributionModel as unknown,
         attributedRevenue: event.attributedRevenue
       });
 

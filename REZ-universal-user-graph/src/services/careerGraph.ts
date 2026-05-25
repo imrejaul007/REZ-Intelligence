@@ -294,7 +294,7 @@ export class CareerGraphService {
   /**
    * Calculate derived scores
    */
-  private calculateDerived(profile: any): CareerGraph['derived'] {
+  private calculateDerived(profile): CareerGraph['derived'] {
     const { careerProfile } = profile;
 
     // Total experience in years
@@ -318,7 +318,7 @@ export class CareerGraphService {
             100,
             (careerProfile.skills.length * 5 +
               careerProfile.skills.reduce(
-                (sum: number, s: any) => sum + (skillLevels[s.level] || 1),
+                (sum: number, s) => sum + (skillLevels[s.level] || 1),
                 0
               ) *
                 5)
@@ -329,7 +329,7 @@ export class CareerGraphService {
     let educationScore = 0;
     if (careerProfile.education && careerProfile.education.length > 0) {
       const maxLevel = Math.max(
-        ...careerProfile.education.map((e: any) =>
+        ...careerProfile.education.map((e) =>
           Object.values(EducationLevel).indexOf(e.level)
         )
       );
@@ -342,9 +342,9 @@ export class CareerGraphService {
       (careerProfile.education?.length || 0) +
       (careerProfile.experience?.length || 0);
     const verifiedItems =
-      (careerProfile.certifications?.filter((c: any) => c.verified).length || 0) +
-      (careerProfile.education?.filter((e: any) => e.verified).length || 0) +
-      (careerProfile.experience?.filter((e: any) => e.verified).length || 0);
+      (careerProfile.certifications?.filter((c) => c.verified).length || 0) +
+      (careerProfile.education?.filter((e) => e.verified).length || 0) +
+      (careerProfile.experience?.filter((e) => e.verified).length || 0);
     const verificationScore = totalItems > 0 ? (verifiedItems / totalItems) * 100 : 0;
 
     // Overall score (weighted average)
@@ -354,13 +354,13 @@ export class CareerGraphService {
 
     // Top skills
     const topSkills = (careerProfile.skills || [])
-      .sort((a: any, b: any) => (b.endorsements || 0) - (a.endorsements || 0))
+      .sort((a, b) => (b.endorsements || 0) - (a.endorsements || 0))
       .slice(0, 10)
-      .map((s: any) => s.name);
+      .map((s) => s.name);
 
     // Top industries
     const topIndustries = [
-      ...new Set(careerProfile.experience?.map((e: any) => e.industry) || []),
+      ...new Set(careerProfile.experience?.map((e) => e.industry) || []),
     ].slice(0, 5);
 
     return {
@@ -383,7 +383,7 @@ export class CareerGraphService {
     skills: string[],
     options?: { limit?: number; skip?: number; verifiedOnly?: boolean }
   ): Promise<{ userId: string; matchScore: number }[]> {
-    const query: any = {
+    const query: unknown = {
       'careerProfile.skills.name': { $in: skills.map((s) => new RegExp(s, 'i')) },
     };
 
@@ -400,7 +400,7 @@ export class CareerGraphService {
 
     // Calculate match score
     return candidates.map((candidate) => {
-      const matchingSkills = candidate.careerProfile.skills.filter((s: any) =>
+      const matchingSkills = candidate.careerProfile.skills.filter((s) =>
         skills.some(
           (sk) => s.name.toLowerCase().includes(sk.toLowerCase())
         )
@@ -422,7 +422,7 @@ export class CareerGraphService {
     preferences: CareerPreferences,
     options?: { limit?: number; skip?: number }
   ): Promise<CareerGraph[]> {
-    const query: any = {};
+    const query: unknown = {};
 
     if (preferences.desiredRoles.length > 0) {
       query['careerProfile.experience.title'] = {
@@ -478,7 +478,7 @@ export class CareerGraphService {
 
     // Find highest education level
     const highestEducation = career.careerProfile.education?.length
-      ? career.careerProfile.education.reduce((max: any, curr: any) => {
+      ? career.careerProfile.education.reduce((max, curr) => {
           const maxLevel = Object.values(EducationLevel).indexOf(max.level);
           const currLevel = Object.values(EducationLevel).indexOf(curr.level);
           return currLevel > maxLevel ? curr : max;

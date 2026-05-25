@@ -18,7 +18,8 @@
  * CorpPerks (Enterprise)
  */
 
-import express, { Request, Response } from 'express';
+import express, { Request, Response } import logger from './utils/logger';
+import from 'express';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '4105', 10);
@@ -96,7 +97,7 @@ const signals: UserSignal[] = [];
 // ============================================
 
 /**
- * Process a user signal from any source
+ * Process a user signal from unknown source
  * Routes to appropriate services
  */
 async function processSignal(signal: UserSignal): Promise<void> {
@@ -551,19 +552,19 @@ app.get('/api/v1/services/status', (_req: Request, res: Response) => {
 // ============================================
 
 app.listen(PORT, () => {
-  console.log(`REZ Ecosystem Hub running on port ${PORT}`);
-  console.log('');
-  console.log('Connected Services:');
+  logger.info(`REZ Ecosystem Hub running on port ${PORT}`);
+  logger.info('');
+  logger.info('Connected Services:');
   Object.entries(SERVICES).forEach(([name, url]) => {
-    console.log(`  ${name}: ${url}`);
+    logger.info(`  ${name}: ${url}`);
   });
-  console.log('');
-  console.log('Features:');
-  console.log('  • Unified user profiles');
-  console.log('  • Signal processing');
-  console.log('  • Cross-brand campaigns');
-  console.log('  • AI recommendations');
-  console.log('  • Engagement analytics');
+  logger.info('');
+  logger.info('Features:');
+  logger.info('  • Unified user profiles');
+  logger.info('  • Signal processing');
+  logger.info('  • Cross-brand campaigns');
+  logger.info('  • AI recommendations');
+  logger.info('  • Engagement analytics');
 });
 
 export { app };

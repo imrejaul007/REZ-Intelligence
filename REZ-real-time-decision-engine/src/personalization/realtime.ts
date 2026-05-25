@@ -56,7 +56,7 @@ export interface UserPreferences {
 export interface PersonalizationResult {
   content: PersonalizedContent;
   signals: PersonalizationSignal[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   processingTimeMs: number;
 }
 
@@ -67,15 +67,15 @@ export interface PersonalizedContent {
   layout: LayoutConfig;
   copy: CopyVariants;
   ctas: CTACollection;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface ContentElement {
   id: string;
   type: 'image' | 'video' | 'text' | 'product' | 'category' | 'cta';
-  content: Record<string, any>;
+  content: Record<string, unknown>;
   position: { x: number; y: number };
-  style: Record<string, any>;
+  style: Record<string, unknown>;
 }
 
 export interface LayoutConfig {

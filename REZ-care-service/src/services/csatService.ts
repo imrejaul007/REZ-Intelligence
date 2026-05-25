@@ -85,7 +85,7 @@ export class CSATService {
     // Check if survey already exists
     const existing = await CSATSurveyModel.findOne({ ticketId, status: { $ne: 'expired' } });
     if (existing) {
-      return existing.toObject() as any;
+      return existing.toObject() as unknown;
     }
 
     // Get customer preference
@@ -128,7 +128,7 @@ export class CSATService {
 
     logger.info('CSAT survey sent', { ticketId, customerId, channel: customerChannel });
 
-    return survey.toObject() as any;
+    return survey.toObject() as unknown;
   }
 
   /**
@@ -356,7 +356,7 @@ export class CSATService {
   // ============================================
 
   private async sendSurveyNotification(
-    survey: any,
+    survey,
     customer: { phone?: string; email?: string }
   ): Promise<void> {
     const messages: Record<string, { title: string; body: string }> = {

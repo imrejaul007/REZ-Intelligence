@@ -13,6 +13,7 @@
 
 import mongoose, { Schema } from 'mongoose';
 import { logger } from '../utils/logger';
+import { generateIssueId } from '../utils/idGenerator';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-care';
 
@@ -143,7 +144,7 @@ function createIssueSignature(issue: {
   const parts = [
     issue.category,
     issue.platform,
-    issue.partnerType || 'any',
+    issue.partnerType || 'unknown',
     ...(issue.keywords || []).slice(0, 3).sort()
   ];
   return parts.join('|');
@@ -302,16 +303,16 @@ export class CrossPlatformIssueMemory {
     ticketId?: string;
     occurredAt?: Date;
   }): Promise<{
-    issue: any;
+    issue;
     isRepeatIssue: boolean;
-    similarIssues: any[];
+    similarIssues: unknown[];
     customerRiskLevel: string;
     partnerWarning: boolean;
     suggestions: string[];
   }> {
     await this.connect();
 
-    const issueId = `ISSUE-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+    const issueId = generateIssueId();
     const now = new Date();
 
     // Check for repeat issues
@@ -401,10 +402,10 @@ export class CrossPlatformIssueMemory {
     category?: string;
     description?: string;
     limit?: number;
-  }): Promise<any[]> {
+  }): Promise<unknown[]> {
     await this.connect();
 
-    const query: any = {};
+    const query: unknown = {};
 
     if (params.customerId) {
       query.customerId = params.customerId;
@@ -441,7 +442,7 @@ export class CrossPlatformIssueMemory {
     totalIssues: number;
     byPlatform: Record<string, number>;
     byCategory: Record<string, number>;
-    recentIssues: any[];
+    recentIssues: unknown[];
     riskLevel: string;
     riskFactors: string[];
     crossPlatformPatterns: {
@@ -464,8 +465,8 @@ export class CrossPlatformIssueMemory {
     const platformPatterns: Record<string, { count: number; lastIssue: Date }> = {};
 
     for (const issue of issues) {
-      const platform = issue.platform.type;
-      const category = issue.issue.category;
+      const platform = issue.platform?.type || 'unknown';
+      const category = issue.issue?.category || 'unknown';
 
       byPlatform[platform] = (byPlatform[platform] || 0) + 1;
       byCategory[category] = (byCategory[category] || 0) + 1;
@@ -519,7 +520,7 @@ export class CrossPlatformIssueMemory {
     openIssues: number;
     avgResolutionTime: number;
     categories: Record<string, { count: number; trend: string }>;
-    recentIssues: any[];
+    recentIssues: unknown[];
     riskLevel: string;
     performanceGrade: string;
     recommendations: string[];
@@ -534,7 +535,7 @@ export class CrossPlatformIssueMemory {
     // Aggregate by category
     const categories: Record<string, { count: number; trend: string }> = {};
     for (const issue of issues) {
-      const cat = issue.issue.category;
+      const cat = issue.issue?.category || 'unknown';
       if (!categories[cat]) categories[cat] = { count: 0, trend: 'stable' };
       categories[cat].count++;
     }
@@ -554,7 +555,7 @@ export class CrossPlatformIssueMemory {
 
     return {
       totalIssues: issues.length,
-      openIssues: issues.filter(i => i.resolution.status !== 'resolved').length,
+      openIssues: issues.filter(i => i.resolution?.status !== 'resolved').length,
       avgResolutionTime: profile?.stats?.avgResolutionTime || 0,
       categories,
       recentIssues: issues.slice(0, 10),
@@ -568,7 +569,7 @@ export class CrossPlatformIssueMemory {
    * Detect platform-wide issues
    */
   async detectPlatformWideIssues(): Promise<{
-    issues: any[];
+    issues: unknown[];
     affectedCustomers: Map<string, number>;
     recommendations: string[];
   }> {
@@ -648,9 +649,9 @@ export class CrossPlatformIssueMemory {
       });
     }
 
-    if (profile.learned?.avoidPartners?.length > 0) {
+    if (profile.learned?.avoidPartners && profile.learned.avoidPartners.length > 0) {
       predictions.push({
-        platform: 'any',
+        platform: 'unknown',
         category: 'service_issue',
         probability: 0.6,
         preventionTip: 'Issue history with similar partners - verify partner rating'
@@ -682,7 +683,7 @@ export class CrossPlatformIssueMemory {
     const factors: string[] = [];
     let score = profile.risk?.score || 0;
 
-    if (profile.stats.totalIssues > 10) factors.push('High issue volume');
+    if (profile.stats && profile.stats.totalIssues > 10) factors.push('High issue volume');
     if (profile.sentiment?.trend === 'declining') factors.push('Declining satisfaction');
     if (profile.crossPlatform?.hasHotelIssues && profile.crossPlatform?.hasRestaurantIssues) {
       factors.push('Issues across multiple platforms');
@@ -699,13 +700,13 @@ export class CrossPlatformIssueMemory {
     if (!profile) return false;
 
     // Warning if more than 5 open issues
-    if (profile.stats.openIssues > 5) return true;
+    if (profile.stats && profile.stats.openIssues > 5) return true;
 
     // Warning if performance grade is D or F
     if (profile.performance?.grade === 'D' || profile.performance?.grade === 'F') return true;
 
     // Warning if recent escalations
-    if (profile.escalations?.recent > 3) return true;
+    if (profile.escalations && profile.escalations.recent && profile.escalations.recent > 3) return true;
 
     return false;
   }
@@ -715,7 +716,7 @@ export class CrossPlatformIssueMemory {
     return words.filter(w => w.length > 4).slice(0, 5);
   }
 
-  private async updateCustomerProfile(customerId: string, issue: any): Promise<void> {
+  private async updateCustomerProfile(customerId: string, issue): Promise<void> {
     await CustomerIssueProfile.findOneAndUpdate(
       { customerId },
       {
@@ -735,7 +736,7 @@ export class CrossPlatformIssueMemory {
     );
   }
 
-  private async updatePartnerProfile(partnerId: string, issue: any): Promise<void> {
+  private async updatePartnerProfile(partnerId: string, issue): Promise<void> {
     await PartnerIssueProfile.findOneAndUpdate(
       { partnerId },
       {
@@ -754,7 +755,7 @@ export class CrossPlatformIssueMemory {
     );
   }
 
-  private generateSuggestions(issue: any, similarIssues: any[], risk: any): string[] {
+  private generateSuggestions(issue, similarIssues: unknown[], risk): string[] {
     const suggestions: string[] = [];
 
     if (similarIssues.length > 0) {
@@ -779,7 +780,7 @@ export class CrossPlatformIssueMemory {
   private generateCustomerRecommendations(
     byPlatform: Record<string, number>,
     byCategory: Record<string, number>,
-    issues: any[]
+    issues: unknown[]
   ): string[] {
     const recommendations: string[] = [];
 
@@ -804,7 +805,7 @@ export class CrossPlatformIssueMemory {
     return recommendations;
   }
 
-  private generatePartnerRecommendations(categories: any, issues: any[]): string[] {
+  private generatePartnerRecommendations(categories, issues: unknown[]): string[] {
     const recommendations: string[] = [];
 
     const openIssues = issues.filter(i => i.resolution.status !== 'resolved');

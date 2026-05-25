@@ -11,7 +11,8 @@
  * This is the brain of REZ advertising.
  */
 
-import express, { Request, Response } from 'express';
+import express, { Request, Response } import logger from './utils/logger';
+import from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
@@ -288,7 +289,7 @@ class AdDecisionEngine {
     return {
       adId: `ad_moment_${moment.type}_${Date.now()}`,
       campaignId: `camp_moment_${moment.type}`,
-      merchantId: 'any',
+      merchantId: 'unknown',
       merchantName: 'REZ Partners',
       type: 'retention',
       targetingReason: `Moment trigger: ${moment.type}`,
@@ -605,7 +606,7 @@ app.post('/api/ads/conversion', async (req: Request, res: Response) => {
 // ============================================
 
 app.listen(PORT, () => {
-  console.log(`
+  logger.info(`
 ╔═══════════════════════════════════════════════════════════╗
 ║         REZ UNIFIED AD DECISION SERVICE                    ║
 ╠═══════════════════════════════════════════════════════════╣

@@ -419,7 +419,7 @@ export class ConsumerGraph {
     userId: string,
     deviceId: string,
     deviceType: 'ios' | 'android' | 'web' | 'tablet' | 'kiosk',
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<void> {
     const profile = this.profiles.get(userId);
     if (!profile) {
@@ -451,7 +451,7 @@ export class ConsumerGraph {
   /**
    * Get consumer's relationship graph
    */
-  async getRelationshipGraph(userId: string): Promise<any> {
+  async getRelationshipGraph(userId: string): Promise<unknown> {
     const profile = this.profiles.get(userId);
     if (!profile) {
       throw new Error('Consumer not found');

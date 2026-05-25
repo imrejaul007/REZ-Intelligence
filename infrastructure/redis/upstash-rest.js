@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * Upstash Redis REST API client (for edge/serverless)
  * Use this instead of redis client for serverless environments
@@ -10,7 +12,7 @@ class UpstashRedis {
     this.token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
     if (!this.url || !this.token) {
-      console.warn('Upstash credentials not configured');
+      logger.warn('Upstash credentials not configured');
     }
 
     this.client = axios.create({

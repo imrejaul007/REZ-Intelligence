@@ -3,7 +3,8 @@
  * Universal loyalty and rewards across all REZ companies
  */
 
-import express, { Request, Response } from 'express';
+import express, { Request, Response } import logger from './utils/logger';
+import from 'express';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '4151', 10);
@@ -340,9 +341,9 @@ app.get('/api/rewards', (req: Request, res: Response) => {
 // ============================================
 
 app.listen(PORT, () => {
-  console.log(`REZ Cross-Company Loyalty running on port ${PORT}`);
-  console.log('  Companies: All REZ companies supported');
-  console.log('  Features: Universal points, cross-company rewards');
+  logger.info(`REZ Cross-Company Loyalty running on port ${PORT}`);
+  logger.info('  Companies: All REZ companies supported');
+  logger.info('  Features: Universal points, cross-company rewards');
 });
 
 export { app };

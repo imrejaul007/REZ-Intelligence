@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 import { v4 as uuidv4 } from 'uuid';
 import {
   WorkoutPlan,
@@ -15,7 +17,7 @@ export function validateEnv(): void {
   const missing = required.filter(key => !process.env[key]);
 
   if (missing.length > 0) {
-    console.warn(`Warning: Missing environment variables: ${missing.join(', ')}`);
+    logger.warn(`Warning: Missing environment variables: ${missing.join(', ')}`);
   }
 }
 
@@ -59,7 +61,7 @@ function generatePlanDescription(profile: UserProfile): string {
   return `A ${profile.daysPerWeek}-day per week workout program designed for ` +
     `${profile.fitnessLevel} fitness levels. This program focuses on ` +
     `${profile.goals.join(', ')} using ` +
-    `${profile.availableEquipment.includes('none' as any) ? 'bodyweight' : 'equipment-based'} exercises. ` +
+    `${profile.availableEquipment.includes('none' as unknown) ? 'bodyweight' : 'equipment-based'} exercises. ` +
     `Each workout is designed to maximize results while maintaining proper form and safety!`;
 }
 

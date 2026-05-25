@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ Notification Debugger MCP Server
  *
@@ -772,9 +774,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 // Start server
 async function main() {
   const USE_REAL_API = process.env.USE_REAL_NOTIFICATION === 'true';
-  console.error("REZ Notification Debugger MCP Server started");
-  console.error(`Notification Service URL: ${NOTIFICATION_SERVICE_URL || 'http://localhost:4011'}`);
-  console.error(`Real API: ${USE_REAL_API ? 'ENABLED' : 'DISABLED (set USE_REAL_NOTIFICATION=true to enable)'}`);
+  logger.error("REZ Notification Debugger MCP Server started");
+  logger.error(`Notification Service URL: ${NOTIFICATION_SERVICE_URL || 'http://localhost:4011'}`);
+  logger.error(`Real API: ${USE_REAL_API ? 'ENABLED' : 'DISABLED (set USE_REAL_NOTIFICATION=true to enable)'}`);
 
   const transport = new (await import("@modelcontextprotocol/sdk/server/stdio.js")).StdioServerTransport();
   await server.connect(transport);

@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ-identity-graph → Commerce Graph Sync
  *
@@ -63,9 +65,9 @@ class CommerceGraphSync {
           }
         }
       );
-      console.log(`[CommerceSync] Identity synced for ${update.userId}`);
+      logger.info(`[CommerceSync] Identity synced for ${update.userId}`);
     } catch (error) {
-      console.error(`[CommerceSync] Failed to sync identity: ${error.message}`);
+      logger.error(`[CommerceSync] Failed to sync identity: ${error.message}`);
     }
   }
 
@@ -91,11 +93,11 @@ class CommerceGraphSync {
           }
         }
       );
-      console.log(`[CommerceSync] Customer node upserted: ${node.userId}`);
+      logger.info(`[CommerceSync] Customer node upserted: ${node.userId}`);
     } catch (error) {
       // Ignore if already exists
       if (!error.message?.includes('409')) {
-        console.error(`[CommerceSync] Failed to upsert customer: ${error.message}`);
+        logger.error(`[CommerceSync] Failed to upsert customer: ${error.message}`);
       }
     }
   }
@@ -122,16 +124,16 @@ class CommerceGraphSync {
           }
         }
       );
-      console.log(`[CommerceSync] Identity linked: ${identityType} -> ${userId}`);
+      logger.info(`[CommerceSync] Identity linked: ${identityType} -> ${userId}`);
     } catch (error) {
-      console.error(`[CommerceSync] Failed to link identity: ${error.message}`);
+      logger.error(`[CommerceSync] Failed to link identity: ${error.message}`);
     }
   }
 
   /**
    * Get customer data from Commerce Graph
    */
-  async getCustomerFromGraph(userId: string): Promise<any> {
+  async getCustomerFromGraph(userId: string): Promise<unknown> {
     try {
       const response = await axios.get(
         `${COMMERCE_GRAPH_URL}/api/customers/${userId}`,
@@ -143,7 +145,7 @@ class CommerceGraphSync {
       );
       return response.data.data;
     } catch (error) {
-      console.error(`[CommerceSync] Failed to get customer: ${error.message}`);
+      logger.error(`[CommerceSync] Failed to get customer: ${error.message}`);
       return null;
     }
   }
@@ -153,7 +155,7 @@ class CommerceGraphSync {
    */
   async batchSync(updates: IdentityUpdate[]): Promise<void> {
     await Promise.all(updates.map(update => this.syncIdentityUpdate(update)));
-    console.log(`[CommerceSync] Batch synced ${updates.length} identities`);
+    logger.info(`[CommerceSync] Batch synced ${updates.length} identities`);
   }
 }
 

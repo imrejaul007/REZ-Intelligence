@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 import { beforeAll, afterAll, afterEach } from '@jest/globals';
 import { MongoClient, Db } from 'mongodb';
 import Redis from 'ioredis';
@@ -163,37 +165,37 @@ async function waitForPort(options: { port: number; host?: string; timeout?: num
 // ============================================================================
 
 beforeAll(async () => {
-  console.log('\n--- Starting REZ E2E Test Setup ---\n');
+  logger.info('\n--- Starting REZ E2E Test Setup ---\n');
 
   try {
     // 1. Connect to MongoDB
     await connectToMongoDB();
-    console.log('MongoDB connected');
+    logger.info('MongoDB connected');
 
     // 2. Connect to Redis
     await connectToRedis();
-    console.log('Redis connected');
+    logger.info('Redis connected');
 
     // 3. Start required services (if in local mode)
     if (process.env.LOCAL_SERVICES === 'true') {
       await startLocalServices();
-      console.log('Local services started');
+      logger.info('Local services started');
     }
 
     // 4. Initialize HTTP clients
     initializeAxiosClients();
-    console.log('HTTP clients initialized');
+    logger.info('HTTP clients initialized');
 
     // 5. Setup test database schema
     await setupTestDatabase();
-    console.log('Test database schema created');
+    logger.info('Test database schema created');
 
     // 6. Wait for services to be healthy
     await waitForServicesHealthy();
-    console.log('All services healthy');
+    logger.info('All services healthy');
 
     isSetupComplete = true;
-    console.log('\n--- E2E Test Setup Complete ---\n');
+    logger.info('\n--- E2E Test Setup Complete ---\n');
   } catch (error) {
     console.error('\nSetup failed:', error);
     throw error;
@@ -201,7 +203,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  console.log('\n--- Cleaning up E2E Test Environment ---\n');
+  logger.info('\n--- Cleaning up E2E Test Environment ---\n');
 
   try {
     // 1. Stop all service processes
@@ -210,15 +212,15 @@ afterAll(async () => {
     // 2. Close database connections
     if (mongoClient) {
       await mongoClient.close();
-      console.log('MongoDB connection closed');
+      logger.info('MongoDB connection closed');
     }
 
     if (redis) {
       await redis.quit();
-      console.log('Redis connection closed');
+      logger.info('Redis connection closed');
     }
 
-    console.log('\n--- Cleanup Complete ---\n');
+    logger.info('\n--- Cleanup Complete ---\n');
   } catch (error) {
     console.error('\nCleanup failed:', error);
     throw error;
@@ -349,7 +351,7 @@ async function startLocalServices(): Promise<void> {
       });
 
       serviceProcesses.set(service.name, spawnedProcess);
-      console.log(`Starting ${service.name} on port ${service.port}...`);
+      logger.info(`Starting ${service.name} on port ${service.port}...`);
     } catch (error) {
       console.warn(`Could not start ${service.name}:`, error);
     }
@@ -366,9 +368,9 @@ async function startLocalServices(): Promise<void> {
           output: 'silent',
         });
         if (isReady) {
-          console.log(`${service.name} is ready`);
+          logger.info(`${service.name} is ready`);
         } else {
-          console.warn(`${service.name} did not start in time`);
+          logger.warn(`${service.name} did not start in time`);
         }
       } catch (error) {
         console.warn(`${service.name} did not start:`, error);
@@ -381,7 +383,7 @@ async function stopLocalServices(): Promise<void> {
   for (const [name, proc] of serviceProcesses) {
     try {
       proc.kill('SIGTERM');
-      console.log(`Stopped ${name}`);
+      logger.info(`Stopped ${name}`);
     } catch (error) {
       console.warn(`Failed to stop ${name}:`, error);
     }
@@ -403,10 +405,10 @@ async function waitForServicesHealthy(): Promise<void> {
         const client = axiosInstances.get(service.name.toLowerCase().replace(' ', '-'));
         if (client) {
           await client.get(service.url, { timeout: 5000 });
-          console.log(`${service.name} is healthy`);
+          logger.info(`${service.name} is healthy`);
         }
       } catch {
-        console.warn(`${service.name} health check failed (may not be running)`);
+        logger.warn(`${service.name} health check failed (may not be running)`);
       }
     })
   );
@@ -812,7 +814,7 @@ export const helpers = {
         lastError = error as Error;
         if (attempt < maxRetries - 1) {
           const delay = baseDelay * Math.pow(2, attempt);
-          console.log(`Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms`);
+          logger.info(`Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms`);
           await helpers.wait(delay);
         }
       }

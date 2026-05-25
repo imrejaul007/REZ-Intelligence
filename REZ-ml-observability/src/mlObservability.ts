@@ -53,16 +53,16 @@ export interface PredictionLog {
 
   // Input
   userId?: string;
-  context: Record<string, any>;
-  features: Record<string, any>;
+  context: Record<string, unknown>;
+  features: Record<string, unknown>;
 
   // Output
-  prediction: any;
+  prediction;
   confidence?: number;
   decision?: string;
 
   // Ground truth (for training)
-  actual?: any;
+  actual?;
   outcome?: string;
 
   // Performance
@@ -87,8 +87,8 @@ export interface DriftDetection {
   driftScore: number;   // 0-1
 
   // Comparison
-  baselineDistribution: any;
-  currentDistribution: any;
+  baselineDistribution;
+  currentDistribution;
 }
 
 export interface Alert {
@@ -102,7 +102,7 @@ export interface Alert {
   featureName?: string;
 
   message: string;
-  details: Record<string, any>;
+  details: Record<string, unknown>;
 
   acknowledged: boolean;
   resolvedAt?: string;

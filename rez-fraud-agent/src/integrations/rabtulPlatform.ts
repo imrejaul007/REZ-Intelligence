@@ -10,7 +10,7 @@ const ANALYTICS_URL = process.env.ANALYTICS_SERVICE_URL || 'http://localhost:401
 const EVENT_BUS_URL = process.env.EVENT_BUS_URL || 'http://localhost:4025';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
-async function request(url: string, options: RequestInit = {}): Promise<any> {
+async function request(url: string, options: RequestInit = {}): Promise<unknown> {
   const res = await fetch(url, {
     ...options,
     headers: {
@@ -33,7 +33,7 @@ export const auth = {
 
 // Wallet Operations
 export const wallet = {
-  addCoins: async (userId: string, amount: number, reason: string, metadata?: Record<string, any>) =>
+  addCoins: async (userId: string, amount: number, reason: string, metadata?: Record<string, unknown>) =>
     request(`${WALLET_URL}/api/wallet/add`, {
       method: 'POST',
       body: JSON.stringify({ userId, amount, reason, metadata }),
@@ -48,12 +48,12 @@ export const wallet = {
 
 // Notification Operations
 export const notifications = {
-  send: async (params: { userId: string; title: string; message: string; type?: string; data?: any }) =>
+  send: async (params: { userId: string; title: string; message: string; type?: string; data?: unknown }) =>
     request(`${NOTIFICATION_URL}/api/notifications/send`, {
       method: 'POST',
       body: JSON.stringify(params),
     }),
-  sendBulk: async (notifications: any[]) =>
+  sendBulk: async (notifications: unknown[]) =>
     request(`${NOTIFICATION_URL}/api/notifications/send/batch`, {
       method: 'POST',
       body: JSON.stringify({ notifications }),
@@ -62,7 +62,7 @@ export const notifications = {
 
 // Analytics Operations
 export const analytics = {
-  track: async (event: string, properties: Record<string, any> = {}) =>
+  track: async (event: string, properties: Record<string, unknown> = {}) =>
     request(`${ANALYTICS_URL}/api/track`, {
       method: 'POST',
       body: JSON.stringify({ event, properties, timestamp: new Date().toISOString() }),
@@ -71,7 +71,7 @@ export const analytics = {
 
 // Event Bus Operations
 export const events = {
-  publish: async (type: string, category: string, data: any, context: Record<string, any> = {}) =>
+  publish: async (type: string, category: string, data, context: Record<string, unknown> = {}) =>
     request(`${EVENT_BUS_URL}/api/events`, {
       method: 'POST',
       body: JSON.stringify({ type, category, version: '1.0.0', source: 'rez-fraud-agent', data, ...context }),

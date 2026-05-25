@@ -3,7 +3,8 @@
  * Production-ready health monitoring with circuit breaker support
  */
 
-import express, { Express, Request, Response, NextFunction } from 'express';
+import express, { Express, Request, Response, NextFunction } import logger from './utils/logger';
+import from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
@@ -59,7 +60,7 @@ function startHealthCheckLoop(): void {
       // Log summary
       const summary = serviceChecker.getSummary(servicesToMonitor);
       if (summary.down > 0) {
-        console.log(`[Health Check] ${summary.healthy}/${summary.total} healthy, ${summary.down} down`);
+        logger.info(`[Health Check] ${summary.healthy}/${summary.total} healthy, ${summary.down} down`);
       }
     } catch (error) {
       console.error('[Health Check] Error during health check:', error);
@@ -382,7 +383,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 // ============================================
 
 async function shutdown(signal: string): Promise<void> {
-  console.log(`\n[Health Monitor] Received ${signal}. Shutting down gracefully...`);
+  logger.info(`\n[Health Monitor] Received ${signal}. Shutting down gracefully...`);
   isShuttingDown = true;
 
   stopHealthCheckLoop();
@@ -390,7 +391,7 @@ async function shutdown(signal: string): Promise<void> {
   // Allow in-flight requests to complete
   await new Promise(resolve => setTimeout(resolve, 1000));
 
-  console.log('[Health Monitor] Shutdown complete');
+  logger.info('[Health Monitor] Shutdown complete');
   process.exit(0);
 }
 
@@ -407,7 +408,7 @@ async function startServer(): Promise<void> {
     startHealthCheckLoop();
 
     app.listen(config.port, () => {
-      console.log(`
+      logger.info(`
 ╔══════════════════════════════════════════════════════════════════╗
 ║                  REZ HEALTH MONITOR v2.0.0                     ║
 ╠══════════════════════════════════════════════════════════════════╣

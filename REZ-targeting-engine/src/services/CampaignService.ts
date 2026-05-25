@@ -81,7 +81,7 @@ class CampaignService {
    * Update campaign
    */
   async updateCampaign(campaignId: string, input: UpdateCampaignInput): Promise<ICampaign | null> {
-    const updateData: any = {};
+    const updateData: unknown = {};
 
     if (input.name) updateData.name = input.name;
     if (input.description !== undefined) updateData.description = input.description;
@@ -119,7 +119,7 @@ class CampaignService {
     limit?: number;
     offset?: number;
   }): Promise<{ campaigns: ICampaign[]; total: number }> {
-    const filter: any = {};
+    const filter: unknown = {};
 
     if (options.status) filter.status = options.status;
     if (options.created_by) filter.created_by = options.created_by;
@@ -172,7 +172,7 @@ class CampaignService {
     }
 
     // Calculate total estimated matching
-    const totalEstimated = this.estimateAudienceSize(campaign.rules as any);
+    const totalEstimated = this.estimateAudienceSize(campaign.rules as unknown);
 
     // Calculate percentages
     preview.total_matching = totalEstimated;

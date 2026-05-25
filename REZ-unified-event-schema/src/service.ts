@@ -201,7 +201,7 @@ app.post('/api/events/batch', async (req, res) => {
 app.get('/api/events', async (req, res) => {
   const { user_id, merchant_id, event_type, from, to, limit = 100 } = req.query;
 
-  const query: any = {};
+  const query: unknown = {};
   if (user_id) query.user_id = user_id;
   if (merchant_id) query.merchant_id = merchant_id;
   if (event_type) query.event_type = event_type;
@@ -220,7 +220,7 @@ app.get('/api/events', async (req, res) => {
 app.get('/api/events/stats', async (req, res) => {
   const { from, to, group_by = 'event_type' } = req.query;
 
-  const match: any = {};
+  const match: unknown = {};
   if (from && to) {
     match.timestamp = { $gte: new Date(from as string), $lte: new Date(to as string) };
   }

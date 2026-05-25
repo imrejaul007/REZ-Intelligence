@@ -103,7 +103,7 @@ async function startServer(): Promise<void> {
         port: PORT,
         nodeEnv: process.env.NODE_ENV || 'development'
       });
-      console.log(`
+      logger.info(`
 ╔═══════════════════════════════════════════════════════════════╗
 ║        REZ Competitor Detection Service                       ║
 ╠═══════════════════════════════════════════════════════════════╣

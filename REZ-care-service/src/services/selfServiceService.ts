@@ -74,7 +74,7 @@ export class SelfServiceService {
         id: 'wallet_sync',
         type: 'wallet_sync',
         title: 'Sync Wallet',
-        description: 'Fix any missing balance or transactions',
+        description: 'Fix unknown missing balance or transactions',
         eligible: true
       });
     }
@@ -110,7 +110,7 @@ export class SelfServiceService {
   async executeAction(
     customerId: string,
     actionType: string,
-    actionData: Record<string, any>
+    actionData: Record<string, unknown>
   ): Promise<SelfServiceResult> {
     switch (actionType) {
       case 'cashback_retry':
@@ -168,7 +168,7 @@ export class SelfServiceService {
           message: response.data.message || 'Could not process cashback. Please contact support.'
         };
       }
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Cashback retry failed', error);
 
       if (error.response?.data?.code === 'ALREADY_PROCESSED') {
@@ -233,7 +233,7 @@ export class SelfServiceService {
           message: response.data.message || 'Could not initiate payment. Please try again.'
         };
       }
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Payment retry failed', error);
 
       if (error.response?.status === 404) {
@@ -283,7 +283,7 @@ export class SelfServiceService {
           message: response.data.message || 'Could not sync wallet.'
         };
       }
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Wallet sync failed', error);
 
       return {
@@ -400,7 +400,7 @@ export class SelfServiceService {
           message: response.data.message || 'Could not reschedule booking. Please contact support.'
         };
       }
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Booking reschedule failed', error);
 
       if (error.response?.status === 400) {
@@ -494,7 +494,7 @@ export class SelfServiceService {
 
   private async checkBookingStatus(customerId: string): Promise<{
     hasActiveBookings: boolean;
-    bookings?: any[];
+    bookings?: unknown[];
   }> {
     try {
       const response = await axios.get(

@@ -12,7 +12,8 @@
  * This is the brain of the hyperlocal commerce network.
  */
 
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response, NextFunction } import logger from './utils/logger';
+import from 'express';
 import mongoose, { Schema, Document } from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -476,7 +477,7 @@ app.get('/api/customers/:userId/moments', async (req: Request, res: Response) =>
       return res.status(404).json({ success: false, error: 'Customer not found' });
     }
 
-    const moments: any[] = [];
+    const moments: unknown[] = [];
 
     // 1. Coin expiry trigger
     if (customer.loyalty.expiringCoins > 0) {
@@ -650,7 +651,7 @@ app.post('/api/ads/decide', async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, error: 'Customer not found' });
     }
 
-    const decisions: any[] = [];
+    const decisions: unknown[] = [];
 
     // Decision 1: Cross-sell opportunity
     if (moment === 'idle' || moment === 'nearby') {
@@ -766,11 +767,11 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
 async function start() {
   try {
     await mongoose.connect(MONGODB_URI);
-    console.log('Connected to MongoDB');
+    logger.info('Connected to MongoDB');
 
     app.listen(PORT, () => {
-      console.log(`REZ Unified Commerce Graph running on port ${PORT}`);
-      console.log(`
+      logger.info(`REZ Unified Commerce Graph running on port ${PORT}`);
+      logger.info(`
 ┌─────────────────────────────────────────────────────────┐
 │         REZ UNIFIED COMMERCE GRAPH                      │
 ├─────────────────────────────────────────────────────────┤

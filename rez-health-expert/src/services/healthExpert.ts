@@ -403,7 +403,7 @@ class HealthExpertAgent {
     recommendations.push({
       type: 'information',
       title: 'Track Your Symptoms',
-      description: 'Keep a log of your symptoms, including when they started, their severity, and any patterns you notice.',
+      description: 'Keep a log of your symptoms, including when they started, their severity, and unknown patterns you notice.',
       priority: 'low'
     });
 
@@ -416,9 +416,9 @@ class HealthExpertAgent {
       `• What specific symptoms are you experiencing?\n` +
       `• How long have you had these symptoms?\n` +
       `• How severe are they (mild, moderate, severe)?\n` +
-      `• Are there any other symptoms accompanying them?\n\n` +
+      `• Are there unknown other symptoms accompanying them?\n\n` +
       `Based on your description, I can provide more specific guidance and help determine if you need to see a healthcare provider.\n\n` +
-      `**Remember**: If you're experiencing any emergency symptoms like chest pain, difficulty breathing, or sudden severe symptoms, please seek immediate medical attention by calling 911 or going to the nearest emergency room.`;
+      `**Remember**: If you're experiencing unknown emergency symptoms like chest pain, difficulty breathing, or sudden severe symptoms, please seek immediate medical attention by calling 911 or going to the nearest emergency room.`;
   }
 
   private async handleAppointmentBooking(request?: AppointmentRequest): Promise<HealthResponse> {
@@ -461,8 +461,8 @@ class HealthExpertAgent {
         `• Type: ${this.formatEnumValue(request.appointmentType)}\n` +
         `• Reason: ${appointment.reasonForVisit}\n\n` +
         `${urgencyMessage}\n\n` +
-        `You'll receive a confirmation shortly. If you need to reschedule or have any questions, please let me know!\n\n` +
-        `**Reminder**: Please bring your insurance card and a list of any medications you're currently taking.`,
+        `You'll receive a confirmation shortly. If you need to reschedule or have unknown questions, please let me know!\n\n` +
+        `**Reminder**: Please bring your insurance card and a list of unknown medications you're currently taking.`,
       appointment,
       disclaimer: 'This appointment confirmation is for planning purposes. For medical emergencies, always call 911.'
     };
@@ -475,7 +475,7 @@ class HealthExpertAgent {
       case AppointmentType.URGENT_CARE:
         return 'Please try to arrive 15-30 minutes before your appointment time.';
       case AppointmentType.PRIMARY_CARE:
-        return 'Please arrive 10-15 minutes early to complete any necessary paperwork.';
+        return 'Please arrive 10-15 minutes early to complete unknown necessary paperwork.';
       default:
         return 'Please arrive on time for your appointment.';
     }

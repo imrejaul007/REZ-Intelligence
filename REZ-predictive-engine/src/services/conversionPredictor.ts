@@ -361,7 +361,7 @@ function generateRecommendation(
     case 'purchase':
       return 'User is ready to convert. Send targeted offer with urgency to close.';
     case 'intent':
-      return 'High purchase intent. Provide easy path to purchase and address any final concerns.';
+      return 'High purchase intent. Provide easy path to purchase and address unknown final concerns.';
     case 'consideration':
       return `User is considering. Offer comparison tools and social proof to build confidence.`;
     case 'interest':

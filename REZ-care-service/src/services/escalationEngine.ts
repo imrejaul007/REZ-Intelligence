@@ -14,6 +14,7 @@ import cron from 'node-cron';
 import axios from 'axios';
 import { logger } from '../utils/logger';
 import { AgentManagementService } from './agentManagementService';
+import { generateRuleId, generateEscalationLogId } from '../utils/idGenerator';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-care';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || 'rez-internal-token';
@@ -120,7 +121,7 @@ export class EscalationEngine {
     description?: string;
     trigger: {
       type: 'time' | 'sentiment' | 'priority' | 'repeat' | 'sla' | 'tag';
-      conditions: any;
+      conditions;
     };
     action: {
       type: 'assign_higher' | 'notify_manager' | 'create_incident' | 'auto_resolve' | 'ping_agent';
@@ -129,10 +130,10 @@ export class EscalationEngine {
     };
     delayMinutes?: number;
     repeatInterval?: number;
-  }): Promise<any> {
+  }): Promise<unknown> {
     await this.connect();
 
-    const ruleId = `RULE-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+    const ruleId = generateRuleId();
 
     const newRule = new EscalationRule({
       ruleId,
@@ -285,7 +286,7 @@ export class EscalationEngine {
   /**
    * Evaluate if rule should trigger
    */
-  private async evaluateRule(rule: any, ticket: any): Promise<boolean> {
+  private async evaluateRule(rule, ticket): Promise<boolean> {
     const { type, conditions } = rule.trigger;
 
     switch (type) {
@@ -331,7 +332,7 @@ export class EscalationEngine {
   /**
    * Execute escalation action
    */
-  private async executeEscalation(rule: any, ticket: any): Promise<{
+  private async executeEscalation(rule, ticket): Promise<{
     escalated: boolean;
     reason?: string;
     action?: string;
@@ -476,7 +477,7 @@ export class EscalationEngine {
     reason: string;
     trigger: string;
   }): Promise<void> {
-    const logId = `ESC-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+    const logId = generateEscalationLogId();
 
     await EscalationLog.create({
       logId,
@@ -554,7 +555,7 @@ export class EscalationEngine {
   /**
    * Get escalation history for ticket
    */
-  async getTicketHistory(ticketId: string): Promise<any[]> {
+  async getTicketHistory(ticketId: string): Promise<unknown[]> {
     await this.connect();
     return EscalationLog.find({ ticketId }).sort({ createdAt: -1 });
   }

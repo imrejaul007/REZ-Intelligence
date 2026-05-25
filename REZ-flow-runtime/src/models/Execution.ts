@@ -64,6 +64,7 @@ export interface IExecution extends Document {
   startedAt: Date;
   completedAt?: Date;
   cancelledAt?: Date;
+  currentNode?: string;
   createdAt: Date;
   updatedAt: Date;
 

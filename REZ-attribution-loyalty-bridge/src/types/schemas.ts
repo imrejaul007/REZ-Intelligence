@@ -84,7 +84,7 @@ export const CashbackRequestSchema = z.object({
   campaignId: z.string().optional(),
   attributionModel: AttributionModelSchema.default('last_touch'),
   attributedRevenue: z.record(ChannelTypeSchema, z.number()).optional(),
-  metadata: z.record(z.any()).optional()
+  metadata: z.record(z.unknown()).optional()
 });
 
 export type CashbackRequest = z.infer<typeof CashbackRequestSchema>;
@@ -107,7 +107,7 @@ export const LoyaltyTriggerRequestSchema = z.object({
   campaignId: z.string().optional(),
   multiplier: z.number().min(1).max(10).default(1),
   expiresIn: z.number().int().positive().optional(), // Days until expiry
-  metadata: z.record(z.any()).optional()
+  metadata: z.record(z.unknown()).optional()
 });
 
 export type LoyaltyTriggerRequest = z.infer<typeof LoyaltyTriggerRequestSchema>;
@@ -128,7 +128,7 @@ export const BridgeEventSchema = z.object({
     'multiplier.changed'
   ]),
   timestamp: z.string().datetime(),
-  payload: z.record(z.any()),
+  payload: z.record(z.unknown()),
   metadata: z.object({
     source: z.string(),
     correlationId: z.string().optional()
@@ -210,7 +210,7 @@ export const CreateBridgeRecordSchema = z.object({
   errorMessage: z.string().optional(),
   retryCount: z.number().default(0),
 
-  metadata: z.record(z.any()).optional()
+  metadata: z.record(z.unknown()).optional()
 });
 
 export type CreateBridgeRecord = z.infer<typeof CreateBridgeRecordSchema>;
@@ -239,11 +239,11 @@ export const NotificationPayloadSchema = z.object({
 
 export const ApiResponseSchema = z.object({
   success: z.boolean(),
-  data: z.record(z.any()).optional(),
+  data: z.record(z.unknown()).optional(),
   error: z.object({
     code: z.string(),
     message: z.string(),
-    details: z.record(z.any()).optional()
+    details: z.record(z.unknown()).optional()
   }).optional(),
   meta: z.object({
     requestId: z.string(),

@@ -14,7 +14,7 @@ const messageSchema = z.object({
   message: z.string().min(1),
   userId: z.string().min(1),
   channel: z.string(),
-  metadata: z.record(z.any()).optional()
+  metadata: z.record(z.unknown()).optional()
 });
 
 // WhatsApp webhook
@@ -52,7 +52,7 @@ router.post('/whatsapp/webhook', async (req: Request, res: Response) => {
     }
 
     res.status(200).json({ status: 'ok' });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('WhatsApp webhook error', { error: error.message });
     res.status(200).json({ status: 'ok' }); // Always return 200 to WhatsApp
   }
@@ -90,7 +90,7 @@ router.post('/instagram/webhook', async (req: Request, res: Response) => {
     }
 
     res.status(200).json({ status: 'ok' });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Instagram webhook error', { error: error.message });
     res.status(200).json({ status: 'ok' });
   }
@@ -122,7 +122,7 @@ router.post('/sms/webhook', async (req: Request, res: Response) => {
     } else {
       res.json({ body: 'Thank you for your message. We will respond shortly.' });
     }
-  } catch (error: any) {
+  } catch (error) {
     logger.error('SMS webhook error', { error: error.message });
     res.status(500).json({ error: error.message });
   }
@@ -143,7 +143,7 @@ router.post('/email/inbound', async (req: Request, res: Response) => {
     });
 
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Email inbound error', { error: error.message });
     res.status(500).json({ error: error.message });
   }
@@ -164,7 +164,7 @@ router.post('/rcs/webhook', async (req: Request, res: Response) => {
     });
 
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('RCS webhook error', { error: error.message });
     res.status(500).json({ error: error.message });
   }
@@ -187,7 +187,7 @@ router.post('/voice/webhook', async (req: Request, res: Response) => {
     res.json({
       response: response || 'Thank you for calling REZ. An agent will respond shortly.'
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Voice webhook error', { error: error.message });
     res.status(500).json({ error: error.message });
   }
@@ -212,7 +212,7 @@ router.post('/web/message', async (req: Request, res: Response) => {
       response,
       sessionId
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Web message error', { error: error.message });
     res.status(500).json({ error: error.message });
   }
@@ -236,7 +236,7 @@ router.post('/app/message', async (req: Request, res: Response) => {
       success: true,
       response
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('App message error', { error: error.message });
     res.status(500).json({ error: error.message });
   }
@@ -249,7 +249,7 @@ router.get('/response/:userId', async (req: Request, res: Response) => {
     const response = await orchestratorService.getResponse(userId);
 
     res.json({ response });
-  } catch (error: any) {
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });

@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 #!/usr/bin/env node
 /**
  * Add Event Bus Integration to Services
@@ -73,7 +75,7 @@ function addEventBusIntegration(serviceDir) {
   const srcPath = path.join(servicePath, 'src');
 
   if (!fs.existsSync(srcPath)) {
-    console.log(`  ⚠ ${serviceDir}: src/ not found`);
+    logger.info(`  ⚠ ${serviceDir}: src/ not found`);
     return false;
   }
 
@@ -82,7 +84,7 @@ function addEventBusIntegration(serviceDir) {
   const indexJsPath = path.join(srcPath, 'index.js');
 
   if (fs.existsSync(indexPath)) {
-    console.log(`  ✓ ${serviceDir}: Adding to index.ts`);
+    logger.info(`  ✓ ${serviceDir}: Adding to index.ts`);
 
     let content = fs.readFileSync(indexPath, 'utf8');
 
@@ -100,11 +102,11 @@ const emitEvent = getEventEmitter('${serviceDir}');
   }
 
   if (fs.existsSync(indexJsPath)) {
-    console.log(`  ⚠ ${serviceDir}: index.js found (needs TypeScript migration)`);
+    logger.info(`  ⚠ ${serviceDir}: index.js found (needs TypeScript migration)`);
     return false;
   }
 
-  console.log(`  ⚠ ${serviceDir}: No index file found`);
+  logger.info(`  ⚠ ${serviceDir}: No index file found`);
   return false;
 }
 
@@ -112,10 +114,10 @@ const emitEvent = getEventEmitter('${serviceDir}');
 // Run
 // ============================================================================
 
-console.log('==========================================');
-console.log('Adding Event Bus Integration to Services');
-console.log('==========================================');
-console.log('');
+logger.info('==========================================');
+logger.info('Adding Event Bus Integration to Services');
+logger.info('==========================================');
+logger.info('');
 
 let successCount = 0;
 
@@ -124,10 +126,10 @@ for (const service of SERVICES_TO_UPDATE) {
   if (success) successCount++;
 }
 
-console.log('');
-console.log(`✓ Added Event Bus integration to ${successCount}/${SERVICES_TO_UPDATE.length} services`);
-console.log('');
-console.log('NEXT STEPS:');
-console.log('1. Add emitEvent.emit() calls in your service logic');
-console.log('2. Emit relevant events (predictions, segments, etc.)');
-console.log('3. Test the integration');
+logger.info('');
+logger.info(`✓ Added Event Bus integration to ${successCount}/${SERVICES_TO_UPDATE.length} services`);
+logger.info('');
+logger.info('NEXT STEPS:');
+logger.info('1. Add emitEvent.emit() calls in your service logic');
+logger.info('2. Emit relevant events (predictions, segments, etc.)');
+logger.info('3. Test the integration');

@@ -67,7 +67,7 @@ interface Config {
 // Extend WebSocket type
 declare module 'ws' {
   interface WebSocket {
-    session?: any;
+    session?;
     isAlive?: boolean;
   }
 }
@@ -191,7 +191,7 @@ app.post('/api/voice/transcribe', async (req: Request, res: Response) => {
     const { audio, provider } = req.body;
     const transcript = await voice.transcribe(Buffer.from(audio, 'base64'), provider);
     res.json({ success: true, transcript });
-  } catch (err: any) {
+  } catch (err) {
     logger.error('Voice transcribe error', { error: err.message });
     res.status(500).json({ success: false, error: err.message });
   }
@@ -202,7 +202,7 @@ app.post('/api/voice/synthesize', async (req: Request, res: Response) => {
     const { text, voice: voiceId } = req.body;
     const audio = await voice.synthesize(text, { voice: voiceId });
     res.json({ success: true, audio: audio ? audio.toString('base64') : null });
-  } catch (err: any) {
+  } catch (err) {
     logger.error('Voice synthesize error', { error: err.message });
     res.status(500).json({ success: false, error: err.message });
   }
@@ -214,7 +214,7 @@ app.post('/api/credit/score', async (req: Request, res: Response) => {
     const { userId } = req.body;
     const score = await credit.getUserCreditScore(userId);
     res.json({ success: true, score });
-  } catch (err: any) {
+  } catch (err) {
     logger.error('Credit score error', { error: err.message });
     res.status(500).json({ success: false, error: err.message });
   }
@@ -225,7 +225,7 @@ app.post('/api/credit/lending', async (req: Request, res: Response) => {
     const { userId } = req.body;
     const lending = await credit.getLendingRecommendation(userId);
     res.json({ success: true, lending });
-  } catch (err: any) {
+  } catch (err) {
     logger.error('Lending error', { error: err.message });
     res.status(500).json({ success: false, error: err.message });
   }
@@ -236,7 +236,7 @@ app.post('/api/credit/bnpl', async (req: Request, res: Response) => {
     const { userId, merchantId, amount } = req.body;
     const bnpl = await credit.calculateBNPL(userId, merchantId, amount);
     res.json({ success: true, bnpl });
-  } catch (err: any) {
+  } catch (err) {
     logger.error('BNPL error', { error: err.message });
     res.status(500).json({ success: false, error: err.message });
   }
@@ -248,7 +248,7 @@ app.post('/api/pos/order', async (req: Request, res: Response) => {
     const { merchantId, items, payment } = req.body;
     const order = await pos.processOrder(merchantId, { items, payment });
     res.json({ success: true, order });
-  } catch (err: any) {
+  } catch (err) {
     logger.error('POS order error', { error: err.message });
     res.status(500).json({ success: false, error: err.message });
   }
@@ -258,7 +258,7 @@ app.get('/api/pos/inventory/:merchantId', async (req: Request, res: Response) =>
   try {
     const inventory = await pos.getInventory(req.params.merchantId);
     res.json({ success: true, inventory });
-  } catch (err: any) {
+  } catch (err) {
     logger.error('POS inventory error', { error: err.message });
     res.status(500).json({ success: false, error: err.message });
   }
@@ -268,7 +268,7 @@ app.get('/api/pos/analytics/:merchantId', async (req: Request, res: Response) =>
   try {
     const analytics = await pos.getMerchantAnalytics(req.params.merchantId);
     res.json({ success: true, analytics });
-  } catch (err: any) {
+  } catch (err) {
     logger.error('POS analytics error', { error: err.message });
     res.status(500).json({ success: false, error: err.message });
   }
@@ -299,7 +299,7 @@ app.post('/api/message', async (req: Request, res: Response) => {
       routing,
       sessionId: session.sessionId
     });
-  } catch (err: any) {
+  } catch (err) {
     logger.error('Message error', { error: err.message });
     res.status(500).json({ success: false, error: err.message });
   }
@@ -316,7 +316,7 @@ app.get('/api/intelligence/context/:userId', async (req: Request, res: Response)
   try {
     const context = await intelligence.getUserContext(req.params.userId);
     res.json({ success: true, context });
-  } catch (err: any) {
+  } catch (err) {
     logger.error('Intelligence context error', { error: err.message });
     res.status(500).json({ success: false, error: err.message });
   }
@@ -326,7 +326,7 @@ app.get('/api/intelligence/predictions/:userId', async (req: Request, res: Respo
   try {
     const predictions = await intelligence.getPredictions(req.params.userId);
     res.json({ success: true, predictions });
-  } catch (err: any) {
+  } catch (err) {
     logger.error('Intelligence predictions error', { error: err.message });
     res.status(500).json({ success: false, error: err.message });
   }
@@ -338,7 +338,7 @@ app.post('/api/brain/enhance', async (req: Request, res: Response) => {
     const { response, context } = req.body;
     const enhanced = await brain.enhanceResponse(response, context);
     res.json({ success: true, enhanced });
-  } catch (err: any) {
+  } catch (err) {
     logger.error('Brain enhance error', { error: err.message });
     res.status(500).json({ success: false, error: err.message });
   }
@@ -372,7 +372,7 @@ wss.on('connection', (ws: WebSocket, req) => {
 
       ws.session.messages.push({ role: 'assistant', content: response.message, routing });
       ws.send(JSON.stringify({ type: 'message', response: response.message, routing: routing }));
-    } catch (err: any) {
+    } catch (err) {
       logger.error('WebSocket error', { error: err.message });
       ws.send(JSON.stringify({ type: 'error', error: err.message }));
     }

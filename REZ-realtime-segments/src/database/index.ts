@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 import mongoose from 'mongoose';
 import config from '../config/index.js';
 
@@ -5,7 +7,7 @@ let isConnected = false;
 
 export async function connectDatabase(): Promise<void> {
   if (isConnected) {
-    console.log('MongoDB already connected');
+    logger.info('MongoDB already connected');
     return;
   }
 
@@ -17,19 +19,19 @@ export async function connectDatabase(): Promise<void> {
     });
 
     isConnected = true;
-    console.log(`MongoDB connected to ${config.mongodb.uri}`);
+    logger.info(`MongoDB connected to ${config.mongodb.uri}`);
 
     mongoose.connection.on('error', (err) => {
       console.error('MongoDB connection error:', err);
     });
 
     mongoose.connection.on('disconnected', () => {
-      console.warn('MongoDB disconnected');
+      logger.warn('MongoDB disconnected');
       isConnected = false;
     });
 
     mongoose.connection.on('reconnected', () => {
-      console.log('MongoDB reconnected');
+      logger.info('MongoDB reconnected');
       isConnected = true;
     });
   } catch (error) {
@@ -46,7 +48,7 @@ export async function disconnectDatabase(): Promise<void> {
   try {
     await mongoose.disconnect();
     isConnected = false;
-    console.log('MongoDB disconnected');
+    logger.info('MongoDB disconnected');
   } catch (error) {
     console.error('Error disconnecting from MongoDB:', error);
     throw error;

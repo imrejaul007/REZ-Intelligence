@@ -133,8 +133,8 @@ export class OrderService {
     const orderId = this.generateOrderId();
 
     // Calculate totals
-    const subtotal = (session as any).getCartTotal?.() || 0;
-    const metadata = session.metadata as any || {};
+    const subtotal = (session as unknown).getCartTotal?.() || 0;
+    const metadata = session.metadata as unknown || {};
     const discount = (metadata.discountAmount as number) || 0;
     const deliveryFee = this.calculateDeliveryFee(subtotal - discount);
     const total = subtotal - discount + deliveryFee;
@@ -159,7 +159,7 @@ export class OrderService {
     });
 
     // Update session state
-    session.state = OrderStatus.PENDING as any;
+    session.state = OrderStatus.PENDING as unknown;
     session.context.currentOrder = {
       id: orderId,
       status: OrderStatus.PENDING,
@@ -168,7 +168,7 @@ export class OrderService {
     await session.save();
 
     // Clear cart after order creation
-    (session as any).clearCart?.();
+    (session as unknown).clearCart?.();
     await session.save();
 
     logger.info('Order created', {

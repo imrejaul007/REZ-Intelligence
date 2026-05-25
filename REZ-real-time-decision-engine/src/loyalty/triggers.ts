@@ -51,7 +51,7 @@ export interface LoyaltyTriggerResult {
 
 export interface LoyaltyAction {
   type: 'award_points' | 'tier_upgrade' | 'vip_access' | 'special_offer' | 'notification' | 'badge_earned';
-  details: Record<string, any>;
+  details: Record<string, unknown>;
   priority: 'high' | 'medium' | 'low';
 }
 

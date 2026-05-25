@@ -28,8 +28,8 @@ async function extractCustomer(req: Request, res: Response, next: Function) {
     return res.status(401).json({ error: 'Customer ID or phone required' });
   }
 
-  (req as any).customerId = customerId || phone;
-  (req as any).phone = phone || customerId;
+  (req as unknown).customerId = customerId || phone;
+  (req as unknown).phone = phone || customerId;
   next();
 }
 
@@ -42,7 +42,7 @@ async function extractCustomer(req: Request, res: Response, next: Function) {
  */
 router.get('/actions', extractCustomer, async (req: Request, res: Response) => {
   try {
-    const { customerId } = req as any;
+    const { customerId } = req as unknown;
     const actions = await selfService.getAvailableActions(customerId);
 
     res.json({
@@ -64,7 +64,7 @@ router.get('/actions', extractCustomer, async (req: Request, res: Response) => {
  */
 router.post('/execute', extractCustomer, async (req: Request, res: Response) => {
   try {
-    const { customerId } = req as any;
+    const { customerId } = req as unknown;
     const { actionType, actionData } = req.body;
 
     if (!actionType) {
@@ -93,7 +93,7 @@ router.post('/execute', extractCustomer, async (req: Request, res: Response) => 
  */
 router.post('/retry-payment', extractCustomer, async (req: Request, res: Response) => {
   try {
-    const { customerId } = req as any;
+    const { customerId } = req as unknown;
     const { orderId } = req.body;
 
     if (!orderId) {
@@ -121,7 +121,7 @@ router.post('/retry-payment', extractCustomer, async (req: Request, res: Respons
  */
 router.post('/sync-wallet', extractCustomer, async (req: Request, res: Response) => {
   try {
-    const { customerId } = req as any;
+    const { customerId } = req as unknown;
     const result = await selfService.syncWallet(customerId);
 
     res.json({
@@ -142,7 +142,7 @@ router.post('/sync-wallet', extractCustomer, async (req: Request, res: Response)
  */
 router.post('/retry-cashback', extractCustomer, async (req: Request, res: Response) => {
   try {
-    const { customerId } = req as any;
+    const { customerId } = req as unknown;
     const { transactionId } = req.body;
 
     const result = await selfService.retryCashback(customerId, transactionId);
@@ -170,7 +170,7 @@ router.post('/retry-cashback', extractCustomer, async (req: Request, res: Respon
  */
 router.get('/history', extractCustomer, async (req: Request, res: Response) => {
   try {
-    const { customerId } = req as any;
+    const { customerId } = req as unknown;
     const history = await crossPlatformMemory.getCustomerIssueHistory(customerId);
 
     res.json({
@@ -192,7 +192,7 @@ router.get('/history', extractCustomer, async (req: Request, res: Response) => {
  */
 router.get('/similar-issues', extractCustomer, async (req: Request, res: Response) => {
   try {
-    const { customerId } = req as any;
+    const { customerId } = req as unknown;
     const { category, platform } = req.query;
 
     const issues = await crossPlatformMemory.findSimilarIssues({
@@ -220,7 +220,7 @@ router.get('/similar-issues', extractCustomer, async (req: Request, res: Respons
  */
 router.get('/predictions', extractCustomer, async (req: Request, res: Response) => {
   try {
-    const { customerId } = req as any;
+    const { customerId } = req as unknown;
     const predictions = await crossPlatformMemory.predictCustomerIssues(customerId);
 
     res.json({
@@ -246,7 +246,7 @@ router.get('/predictions', extractCustomer, async (req: Request, res: Response) 
  */
 router.post('/report-issue', extractCustomer, async (req: Request, res: Response) => {
   try {
-    const { customerId, phone } = req as any;
+    const { customerId, phone } = req as unknown;
     const {
       platform,
       category,
@@ -285,7 +285,7 @@ router.post('/report-issue', extractCustomer, async (req: Request, res: Response
         issueId: result.issue.issueId,
         isRepeatIssue: result.isRepeatIssue,
         suggestions: result.suggestions,
-        suggestedActions: suggestedActions.filter((a: any) =>
+        suggestedActions: suggestedActions.filter((a) =>
           a.category === category || a.priority === 'quick'
         ),
         message: 'Issue reported successfully. We\'ll get back to you soon.'
@@ -306,7 +306,7 @@ router.post('/report-issue', extractCustomer, async (req: Request, res: Response
  */
 router.post('/rate', extractCustomer, async (req: Request, res: Response) => {
   try {
-    const { customerId } = req as any;
+    const { customerId } = req as unknown;
     const { ticketId, rating, comment } = req.body;
 
     // In real app, save to CSAT collection
@@ -408,7 +408,7 @@ router.get('/help-articles/:articleId', async (req: Request, res: Response) => {
   const { articleId } = req.params;
 
   // Mock article content
-  const articles: Record<string, any> = {
+  const articles: Record<string, unknown> = {
     p1: {
       id: 'p1',
       title: 'Payment failed - What to do?',

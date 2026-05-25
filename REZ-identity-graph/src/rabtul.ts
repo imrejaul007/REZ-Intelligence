@@ -15,7 +15,7 @@ const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 /**
  * Verify token
  */
-export async function verifyToken(token: string): Promise<{ valid: boolean; user?: any; error?: string }> {
+export async function verifyToken(token: string): Promise<{ valid: boolean; user?; error?: string }> {
   try {
     const res = await axios.get(`${AUTH_URL}/api/auth/verify`, {
       headers: { 'Authorization': `Bearer ${token}`, 'X-Internal-Token': INTERNAL_TOKEN },
@@ -24,7 +24,7 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; user
       return { valid: true, user: res.data.user };
     }
     return { valid: false, error: 'Invalid token' };
-  } catch (error: any) {
+  } catch (error) {
     return { valid: false, error: error.message };
   }
 }
@@ -32,13 +32,13 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; user
 /**
  * Get unified profile
  */
-export async function getUnifiedProfile(userId: string): Promise<{ profile: any; error?: string }> {
+export async function getUnifiedProfile(userId: string): Promise<{ profile; error?: string }> {
   try {
     const res = await axios.get(`${PROFILE_URL}/api/profiles/${userId}`, {
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { profile: res.data };
-  } catch (error: any) {
+  } catch (error) {
     return { profile: null, error: error.message };
   }
 }
@@ -46,13 +46,13 @@ export async function getUnifiedProfile(userId: string): Promise<{ profile: any;
 /**
  * Update unified profile
  */
-export async function updateUnifiedProfile(userId: string, updates: Record<string, any>): Promise<{ success: boolean; error?: string }> {
+export async function updateUnifiedProfile(userId: string, updates: Record<string, unknown>): Promise<{ success: boolean; error?: string }> {
   try {
     await axios.patch(`${PROFILE_URL}/api/profiles/${userId}`, updates, {
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -66,7 +66,7 @@ export async function linkIdentity(userId: string, identity: { type: string; val
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -80,7 +80,7 @@ export async function resolveIdentity(identifier: string, type: 'phone' | 'email
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { userId: res.data.userId };
-  } catch (error: any) {
+  } catch (error) {
     return { error: error.message };
   }
 }
@@ -88,13 +88,13 @@ export async function resolveIdentity(identifier: string, type: 'phone' | 'email
 /**
  * Get user wallet for verification
  */
-export async function getUserWallet(userId: string): Promise<{ wallet: any; error?: string }> {
+export async function getUserWallet(userId: string): Promise<{ wallet; error?: string }> {
   try {
     const res = await axios.get(`${WALLET_URL}/api/wallet/${userId}/balance`, {
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { wallet: res.data };
-  } catch (error: any) {
+  } catch (error) {
     return { wallet: null, error: error.message };
   }
 }
@@ -102,7 +102,7 @@ export async function getUserWallet(userId: string): Promise<{ wallet: any; erro
 /**
  * Publish identity event
  */
-export async function publishIdentityEvent(eventType: string, data: Record<string, any>): Promise<{ success: boolean; error?: string }> {
+export async function publishIdentityEvent(eventType: string, data: Record<string, unknown>): Promise<{ success: boolean; error?: string }> {
   try {
     await axios.post(`${EVENT_BUS_URL}/api/events/publish`, {
       type: `identity.${eventType}`,
@@ -113,7 +113,7 @@ export async function publishIdentityEvent(eventType: string, data: Record<strin
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }

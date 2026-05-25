@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * Feature Service - Core Business Logic for ML Feature Store
  * Handles feature retrieval, storage, and serving operations
@@ -169,7 +171,7 @@ export class FeatureService {
     for (const featureName of Object.keys(features)) {
       const featureDef = FEATURE_BY_NAME.get(featureName);
       if (!featureDef) {
-        console.warn(`Unknown feature: ${featureName}`);
+        logger.warn(`Unknown feature: ${featureName}`);
       } else if (featureDef.entityId !== entityId) {
         throw new Error(
           `Feature ${featureName} belongs to entity ${featureDef.entityId}, not ${entityId}`

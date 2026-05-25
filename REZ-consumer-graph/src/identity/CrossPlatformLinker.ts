@@ -19,7 +19,7 @@ export interface PlatformLink {
   created_at: string;
   last_sync: string;
   status: 'active' | 'suspended' | 'revoked';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface LinkingRequest {
@@ -79,7 +79,7 @@ export class CrossPlatformLinker {
     targetApp: AppType,
     targetUserId: string,
     linkType: 'explicit' | 'implicit' | 'inferred' = 'explicit',
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<PlatformLink> {
     // Check for existing link
     const existingLink = this.getLink(userId, sourceApp, targetApp);

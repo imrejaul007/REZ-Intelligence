@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * Twilio Webhook Handler
  * Handles incoming phone calls via Twilio
@@ -22,7 +24,7 @@ const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
  * Main webhook for incoming calls
  */
 router.post('/', async (req, res) => {
-  console.log('[TwilioWebhook] Incoming call');
+  logger.info('[TwilioWebhook] Incoming call');
 
   const {
     CallSid,
@@ -64,7 +66,7 @@ router.post('/', async (req, res) => {
  * Process voice input
  */
 router.post('/process', async (req, res) => {
-  console.log('[TwilioWebhook] Processing voice');
+  logger.info('[TwilioWebhook] Processing voice');
 
   const {
     CallSid,
@@ -133,9 +135,9 @@ router.post('/status', async (req, res) => {
 
   // Log call status
   if (CallStatus === 'completed') {
-    console.log(`[TwilioWebhook] Call ${CallSid} completed`);
+    logger.info(`[TwilioWebhook] Call ${CallSid} completed`);
   } else if (CallStatus === 'failed') {
-    console.log(`[TwilioWebhook] Call ${CallSid} failed`);
+    logger.info(`[TwilioWebhook] Call ${CallSid} failed`);
   }
 
   res.sendStatus(200);
@@ -146,7 +148,7 @@ router.post('/status', async (req, res) => {
  * Handle hangup
  */
 router.post('/hangup', async (req, res) => {
-  console.log('[TwilioWebhook] Call hangup');
+  logger.info('[TwilioWebhook] Call hangup');
 
   const twiml = `<Response><Say>Thank you for calling. Goodbye!</Say></Response>`;
   res.type('text/xml').send(twiml);

@@ -3,7 +3,8 @@
  * Connects DOOH screens to user intelligence for targeted advertising
  */
 
-import express from 'express';
+import express import logger from './utils/logger';
+import from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import mongoose from 'mongoose';
@@ -392,16 +393,16 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 async function start(): Promise<void> {
   try {
     await mongoose.connect(MONGODB_URI);
-    console.log(`[${new Date().toISOString()}] Connected to MongoDB`);
+    logger.info(`[${new Date().toISOString()}] Connected to MongoDB`);
 
     app.listen(PORT, () => {
-      console.log(`[${new Date().toISOString()}] DOOH Intelligence running on port ${PORT}`);
+      logger.info(`[${new Date().toISOString()}] DOOH Intelligence running on port ${PORT}`);
     });
   } catch (error) {
     console.error('Startup error:', error);
     // Start without MongoDB for now
     app.listen(PORT, () => {
-      console.log(`[${new Date().toISOString()}] DOOH Intelligence running on port ${PORT} (without MongoDB)`);
+      logger.info(`[${new Date().toISOString()}] DOOH Intelligence running on port ${PORT} (without MongoDB)`);
     });
   }
 }

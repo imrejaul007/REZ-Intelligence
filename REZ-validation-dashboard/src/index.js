@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 'use strict';
 
 require('dotenv').config();
@@ -22,7 +24,7 @@ const errorHandler = (err, req, res, next) => {
 const REQUIRED_ENV = ['MONGODB_URI', 'INTERNAL_SERVICE_TOKEN'];
 for (const env of REQUIRED_ENV) {
   if (!process.env[env]) {
-    console.error(`FATAL: ${env} is required`);
+    logger.error(`FATAL: ${env} is required`);
     process.exit(1);
   }
 }
@@ -658,8 +660,8 @@ async function start() {
     await mongoose.connect(process.env.MONGODB_URI);
     logger.info('Connected to MongoDB');
     app.listen(PORT, () => {
-      console.log(`Validation Dashboard running on port ${PORT}`);
-      console.log(`Dashboard: http://localhost:${PORT}/dashboard`);
+      logger.info(`Validation Dashboard running on port ${PORT}`);
+      logger.info(`Dashboard: http://localhost:${PORT}/dashboard`);
     });
   } catch (err) {
     logger.error('Startup failed', { error: err.message });

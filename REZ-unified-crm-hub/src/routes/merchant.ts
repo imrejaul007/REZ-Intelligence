@@ -105,7 +105,7 @@ router.get('/auth/me', (req: Request, res: Response) => {
  */
 router.get('/customers', async (req: Request, res: Response) => {
   try {
-    const merchantId = (req as any).merchantId;
+    const merchantId = (req as unknown).merchantId;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
 
@@ -226,7 +226,7 @@ router.get('/customers', async (req: Request, res: Response) => {
  */
 router.get('/customers/:id', async (req: Request, res: Response) => {
   try {
-    const merchantId = (req as any).merchantId;
+    const merchantId = (req as unknown).merchantId;
     const { id } = req.params;
 
     logger.info('Merchant API: Fetching customer detail', {
@@ -304,7 +304,7 @@ router.get('/customers/:id', async (req: Request, res: Response) => {
  */
 router.get('/customers/:id/orders', async (req: Request, res: Response) => {
   try {
-    const merchantId = (req as any).merchantId;
+    const merchantId = (req as unknown).merchantId;
     const { id } = req.params;
 
     // Mock order data
@@ -381,7 +381,7 @@ router.get('/customers/:id/reviews', async (req: Request, res: Response) => {
  */
 router.get('/segments', async (req: Request, res: Response) => {
   try {
-    const merchantId = (req as any).merchantId;
+    const merchantId = (req as unknown).merchantId;
 
     logger.info('Merchant API: Fetching segments', { merchantId });
 
@@ -445,7 +445,7 @@ router.get('/segments', async (req: Request, res: Response) => {
  */
 router.get('/inbox/messages', async (req: Request, res: Response) => {
   try {
-    const merchantId = (req as any).merchantId;
+    const merchantId = (req as unknown).merchantId;
     const channel = req.query.channel as string;
 
     // Mock messages
@@ -622,7 +622,7 @@ router.post('/inbox/messages/:id/reply', async (req: Request, res: Response) => 
  */
 router.get('/analytics/overview', async (req: Request, res: Response) => {
   try {
-    const merchantId = (req as any).merchantId;
+    const merchantId = (req as unknown).merchantId;
 
     // Mock analytics - only merchant-safe data
     const analytics = {

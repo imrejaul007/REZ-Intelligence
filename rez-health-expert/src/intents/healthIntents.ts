@@ -232,7 +232,7 @@ export function getResponseForIntent(intent: HealthIntent): string {
         '• What symptoms are you experiencing?\n' +
         '• How long have you had these symptoms?\n' +
         '• How would you rate the severity (mild, moderate, severe)?\n' +
-        '• Are there any other symptoms accompanying them?\n\n' +
+        '• Are there unknown other symptoms accompanying them?\n\n' +
         'This information will help me provide you with more helpful guidance.';
 
     case HealthIntent.APPOINTMENT_BOOKING:
@@ -315,7 +315,7 @@ export function getResponseForIntent(intent: HealthIntent): string {
 
 export function getEmergencyMessage(): string {
   return '⚠️ **MEDICAL EMERGENCY**\n\n' +
-    'If you are experiencing any of the following, please call 911 or go to the nearest emergency room immediately:\n\n' +
+    'If you are experiencing unknown of the following, please call 911 or go to the nearest emergency room immediately:\n\n' +
     '• Chest pain or pressure\n' +
     '• Difficulty breathing\n' +
     '• Severe bleeding\n' +

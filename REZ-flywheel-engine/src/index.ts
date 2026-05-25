@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ Flywheel Engine - Entry Point
  *
@@ -6,7 +8,7 @@
 
 const PORT = process.env.PORT || 4110;
 
-console.log(`Flywheel Engine starting on port ${PORT}`);
-console.log('[READY] Flywheel Engine');
+logger.info(`Flywheel Engine starting on port ${PORT}`);
+logger.info('[READY] Flywheel Engine');
 
 export {};

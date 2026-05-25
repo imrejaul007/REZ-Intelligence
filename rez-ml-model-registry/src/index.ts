@@ -1,4 +1,5 @@
-import express, { Application, Request, Response, NextFunction } from 'express';
+import express, { Application, Request, Response, NextFunction } import logger from './utils/logger';
+import from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -152,7 +153,7 @@ app.use((_req: Request, res: Response) => {
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error('Unhandled error:', err);
 
-  const statusCode = (err as any).statusCode || 500;
+  const statusCode = (err as unknown).statusCode || 500;
   const message = err.message || 'Internal Server Error';
 
   res.status(statusCode).json({
@@ -169,8 +170,8 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 
 async function connectToDatabase(): Promise<void> {
   try {
-    console.log('Connecting to MongoDB...');
-    console.log(`URI: ${MONGODB_URI.replace(/\/\/.*@/, '//<credentials>@')}`);
+    logger.info('Connecting to MongoDB...');
+    logger.info(`URI: ${MONGODB_URI.replace(/\/\/.*@/, '//<credentials>@')}`);
 
     await mongoose.connect(MONGODB_URI, {
       maxPoolSize: 10,
@@ -178,18 +179,18 @@ async function connectToDatabase(): Promise<void> {
       socketTimeoutMS: 45000,
     });
 
-    console.log('MongoDB connected successfully');
+    logger.info('MongoDB connected successfully');
 
     mongoose.connection.on('error', (err) => {
       console.error('MongoDB connection error:', err);
     });
 
     mongoose.connection.on('disconnected', () => {
-      console.warn('MongoDB disconnected');
+      logger.warn('MongoDB disconnected');
     });
 
     mongoose.connection.on('reconnected', () => {
-      console.log('MongoDB reconnected');
+      logger.info('MongoDB reconnected');
     });
   } catch (error) {
     console.error('Failed to connect to MongoDB:', error);
@@ -202,11 +203,11 @@ async function connectToDatabase(): Promise<void> {
 // ============================================
 
 async function gracefulShutdown(signal: string): Promise<void> {
-  console.log(`\n${signal} received. Shutting down gracefully...`);
+  logger.info(`\n${signal} received. Shutting down gracefully...`);
 
   try {
     await mongoose.connection.close();
-    console.log('MongoDB connection closed');
+    logger.info('MongoDB connection closed');
     process.exit(0);
   } catch (error) {
     console.error('Error during shutdown:', error);
@@ -225,15 +226,15 @@ async function startServer(): Promise<void> {
   await connectToDatabase();
 
   app.listen(PORT, () => {
-    console.log('========================================');
-    console.log('ReZ ML Model Registry Service');
-    console.log('========================================');
-    console.log(`Environment: ${NODE_ENV}`);
-    console.log(`Port: ${PORT}`);
-    console.log(`MongoDB: ${MONGODB_URI.replace(/\/\/.*@/, '//<credentials>@')}`);
-    console.log(`Health: http://localhost:${PORT}/health`);
-    console.log(`API: http://localhost:${PORT}/api/v1`);
-    console.log('========================================');
+    logger.info('========================================');
+    logger.info('ReZ ML Model Registry Service');
+    logger.info('========================================');
+    logger.info(`Environment: ${NODE_ENV}`);
+    logger.info(`Port: ${PORT}`);
+    logger.info(`MongoDB: ${MONGODB_URI.replace(/\/\/.*@/, '//<credentials>@')}`);
+    logger.info(`Health: http://localhost:${PORT}/health`);
+    logger.info(`API: http://localhost:${PORT}/api/v1`);
+    logger.info('========================================');
   });
 }
 

@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ Offline Commerce Tracker - Entry Point
  *
@@ -6,7 +8,7 @@
 
 const PORT = process.env.PORT || 4112;
 
-console.log(`Offline Commerce Tracker starting on port ${PORT}`);
+logger.info(`Offline Commerce Tracker starting on port ${PORT}`);
 console.log('[READY] Offline Commerce Tracker`);
 
 export {};

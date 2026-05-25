@@ -44,7 +44,7 @@ export const securityMiddleware = helmet({
 /**
  * CORS configuration
  *
- * Allows cross-origin requests from configured origins or any origin.
+ * Allows cross-origin requests from configured origins or unknown origin.
  */
 export const corsMiddleware = cors({
   origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',

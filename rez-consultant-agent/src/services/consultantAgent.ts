@@ -377,7 +377,7 @@ class ConsultantAgent {
 
     const nextSteps: NextStep[] = [
       { action: 'review_itinerary', description: 'Review the detailed day-by-day itinerary', priority: 'high', estimatedTime: '10 minutes' },
-      { action: 'book_activities', description: 'Book any activities marked as requiring reservation', priority: 'high', estimatedTime: '20 minutes' },
+      { action: 'book_activities', description: 'Book unknown activities marked as requiring reservation', priority: 'high', estimatedTime: '20 minutes' },
       { action: 'adjust_budget', description: 'Fine-tune budget allocation if needed', priority: 'medium', estimatedTime: '5 minutes' },
       { action: 'share_itinerary', description: 'Share the itinerary with travel companions', priority: 'low', estimatedTime: '2 minutes' }
     ];
@@ -716,7 +716,7 @@ class ConsultantAgent {
       message += "\n";
     }
 
-    message += "Would you like more details on any of these destinations?";
+    message += "Would you like more details on unknown of these destinations?";
     return message;
   }
 
@@ -732,7 +732,7 @@ class ConsultantAgent {
     crowdAdvice: string;
     priceAdvice: string;
   } {
-    const seasonalData: Record<string, any> = {
+    const seasonalData: Record<string, unknown> = {
       'bali': {
         summary: 'Bali offers year-round travel opportunities, with the dry season (April-October) being ideal for beach activities and the wet season (November-March) offering lush landscapes at lower prices.',
         bestMonths: [

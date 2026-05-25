@@ -19,6 +19,20 @@ import {
 } from '../constants';
 import { logger } from '../utils/logger';
 import { RequestLog } from '../models/RequestLog';
+import {
+  createInputGuard,
+  createCostGuard,
+  createRateLimitGuard,
+  createCircuitBreaker,
+  UserQuerySchema,
+  CostExceededError,
+  RateLimitError,
+  CircuitOpenError,
+  sanitizeUserContent,
+  estimateTokens,
+  DEFAULT_CONFIG,
+  CostStorage,
+} from '@rez/ai-guardrails';
 
 interface ProviderKeyConfig {
   keys: string[];
@@ -28,6 +42,10 @@ interface ProviderKeyConfig {
 export class AIRouter {
   private redis: RedisClientType | null = null;
   private keyIndex: Record<string, ProviderKeyConfig> = {};
+  private costGuard: ReturnType<typeof createCostGuard>;
+  private rateLimitGuard: ReturnType<typeof createRateLimitGuard>;
+  private inputGuard: ReturnType<typeof createInputGuard>;
+  private circuitBreakers: Map<string, ReturnType<typeof createCircuitBreaker>>;
 
   async init(): Promise<void> {
     try {
@@ -46,7 +64,11 @@ export class AIRouter {
 
       // Load API keys from env
       this.loadKeys();
-      logger.info('AI Router initialized');
+
+      // Initialize guardrails
+      this.initializeGuardrails();
+
+      logger.info('AI Router initialized with guardrails');
     } catch (err) {
       logger.warn('Redis connection failed, continuing without cache', {
         error: err instanceof Error ? err.message : 'Unknown error',
@@ -75,6 +97,48 @@ export class AIRouter {
     });
   }
 
+  private initializeGuardrails(): void {
+    // Input validation guard
+    this.inputGuard = createInputGuard(UserQuerySchema);
+
+    // Cost guard with configurable limits
+    this.costGuard = createCostGuard({
+      dailyBudgetUSD: parseFloat(process.env.AI_DAILY_BUDGET_USD || '100'),
+      perUserDailyBudgetUSD: parseFloat(process.env.AI_USER_DAILY_BUDGET_USD || '10'),
+      perRequestMaxUSD: parseFloat(process.env.AI_REQUEST_MAX_COST_USD || '1'),
+    });
+
+    // Rate limit guard (will use Redis if available)
+    this.rateLimitGuard = createRateLimitGuard(
+      this.redis ? {
+        incr: (key) => this.redis!.incr(key),
+        expire: (key, seconds) => this.redis!.expire(key, seconds),
+        ttl: (key) => this.redis!.ttl(key),
+      } : undefined
+    );
+
+    // Circuit breakers per provider
+    this.circuitBreakers = new Map([
+      [PROVIDERS.ANTHROPIC, createCircuitBreaker('anthropic', {
+        failureThreshold: 5,
+        resetTimeoutMs: 60000,
+        halfOpenMaxCalls: 3,
+      })],
+      [PROVIDERS.OPENAI, createCircuitBreaker('openai', {
+        failureThreshold: 5,
+        resetTimeoutMs: 60000,
+        halfOpenMaxCalls: 3,
+      })],
+      [PROVIDERS.GOOGLE, createCircuitBreaker('google', {
+        failureThreshold: 5,
+        resetTimeoutMs: 60000,
+        halfOpenMaxCalls: 3,
+      })],
+    ]);
+
+    logger.info('Guardrails initialized');
+  }
+
   private parseKeys(keys: string | undefined): string[] {
     if (!keys) return [];
     if (typeof keys === 'string') {
@@ -94,6 +158,29 @@ export class AIRouter {
     return key;
   }
 
+  // Get next available provider (for circuit breaker fallback)
+  private getNextAvailableProvider(excludeProvider: AIProvider): AIProvider {
+    const providers = Object.values(PROVIDERS).filter(
+      (p) => p !== excludeProvider && this.isProviderConfigured(p)
+    );
+
+    for (const provider of providers) {
+      const cb = this.circuitBreakers.get(provider);
+      if (!cb || cb.getState() !== 'OPEN') {
+        return provider;
+      }
+    }
+
+    // If all circuits are open, return the first one anyway
+    return providers[0] || PROVIDERS.ANTHROPIC;
+  }
+
+  // Get circuit breaker state for a provider
+  getCircuitState(provider: AIProvider): string {
+    const cb = this.circuitBreakers.get(provider);
+    return cb?.getState() || 'UNKNOWN';
+  }
+
   // Route request to appropriate model
   async route(options: RouteOptions): Promise<ProviderResult> {
     const {
@@ -110,11 +197,60 @@ export class AIRouter {
     const requestId = uuidv4();
     const startTime = Date.now();
 
-    // Select provider
-    let provider = preferredProvider || PROVIDERS.ANTHROPIC;
+    // Sanitize inputs
+    const sanitizedPrompt = sanitizeUserContent(prompt);
+    const sanitizedSystemPrompt = systemPrompt ? sanitizeUserContent(systemPrompt) : undefined;
 
-    // Get model
+    // Guard: Validate input
+    try {
+      if (userId) {
+        this.inputGuard({ userId, query: sanitizedPrompt, context: { page: '', timestamp: Date.now() } });
+      }
+    } catch (err) {
+      logger.error('[AIRouter] Input validation failed', { error: err instanceof Error ? err.message : 'Unknown error' });
+      throw err;
+    }
+
+    // Guard: Rate limiting
+    try {
+      await this.rateLimitGuard.check(
+        userId || 'anonymous',
+        { windowMs: 60000, maxRequests: 60 }
+      );
+    } catch (err) {
+      if (err instanceof RateLimitError) {
+        logger.warn('[AIRouter] Rate limit exceeded', { userId, details: err.details });
+        throw err;
+      }
+    }
+
+    // Guard: Cost estimation and enforcement
+    let provider = preferredProvider || PROVIDERS.ANTHROPIC;
     let model = DEFAULT_MODELS[provider]?.[tier];
+    const estimatedCost = this.estimateCost(model!, sanitizedPrompt, 4096);
+
+    try {
+      await this.costGuard.checkAndTrack(
+        { inputTokens: estimateTokens(sanitizedPrompt), outputTokens: 1000, model: model!, estimatedCostUSD: estimatedCost },
+        userId || 'anonymous'
+      );
+    } catch (err) {
+      if (err instanceof CostExceededError || err instanceof Error && err.name.includes('Budget')) {
+        logger.error('[AIRouter] Cost limit exceeded', { estimatedCost, maxCost, userId });
+        throw err;
+      }
+    }
+
+    await this.enforceCostLimit(estimatedCost, maxCost, userId);
+
+    // Check circuit breaker
+    const circuitBreaker = this.circuitBreakers.get(provider);
+    if (circuitBreaker && circuitBreaker.getState() === 'OPEN') {
+      if (!fallback) throw new CircuitOpenError(provider);
+      provider = this.getNextAvailableProvider(provider);
+      model = DEFAULT_MODELS[provider]?.[tier];
+      logger.info('[AIRouter] Circuit open, switching provider', { from: preferredProvider, to: provider });
+    }
 
     // If preferred provider fails, try fallback
     if (fallback) {
@@ -124,12 +260,19 @@ export class AIRouter {
       ] as AIProvider[];
 
       for (const p of providers) {
+        const cb = this.circuitBreakers.get(p);
         try {
-          const result = await this.callProvider(p, model!, prompt, systemPrompt, {
+          const result = await (cb?.execute(async () =>
+            this.callProvider(p, model!, sanitizedPrompt, sanitizedSystemPrompt, {
+              requestId,
+              userId,
+              timeout,
+            })
+          ) || this.callProvider(p, model!, sanitizedPrompt, sanitizedSystemPrompt, {
             requestId,
             userId,
             timeout,
-          });
+          }));
 
           // Log success
           await this.logRequest({
@@ -358,6 +501,37 @@ export class AIRouter {
       (promptTokens / 1000000) * costs.input +
       (completionTokens / 1000000) * costs.output
     );
+  }
+
+  // PRODUCTION FIX: Estimate cost BEFORE making API call
+  estimateCost(model: string, prompt: string, maxTokens?: number): number {
+    // Rough estimate: ~4 characters per token
+    const promptTokens = Math.ceil(prompt.length / 4);
+    const completionTokens = maxTokens || 1000; // Default max completion
+
+    const costs = MODEL_COSTS[model] || { input: 1, output: 5 };
+    return (
+      (promptTokens / 1000000) * costs.input +
+      (completionTokens / 1000000) * costs.output
+    );
+  }
+
+  // PRODUCTION FIX: Enforce max cost limit
+  async enforceCostLimit(
+    estimatedCost: number,
+    maxCost: number | undefined,
+    userId?: string
+  ): Promise<void> {
+    if (maxCost && estimatedCost > maxCost) {
+      logger.error('[AIRouter] Cost limit exceeded', {
+        estimatedCost,
+        maxCost,
+        userId,
+      });
+      throw new Error(
+        `Estimated cost ${estimatedCost.toFixed(4)} exceeds maximum allowed ${maxCost}`
+      );
+    }
   }
 
   private async logRequest(data: {

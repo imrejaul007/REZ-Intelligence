@@ -1,4 +1,5 @@
-import express, { Express, Request, Response } from 'express';
+import express, { Express, Request, Response } import logger from './utils/logger';
+import from 'express';
 import axios from 'axios';
 import { z } from 'zod';
 
@@ -46,7 +47,7 @@ const reviewSchema = z.object({
 });
 
 // Signal emitters
-async function emitToService(url: string, endpoint: string, data: any) {
+async function emitToService(url: string, endpoint: string, data) {
   try {
     await axios.post(`${url}${endpoint}`, data, { timeout: 5000 });
   } catch (error) {
@@ -156,7 +157,7 @@ app.get('/health', (_req: Request, res: Response) => {
 
 const PORT = parseInt(process.env.PORT || '4150', 10);
 app.listen(PORT, () => {
-  console.log(`Commerce Signal Connector listening on port ${PORT}`);
+  logger.info(`Commerce Signal Connector listening on port ${PORT}`);
 });
 
 export { app };

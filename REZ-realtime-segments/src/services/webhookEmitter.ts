@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 import fetch from 'node-fetch';
 import config from '../config/index.js';
 import type { SegmentEventPayload, SegmentEventType } from '../types/index.js';
@@ -35,7 +37,7 @@ export function startWebhookProcessor(): void {
   }
 
   processingInterval = setInterval(processWebhookQueue, 5000);
-  console.log('Webhook processor started');
+  logger.info('Webhook processor started');
 }
 
 export function stopWebhookProcessor(): void {
@@ -43,7 +45,7 @@ export function stopWebhookProcessor(): void {
     clearInterval(processingInterval);
     processingInterval = null;
   }
-  console.log('Webhook processor stopped');
+  logger.info('Webhook processor stopped');
 }
 
 async function processWebhookQueue(): Promise<void> {
@@ -93,7 +95,7 @@ async function deliverWebhook(payload: SegmentEventPayload): Promise<WebhookDeli
       webhookQueue.push(payload);
     } else {
       retryTracker.delete(key);
-      console.error(`Webhook delivery failed after ${MAX_RETRIES} attempts for ${key}`);
+      logger.error(`Webhook delivery failed after ${MAX_RETRIES} attempts for ${key}`);
     }
   } else {
     // Clear retry tracking on success
@@ -126,7 +128,7 @@ async function attemptWebhookDelivery(
     const duration = Date.now() - startTime;
 
     if (response.ok) {
-      console.log(`Webhook delivered successfully to ${endpoint} in ${duration}ms`);
+      logger.info(`Webhook delivered successfully to ${endpoint} in ${duration}ms`);
       return {
         endpoint,
         success: true,
@@ -134,7 +136,7 @@ async function attemptWebhookDelivery(
         deliveredAt: new Date().toISOString()
       };
     } else {
-      console.warn(`Webhook delivery failed to ${endpoint}: ${response.status}`);
+      logger.warn(`Webhook delivery failed to ${endpoint}: ${response.status}`);
       return {
         endpoint,
         success: false,
@@ -146,7 +148,7 @@ async function attemptWebhookDelivery(
     const duration = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-    console.error(`Webhook delivery error to ${endpoint} after ${duration}ms: ${errorMessage}`);
+    logger.error(`Webhook delivery error to ${endpoint} after ${duration}ms: ${errorMessage}`);
 
     return {
       endpoint,
@@ -160,7 +162,7 @@ async function attemptWebhookDelivery(
 // Queue a webhook event for delivery
 export function queueWebhook(payload: SegmentEventPayload): void {
   webhookQueue.push(payload);
-  console.log(`Webhook queued: ${payload.eventType} for user ${payload.userId} in segment ${payload.segmentId}`);
+  logger.info(`Webhook queued: ${payload.eventType} for user ${payload.userId} in segment ${payload.segmentId}`);
 }
 
 // Emit user entered segment event

@@ -1,4 +1,5 @@
-import express, { Application, Request, Response } from 'express';
+import express, { Application, Request, Response } import logger from './utils/logger';
+import from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
@@ -49,12 +50,12 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-  console.log(`REZ Audit Logging Service running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
-  console.log(`API Endpoints:`);
-  console.log(`  - Audit: http://localhost:${PORT}/audit`);
-  console.log(`  - Compliance: http://localhost:${PORT}/compliance`);
-  console.log(`  - Reports: http://localhost:${PORT}/reports`);
+  logger.info(`REZ Audit Logging Service running on port ${PORT}`);
+  logger.info(`Health check: http://localhost:${PORT}/health`);
+  logger.info(`API Endpoints:`);
+  logger.info(`  - Audit: http://localhost:${PORT}/audit`);
+  logger.info(`  - Compliance: http://localhost:${PORT}/compliance`);
+  logger.info(`  - Reports: http://localhost:${PORT}/reports`);
 });
 
 export default app;

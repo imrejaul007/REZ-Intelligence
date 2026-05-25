@@ -42,7 +42,7 @@ router.post('/offers', async (req: Request, res: Response) => {
       offers,
       message: offers.length > 0 ? upsellEngine.generateUpsellMessage(offers) : null,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[Upsell] Failed to get offers', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -80,7 +80,7 @@ router.post('/ticket/:ticketId', async (req: Request, res: Response) => {
       offers,
       message: offers.length > 0 ? upsellEngine.generateUpsellMessage(offers) : null,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[Upsell] Failed to get ticket offers', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -109,7 +109,7 @@ router.post('/track', async (req: Request, res: Response) => {
         ? 'Offer accepted! We will process your request shortly.'
         : 'Thanks for your response!'
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[Upsell] Failed to track', error);
     res.status(500).json({ success: false, error: error.message });
   }

@@ -286,7 +286,7 @@ export async function findTargetedUsers(
         const { score, reasons } = scoreUserForScreen(
           {
             ...user,
-            recentIntents: intents.map((i: any) => ({
+            recentIntents: intents.map((i) => ({
               intent: i.intentKey,
               category: i.category,
             })),
@@ -305,7 +305,7 @@ export async function findTargetedUsers(
           userContext: {
             rfmSegment: user.rfmSegment || 'unknown',
             topInterests: user.interests?.slice(0, 5) || [],
-            recentIntents: intents.slice(0, 3).map((i: any) => i.intentKey),
+            recentIntents: intents.slice(0, 3).map((i) => i.intentKey),
           },
         });
       } catch {

@@ -240,7 +240,7 @@ class DeliveryService {
       const orders = ordersResponse?.data?.orders || [];
 
       // Fetch locations
-      const routePoints: RoutePoint[] = orders.map((order: any) => ({
+      const routePoints: RoutePoint[] = orders.map((order) => ({
         orderId: order.orderId,
         customerAddress: order.shippingAddress,
         latitude: order.shippingLatitude || 0,
@@ -557,7 +557,7 @@ class DeliveryService {
 
       const orders = ordersResponse?.data?.orders || [];
       const deliveries = await Promise.all(
-        orders.slice(offset, offset + limit).map((order: any) => this.getDeliveryInsight(order.orderId))
+        orders.slice(offset, offset + limit).map((order) => this.getDeliveryInsight(order.orderId))
       );
 
       return {

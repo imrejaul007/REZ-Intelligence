@@ -275,7 +275,7 @@ async function start(): Promise<void> {
         webhookBaseUrl: process.env.TWILIO_WEBHOOK_BASE_URL || 'not configured'
       });
 
-      console.log(`
+      logger.info(`
 ╔══════════════════════════════════════════════════════════════╗
 ║                    REZ AI Voice Agent                      ║
 ╠══════════════════════════════════════════════════════════════╣

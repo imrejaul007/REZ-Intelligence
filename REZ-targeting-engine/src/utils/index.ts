@@ -145,10 +145,10 @@ export const pick = <T, K extends keyof T>(
   obj: T,
   keys: K[]
 ): Pick<T, K> => {
-  const result = {} as any;
+  const result = {} as unknown;
   keys.forEach(key => {
-    if (key in (obj as any)) {
-      result[key] = (obj as any)[key];
+    if (key in (obj as unknown)) {
+      result[key] = (obj as unknown)[key];
     }
   });
   return result;
@@ -175,11 +175,11 @@ export const deepMerge = <T extends object>(target: T, source: Partial<T>): T =>
         source[key] !== null
       ) {
         output[key] = deepMerge(
-          (target[key] as any) || {},
-          source[key] as any
+          (target[key] as unknown) || {},
+          source[key] as unknown
         );
       } else {
-        output[key] = source[key] as any;
+        output[key] = source[key] as unknown;
       }
     }
   }

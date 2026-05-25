@@ -190,7 +190,7 @@ export class PublisherService {
       payload,
       source,
       correlationId,
-      priority: payload['priority' as keyof typeof payload] as any || 'high',
+      priority: payload['priority' as keyof typeof payload] as unknown || 'high',
     });
   }
 

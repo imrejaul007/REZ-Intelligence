@@ -284,7 +284,7 @@ async function start(): Promise<void> {
         apiDocs: `http://localhost:${config.server.port}/events/types`,
       });
 
-      console.log(`
+      logger.info(`
 ╔══════════════════════════════════════════════════════════╗
 ║        REZ Event Bus Service - Started Successfully      ║
 ╠══════════════════════════════════════════════════════════╣

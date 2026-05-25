@@ -102,7 +102,7 @@ export async function serviceRequest<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const config = SERVICE_ENDPOINTS[serviceName] as any;
+  const config = SERVICE_ENDPOINTS[serviceName] as unknown;
 
   const response = await fetch(`${config.url}${path}`, {
     ...options,

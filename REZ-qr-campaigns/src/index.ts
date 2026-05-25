@@ -1,4 +1,5 @@
-import express, { Express, Request, Response } from 'express';
+import express, { Express, Request, Response } import logger from './utils/logger';
+import from 'express';
 import mongoose, { Schema, Document } from 'mongoose';
 import QRCode from 'qrcode';
 import { v4 as uuidv4 } from 'uuid';
@@ -428,16 +429,16 @@ app.get('/health', (_req: Request, res: Response) => {
 async function start() {
   const mongoUri = process.env.MONGODB_URI;
   if (!mongoUri) {
-    console.error('MONGODB_URI is required');
+    logger.error('MONGODB_URI is required');
     process.exit(1);
   }
 
   await mongoose.connect(mongoUri);
-  console.log('Connected to MongoDB');
+  logger.info('Connected to MongoDB');
 
   const port = parseInt(process.env.PORT || '4130', 10);
   app.listen(port, () => {
-    console.log(`QR Campaigns Service listening on port ${port}`);
+    logger.info(`QR Campaigns Service listening on port ${port}`);
   });
 }
 

@@ -3,7 +3,8 @@
  * Coordinates all AI services across REZ ecosystem
  */
 
-import express, { Request, Response } from 'express';
+import express, { Request, Response } import logger from './utils/logger';
+import from 'express';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '4101', 10);
@@ -284,10 +285,10 @@ function handleAnalysis(
 // ============================================
 
 app.listen(PORT, () => {
-  console.log(`REZ AI Orchestrator running on port ${PORT}`);
-  console.log('  Connected AI Services:');
+  logger.info(`REZ AI Orchestrator running on port ${PORT}`);
+  logger.info('  Connected AI Services:');
   Object.entries(AI_SERVICES).forEach(([name, url]) => {
-    console.log(`    - ${name}: ${url}`);
+    logger.info(`    - ${name}: ${url}`);
   });
 });
 

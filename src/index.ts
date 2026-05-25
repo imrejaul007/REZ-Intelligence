@@ -6,7 +6,7 @@
  */
 
 // Core types and interfaces
-export {
+export type {
   AgentTask,
   SubTask,
   AgentResult,
@@ -14,17 +14,21 @@ export {
   Tool,
   ToolParameter,
   ApprovalRequest,
-  AGENT_TYPES,
 } from './AgentOrchestrator';
 
+export { AGENT_TYPES } from './AgentOrchestrator';
+
 // Marketing integration exports
-export {
-  MarketingIntegration,
-  marketingIntegration,
+export type {
   AgentEventType,
   AgentInsight,
   MarketingCampaignPayload,
   MarketingApiResponse,
+} from './marketingIntegration';
+
+export {
+  MarketingIntegration,
+  marketingIntegration,
   createAbandonmentInsight,
   createWinBackInsight,
   createRetentionInsight,
@@ -34,20 +38,7 @@ export {
   mapAgentTaskToMarketingInsight,
   onAgentTaskCompleted,
   batchProcessInsights,
-  triggerMarketingFromTask,
-  triggerMarketingCampaign,
-  getMarketingHealth,
-} from './AgentOrchestrator';
-
-// Import orchestrator core
-import {
-  AgentTask,
-  AgentType,
-  AGENT_TYPES,
-  triggerMarketingFromTask,
-  triggerMarketingCampaign,
-  getMarketingHealth,
-} from './AgentOrchestrator';
+} from './marketingIntegration';
 
 /**
  * Orchestrator configuration
@@ -101,14 +92,8 @@ export function isMarketingEnabled(): boolean {
   return currentConfig.marketingEnabled ?? DEFAULT_CONFIG.marketingEnabled;
 }
 
-// Re-export for convenience
-export { triggerMarketingFromTask, triggerMarketingCampaign, getMarketingHealth };
-
 export default {
   initializeOrchestrator,
   getOrchestratorConfig,
   isMarketingEnabled,
-  triggerMarketingFromTask,
-  triggerMarketingCampaign,
-  getMarketingHealth,
 };

@@ -87,12 +87,12 @@ export async function onConversionLikelihood(userId: string, probability: number
 // GET CONTEXT FROM ECOSYSTEM
 // ============================================
 
-export async function getUserHistory(userId: string): Promise<any[]> {
+export async function getUserHistory(userId: string): Promise<unknown[]> {
   const response = await axios.get(`${ECOSYSTEM_URL}/api/v1/profile/${userId}/history`);
   return response.data.transactions || [];
 }
 
-export async function getUserSignals(userId: string): Promise<any[]> {
+export async function getUserSignals(userId: string): Promise<unknown[]> {
   const response = await axios.get(`${ECOSYSTEM_URL}/api/v1/profile/${userId}/signals`);
   return response.data.signals || [];
 }

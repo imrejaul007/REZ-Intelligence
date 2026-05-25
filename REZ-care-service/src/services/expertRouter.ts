@@ -29,7 +29,7 @@ export interface ExpertContext {
   sessionId?: string;
   platform: string;
   industry?: string;
-  [key: string]: any;
+  [key: string];
 }
 
 export interface ExpertResponse {
@@ -218,7 +218,7 @@ export class ExpertRouter {
       }
 
       return null;
-    } catch (error: any) {
+    } catch (error) {
       logger.warn(`[ExpertRouter] ${expertType} expert error: ${error.message}`);
       return null;
     }
@@ -265,7 +265,7 @@ export class ExpertRouter {
         source: 'copilot',
         confidence: 0,
       };
-    } catch (error: any) {
+    } catch (error) {
       logger.error(`[ExpertRouter] Copilot error: ${error.message}`);
       return {
         success: false,

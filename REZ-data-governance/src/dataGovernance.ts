@@ -57,7 +57,7 @@ const consents = new Map<string, Consent[]>();
 const dataRequests = new Map<string, DataRequest>();
 
 // Audit log
-const auditLog: any[] = [];
+const auditLog: unknown[] = [];
 
 // ============================================
 // PII DETECTION & ANONYMIZATION

@@ -11,7 +11,8 @@
  * - Weather
  */
 
-import express, { Request, Response } from 'express';
+import express, { Request, Response } import logger from './utils/logger';
+import from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
@@ -206,7 +207,7 @@ class SpendPredictor {
   // PRIVATE METHODS
   // ============================================
 
-  private calculateBillMetrics(transactions: any[]): {
+  private calculateBillMetrics(transactions: unknown[]): {
     avgBill: number;
     maxBill: number;
     minBill: number;
@@ -219,7 +220,7 @@ class SpendPredictor {
     return { avgBill, maxBill, minBill };
   }
 
-  private calculateCategoryBreakdown(transactions: any[]): SpendPrediction['categoryBreakdown'] {
+  private calculateCategoryBreakdown(transactions: unknown[]): SpendPrediction['categoryBreakdown'] {
     const categoryMap = new Map<string, { total: number; count: number }>();
 
     for (const t of transactions) {
@@ -239,7 +240,7 @@ class SpendPredictor {
     })).sort((a, b) => b.frequency - a.frequency);
   }
 
-  private calculateTimePatterns(transactions: any[]): SpendPrediction['timePatterns'] {
+  private calculateTimePatterns(transactions: unknown[]): SpendPrediction['timePatterns'] {
     const dayTotals = new Map<string, { total: number; count: number }>();
     const hourTotals = new Map<number, { total: number; count: number }>();
 
@@ -275,7 +276,7 @@ class SpendPredictor {
     };
   }
 
-  private identifySpendFactors(transactions: any[]): SpendPrediction['factors'] {
+  private identifySpendFactors(transactions: unknown[]): SpendPrediction['factors'] {
     const factors: SpendPrediction['factors'] = [];
 
     // Check for payday effect
@@ -360,7 +361,7 @@ class SpendPredictor {
     return recommendations;
   }
 
-  private weeksSinceFirst(transactions: any[]): number {
+  private weeksSinceFirst(transactions: unknown[]): number {
     if (transactions.length === 0) return 1;
     const first = transactions[transactions.length - 1].timestamp;
     const days = (Date.now() - new Date(first).getTime()) / (1000 * 60 * 60 * 24);
@@ -461,11 +462,11 @@ app.post('/api/predict/spend/batch', async (req: Request, res: Response) => {
 async function start() {
   try {
     await mongoose.connect(MONGODB_URI);
-    console.log('Spend Predictor connected to MongoDB');
+    logger.info('Spend Predictor connected to MongoDB');
 
     const PORT = parseInt(process.env.PORT || '4147', 10);
     app.listen(PORT, () => {
-      console.log(`Spend Predictor running on port ${PORT}`);
+      logger.info(`Spend Predictor running on port ${PORT}`);
     });
   } catch (error) {
     console.error('Failed to start:', error);

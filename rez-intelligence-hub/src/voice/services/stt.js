@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * Speech-to-Text Service
  * Converts audio to text using Whisper API
@@ -22,7 +24,7 @@ class SpeechToTextService {
 
     try {
       if (!this.initialized) {
-        console.log('[STT] Running in mock mode');
+        logger.info('[STT] Running in mock mode');
         return this.mockTranscribe(audioSource);
       }
 

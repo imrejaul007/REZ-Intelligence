@@ -124,7 +124,7 @@ export interface UnifiedProfile {
 
 export interface EnrichmentPayload {
   source: 'identity' | 'cdp' | 'orders' | 'signals' | 'manual';
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   timestamp?: Date;
 }
 
@@ -147,6 +147,6 @@ export interface ProfileSearchQuery {
 
 export interface ServiceSignalResponse {
   success: boolean;
-  data?: any;
+  data?;
   error?: string;
 }

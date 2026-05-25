@@ -291,19 +291,19 @@ const marketingCircuitBreaker = new CircuitBreaker();
 // ═══════════════════════════════════════════════════════════════════════════════
 
 interface RetryOptions {
-  maxAttempts: number;
-  baseDelayMs: number;
-  maxDelayMs: number;
-  jitterMaxMs: number;
+  MAX_ATTEMPTS: number;
+  BASE_DELAY_MS: number;
+  MAX_DELAY_MS: number;
+  JITTER_MAX_MS: number;
 }
 
 function calculateBackoff(attempt: number, options: RetryOptions): number {
-  const exponentialDelay = Math.min(
-    options.baseDelayMs * Math.pow(2, attempt - 1),
-    options.maxDelayMs
+  const expDelay = Math.min(
+    options.BASE_DELAY_MS * Math.pow(2, attempt - 1),
+    options.MAX_DELAY_MS
   );
-  const jitter = Math.floor(Math.random() * options.jitterMaxMs);
-  return exponentialDelay + jitter;
+  const jitterMs = Math.floor(Math.random() * options.JITTER_MAX_MS);
+  return expDelay + jitterMs;
 }
 
 async function sleep(ms: number): Promise<void> {
@@ -317,7 +317,7 @@ async function fetchWithRetry<T>(
 ): Promise<T> {
   let lastError: Error | null = null;
 
-  for (let attempt = 1; attempt <= retryOptions.maxAttempts; attempt++) {
+  for (let attempt = 1; attempt <= retryOptions.MAX_ATTEMPTS; attempt++) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(
@@ -349,12 +349,12 @@ async function fetchWithRetry<T>(
         logger.warn('Request timeout', { url, attempt });
       }
 
-      if (attempt < retryOptions.maxAttempts) {
+      if (attempt < retryOptions.MAX_ATTEMPTS) {
         const delay = calculateBackoff(attempt, retryOptions);
         logger.warn('Request failed, retrying', {
           url,
           attempt,
-          maxAttempts: retryOptions.maxAttempts,
+          maxAttempts: retryOptions.MAX_ATTEMPTS,
           delayMs: delay,
           error: lastError.message,
         });

@@ -315,7 +315,7 @@ export class SupportAgent {
     responseMessage += `**Category:** ${this.formatCategory(category)}\n`;
     responseMessage += `**Priority:** ${this.formatPriority(priority)}\n`;
     responseMessage += `**Subject:** ${ticket.subject}\n\n`;
-    responseMessage += `Our team will respond within ${this.getResponseTime(priority)}. You can reference this ticket ID for any follow-ups.`;
+    responseMessage += `Our team will respond within ${this.getResponseTime(priority)}. You can reference this ticket ID for unknown follow-ups.`;
 
     return {
       success: true,
@@ -351,7 +351,7 @@ export class SupportAgent {
       if (customerTickets.length === 0) {
         return {
           success: true,
-          message: "I couldn't find any tickets associated with your account. Would you like to create a new support ticket?",
+          message: "I couldn't find unknown tickets associated with your account. Would you like to create a new support ticket?",
           actions: [{ type: 'create_ticket', data: {} }]
         };
       }
@@ -363,7 +363,7 @@ export class SupportAgent {
       if (openTickets.length === 0) {
         return {
           success: true,
-          message: "You don't have any open support tickets. All your previous tickets have been resolved. Is there anything else I can help you with?",
+          message: "You don't have unknown open support tickets. All your previous tickets have been resolved. Is there anything else I can help you with?",
           actions: [{ type: 'show_ticket_history', data: { tickets: customerTickets } }]
         };
       }

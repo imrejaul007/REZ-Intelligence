@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * MongoDB Index Migrations
  * Run these to create indexes for performance
@@ -61,13 +63,13 @@ module.exports = {
       { name: 'idx_shown_date' }
     );
 
-    console.log('Indexes created successfully');
+    logger.info('Indexes created successfully');
   },
 
   async down(db) {
     // Drop indexes if needed
     await db.collection('events').dropIndex('idx_user_timestamp');
     await db.collection('events').dropIndex('idx_merchant_timestamp');
-    console.log('Indexes dropped');
+    logger.info('Indexes dropped');
   }
 };

@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ AGENT OS v3.0 - FULLY CONNECTED
  *
@@ -258,7 +260,7 @@ setInterval(() => {
 // =========================================================================
 
 server.listen(CONFIG.PORT, () => {
-  console.log(`
+  logger.info(`
 ╔══════════════════════════════════════════════════════════╗
 ║          REZ AGENT OS v3.0 FULLY CONNECTED          ║
 ╠══════════════════════════════════════════════════════════╣

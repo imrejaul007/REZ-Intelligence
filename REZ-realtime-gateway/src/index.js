@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 'use strict';
 
 require('dotenv').config();
@@ -238,8 +240,8 @@ async function start() {
 
   server.listen(PORT, () => {
     logger.info(`Realtime Gateway running on port ${PORT}`);
-    console.log(`WebSocket: ws://localhost:${PORT}`);
-    console.log(`HTTP: http://localhost:${PORT}`);
+    logger.info(`WebSocket: ws://localhost:${PORT}`);
+    logger.info(`HTTP: http://localhost:${PORT}`);
   });
 }
 

@@ -38,6 +38,21 @@ const logger = winston.createLogger({
 });
 
 // ============================================================================
+// PRODUCTION FIX: Batch Processing Configuration
+// ============================================================================
+
+const BATCH_CONFIG = {
+  // Maximum users to process per agent run
+  MAX_USERS_PER_RUN: 10000,
+  // Batch size for database queries
+  BATCH_SIZE: 100,
+  // Maximum execution time in milliseconds (5 minutes)
+  MAX_EXECUTION_MS: 300000,
+  // Minimum time between agent runs
+  MIN_RUN_INTERVAL_MS: 60000,
+};
+
+// ============================================================================
 // MONGODB MODELS
 // ============================================================================
 
@@ -521,63 +536,75 @@ const SegmentClassifierAgent = {
     let classifiedCount = 0;
 
     try {
-      const allUsers = await UserProfile.find({});
+      // PRODUCTION FIX: Process users in batches with limits
+      const startTimeMs = Date.now();
+      let skip = 0;
+      let hasMore = true;
 
-      for (const user of allUsers) {
-        const previousSegments = [...(user.segments || [])];
-        const newSegments = [];
-
-        const accountAgeDays = (Date.now() - new Date(user.createdAt).getTime()) / (24 * 60 * 60 * 1000);
-        const inactiveDays = (Date.now() - new Date(user.lastActive).getTime()) / (24 * 60 * 60 * 1000);
-
-        // Classify into segments
-        if (accountAgeDays <= this.SEGMENTS.NEW.accountAgeDays) {
-          newSegments.push('NEW');
+      while (hasMore) {
+        // Check time budget
+        if ((Date.now() - startTimeMs) > BATCH_CONFIG.MAX_EXECUTION_MS) {
+          logger.warn(`${this.name}: Execution time exceeded, stopping at ${skip} users`);
+          break;
         }
 
-        if (user.lifetimeValue >= this.SEGMENTS.VIP.minLTV && user.engagementScore >= this.SEGMENTS.VIP.minEngagement) {
-          newSegments.push('VIP');
-        } else if (user.lifetimeValue >= this.SEGMENTS.HIGH_VALUE.minLTV && user.engagementScore >= this.SEGMENTS.HIGH_VALUE.minEngagement) {
-          newSegments.push('HIGH_VALUE');
-        } else if (user.lifetimeValue >= this.SEGMENTS.GROWTH.minLTV && user.engagementScore >= this.SEGMENTS.GROWTH.minEngagement) {
-          newSegments.push('GROWTH');
+        // Check user count limit
+        if (skip >= BATCH_CONFIG.MAX_USERS_PER_RUN) {
+          logger.warn(`${this.name}: User count limit reached`);
+          break;
         }
 
-        if (inactiveDays >= this.SEGMENTS.DORMANT.inactiveDays) {
-          newSegments.push('DORMANT');
-        } else if (inactiveDays >= this.SEGMENTS.AT_RISK.inactiveDays) {
-          newSegments.push('AT_RISK');
+        // Fetch batch
+        const batch = await UserProfile.find({})
+          .sort({ updatedAt: -1 }) // Process recently updated first
+          .skip(skip)
+          .limit(BATCH_CONFIG.BATCH_SIZE);
+
+        if (batch.length === 0) {
+          hasMore = false;
+          break;
         }
 
-        // Check for segment changes
-        const segmentsChanged = JSON.stringify(previousSegments.sort()) !== JSON.stringify(newSegments.sort());
+        // Process batch
+        for (const user of batch) {
+          const previousSegments = [...(user.segments || [])];
+          const newSegments = [];
 
-        if (segmentsChanged) {
-          user.segments = newSegments;
-          await user.save();
+          const accountAgeDays = (Date.now() - new Date(user.createdAt).getTime()) / (24 * 60 * 60 * 1000);
+          const inactiveDays = (Date.now() - new Date(user.lastActive).getTime()) / (24 * 60 * 60 * 1000);
 
-          await AgentInsight.create({
-            agentId: 'segment-classifier-agent',
-            agentName: this.name,
-            userId: user.userId,
-            insightType: 'segment_change',
-            data: {
-              previousSegments,
-              newSegments,
-              metrics: {
-                lifetimeValue: user.lifetimeValue,
-                engagementScore: user.engagementScore,
-                inactiveDays: Math.floor(inactiveDays),
-                accountAgeDays: Math.floor(accountAgeDays)
-              }
-            },
-            confidence: 0.92,
-            action: segmentsChanged ? 'segment_reclassified' : 'no_change'
-          });
+          // Classify into segments
+          if (accountAgeDays <= this.SEGMENTS.NEW.accountAgeDays) {
+            newSegments.push('NEW');
+          }
 
-          classifiedCount++;
+          if (user.lifetimeValue >= this.SEGMENTS.VIP.minLTV && user.engagementScore >= this.SEGMENTS.VIP.minEngagement) {
+            newSegments.push('VIP');
+          } else if (user.lifetimeValue >= this.SEGMENTS.HIGH_VALUE.minLTV && user.engagementScore >= this.SEGMENTS.HIGH_VALUE.minEngagement) {
+            newSegments.push('HIGH_VALUE');
+          } else if (user.lifetimeValue >= this.SEGMENTS.GROWTH.minLTV && user.engagementScore >= this.SEGMENTS.GROWTH.minEngagement) {
+            newSegments.push('GROWTH');
+          }
+
+          if (inactiveDays >= this.SEGMENTS.DORMANT.inactiveDays) {
+            newSegments.push('DORMANT');
+          } else if (inactiveDays >= this.SEGMENTS.AT_RISK.inactiveDays) {
+            newSegments.push('AT_RISK');
+          }
+
+          // Check for segment changes
+          const segmentsChanged = JSON.stringify(previousSegments.sort()) !== JSON.stringify(newSegments.sort());
+
+          if (segmentsChanged) {
+            user.segments = newSegments;
+            await user.save();
+            classifiedCount++;
+          }
         }
+
+        skip += BATCH_CONFIG.BATCH_SIZE;
       }
+
 
       const duration = Date.now() - startTime;
       logger.info(`${this.name}: Completed. Reclassified ${classifiedCount} users in ${duration}ms`);

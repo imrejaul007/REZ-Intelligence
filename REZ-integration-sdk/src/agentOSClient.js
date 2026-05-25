@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ Agent OS - Universal App Connector
  *
@@ -60,7 +62,7 @@ class AgentOSClient {
       this.ws.onopen = () => {
         this.isConnected = true;
         this.config.userId = userId;
-        console.log(`[AgentOS] Connected as ${userId}`);
+        logger.info(`[AgentOS] Connected as ${userId}`);
         resolve();
       };
 
@@ -76,7 +78,7 @@ class AgentOSClient {
 
       this.ws.onclose = () => {
         this.isConnected = false;
-        console.log('[AgentOS] Disconnected');
+        logger.info('[AgentOS] Disconnected');
       };
     });
   }

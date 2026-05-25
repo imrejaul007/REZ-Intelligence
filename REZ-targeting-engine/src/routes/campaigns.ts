@@ -84,7 +84,7 @@ router.get(
     const { status, created_by, limit, offset } = req.query;
 
     const result = await campaignService.listCampaigns({
-      status: status as any,
+      status: status as unknown,
       created_by: created_by as string,
       limit: limit ? parseInt(limit as string) : undefined,
       offset: offset ? parseInt(offset as string) : undefined

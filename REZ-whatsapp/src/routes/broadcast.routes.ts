@@ -40,7 +40,7 @@ export function createBroadcastRoutes(
           {
             name,
             templateId,
-            segment: segment as any,
+            segment: segment as unknown,
             scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
             metadata,
           },

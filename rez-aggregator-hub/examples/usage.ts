@@ -54,7 +54,7 @@ async function basicSetup() {
 async function fetchOrdersExample(hub: AggregatorHub) {
   // Get all orders from all aggregators
   const allOrders = await hub.getOrders('store-123');
-  console.log(`Total orders: ${allOrders.length}`);
+  logger.info(`Total orders: ${allOrders.length}`);
 
   // Filter by specific aggregators
   const swiggyOrders = await hub.getOrders('store-123', {
@@ -130,7 +130,7 @@ async function syncMenuExample(hub: AggregatorHub) {
 
   // Check results
   for (const result of syncResults) {
-    console.log(`${result.aggregator}: ${result.itemsSuccess}/${result.itemsProcessed} items synced`);
+    logger.info(`${result.aggregator}: ${result.itemsSuccess}/${result.itemsProcessed} items synced`);
     if (result.errors.length > 0) {
       console.log('Errors:', result.errors);
     }
@@ -190,7 +190,7 @@ async function orderActionsExample(hub: AggregatorHub) {
         order.aggregatorOrderId,
         order.aggregator
       );
-      console.log(`Order ${order.id} accepted: ${accepted}`);
+      logger.info(`Order ${order.id} accepted: ${accepted}`);
     } else {
       // Reject with reason
       const rejected = await hub.rejectOrder(
@@ -199,7 +199,7 @@ async function orderActionsExample(hub: AggregatorHub) {
         order.aggregator,
         'Kitchen is busy, please try later'
       );
-      console.log(`Order ${order.id} rejected: ${rejected}`);
+      logger.info(`Order ${order.id} rejected: ${rejected}`);
     }
   }
 }
@@ -211,7 +211,8 @@ async function orderActionsExample(hub: AggregatorHub) {
 async function webhookExample(hub: AggregatorHub) {
   // In an Express.js app:
   /*
-  import express from 'express';
+  import express import logger from './utils/logger';
+import from 'express';
   const app = express();
 
   app.use(express.json());
@@ -258,25 +259,25 @@ async function analyticsExample(hub: AggregatorHub) {
 
   const analytics = await hub.getAnalytics('store-123', dateRange);
 
-  console.log('=== Analytics Summary ===');
-  console.log(`Total Orders: ${analytics.totalOrders}`);
-  console.log(`Total Revenue: ₹${analytics.totalRevenue.toFixed(2)}`);
-  console.log(`Average Order Value: ₹${analytics.averageOrderValue.toFixed(2)}`);
-  console.log(`Cancellation Rate: ${(analytics.cancellationRate * 100).toFixed(1)}%`);
+  logger.info('=== Analytics Summary ===');
+  logger.info(`Total Orders: ${analytics.totalOrders}`);
+  logger.info(`Total Revenue: ₹${analytics.totalRevenue.toFixed(2)}`);
+  logger.info(`Average Order Value: ₹${analytics.averageOrderValue.toFixed(2)}`);
+  logger.info(`Cancellation Rate: ${(analytics.cancellationRate * 100).toFixed(1)}%`);
 
-  console.log('\n=== By Aggregator ===');
+  logger.info('\n=== By Aggregator ===');
   for (const agg of analytics.byAggregator) {
-    console.log(`${agg.aggregator}: ${agg.orderCount} orders, ₹${agg.revenue.toFixed(2)} revenue`);
+    logger.info(`${agg.aggregator}: ${agg.orderCount} orders, ₹${agg.revenue.toFixed(2)} revenue`);
   }
 
-  console.log('\n=== Peak Hours ===');
+  logger.info('\n=== Peak Hours ===');
   for (const hour of analytics.peakHours.slice(0, 5)) {
-    console.log(`${hour.hour}:00 - ${hour.orderCount} orders`);
+    logger.info(`${hour.hour}:00 - ${hour.orderCount} orders`);
   }
 
-  console.log('\n=== Top Items ===');
+  logger.info('\n=== Top Items ===');
   for (const item of analytics.topItems.slice(0, 5)) {
-    console.log(`${item.itemName}: ${item.quantitySold} sold`);
+    logger.info(`${item.itemName}: ${item.quantitySold} sold`);
   }
 
   return analytics;
@@ -296,10 +297,10 @@ async function healthCheckExample(hub: AggregatorHub) {
 
   // Get full status
   const status = await hub.getStatus();
-  console.log('\n=== Hub Status ===');
-  console.log(`Overall: ${status.healthy ? 'Healthy' : 'Unhealthy'}`);
-  console.log(`Today's Orders: ${status.totalOrdersToday}`);
-  console.log(`Pending Orders: ${status.pendingOrders}`);
+  logger.info('\n=== Hub Status ===');
+  logger.info(`Overall: ${status.healthy ? 'Healthy' : 'Unhealthy'}`);
+  logger.info(`Today's Orders: ${status.totalOrdersToday}`);
+  logger.info(`Pending Orders: ${status.pendingOrders}`);
 }
 
 // ============================================
@@ -314,18 +315,18 @@ async function eventHandlersExample() {
     storeId: 'store-123',
   }, {
     onNewOrder: async (order) => {
-      console.log(`New order received: ${order.id}`);
+      logger.info(`New order received: ${order.id}`);
       // Send notification to kitchen
       // Play audio alert
       // Auto-accept if criteria met
     },
     onOrderUpdate: async (order) => {
-      console.log(`Order updated: ${order.id} -> ${order.orderStatus}`);
+      logger.info(`Order updated: ${order.id} -> ${order.orderStatus}`);
       // Update local database
       // Notify customer
     },
     onOrderCancelled: async (order, reason) => {
-      console.log(`Order cancelled: ${order.id}, Reason: ${reason}`);
+      logger.info(`Order cancelled: ${order.id}, Reason: ${reason}`);
       // Update inventory
       // Send refund if applicable
     },
@@ -354,11 +355,11 @@ async function completeIntegration() {
     }
 
     // 2. Sync menu
-    console.log('Syncing menu...');
+    logger.info('Syncing menu...');
     await syncMenuExample(hub);
 
     // 3. Fetch and process orders
-    console.log('Fetching orders...');
+    logger.info('Fetching orders...');
     const orders = await hub.getOrders('store-123', { status: 'new' });
 
     for (const order of orders) {
@@ -370,25 +371,25 @@ async function completeIntegration() {
       );
 
       if (accepted) {
-        console.log(`Accepted order ${order.id}`);
+        logger.info(`Accepted order ${order.id}`);
         // Update local system
       }
     }
 
     // 4. Get analytics
-    console.log('Fetching analytics...');
+    logger.info('Fetching analytics...');
     const analytics = await hub.getAnalytics('store-123', {
       start: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
       end: new Date(),
     });
 
-    console.log('Weekly Report:');
-    console.log(`  Orders: ${analytics.totalOrders}`);
-    console.log(`  Revenue: ₹${analytics.totalRevenue.toFixed(2)}`);
+    logger.info('Weekly Report:');
+    logger.info(`  Orders: ${analytics.totalOrders}`);
+    logger.info(`  Revenue: ₹${analytics.totalRevenue.toFixed(2)}`);
 
     // 5. Cleanup
     hub.destroy();
-    console.log('Done!');
+    logger.info('Done!');
   } catch (error) {
     console.error('Integration error:', error);
     hub.destroy();

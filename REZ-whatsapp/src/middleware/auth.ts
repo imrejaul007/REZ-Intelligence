@@ -1,14 +1,81 @@
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import twilio from 'twilio';
+import Redis from 'ioredis';
+import { z } from 'zod';
 import { logger } from '../utils/logger';
+
+// ==================== TYPES ====================
 
 export interface AuthenticatedRequest extends Request {
   serviceId?: string;
   isInternalService?: boolean;
 }
 
-// Internal service token validation
+// ==================== VALIDATION SCHEMAS ====================
+
+export const WebhookEventSchema = z.object({
+  entry: z.array(z.object({
+    id: z.string(),
+    changes: z.array(z.object({
+      value: z.object({
+        messaging_product: z.string(),
+        metadata: z.object({
+          display_phone_number: z.string(),
+          phone_number_id: z.string(),
+        }),
+        contacts: z.array(z.object({
+          profile: z.object({ name: z.string() }),
+          wa_id: z.string(),
+        })).optional(),
+        messages: z.array(z.object({
+          from: z.string().regex(/^\+?[1-9]\d{6,14}$/),
+          id: z.string(),
+          timestamp: z.string(),
+          type: z.enum(['text', 'image', 'audio', 'video', 'document', 'location', 'sticker', 'contacts', 'interactive']),
+          text: z.object({ body: z.string() }).optional(),
+          image: z.object({ id: z.string(), mime_type: z.string(), sha256: z.string() }).optional(),
+          audio: z.object({ id: z.string(), mime_type: z.string(), sha256: z.string() }).optional(),
+          video: z.object({ id: z.string(), mime_type: z.string(), sha256: z.string() }).optional(),
+          document: z.object({ id: z.string(), filename: z.string(), mime_type: z.string(), sha256: z.string() }).optional(),
+          location: z.object({ latitude: z.number(), longitude: z.number(), name: z.string().optional() }).optional(),
+          interactive: z.unknown().optional(),
+        })).optional(),
+        statuses: z.array(z.object({
+          id: z.string(),
+          recipient_id: z.string(),
+          status: z.enum(['sent', 'delivered', 'read', 'failed', 'undelivered']),
+          timestamp: z.string(),
+          errors: z.array(z.object({
+            code: z.number(),
+            title: z.string(),
+          })).optional(),
+        })).optional(),
+      }),
+      field: z.string(),
+    })),
+  })),
+});
+
+export const PhoneSchema = z.string().regex(/^\+?[1-9]\d{6,14}$/, 'Invalid phone number');
+export const EmailSchema = z.string().email('Invalid email');
+
+// ==================== REDIS CLIENT ====================
+
+let redisClient: Redis | null = null;
+
+function getRedis(): Redis {
+  if (!redisClient) {
+    redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+      maxRetriesPerRequest: null,
+      enableReadyCheck: false,
+    });
+  }
+  return redisClient;
+}
+
+// ==================== INTERNAL TOKEN VALIDATION ====================
+
 export const validateInternalToken = (
   req: AuthenticatedRequest,
   res: Response,
@@ -31,16 +98,14 @@ export const validateInternalToken = (
     return;
   }
 
-  // Validate token against configured tokens
   const validTokens = getValidTokens();
-
-  // Check if token matches any valid token
-  const isValid = validTokens.some((validToken) =>
-    crypto.timingSafeEqual(
-      Buffer.from(token),
-      Buffer.from(validToken)
-    )
-  );
+  const isValid = validTokens.some((validToken) => {
+    try {
+      return timingSafeEqual(token, validToken);
+    } catch {
+      return false;
+    }
+  });
 
   if (!isValid) {
     logger.warn('Invalid internal token', {
@@ -57,12 +122,25 @@ export const validateInternalToken = (
     return;
   }
 
-  // Set service ID from token map if available
   req.isInternalService = true;
   next();
 };
 
-// Twilio webhook signature verification
+// ==================== TIMING SAFE COMPARISON ====================
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+// ==================== TWILIO WEBHOOK VERIFICATION ====================
+
 export const verifyTwilioWebhook = (
   req: AuthenticatedRequest,
   res: Response,
@@ -71,10 +149,9 @@ export const verifyTwilioWebhook = (
   const signature = req.headers['x-twilio-signature'] as string;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   const webhookUrl = process.env.WEBHOOK_URL || getWebhookUrl(req);
-
-  // Check environment
   const isProduction = process.env.NODE_ENV === 'production';
 
+  // Check for missing signature
   if (!signature) {
     if (isProduction) {
       logger.warn('Missing Twilio signature in production', {
@@ -90,7 +167,6 @@ export const verifyTwilioWebhook = (
       });
       return;
     }
-    // Allow through in development but log
     logger.warn('Missing Twilio signature (development mode)', {
       path: req.path,
     });
@@ -98,6 +174,7 @@ export const verifyTwilioWebhook = (
     return;
   }
 
+  // Check for missing auth token
   if (!authToken) {
     logger.error('TWILIO_AUTH_TOKEN not configured');
     res.status(500).json({
@@ -110,14 +187,9 @@ export const verifyTwilioWebhook = (
     return;
   }
 
+  // Validate signature
   try {
-    // Validate the request signature using Twilio's built-in validator
-    const isValid = twilio.validateRequest(
-      authToken,
-      signature,
-      webhookUrl,
-      req.body
-    );
+    const isValid = twilio.validateRequest(authToken, signature, webhookUrl, req.body);
 
     if (!isValid) {
       logger.warn('Invalid Twilio signature', {
@@ -135,7 +207,6 @@ export const verifyTwilioWebhook = (
         });
         return;
       }
-      // Allow through in development for testing
       logger.warn('Invalid signature accepted in development mode');
     }
 
@@ -158,24 +229,16 @@ export const verifyTwilioWebhook = (
       });
       return;
     }
-
     next();
   }
 };
 
-/**
- * Helper to construct webhook URL from request
- */
 function getWebhookUrl(req: Request): string {
   const protocol = req.protocol;
   const host = req.get('host') || 'localhost:4202';
-  const baseUrl = `${protocol}://${host}`;
-  return `${baseUrl}${req.path}`;
+  return `${protocol}://${host}${req.path}`;
 }
 
-/**
- * Verify Twilio webhook signature (standalone utility)
- */
 export function verifyTwilioSignature(
   authToken: string,
   signature: string,
@@ -185,20 +248,12 @@ export function verifyTwilioSignature(
   return twilio.validateRequest(authToken, signature, url, params);
 }
 
-/**
- * Generate HMAC signature for outgoing webhooks (for services that need to call other webhooks)
- */
-export function generateHmacSignature(
-  payload: string,
-  secret: string
-): string {
-  return crypto
-    .createHmac('sha256', secret)
-    .update(payload)
-    .digest('hex');
+export function generateHmacSignature(payload: string, secret: string): string {
+  return crypto.createHmac('sha256', secret).update(payload).digest('hex');
 }
 
-// Merchant authentication (for merchant-facing endpoints)
+// ==================== MERCHANT AUTH ====================
+
 export const validateMerchantAuth = (
   req: AuthenticatedRequest,
   res: Response,
@@ -219,14 +274,11 @@ export const validateMerchantAuth = (
 
   const token = authHeader.substring(7);
 
-  // In production, validate JWT and extract merchant ID
   try {
+    // In production, validate JWT and extract merchant ID
     // const decoded = jwt.verify(token, process.env.JWT_SECRET);
     // req.merchantId = decoded.merchantId;
-
-    // For development, accept any token
     req.serviceId = token;
-
     next();
   } catch (error) {
     logger.warn('Invalid merchant token', {
@@ -243,7 +295,6 @@ export const validateMerchantAuth = (
   }
 };
 
-// Optional authentication - sets user if valid token, continues otherwise
 export const optionalAuth = (
   req: AuthenticatedRequest,
   res: Response,
@@ -256,14 +307,13 @@ export const optionalAuth = (
     return;
   }
 
-  // Process token if present
   if (authHeader.startsWith('Bearer ')) {
     const token = authHeader.substring(7);
     try {
       // const decoded = jwt.verify(token, process.env.JWT_SECRET);
       // req.userId = decoded.userId;
       req.serviceId = token;
-    } catch (error) {
+    } catch {
       // Ignore invalid tokens for optional auth
     }
   }
@@ -271,16 +321,13 @@ export const optionalAuth = (
   next();
 };
 
-// Get valid tokens from environment
 function getValidTokens(): string[] {
   const tokens: string[] = [];
 
-  // Primary internal token
   if (process.env.INTERNAL_SERVICE_TOKEN) {
     tokens.push(process.env.INTERNAL_SERVICE_TOKEN);
   }
 
-  // Additional tokens from JSON map
   if (process.env.INTERNAL_SERVICE_TOKENS_JSON) {
     try {
       const tokenMap = JSON.parse(process.env.INTERNAL_SERVICE_TOKENS_JSON);
@@ -297,7 +344,6 @@ function getValidTokens(): string[] {
   return tokens;
 }
 
-// Role-based access control
 export const requireRole = (roles: string[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     const userRole = req.headers['x-user-role'] as string;
@@ -317,68 +363,92 @@ export const requireRole = (roles: string[]) => {
   };
 };
 
-// Rate limiting for authenticated endpoints
+// ==================== REDIS-BASED RATE LIMITING ====================
+
 export interface RateLimitOptions {
   windowMs: number;
   max: number;
   keyPrefix: string;
 }
 
-// In-memory store for rate limiting (use Redis in production)
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
-
 export const rateLimiter = (options: RateLimitOptions) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
-    const key = req.serviceId || req.ip || 'unknown';
-    const now = Date.now();
+  return async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    const key = `ratelimit:${options.keyPrefix}:${req.serviceId || req.ip || 'unknown'}`;
+    const redis = getRedis();
 
-    let record = rateLimitStore.get(key);
+    try {
+      const now = Date.now();
+      const windowStart = now - options.windowMs;
 
-    if (!record || now > record.resetTime) {
-      record = {
-        count: 0,
-        resetTime: now + options.windowMs,
-      };
-      rateLimitStore.set(key, record);
+      const multi = redis.multi();
+      multi.zremrangebyscore(key, 0, windowStart);
+      multi.zcard(key);
+      multi.zadd(key, now.toString(), `${now}-${Math.random()}`);
+      multi.expire(key, Math.ceil(options.windowMs / 1000));
+      multi.zcard(key);
+
+      const results = await multi.exec();
+      const currentCount = (results![1][1] as number) || 0;
+      const newCount = (results![4][1] as number) || 0;
+
+      res.setHeader('X-RateLimit-Limit', options.max);
+      res.setHeader('X-RateLimit-Remaining', Math.max(0, options.max - currentCount - 1));
+      res.setHeader('X-RateLimit-Reset', new Date(now + options.windowMs).toISOString());
+
+      if (currentCount >= options.max) {
+        logger.warn('Rate limit exceeded', {
+          key,
+          count: currentCount,
+          limit: options.max,
+          ip: req.ip,
+        });
+
+        res.status(429).json({
+          success: false,
+          error: {
+            code: 'RATE_LIMIT_EXCEEDED',
+            message: 'Too many requests, please try again later',
+            retryAfter: Math.ceil(options.windowMs / 1000),
+          },
+        });
+        return;
+      }
+
+      next();
+    } catch (error) {
+      logger.error('Rate limiter error', { error });
+      // Fail open - allow request if Redis is down
+      next();
     }
-
-    record.count++;
-
-    // Set rate limit headers
-    res.setHeader('X-RateLimit-Limit', options.max);
-    res.setHeader('X-RateLimit-Remaining', Math.max(0, options.max - record.count));
-    res.setHeader('X-RateLimit-Reset', new Date(record.resetTime).toISOString());
-
-    if (record.count > options.max) {
-      logger.warn('Rate limit exceeded', {
-        key,
-        count: record.count,
-        limit: options.max,
-      });
-
-      res.status(429).json({
-        success: false,
-        error: {
-          code: 'RATE_LIMIT_EXCEEDED',
-          message: 'Too many requests, please try again later',
-        },
-      });
-      return;
-    }
-
-    next();
   };
 };
 
-// Clean up rate limit store periodically
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, record] of rateLimitStore.entries()) {
-    if (now > record.resetTime) {
-      rateLimitStore.delete(key);
+// ==================== INPUT VALIDATION ====================
+
+export function validateWebhookPayload(data: unknown): { valid: boolean; error?: string } {
+  try {
+    WebhookEventSchema.parse(data);
+    return { valid: true };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { valid: false, error: error.errors.map(e => e.message).join(', ') };
     }
+    return { valid: false, error: 'Invalid payload' };
   }
-}, 60000); // Clean up every minute
+}
+
+// ==================== MASK PII ====================
+
+export function maskPII(value: string): string {
+  if (!value) return value;
+  if (value.includes('@')) {
+    return value.replace(/(.{2}).*(@.*)/, '$1***$2');
+  }
+  if (/^\+?[0-9]{10,}$/.test(value.replace(/\s/g, ''))) {
+    return value.replace(/(.{3}).*(.{4})$/, '$1****$2');
+  }
+  return value;
+}
 
 export default {
   validateInternalToken,
@@ -387,4 +457,6 @@ export default {
   optionalAuth,
   requireRole,
   rateLimiter,
+  validateWebhookPayload,
+  maskPII,
 };

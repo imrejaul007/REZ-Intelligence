@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * OpenTelemetry Tracing Setup for REZ Intelligence
  *
@@ -84,21 +86,21 @@ const sdk = new NodeSDK({
 function startTracing() {
   try {
     sdk.start();
-    console.log('OpenTelemetry tracing started');
-    console.log(`  Service: ${config.serviceName}`);
-    console.log(`  Endpoint: ${config.otlpEndpoint}`);
+    logger.info('OpenTelemetry tracing started');
+    logger.info(`  Service: ${config.serviceName}`);
+    logger.info(`  Endpoint: ${config.otlpEndpoint}`);
 
     // Graceful shutdown
     process.on('SIGTERM', () => {
       sdk.shutdown()
-        .then(() => console.log('Tracing terminated'))
+        .then(() => logger.info('Tracing terminated'))
         .catch((error) => console.error('Error terminating tracing', error))
         .finally(() => process.exit(0));
     });
 
     process.on('SIGINT', () => {
       sdk.shutdown()
-        .then(() => console.log('Tracing terminated'))
+        .then(() => logger.info('Tracing terminated'))
         .catch((error) => console.error('Error terminating tracing', error))
         .finally(() => process.exit(0));
     });

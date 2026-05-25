@@ -27,7 +27,7 @@ export class RateLimiter {
 
   private getKey(req: Request): string {
     // Use service ID if authenticated, otherwise use IP
-    const identifier = (req as any).serviceId || req.ip || 'unknown';
+    const identifier = (req as unknown).serviceId || req.ip || 'unknown';
     return `ratelimit:${identifier}`;
   }
 
@@ -88,7 +88,7 @@ export class RateLimiter {
       if (info.remaining <= 0) {
         logger.warn('Rate limit exceeded', {
           ip: req.ip,
-          serviceId: (req as any).serviceId,
+          serviceId: (req as unknown).serviceId,
           resetAt: new Date(info.reset).toISOString(),
         });
 

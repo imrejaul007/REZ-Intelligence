@@ -1,4 +1,5 @@
-import express, { Express, Request, Response, NextFunction } from 'express';
+import express, { Express, Request, Response, NextFunction } import logger from './utils/logger';
+import from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -266,7 +267,7 @@ async function gracefulShutdown(signal: string): Promise<void> {
   }
 
   isShuttingDown = true;
-  console.log(`\nReceived ${signal}. Starting graceful shutdown...`);
+  logger.info(`\nReceived ${signal}. Starting graceful shutdown...`);
 
   try {
     // Stop accepting new requests
@@ -276,7 +277,7 @@ async function gracefulShutdown(signal: string): Promise<void> {
     await disconnectRedis();
     await disconnectDatabase();
 
-    console.log('Graceful shutdown completed');
+    logger.info('Graceful shutdown completed');
     process.exit(0);
   } catch (error) {
     console.error('Error during shutdown:', error);
@@ -289,23 +290,23 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Start server
 async function startServer(): Promise<void> {
-  console.log('Starting REZ Realtime Segments Service...');
+  logger.info('Starting REZ Realtime Segments Service...');
 
   try {
     // Connect to databases
-    console.log('Connecting to MongoDB...');
+    logger.info('Connecting to MongoDB...');
     await connectDatabase();
 
-    console.log('Connecting to Redis...');
+    logger.info('Connecting to Redis...');
     await connectRedis();
 
     // Start webhook processor
-    console.log('Starting webhook processor...');
+    logger.info('Starting webhook processor...');
     startWebhookProcessor();
 
     // Start HTTP server
     const server = app.listen(config.server.port, () => {
-      console.log(`
+      logger.info(`
 ╔══════════════════════════════════════════════════════════╗
 ║           REZ REALTIME SEGMENTS SERVICE                  ║
 ╠══════════════════════════════════════════════════════════╣
@@ -324,7 +325,7 @@ async function startServer(): Promise<void> {
 ╚══════════════════════════════════════════════════════════╝
       `);
 
-      console.log('Service started successfully');
+      logger.info('Service started successfully');
     });
 
     // Handle server errors
@@ -341,7 +342,7 @@ async function startServer(): Promise<void> {
 
 // Demo function to test segment evaluation
 async function runDemo(): Promise<void> {
-  console.log('\n=== Running Segment Evaluation Demo ===\n');
+  logger.info('\n=== Running Segment Evaluation Demo ===\n');
 
   const mockUser = createMockUserData({
     userId: 'demo-user-001',
@@ -353,24 +354,24 @@ async function runDemo(): Promise<void> {
     }
   });
 
-  console.log('Mock User Data:');
+  logger.info('Mock User Data:');
   console.log(JSON.stringify(mockUser, null, 2));
 
   // Simulate segment evaluation (without DB/Redis)
   const { evaluateAllSegments } = await import('./services/segmentEngine.js');
   const results = evaluateAllSegments(DEFAULT_SEGMENTS, mockUser);
 
-  console.log('\n--- Segment Evaluation Results ---');
+  logger.info('\n--- Segment Evaluation Results ---');
   for (const result of results) {
     const status = result.matches ? '✓ MATCHES' : '✗ NO MATCH';
-    console.log(`${status} ${result.segmentId.padEnd(20)} (${result.evaluationTimeMs}ms)`);
+    logger.info(`${status} ${result.segmentId.padEnd(20)} (${result.evaluationTimeMs}ms)`);
     if (result.matches) {
-      console.log(`   Matched rules: ${result.matchedRules.length}`);
+      logger.info(`   Matched rules: ${result.matchedRules.length}`);
     }
   }
 
   const matches = results.filter(r => r.matches);
-  console.log(`\nTotal matches: ${matches.length}/${results.length}`);
+  logger.info(`\nTotal matches: ${matches.length}/${results.length}`);
 }
 
 // Export for testing

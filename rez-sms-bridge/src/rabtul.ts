@@ -25,7 +25,7 @@ export async function sendSMS(params: {
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true, messageId: res.data.messageId };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -55,7 +55,7 @@ export async function sendBulkSMS(messages: Array<{
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true, sent: res.data.sent, failed: res.data.failed };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, sent: 0, failed: messages.length, error: error.message };
   }
 }
@@ -69,7 +69,7 @@ export async function getSMSStatus(messageId: string): Promise<{ status: string;
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { status: res.data.status };
-  } catch (error: any) {
+  } catch (error) {
     return { status: 'unknown', error: error.message };
   }
 }

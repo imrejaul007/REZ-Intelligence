@@ -13,7 +13,7 @@ const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 export async function createOrder(params: {
   userId: string;
   items: Array<{ productId: string; quantity: number; price: number }>;
-  shippingAddress?: Record<string, any>;
+  shippingAddress?: Record<string, unknown>;
   paymentMethod?: string;
 }): Promise<{ success: boolean; orderId?: string; error?: string }> {
   try {
@@ -21,7 +21,7 @@ export async function createOrder(params: {
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true, orderId: res.data.orderId };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -29,13 +29,13 @@ export async function createOrder(params: {
 /**
  * Get order
  */
-export async function getOrder(orderId: string): Promise<{ order: any; error?: string }> {
+export async function getOrder(orderId: string): Promise<{ order; error?: string }> {
   try {
     const res = await axios.get(`${ORDER_URL}/api/orders/${orderId}`, {
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { order: res.data };
-  } catch (error: any) {
+  } catch (error) {
     return { order: null, error: error.message };
   }
 }
@@ -49,7 +49,7 @@ export async function updateOrderStatus(orderId: string, status: string): Promis
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -57,14 +57,14 @@ export async function updateOrderStatus(orderId: string, status: string): Promis
 /**
  * Get user orders
  */
-export async function getUserOrders(userId: string, limit = 20): Promise<{ orders: any[]; error?: string }> {
+export async function getUserOrders(userId: string, limit = 20): Promise<{ orders: unknown[]; error?: string }> {
   try {
     const res = await axios.get(`${ORDER_URL}/api/orders/user/${userId}`, {
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
       params: { limit },
     });
     return { orders: res.data.orders || [] };
-  } catch (error: any) {
+  } catch (error) {
     return { orders: [], error: error.message };
   }
 }
@@ -78,7 +78,7 @@ export async function cancelOrder(orderId: string, reason?: string): Promise<{ s
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }

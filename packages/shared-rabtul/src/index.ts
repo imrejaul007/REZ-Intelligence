@@ -71,7 +71,7 @@ export const auth = {
         };
       }
       return { valid: false, error: 'Invalid token' };
-    } catch (error: any) {
+    } catch (error) {
       return { valid: false, error: error.message };
     }
   },
@@ -87,7 +87,7 @@ export const auth = {
         { headers: { 'Content-Type': 'application/json' } }
       );
       return { success: response.data.success ?? true };
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message };
     }
   },
@@ -106,7 +106,7 @@ export const auth = {
         return { success: true, token: response.data.token };
       }
       return { success: false, error: 'Invalid OTP' };
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message };
     }
   },
@@ -125,7 +125,7 @@ export const auth = {
         return { success: true, userId: response.data.userId };
       }
       return { success: false, error: response.data.message };
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message };
     }
   },
@@ -144,7 +144,7 @@ export const auth = {
         return { success: true, token: response.data.token };
       }
       return { success: false, error: 'No token returned' };
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message };
     }
   },
@@ -186,7 +186,7 @@ export const wallet = {
         { headers: { 'Content-Type': 'application/json', 'X-Internal-Token': RABTUL_CONFIG.INTERNAL_TOKEN } }
       );
       return { success: true, transactionId: response.data.transactionId };
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message };
     }
   },
@@ -202,7 +202,7 @@ export const wallet = {
         { headers: { 'Content-Type': 'application/json', 'X-Internal-Token': RABTUL_CONFIG.INTERNAL_TOKEN } }
       );
       return { success: true, transactionId: response.data.transactionId };
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message };
     }
   },
@@ -218,7 +218,7 @@ export const wallet = {
         { headers: { 'Content-Type': 'application/json', 'X-Internal-Token': RABTUL_CONFIG.INTERNAL_TOKEN } }
       );
       return { success: true, transactionId: response.data.transactionId };
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message };
     }
   },
@@ -226,14 +226,14 @@ export const wallet = {
   /**
    * Get transaction history
    */
-  async getTransactions(userId: string, limit = 20): Promise<{ transactions: any[]; error?: string }> {
+  async getTransactions(userId: string, limit = 20): Promise<{ transactions: unknown[]; error?: string }> {
     try {
       const response = await axios.get(`${RABTUL_CONFIG.WALLET_SERVICE_URL}/api/wallet/${userId}/transactions`, {
         headers: { 'X-Internal-Token': RABTUL_CONFIG.INTERNAL_TOKEN },
         params: { limit },
       });
       return { transactions: response.data.transactions || [] };
-    } catch (error: any) {
+    } catch (error) {
       return { transactions: [], error: error.message };
     }
   },
@@ -273,7 +273,7 @@ export const payment = {
         { headers: { 'X-Internal-Token': RABTUL_CONFIG.INTERNAL_TOKEN } }
       );
       return { paymentId: response.data.paymentId, status: 'pending' };
-    } catch (error: any) {
+    } catch (error) {
       return { error: error.message };
     }
   },
@@ -287,7 +287,7 @@ export const payment = {
         headers: { 'X-Internal-Token': RABTUL_CONFIG.INTERNAL_TOKEN },
       });
       return { status: response.data.status };
-    } catch (error: any) {
+    } catch (error) {
       return { error: error.message };
     }
   },
@@ -303,7 +303,7 @@ export const payment = {
         { headers: { 'X-Internal-Token': RABTUL_CONFIG.INTERNAL_TOKEN } }
       );
       return { status: 'completed', paymentId: response.data.refundId };
-    } catch (error: any) {
+    } catch (error) {
       return { error: error.message };
     }
   },
@@ -336,7 +336,7 @@ export const notifications = {
         { headers: { 'X-Internal-Token': RABTUL_CONFIG.INTERNAL_TOKEN } }
       );
       return { success: true, notificationId: response.data.notificationId };
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message };
     }
   },
@@ -355,7 +355,7 @@ export const notifications = {
         { headers: { 'X-Internal-Token': RABTUL_CONFIG.INTERNAL_TOKEN } }
       );
       return { success: true, notificationId: response.data.notificationId };
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message };
     }
   },
@@ -376,7 +376,7 @@ export const notifications = {
         { headers: { 'X-Internal-Token': RABTUL_CONFIG.INTERNAL_TOKEN } }
       );
       return { success: true, notificationId: response.data.notificationId };
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message };
     }
   },
@@ -396,7 +396,7 @@ export const notifications = {
         { headers: { 'X-Internal-Token': RABTUL_CONFIG.INTERNAL_TOKEN } }
       );
       return { success: true, notificationId: response.data.notificationId };
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message };
     }
   },
@@ -418,7 +418,7 @@ export const notifications = {
         { headers: { 'X-Internal-Token': RABTUL_CONFIG.INTERNAL_TOKEN } }
       );
       return { success: true, notificationId: response.data.notificationId };
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message };
     }
   },
@@ -437,7 +437,7 @@ export interface EventResult {
 export interface IntelligenceEvent {
   type: string;
   source: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   timestamp?: string;
   userId?: string;
   sessionId?: string;
@@ -459,7 +459,7 @@ export const eventBus = {
         { headers: { 'X-Internal-Token': RABTUL_CONFIG.INTERNAL_TOKEN } }
       );
       return { success: true, eventId: response.data.eventId };
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message };
     }
   },
@@ -467,7 +467,7 @@ export const eventBus = {
   /**
    * Publish intent signal
    */
-  async publishIntent(userId: string, intent: string, confidence: number, context: Record<string, any>): Promise<EventResult> {
+  async publishIntent(userId: string, intent: string, confidence: number, context: Record<string, unknown>): Promise<EventResult> {
     return this.publish({
       type: 'intelligence.intent',
       data: { userId, intent, confidence, context },
@@ -507,7 +507,7 @@ export const eventBus = {
   /**
    * Publish signal event
    */
-  async publishSignal(signalType: string, entityType: string, entityId: string, data: Record<string, any>): Promise<EventResult> {
+  async publishSignal(signalType: string, entityType: string, entityId: string, data: Record<string, unknown>): Promise<EventResult> {
     return this.publish({
       type: `signal.${signalType}`,
       data: { entityType, entityId, ...data },
@@ -527,7 +527,7 @@ export const eventBus = {
   /**
    * Publish customer 360 update
    */
-  async publishCustomer360(userId: string, profile: Record<string, any>): Promise<EventResult> {
+  async publishCustomer360(userId: string, profile: Record<string, unknown>): Promise<EventResult> {
     return this.publish({
       type: 'customer.360',
       data: { userId, profile },

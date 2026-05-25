@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 #!/usr/bin/env node
 
 import 'dotenv/config';
@@ -919,9 +921,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 // Start server
 async function main() {
-  console.error("REZ Inventory MCP Server started");
-  console.error(`Inventory Service URL: ${INVENTORY_SERVICE_URL}`);
-  console.error(`Real API: ${USE_REAL_API ? 'ENABLED' : 'DISABLED (set USE_REAL_INVENTORY=true to enable)'}`);
+  logger.error("REZ Inventory MCP Server started");
+  logger.error(`Inventory Service URL: ${INVENTORY_SERVICE_URL}`);
+  logger.error(`Real API: ${USE_REAL_API ? 'ENABLED' : 'DISABLED (set USE_REAL_INVENTORY=true to enable)'}`);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);

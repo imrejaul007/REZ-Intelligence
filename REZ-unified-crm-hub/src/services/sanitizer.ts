@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * Data Sanitizer Service
  *
@@ -60,7 +62,7 @@ export function toMerchantCustomer(internal: InternalCustomer): MerchantCustomer
 export function toMerchantCustomerDetail(
   internal: InternalCustomer,
   orders?: InternalOrder[],
-  reviews?: Record<string, any>[]
+  reviews?: Record<string, unknown>[]
 ): MerchantCustomerDetail {
   return {
     id: internal.id,
@@ -125,7 +127,7 @@ function toMerchantOrder(order: InternalOrder): MerchantOrderSummary {
 /**
  * Transform review to merchant-safe format
  */
-function toMerchantReview(review: any): any {
+function toMerchantReview(review): unknown {
   return {
     id: review.id,
     rating: review.rating,
@@ -139,7 +141,7 @@ function toMerchantReview(review: any): any {
  * Filter customer to remove internal-only fields
  * Use this as a safety check
  */
-export function sanitizeCustomerObject(customer: Record<string, any>): Record<string, any> {
+export function sanitizeCustomerObject(customer: Record<string, unknown>): Record<string, unknown> {
   // Fields to NEVER send to merchants
   const forbiddenFields = [
     'predictions',
@@ -191,7 +193,7 @@ export function sanitizeCustomerObject(customer: Record<string, any>): Record<st
     'createdAt',
   ];
 
-  const sanitized: Record<string, any> = {};
+  const sanitized: Record<string, unknown> = {};
 
   // Add only allowed fields
   for (const field of allowedFields) {
@@ -202,7 +204,7 @@ export function sanitizeCustomerObject(customer: Record<string, any>): Record<st
 
   // Add segments as array of names
   if (customer.segments && Array.isArray(customer.segments)) {
-    sanitized.segments = customer.segments.map((s: any) =>
+    sanitized.segments = customer.segments.map((s) =>
       typeof s === 'string' ? s : s.name
     );
   }
@@ -210,8 +212,8 @@ export function sanitizeCustomerObject(customer: Record<string, any>): Record<st
   // Add tags without confidence
   if (customer.smartTags && Array.isArray(customer.smartTags)) {
     sanitized.tags = customer.smartTags
-      .filter((t: any) => !t.confidence || t.confidence >= 0.7)
-      .map((t: any) => ({
+      .filter((t) => !t.confidence || t.confidence >= 0.7)
+      .map((t) => ({
         name: t.name,
         icon: t.icon,
         color: t.color,
@@ -225,7 +227,7 @@ export function sanitizeCustomerObject(customer: Record<string, any>): Record<st
  * Validate that an object doesn't contain internal fields
  * Throws error if forbidden fields found
  */
-export function validateMerchantSafe(obj: Record<string, any>): void {
+export function validateMerchantSafe(obj: Record<string, unknown>): void {
   const forbiddenPatterns = [
     'prediction',
     'churn',
@@ -246,7 +248,7 @@ export function validateMerchantSafe(obj: Record<string, any>): void {
 
     for (const pattern of forbiddenPatterns) {
       if (lowerKey.includes(pattern.toLowerCase())) {
-        console.error(`[SECURITY] Forbidden field detected in merchant response: ${key}`);
+        logger.error(`[SECURITY] Forbidden field detected in merchant response: ${key}`);
         throw new Error(`Security violation: Internal field '${key}' found in merchant response`);
       }
     }

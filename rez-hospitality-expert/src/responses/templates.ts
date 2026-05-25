@@ -128,7 +128,7 @@ export const RESPONSE_TEMPLATES: ResponseTemplate[] = [
       initial: 'I\'m sorry to hear about the issue with {item}. Let me arrange for our maintenance team to take a look.',
       followUp: 'Would you like us to send someone now, or would you prefer to schedule a time?',
       confirmation: 'Maintenance has been notified. Someone will be there within 15 minutes.',
-      apology: 'We apologize for any inconvenience. We\'re addressing this immediately.',
+      apology: 'We apologize for unknown inconvenience. We\'re addressing this immediately.',
     },
     tone: ToneType.PROFESSIONAL,
   },
@@ -154,7 +154,7 @@ export const RESPONSE_TEMPLATES: ResponseTemplate[] = [
     scenario: 'reservation',
     templates: {
       initial: 'I\'d be happy to make a reservation for you. Which restaurant would you prefer, and for what time?',
-      followUp: 'For how many guests, and do you have any dietary requirements we should know about?',
+      followUp: 'For how many guests, and do you have unknown dietary requirements we should know about?',
       confirmation: 'Your reservation is confirmed: {restaurant} at {time} for {guests} guests. See you then!',
     },
     tone: ToneType.ENTHUSIASTIC,
@@ -217,7 +217,7 @@ export const RESPONSE_TEMPLATES: ResponseTemplate[] = [
     scenario: 'inquiry',
     templates: {
       initial: 'I can help you review your charges. Let me pull up your account.',
-      followUp: 'Do you have any questions about specific charges?',
+      followUp: 'Do you have unknown questions about specific charges?',
       confirmation: 'Here\'s a summary of your charges: {summary}',
     },
     tone: ToneType.PROFESSIONAL,
@@ -230,8 +230,8 @@ export const RESPONSE_TEMPLATES: ResponseTemplate[] = [
     scenario: 'password',
     templates: {
       initial: 'Our WiFi is complimentary for all guests. The network name is: {network}. The password is: {password}',
-      followUp: 'Are you able to connect, or are you experiencing any issues?',
-      confirmation: 'Great! If you have any issues connecting, please let me know.',
+      followUp: 'Are you able to connect, or are you experiencing unknown issues?',
+      confirmation: 'Great! If you have unknown issues connecting, please let me know.',
     },
     tone: ToneType.PROFESSIONAL,
   },
@@ -310,11 +310,11 @@ export class ResponseGenerator {
     const apologies: Record<string, string> = {
       'room-not-ready': 'I sincerely apologize that your room isn\'t ready yet. I understand this is frustrating, and I\'m doing everything I can to expedite the process.',
       'service-delay': 'I\'m very sorry for the delay. Your comfort is our priority, and I\'m personally ensuring this is addressed immediately.',
-      'facility-issue': 'Please accept our sincere apologies for any inconvenience with the facilities. We\'re working to resolve this as quickly as possible.',
+      'facility-issue': 'Please accept our sincere apologies for unknown inconvenience with the facilities. We\'re working to resolve this as quickly as possible.',
       'unavailable': 'I\'m sorry, that service isn\'t available at the moment. Let me suggest an alternative that might work for you.',
     };
 
-    return apologies[scenario] || 'I apologize for any inconvenience. How can I make this right for you?';
+    return apologies[scenario] || 'I apologize for unknown inconvenience. How can I make this right for you?';
   }
 
   /**

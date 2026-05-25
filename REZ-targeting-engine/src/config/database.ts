@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 import mongoose from 'mongoose';
 
 // SECURITY FIX: Fail at startup if MONGODB_URI not set
@@ -18,7 +20,7 @@ export const connectDatabase = async (): Promise<void> => {
     await mongoose.connect(MONGODB_URI, options);
 
     mongoose.connection.on('connected', () => {
-      console.log(`[MongoDB] Connected to: ${mongoose.connection.host}`);
+      logger.info(`[MongoDB] Connected to: ${mongoose.connection.host}`);
     });
 
     mongoose.connection.on('error', (err) => {
@@ -26,7 +28,7 @@ export const connectDatabase = async (): Promise<void> => {
     });
 
     mongoose.connection.on('disconnected', () => {
-      console.warn('[MongoDB] Disconnected. Attempting to reconnect...');
+      logger.warn('[MongoDB] Disconnected. Attempting to reconnect...');
     });
 
   } catch (error) {

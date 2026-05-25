@@ -68,7 +68,7 @@ app.get('/stats', async (req: Request, res: Response) => {
       { $group: { _id: '$decision', count: { $sum: 1 } } }
     ]);
     res.json({ total, byDecision });
-  } catch (error: any) {
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
@@ -78,7 +78,7 @@ app.get('/decisions', async (req: Request, res: Response) => {
   try {
     const decisions = await Decision.find().sort({ createdAt: -1 }).limit(50);
     res.json({ decisions });
-  } catch (error: any) {
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
@@ -136,7 +136,7 @@ app.post('/webhook/events', async (req: Request, res: Response) => {
       decision: decision,
       decisionId: doc._id,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[DECISION ERROR]', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -146,7 +146,7 @@ app.post('/webhook/events', async (req: Request, res: Response) => {
  * Create decision based on event type (Observer Mode)
  * NO execution - just decision logic
  */
-function createDecision(eventType: string, event: any) {
+function createDecision(eventType: string, event) {
   switch (eventType) {
     case 'inventory.low':
       return {
@@ -205,7 +205,7 @@ async function pollEvents() {
     try {
       // In real implementation, this would poll Event Platform
       // For now, events are pushed via webhook
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[POLLER ERROR]', { error: error.message });
     }
   }, 5000);
@@ -236,7 +236,7 @@ async function start() {
     // Start polling
     await pollEvents();
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to start', { error: error.message });
     process.exit(1);
   }

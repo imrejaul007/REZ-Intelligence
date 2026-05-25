@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * CrossPlatformSync.ts - Synchronization Across Platform Services
  */
@@ -147,7 +149,7 @@ export class CrossPlatformSync {
     if (this.isRunning) return;
 
     this.isRunning = true;
-    console.log(`Starting cross-platform sync with interval: ${this.config.intervalMs}ms`);
+    logger.info(`Starting cross-platform sync with interval: ${this.config.intervalMs}ms`);
 
     this.intervalHandle = setInterval(() => {
       this.runScheduledSync().catch(error => {
@@ -165,7 +167,7 @@ export class CrossPlatformSync {
       this.intervalHandle = undefined;
     }
     this.isRunning = false;
-    console.log('Cross-platform sync stopped');
+    logger.info('Cross-platform sync stopped');
   }
 
   /**
@@ -173,7 +175,7 @@ export class CrossPlatformSync {
    */
   async runScheduledSync(): Promise<void> {
     // In production, this would fetch merchants that need syncing
-    console.log('Running scheduled sync...');
+    logger.info('Running scheduled sync...');
   }
 
   /**
@@ -247,7 +249,7 @@ export class CrossPlatformSync {
           timestamp: new Date().toISOString(),
           data: { duration_ms: Date.now() - serviceStartTime },
         });
-      } catch (error: any) {
+      } catch (error) {
         result.services.push({
           service: service.name,
           status: 'failed',
@@ -470,7 +472,7 @@ export class CrossPlatformSync {
       this.updateMerchantModule(merchant, service, data);
 
       return { success: true, data };
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message };
     }
   }

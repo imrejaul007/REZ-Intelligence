@@ -230,7 +230,7 @@ class MomentRulesEngine {
     });
   }
 
-  evaluate(context: MomentContext): { rule: MomentRule; ad: any } | null {
+  evaluate(context: MomentContext): { rule: MomentRule; ad: unknown } | null {
     const matchingRules = this.rules
       .filter(rule => rule.condition(context))
       .sort((a, b) => b.priority - a.priority);
@@ -333,7 +333,7 @@ class MomentAdEngine {
   async triggerMoment(
     userId: string,
     momentType: MomentTrigger,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<MomentAd | null> {
     const context: MomentContext = {
       userId,
@@ -352,7 +352,7 @@ class MomentAdEngine {
   // Private Methods
   // ============================================================================
 
-  private async getUserProfile(userId: string): Promise<any> {
+  private async getUserProfile(userId: string): Promise<unknown> {
     try {
       const response = await axios.get(
         `${PROFILE_SERVICE_URL}/api/profiles/${userId}`,
@@ -364,7 +364,7 @@ class MomentAdEngine {
     }
   }
 
-  private async getUserSignals(userId: string): Promise<any> {
+  private async getUserSignals(userId: string): Promise<unknown> {
     try {
       const response = await axios.get(
         `${INTENT_SERVICE_URL}/api/signals/${userId}`,
@@ -384,7 +384,7 @@ class MomentAdEngine {
     title: string;
     description: string;
     cta: string;
-    targeting: any;
+    targeting;
     context: MomentContext;
   }): Promise<MomentAd | null> {
     // Get relevant campaign based on targeting

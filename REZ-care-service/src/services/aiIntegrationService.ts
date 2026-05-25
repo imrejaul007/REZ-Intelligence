@@ -83,7 +83,7 @@ class AIIntegrationService {
         return response.data.data;
       }
       return null;
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[AI Integration] Sentiment analysis failed', error.message);
       return this.getFallbackSentiment(message);
     }
@@ -102,7 +102,7 @@ class AIIntegrationService {
         return response.data.suggestions;
       }
       return [];
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[AI Integration] Ticket suggestions failed', error.message);
       return [];
     }
@@ -119,7 +119,7 @@ class AIIntegrationService {
         return response.data.data;
       }
       return null;
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[AI Integration] User history failed', error.message);
       return null;
     }
@@ -128,9 +128,9 @@ class AIIntegrationService {
   /**
    * Detect intent from message
    */
-  async detectIntent(message: string, context?: any): Promise<{
+  async detectIntent(message: string, context?): Promise<{
     intent: string;
-    entities: Record<string, any>;
+    entities: Record<string, unknown>;
     confidence: number;
   } | null> {
     try {
@@ -143,7 +143,7 @@ class AIIntegrationService {
         return response.data.data;
       }
       return null;
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[AI Integration] Intent detection failed', error.message);
       return null;
     }
@@ -168,7 +168,7 @@ class AIIntegrationService {
         return response.data.results;
       }
       return [];
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[AI Integration] Knowledge search failed', error.message);
       return [];
     }
@@ -177,7 +177,7 @@ class AIIntegrationService {
   /**
    * Get dashboard analytics from AI
    */
-  async getAnalytics(days: number = 7): Promise<any> {
+  async getAnalytics(days: number = 7): Promise<unknown> {
     try {
       const response = await this.client.get('/analytics', {
         params: { days }
@@ -187,7 +187,7 @@ class AIIntegrationService {
         return response.data.data;
       }
       return null;
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[AI Integration] Analytics failed', error.message);
       return null;
     }
@@ -217,7 +217,7 @@ class AIIntegrationService {
         return response.data.data;
       }
       return null;
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[AI Integration] Chat response failed', error.message);
       return null;
     }
@@ -226,7 +226,7 @@ class AIIntegrationService {
   /**
    * Get unified customer view from AI
    */
-  async getUnifiedCustomerView(customerId: string): Promise<any> {
+  async getUnifiedCustomerView(customerId: string): Promise<unknown> {
     try {
       // Try to get from AI brain
       const history = await this.getUserHistory(customerId);
@@ -239,7 +239,7 @@ class AIIntegrationService {
         aiPowered: true,
         timestamp: new Date()
       };
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[AI Integration] Unified view failed', error.message);
       return {
         customerId,

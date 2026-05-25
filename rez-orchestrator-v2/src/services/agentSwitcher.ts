@@ -225,7 +225,7 @@ export class AgentSwitcher {
     }
   }
 
-  private parseAgentResponse(data: any): AgentResponse {
+  private parseAgentResponse(data): AgentResponse {
     if (typeof data === 'string') {
       return { content: data, format: 'text' };
     }

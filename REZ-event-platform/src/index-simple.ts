@@ -15,7 +15,7 @@ import path from 'path';
 
 // Load OpenAPI spec for Swagger UI
 const openApiSpecPath = path.join(__dirname, 'docs', 'openapi.yaml');
-let openApiSpec: any = null;
+let openApiSpec: unknown = null;
 
 async function loadOpenApiSpec(): Promise<void> {
   try {
@@ -23,7 +23,7 @@ async function loadOpenApiSpec(): Promise<void> {
     const specContent = await fs.readFile(openApiSpecPath, 'utf8');
     openApiSpec = require('js-yaml').load(specContent);
     logger.info('OpenAPI spec loaded successfully', { path: openApiSpecPath });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Failed to load OpenAPI spec', { error: error.message });
   }
 }
@@ -173,7 +173,7 @@ app.post('/events/:type', async (req: Request, res: Response) => {
         success: aeResponse.data?.success,
         decision: aeResponse.data?.decision?.type
       });
-    } catch (aeError: any) {
+    } catch (aeError) {
       logger.error('[ACTION ENGINE ERROR]', { error: aeError.message });
       // Don't fail the event - just log the error
     }
@@ -183,7 +183,7 @@ app.post('/events/:type', async (req: Request, res: Response) => {
       eventId: log._id,
       correlationId: log.correlationId,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[EVENT ERROR]', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -198,7 +198,7 @@ app.get('/stats', async (req: Request, res: Response) => {
     ]);
 
     res.json({ total, byType });
-  } catch (error: any) {
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
@@ -249,7 +249,7 @@ app.post('/webhook/merchant/inventory', async (req: Request, res: Response) => {
     }
 
     res.json({ success: true, correlation_id, event_id: log._id });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[MERCHANT EVENT ERROR]', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -288,7 +288,7 @@ app.post('/webhook/merchant/order', async (req: Request, res: Response) => {
     await log.save();
 
     res.json({ success: true, correlation_id, event_id: log._id });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[MERCHANT ORDER ERROR]', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -325,7 +325,7 @@ app.post('/webhook/merchant/payment', async (req: Request, res: Response) => {
     await log.save();
 
     res.json({ success: true, correlation_id, event_id: log._id });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[MERCHANT PAYMENT ERROR]', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -367,7 +367,7 @@ app.post('/webhook/consumer/order', async (req: Request, res: Response) => {
     await log.save();
 
     res.json({ success: true, correlation_id, event_id: log._id });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[CONSUMER ORDER ERROR]', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -404,7 +404,7 @@ app.post('/webhook/consumer/search', async (req: Request, res: Response) => {
     await log.save();
 
     res.json({ success: true, correlation_id, event_id: log._id });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[CONSUMER SEARCH ERROR]', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -442,7 +442,7 @@ app.post('/webhook/consumer/view', async (req: Request, res: Response) => {
     await log.save();
 
     res.json({ success: true, correlation_id, event_id: log._id });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[CONSUMER VIEW ERROR]', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -481,7 +481,7 @@ app.post('/webhook/auth/signup', async (req: Request, res: Response) => {
     await log.save();
 
     res.json({ success: true, correlation_id, event_id: log._id });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[AUTH SIGNUP ERROR]', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -517,7 +517,7 @@ app.post('/webhook/auth/login', async (req: Request, res: Response) => {
     await log.save();
 
     res.json({ success: true, correlation_id, event_id: log._id });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[AUTH LOGIN ERROR]', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -549,7 +549,7 @@ app.post('/webhook/auth/logout', async (req: Request, res: Response) => {
     await log.save();
 
     res.json({ success: true, correlation_id, event_id: log._id });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[AUTH LOGOUT ERROR]', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -591,7 +591,7 @@ app.post('/webhook/wallet/topup', async (req: Request, res: Response) => {
     await log.save();
 
     res.json({ success: true, correlation_id, event_id: log._id });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[WALLET TOPUP ERROR]', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -628,7 +628,7 @@ app.post('/webhook/wallet/withdraw', async (req: Request, res: Response) => {
     await log.save();
 
     res.json({ success: true, correlation_id, event_id: log._id });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[WALLET WITHDRAW ERROR]', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -670,7 +670,7 @@ app.post('/webhook/catalog/view', async (req: Request, res: Response) => {
     await log.save();
 
     res.json({ success: true, correlation_id, event_id: log._id });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[CATALOG VIEW ERROR]', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -710,7 +710,7 @@ app.post('/webhook/gamification/earn', async (req: Request, res: Response) => {
     await log.save();
 
     res.json({ success: true, correlation_id, event_id: log._id });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[GAMIFICATION EARN ERROR]', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -746,7 +746,7 @@ app.post('/webhook/gamification/redeem', async (req: Request, res: Response) => 
     await log.save();
 
     res.json({ success: true, correlation_id, event_id: log._id });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[GAMIFICATION REDEEM ERROR]', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -787,7 +787,7 @@ app.post('/webhook/support/ticket', async (req: Request, res: Response) => {
     await log.save();
 
     res.json({ success: true, correlation_id, event_id: log._id });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[SUPPORT TICKET ERROR]', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -830,7 +830,7 @@ app.post('/webhook/chat/message', async (req: Request, res: Response) => {
     await log.save();
 
     res.json({ success: true, correlation_id, event_id: log._id });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[CHAT MESSAGE ERROR]', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -888,7 +888,7 @@ app.use((req: Request, res: Response) => {
 });
 
 // Error handler
-app.use((err: Error, req: Request, res: Response, next: any) => {
+app.use((err: Error, req: Request, res: Response, next) => {
   logger.error('Unhandled error', { error: err.message });
   res.status(500).json({ error: 'Internal server error' });
 });
@@ -910,7 +910,7 @@ async function start() {
       logger.info(`Action Engine: ${ACTION_ENGINE_URL}`);
       logger.info(`Health: http://localhost:${PORT}/health`);
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Failed to start', { error: error.message });
     process.exit(1);
   }

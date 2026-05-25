@@ -14,7 +14,7 @@ const { logger } = await import('@rez/rez-shared/telemetry').catch(() => ({ logg
 
 const EI_ERRORS_DIR = path.join(__dirname, '..', 'errors');
 
-function getAllErrors(): any[] {
+function getAllErrors(): unknown[] {
   const registry = path.join(EI_ERRORS_DIR, 'ERRORS.json');
   if (!fs.existsSync(registry)) return [];
   return JSON.parse(fs.readFileSync(registry, 'utf-8')).errors || [];
@@ -25,7 +25,7 @@ function sync(): void {
 
   logger.info(`Syncing ${errors.length} errors from rez-error-intelligence...`);
 
-  const errorsByRepo: Record<string, any[]> = {};
+  const errorsByRepo: Record<string, unknown[]> = {};
   for (const err of errors) {
     const repo = err.repo || 'unknown';
     if (!errorsByRepo[repo]) errorsByRepo[repo] = [];

@@ -8,7 +8,7 @@ export interface MessageRequest {
   message: string;
   userId: string;
   channel: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface MessageResponse {
@@ -133,7 +133,7 @@ class OrchestratorService {
       }
 
       return null;
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Routing failed', {
         error: error.message,
         channel: request.channel,

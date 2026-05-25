@@ -64,7 +64,7 @@ router.get('/segments/:segment/users', authMiddleware, async (req: Request, res:
       success: true,
       data: {
         segment,
-        description: getSegmentDescription(segment as any),
+        description: getSegmentDescription(segment as unknown),
         userCount: userIds.length,
         userIds: userIds.slice(0, 100)
       }
@@ -170,7 +170,7 @@ router.post('/zones', authMiddleware, async (req: Request, res: Response, next: 
         categories: validated.attributes?.categories || [],
         footfallTier: validated.attributes?.footfallTier || 'medium'
       }
-    } as any);
+    } as unknown);
 
     res.status(201).json({
       success: true,
@@ -195,7 +195,7 @@ router.put('/zones/:zoneId', authMiddleware, async (req: Request, res: Response,
     const { zoneId } = req.params;
     const updateData = req.body;
 
-    const zone = await locationService.updateZone(zoneId, updateData as any);
+    const zone = await locationService.updateZone(zoneId, updateData as unknown);
 
     if (!zone) {
       throw createApiError('Zone not found', 404, 'ZONE_NOT_FOUND');

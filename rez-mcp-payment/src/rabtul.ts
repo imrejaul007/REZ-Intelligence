@@ -28,7 +28,7 @@ export async function createPayment(params: {
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true, paymentId: res.data.paymentId };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -42,7 +42,7 @@ export async function verifyPayment(paymentId: string): Promise<{ success: boole
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true, status: res.data.status };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -56,7 +56,7 @@ export async function refundPayment(paymentId: string, amount?: number): Promise
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true, refundId: res.data.refundId };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -64,14 +64,14 @@ export async function refundPayment(paymentId: string, amount?: number): Promise
 /**
  * Get payment history
  */
-export async function getPaymentHistory(userId: string, limit = 20): Promise<{ payments: any[]; error?: string }> {
+export async function getPaymentHistory(userId: string, limit = 20): Promise<{ payments: unknown[]; error?: string }> {
   try {
     const res = await axios.get(`${PAYMENT_URL}/api/payments/history/${userId}`, {
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
       params: { limit },
     });
     return { payments: res.data.payments || [] };
-  } catch (error: any) {
+  } catch (error) {
     return { payments: [], error: error.message };
   }
 }

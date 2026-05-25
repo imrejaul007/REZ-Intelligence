@@ -183,7 +183,7 @@ class RFMService {
   /**
    * Get cohort analysis
    */
-  async analyzeCohort(cohortDate: Date): Promise<any> {
+  async analyzeCohort(cohortDate: Date): Promise<unknown> {
     const startOfMonth = new Date(cohortDate.getFullYear(), cohortDate.getMonth(), 1);
     const endOfMonth = new Date(cohortDate.getFullYear(), cohortDate.getMonth() + 1, 0);
 

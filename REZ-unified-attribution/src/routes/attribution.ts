@@ -59,7 +59,7 @@ attributionRouter.post('/track/touchpoint', async (req: Request, res: Response) 
     });
 
     res.json({ success: true, data: touchpoint });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Touchpoint track failed', { error: error.message });
     res.status(400).json({ success: false, error: error.message });
   }
@@ -88,7 +88,7 @@ attributionRouter.post('/track/touchpoint/batch', async (req: Request, res: Resp
     })));
 
     res.json({ success: true, count: touchpoints.length });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Batch touchpoint track failed', { error: error.message });
     res.status(400).json({ success: false, error: error.message });
   }
@@ -102,7 +102,7 @@ attributionRouter.get('/track/touchpoints', async (req: Request, res: Response) 
   try {
     const { merchantId, customerId, channel, startDate, endDate, limit = 50 } = req.query;
 
-    const query: any = {};
+    const query: unknown = {};
     if (merchantId) query.merchantId = merchantId;
     if (customerId) query.customerId = customerId;
     if (channel) query.channel = channel;
@@ -117,7 +117,7 @@ attributionRouter.get('/track/touchpoints', async (req: Request, res: Response) 
       .limit(Number(limit));
 
     res.json({ success: true, data: touchpoints });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Touchpoints fetch failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -188,7 +188,7 @@ attributionRouter.post('/track/conversion', async (req: Request, res: Response) 
         attribution
       }
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Conversion track failed', { error: error.message });
     res.status(400).json({ success: false, error: error.message });
   }
@@ -202,7 +202,7 @@ attributionRouter.get('/track/conversions', async (req: Request, res: Response) 
   try {
     const { merchantId, customerId, status, startDate, endDate, limit = 50 } = req.query;
 
-    const query: any = {};
+    const query: unknown = {};
     if (merchantId) query.merchantId = merchantId;
     if (customerId) query.customerId = customerId;
     if (status) query.status = status;
@@ -217,7 +217,7 @@ attributionRouter.get('/track/conversions', async (req: Request, res: Response) 
       .limit(Number(limit));
 
     res.json({ success: true, data: conversions });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Conversions fetch failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -241,7 +241,7 @@ attributionRouter.patch('/track/conversion/:id/status', async (req: Request, res
     }
 
     res.json({ success: true, data: conversion });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Conversion status update failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -273,7 +273,7 @@ attributionRouter.post('/dooh/impression', async (req: Request, res: Response) =
     });
 
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('DOOH impression failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -302,7 +302,7 @@ attributionRouter.post('/dooh/visit', async (req: Request, res: Response) => {
     });
 
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('DOOH visit failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -333,7 +333,7 @@ attributionRouter.post('/qr/scan', async (req: Request, res: Response) => {
     });
 
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('QR scan failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -366,7 +366,7 @@ attributionRouter.post('/creator/view', async (req: Request, res: Response) => {
     });
 
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Creator view failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -397,7 +397,7 @@ attributionRouter.post('/creator/coupon', async (req: Request, res: Response) =>
     });
 
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Creator coupon failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -452,7 +452,7 @@ attributionRouter.post('/aggregator/order', async (req: Request, res: Response) 
     });
 
     res.json({ success: true, data: conversion });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Aggregator order failed', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }

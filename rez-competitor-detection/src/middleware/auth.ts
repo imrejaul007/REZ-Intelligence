@@ -1,4 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } import logger from './utils/logger';
+import from 'express';
 import crypto from 'crypto';
 
 // Extend Express Request
@@ -25,7 +26,7 @@ export function initializeServiceTokens(): void {
       Object.entries(tokens).forEach(([service, token]) => {
         SERVICE_TOKENS.set(service, token as string);
       });
-      console.log(`Loaded ${SERVICE_TOKENS.size} service tokens`);
+      logger.info(`Loaded ${SERVICE_TOKENS.size} service tokens`);
     } catch (error) {
       console.error('Failed to parse INTERNAL_SERVICE_TOKENS_JSON:', error);
     }

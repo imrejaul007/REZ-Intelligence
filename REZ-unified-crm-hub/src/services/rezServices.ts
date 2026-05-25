@@ -81,7 +81,7 @@ export class RezServicesConnector {
           healthy: response.status === 200,
           latency: Date.now() - start,
         };
-      } catch (error: any) {
+      } catch (error) {
         return {
           service: name,
           url: serviceUrls.intelligence[name as keyof typeof serviceUrls.intelligence] || '',
@@ -106,7 +106,7 @@ export class RezServicesConnector {
   // IDENTITY GRAPH (Port 4050)
   // ============================================
 
-  async getIdentityByUserId(userId: string): Promise<any> {
+  async getIdentityByUserId(userId: string): Promise<unknown> {
     const client = this.clients.get('identityGraph');
     if (!client) return null;
 
@@ -119,7 +119,7 @@ export class RezServicesConnector {
     }
   }
 
-  async resolveIdentity(identifier: { email?: string; phone?: string; deviceId?: string }): Promise<any> {
+  async resolveIdentity(identifier: { email?: string; phone?: string; deviceId?: string }): Promise<unknown> {
     const client = this.clients.get('identityGraph');
     if (!client) return null;
 
@@ -141,7 +141,7 @@ export class RezServicesConnector {
   // PREDICTIVE ENGINE (Port 4059)
   // ============================================
 
-  async getPredictions(userId: string): Promise<any> {
+  async getPredictions(userId: string): Promise<unknown> {
     const client = this.clients.get('predictiveEngine');
     if (!client) return this.getDefaultPredictions();
 
@@ -191,7 +191,7 @@ export class RezServicesConnector {
   // RFM SERVICE (Port 4055)
   // ============================================
 
-  async getRFMScore(userId: string): Promise<any> {
+  async getRFMScore(userId: string): Promise<unknown> {
     const client = this.clients.get('rfmService');
     if (!client) return null;
 
@@ -204,7 +204,7 @@ export class RezServicesConnector {
     }
   }
 
-  async getRFMAnalysis(storeId?: string): Promise<any> {
+  async getRFMAnalysis(storeId?: string): Promise<unknown> {
     const client = this.clients.get('rfmService');
     if (!client) return null;
 
@@ -223,7 +223,7 @@ export class RezServicesConnector {
   // UNIFIED PROFILE (Port 4060)
   // ============================================
 
-  async getProfile(userId: string): Promise<any> {
+  async getProfile(userId: string): Promise<unknown> {
     const client = this.clients.get('unifiedProfile');
     if (!client) return null;
 
@@ -236,7 +236,7 @@ export class RezServicesConnector {
     }
   }
 
-  async getProfileActivity(userId: string): Promise<any> {
+  async getProfileActivity(userId: string): Promise<unknown> {
     const client = this.clients.get('unifiedProfile');
     if (!client) return null;
 
@@ -249,7 +249,7 @@ export class RezServicesConnector {
     }
   }
 
-  async searchProfiles(query: string, filters?: any): Promise<any[]> {
+  async searchProfiles(query: string, filters?): Promise<unknown[]> {
     const client = this.clients.get('unifiedProfile');
     if (!client) return [];
 
@@ -268,7 +268,7 @@ export class RezServicesConnector {
   // CUSTOMER INTELLIGENCE (Port 4140)
   // ============================================
 
-  async getCustomerIntelligence(userId: string): Promise<any> {
+  async getCustomerIntelligence(userId: string): Promise<unknown> {
     const client = this.clients.get('customerIntelligence');
     if (!client) return null;
 
@@ -281,7 +281,7 @@ export class RezServicesConnector {
     }
   }
 
-  async getCustomerOrders(userId: string, options?: { limit?: number; offset?: number }): Promise<any[]> {
+  async getCustomerOrders(userId: string, options?: { limit?: number; offset?: number }): Promise<unknown[]> {
     const client = this.clients.get('customerIntelligence');
     if (!client) return [];
 
@@ -300,7 +300,7 @@ export class RezServicesConnector {
   // REZ NOW (Consumer)
   // ============================================
 
-  async getRezNowCustomer(userId: string): Promise<any> {
+  async getRezNowCustomer(userId: string): Promise<unknown> {
     const client = this.clients.get('rezNow');
     if (!client) return null;
 
@@ -313,7 +313,7 @@ export class RezServicesConnector {
     }
   }
 
-  async getRezNowOrders(userId: string, storeSlug?: string): Promise<any[]> {
+  async getRezNowOrders(userId: string, storeSlug?: string): Promise<unknown[]> {
     const client = this.clients.get('rezNow');
     if (!client) return [];
 
@@ -332,7 +332,7 @@ export class RezServicesConnector {
   // ENGAGEMENT PLATFORM (REZ Media)
   // ============================================
 
-  async getEngagementData(userId: string): Promise<any> {
+  async getEngagementData(userId: string): Promise<unknown> {
     const client = this.clients.get('engagementPlatform');
     if (!client) return null;
 
@@ -345,7 +345,7 @@ export class RezServicesConnector {
     }
   }
 
-  async getLoyaltyStatus(userId: string): Promise<any> {
+  async getLoyaltyStatus(userId: string): Promise<unknown> {
     const client = this.clients.get('engagementPlatform');
     if (!client) return null;
 
@@ -362,7 +362,7 @@ export class RezServicesConnector {
   // CRM HUB (HubSpot/Zoho)
   // ============================================
 
-  async getCRMContact(userId: string): Promise<any> {
+  async getCRMContact(userId: string): Promise<unknown> {
     const client = this.clients.get('crmHub');
     if (!client) return null;
 
@@ -379,7 +379,7 @@ export class RezServicesConnector {
   // AGGREGATE ALL DATA
   // ============================================
 
-  async aggregateCustomerData(userId: string): Promise<any> {
+  async aggregateCustomerData(userId: string): Promise<unknown> {
     logger.info('Aggregating customer data', { userId });
 
     // Run all requests in parallel

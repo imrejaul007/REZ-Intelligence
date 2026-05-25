@@ -15,7 +15,7 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; erro
       headers: { 'Authorization': `Bearer ${token}`, 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { valid: res.data.success };
-  } catch (error: any) {
+  } catch (error) {
     return { valid: false, error: error.message };
   }
 }

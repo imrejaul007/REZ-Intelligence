@@ -5,9 +5,9 @@ export interface DecisionContext {
   userId: string;
   sessionId: string;
   requestType: 'offer' | 'fraud' | 'recommendation' | 'loyalty' | 'personalization';
-  context: Record<string, any>;
+  context: Record<string, unknown>;
   timestamp: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface DecisionResult {
@@ -18,14 +18,14 @@ export interface DecisionResult {
   confidence: number;
   reasons: string[];
   actions: DecisionAction[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   processingTimeMs: number;
 }
 
 export interface DecisionAction {
   type: string;
   target: string;
-  value?: any;
+  value?;
   priority: 'high' | 'medium' | 'low';
 }
 
@@ -51,7 +51,7 @@ export class DecisionRouter {
     this.decisionHandlers.set('personalization', this.handlePersonalizationDecision.bind(this));
   }
 
-  async route(body: any, headers: Headers): Promise<DecisionResult> {
+  async route(body, headers: Headers): Promise<DecisionResult> {
     const startTime = Date.now();
     const decisionId = uuidv4();
 
@@ -262,7 +262,7 @@ export class DecisionRouter {
   }
 
   // Scoring helpers
-  private calculateOfferScore(context: Record<string, any>): number {
+  private calculateOfferScore(context: Record<string, unknown>): number {
     let score = 0.5;
 
     // User engagement factor
@@ -282,7 +282,7 @@ export class DecisionRouter {
     return Math.min(1, Math.max(0, score));
   }
 
-  private calculateFraudScore(context: Record<string, any>): number {
+  private calculateFraudScore(context: Record<string, unknown>): number {
     let score = 0.1; // Low base fraud score
 
     // Velocity check
@@ -302,7 +302,7 @@ export class DecisionRouter {
     return Math.min(1, score);
   }
 
-  private calculateLoyaltyScore(context: Record<string, any>): number {
+  private calculateLoyaltyScore(context: Record<string, unknown>): number {
     let score = 0.3;
 
     // Points factor
@@ -337,7 +337,7 @@ export class DecisionRouter {
     return 'review';
   }
 
-  private generateFraudReasons(context: Record<string, any>, score: number): string[] {
+  private generateFraudReasons(context: Record<string, unknown>, score: number): string[] {
     const reasons: string[] = [];
 
     if (score < 0.2) {
@@ -353,7 +353,7 @@ export class DecisionRouter {
     return reasons;
   }
 
-  private generateFraudActions(decision: string, context: Record<string, any>): DecisionAction[] {
+  private generateFraudActions(decision: string, context: Record<string, unknown>): DecisionAction[] {
     const actions: DecisionAction[] = [];
 
     if (decision === 'denied') {

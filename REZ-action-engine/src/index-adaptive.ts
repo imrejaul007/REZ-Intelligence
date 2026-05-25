@@ -139,7 +139,7 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-function log(message: string, meta?: any) {
+function log(message: string, meta?) {
   const timestamp = new Date().toISOString();
   console.log(`${timestamp} [ACTION] ${message}`, meta ? JSON.stringify(meta) : '');
 }
@@ -218,7 +218,7 @@ app.get('/stats', async (req: Request, res: Response) => {
         },
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
@@ -232,7 +232,7 @@ app.get('/stats/compare', async (req: Request, res: Response) => {
     const { merchantId, itemId, eventType } = req.query;
 
     // Build match filter
-    const matchFilter: any = {};
+    const matchFilter: unknown = {};
     if (merchantId) matchFilter['payload.data.merchant_id'] = merchantId;
     if (itemId) matchFilter['payload.data.item_id'] = itemId;
     if (eventType) matchFilter.eventType = eventType;
@@ -358,7 +358,7 @@ app.get('/stats/compare', async (req: Request, res: Response) => {
       storedComparisons,
       filters: { merchantId, itemId, eventType },
     });
-  } catch (error: any) {
+  } catch (error) {
     log('[COMPARE ERROR]', { error: error.message });
     res.status(500).json({ error: error.message });
   }
@@ -369,20 +369,20 @@ app.get('/decisions', async (req: Request, res: Response) => {
   try {
     const decisions = await Decision.find().sort({ createdAt: -1 }).limit(20);
     res.json({ decisions });
-  } catch (error: any) {
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 // Get learned params from Feedback Service
-async function getLearnedParams(merchantId: string, itemId: string): Promise<any> {
+async function getLearnedParams(merchantId: string, itemId: string): Promise<unknown> {
   try {
     const response = await axios.get(
       `${FEEDBACK_SERVICE_URL}/learned-params/${merchantId}/${itemId}`,
       { timeout: 3000 }
     );
     return response.data;
-  } catch (error: any) {
+  } catch (error) {
     log('[LEARNING LOOKUP FAILED]', { merchantId, itemId, error: error.message });
     return { found: false };
   }
@@ -393,7 +393,7 @@ async function getLearnedParams(merchantId: string, itemId: string): Promise<any
  */
 function determineActionLevel(
   confidence: number,
-  learnedParams: any
+  learnedParams: unknown
 ): { level: 'SAFE' | 'SEMI_SAFE' | 'RISKY'; recommendation: ActionRecommendation; reason: string } {
   const totalDecisions = learnedParams.found ? learnedParams.params.totalDecisions || 0 : 0;
   const approvalRate = learnedParams.found ? learnedParams.params.approvalRate || 0 : 0;
@@ -572,7 +572,7 @@ async function updateComparisonMetrics(
       baselineRate: (baselineRate * 100).toFixed(1) + '%',
       lift: (absoluteLift * 100).toFixed(2) + '%',
     });
-  } catch (error: any) {
+  } catch (error) {
     log('[COMPARISON UPDATE ERROR]', { error: error.message });
   }
 }
@@ -662,7 +662,7 @@ app.post('/webhook/events', async (req: Request, res: Response) => {
         params: learnedParams.found ? learnedParams.params : null,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     log('[DECISION ERROR]', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
@@ -704,7 +704,7 @@ app.post('/webhook/feedback', async (req: Request, res: Response) => {
         decision.wasEffective = wasEffective;
         decision.modificationDelta = modificationDelta || null;
         await decision.save();
-        updateResult = { matchedCount: 1, modifiedCount: 1 } as any;
+        updateResult = { matchedCount: 1, modifiedCount: 1 } as unknown;
       }
     }
 
@@ -724,7 +724,7 @@ app.post('/webhook/feedback', async (req: Request, res: Response) => {
     }
 
     res.json({ success: true, updated: updateResult.matchedCount > 0, wasEffective });
-  } catch (error: any) {
+  } catch (error) {
     log('[FEEDBACK ERROR]', { error: error.message });
     res.status(500).json({ error: error.message });
   }
@@ -734,7 +734,7 @@ app.post('/webhook/feedback', async (req: Request, res: Response) => {
  * Create adaptive decision based on event type and learned parameters
  * @param isBaseline - if true, use improved baseline calculation with context
  */
-function createAdaptiveDecision(eventType: string, event: any, learnedParams: any, isBaseline: boolean = false) {
+function createAdaptiveDecision(eventType: string, event, learnedParams, isBaseline: boolean = false) {
 
   // CONTEXT FEATURES - Extract from event data
   const dayOfWeek = new Date().getDay(); // 0=Sunday, 6=Saturday
@@ -928,7 +928,7 @@ async function start() {
       log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     });
 
-  } catch (error: any) {
+  } catch (error) {
     log('[FATAL]', { error: error.message });
     process.exit(1);
   }

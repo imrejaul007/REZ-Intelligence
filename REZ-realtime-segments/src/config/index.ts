@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -34,7 +36,7 @@ function parseServiceTokens(json: string): Record<string, string> {
   try {
     return JSON.parse(json);
   } catch {
-    console.warn('Failed to parse INTERNAL_SERVICE_TOKENS_JSON, using empty object');
+    logger.warn('Failed to parse INTERNAL_SERVICE_TOKENS_JSON, using empty object');
     return {};
   }
 }
@@ -43,7 +45,7 @@ function parseWebhookEndpoints(json: string): string[] {
   try {
     return JSON.parse(json);
   } catch {
-    console.warn('Failed to parse WEBHOOK_ENDPOINTS, using empty array');
+    logger.warn('Failed to parse WEBHOOK_ENDPOINTS, using empty array');
     return [];
   }
 }

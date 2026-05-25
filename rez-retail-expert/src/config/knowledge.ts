@@ -217,7 +217,7 @@ export const COMPARISON_CRITERIA: ComparisonCriteria[] = [
   {
     id: 'price',
     name: 'Price',
-    description: 'Current price and any ongoing discounts or promotions',
+    description: 'Current price and unknown ongoing discounts or promotions',
     applicableCategories: ['all']
   },
   {
@@ -276,6 +276,6 @@ export const CARE_SYMBOLS: Record<string, { symbol: string; meaning: string }> =
   },
   bleach: {
     symbol: 'B',
-    meaning: 'Bleach when needed. Empty triangle = any bleach.'
+    meaning: 'Bleach when needed. Empty triangle = unknown bleach.'
   }
 };

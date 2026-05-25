@@ -50,9 +50,9 @@ router.post('/opportunities', async (req: Request, res: Response) => {
       success: true,
       offers: allOffers,
       byType: opportunities,
-      agentSuggestions: smartUpsellEngine.generateAgentSuggestions(opportunities as any),
+      agentSuggestions: smartUpsellEngine.generateAgentSuggestions(opportunities as unknown),
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[SmartUpsell] Failed to get opportunities', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -83,7 +83,7 @@ router.post('/upgrades', async (req: Request, res: Response) => {
       success: true,
       upgrades: opportunities.upgrades,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[SmartUpsell] Failed to get upgrades', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -114,7 +114,7 @@ router.post('/accessories', async (req: Request, res: Response) => {
       success: true,
       accessories: opportunities.accessories,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[SmartUpsell] Failed to get accessories', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -144,7 +144,7 @@ router.post('/complementary', async (req: Request, res: Response) => {
       success: true,
       complementary: opportunities.complementary,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[SmartUpsell] Failed to get complementary', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -174,10 +174,10 @@ router.post('/agent-suggestions', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      suggestions: smartUpsellEngine.generateAgentSuggestions(opportunities as any),
+      suggestions: smartUpsellEngine.generateAgentSuggestions(opportunities as unknown),
       topOffers: opportunities.upgrades.slice(0, 2),
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[SmartUpsell] Failed to get agent suggestions', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -197,7 +197,7 @@ router.get('/personalized/:customerId', async (req: Request, res: Response) => {
       success: true,
       offers,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[SmartUpsell] Failed to get personalized', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -234,7 +234,7 @@ router.post('/track', async (req: Request, res: Response) => {
         ? 'Great choice! We will add this to your order.'
         : 'No problem! Let us know if you need anything else.',
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[SmartUpsell] Failed to track', error);
     res.status(500).json({ success: false, error: error.message });
   }

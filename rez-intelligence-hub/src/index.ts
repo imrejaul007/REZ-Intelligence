@@ -3,7 +3,8 @@
  * Unified user/merchant profiles + Voice AI + Autonomous Agents
  */
 
-import express, { Request, Response } from 'express';
+import express, { Request, Response } import logger from './utils/logger';
+import from 'express';
 import mongoose from 'mongoose';
 import financeRoutes from './routes/financeRoutes';
 import userRoutes from './routes/userRoutes';
@@ -32,7 +33,7 @@ const PORT = process.env.PORT || 4020;
 // SECURITY FIX: MongoDB URI from environment variable
 const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {
-  console.error('FATAL: MONGODB_URI environment variable is required');
+  logger.error('FATAL: MONGODB_URI environment variable is required');
   process.exit(1);
 }
 
@@ -98,7 +99,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   const expectedToken = process.env.INTERNAL_SERVICE_TOKEN;
 
   if (!expectedToken) {
-    console.error('INTELLIGENCE_001: INTERNAL_SERVICE_TOKEN not configured');
+    logger.error('INTELLIGENCE_001: INTERNAL_SERVICE_TOKEN not configured');
     return res.status(503).json({ error: 'Service not configured' });
   }
 
@@ -235,7 +236,7 @@ app.post('/api/voice/process', async (req: Request, res: Response) => {
     } else {
       res.json(result);
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('[Voice] Error:', error);
     res.status(500).json({ error: error.message });
   }
@@ -260,7 +261,7 @@ app.post('/api/voice/text', async (req: Request, res: Response) => {
     } else {
       res.json(result);
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('[Voice] Error:', error);
     res.status(500).json({ error: error.message });
   }
@@ -367,9 +368,9 @@ app.get('/health/voice', (req: Request, res: Response) => {
 
 mongoose.connect(process.env.MONGODB_URI).then(() => {
   app.listen(PORT, () => {
-    console.log(`Intelligence Hub running on port ${PORT}`);
-    console.log(`Health check: http://localhost:${PORT}/health`);
-    console.log(`User routes: http://localhost:${PORT}/api/intelligence`);
+    logger.info(`Intelligence Hub running on port ${PORT}`);
+    logger.info(`Health check: http://localhost:${PORT}/health`);
+    logger.info(`User routes: http://localhost:${PORT}/api/intelligence`);
   });
 }).catch((err) => {
   console.error('MongoDB connection failed:', err);

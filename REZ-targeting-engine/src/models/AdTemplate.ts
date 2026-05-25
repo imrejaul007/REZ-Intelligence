@@ -11,7 +11,7 @@ export interface IAdTemplate extends Document {
     cta_url?: string;
     image_url?: string;
     deep_link?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   };
   design: {
     layout: string;

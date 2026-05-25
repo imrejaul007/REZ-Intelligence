@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * Booking Service Connector
  *
@@ -317,7 +319,7 @@ function getInternalToken(): string {
     const tokens = JSON.parse(tokensJson);
     return tokens.orchestrator || tokens.booking || '';
   } catch {
-    console.warn('[BookingConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+    logger.warn('[BookingConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
     return '';
   }
 }

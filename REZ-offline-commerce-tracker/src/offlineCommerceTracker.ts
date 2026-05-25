@@ -43,7 +43,7 @@ export interface StoreVisit {
   exitTime?: string;
   duration?: number; // minutes
   method: 'qr_scan' | 'geofence' | 'manual' | 'pos';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface OfflinePurchase {
@@ -70,7 +70,7 @@ export interface EngagementSignal {
   userId: string;
   merchantId: string;
   type: 'view' | 'save' | 'share' | 'review' | 'ask' | 'call' | 'directions';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   timestamp: string;
 }
 
@@ -268,7 +268,7 @@ class OfflineCommerceTracker {
     type: string;
     userId?: string;
     merchantId?: string;
-    data: Record<string, any>;
+    data: Record<string, unknown>;
   }): Promise<void> {
     try {
       await axios.post(`${EVENT_BUS_URL}/api/events`, {
@@ -285,7 +285,7 @@ class OfflineCommerceTracker {
     from: { type: string; id: string };
     to: { type: string; id: string };
     weight: number;
-    properties: Record<string, any>;
+    properties: Record<string, unknown>;
   }): Promise<void> {
     try {
       await axios.post(`${GRAPH_SERVICE_URL}/api/edges`, edge);

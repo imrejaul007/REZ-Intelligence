@@ -2,9 +2,4 @@
  * REZ Memory Layer - Utils Index
  */
 
-export {
-  normalizeEvent,
-  normalizeEvents,
-  toTimelineEvent,
-  validateEvent
-} from './eventNormalizer';
+export { normalizeEvent, toTimelineEvent, validateEvent } from './eventNormalizer';

@@ -70,7 +70,7 @@ export default function LoginPage() {
 
           <div className="mt-6 pt-6 border-t border-gray-100">
             <p className="text-sm text-gray-500 text-center">
-              Demo: Use any merchant ID to get started
+              Demo: Use unknown merchant ID to get started
             </p>
           </div>
         </div>

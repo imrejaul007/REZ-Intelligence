@@ -56,7 +56,7 @@ export function getRecommendationsForSymptom(symptoms: SymptomInfo[]): HealthRec
   recommendations.push({
     type: 'lifestyle',
     title: 'Track Your Symptoms',
-    description: 'Keep a log of your symptoms including when they started, their severity, and any patterns or triggers you notice.',
+    description: 'Keep a log of your symptoms including when they started, their severity, and unknown patterns or triggers you notice.',
     priority: 'low'
   });
 
@@ -165,7 +165,7 @@ export function getFollowUpRecommendations(
     recommendations.push({
       type: 'information',
       title: 'Before Your Follow-Up',
-      description: 'Prepare a list of any new symptoms, questions for your doctor, and note any changes in your condition since the last visit.',
+      description: 'Prepare a list of unknown new symptoms, questions for your doctor, and note unknown changes in your condition since the last visit.',
       priority: 'high'
     });
   }
@@ -173,14 +173,14 @@ export function getFollowUpRecommendations(
   recommendations.push({
     type: 'lifestyle',
     title: 'Monitor Your Progress',
-    description: 'Keep track of any changes in your symptoms, including improvements or new developments.',
+    description: 'Keep track of unknown changes in your symptoms, including improvements or new developments.',
     priority: 'medium'
   });
 
   recommendations.push({
     type: 'self_care',
     title: 'Continue Self-Care',
-    description: 'Continue following any self-care recommendations provided by your healthcare provider.',
+    description: 'Continue following unknown self-care recommendations provided by your healthcare provider.',
     priority: 'medium'
   });
 

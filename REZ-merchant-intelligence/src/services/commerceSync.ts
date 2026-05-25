@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ-merchant-intelligence → Commerce Graph Sync
  *
@@ -88,9 +90,9 @@ class MerchantCommerceSync {
           }
         }
       );
-      console.log(`[MerchantSync] Merchant synced: ${merchant.merchantId}`);
+      logger.info(`[MerchantSync] Merchant synced: ${merchant.merchantId}`);
     } catch (error) {
-      console.error(`[MerchantSync] Failed to sync merchant: ${error.message}`);
+      logger.error(`[MerchantSync] Failed to sync merchant: ${error.message}`);
     }
   }
 
@@ -109,13 +111,13 @@ class MerchantCommerceSync {
           }
         }
       );
-      console.log(`[MerchantSync] Merchant created: ${merchant.merchantId}`);
+      logger.info(`[MerchantSync] Merchant created: ${merchant.merchantId}`);
     } catch (error) {
       if (error.message?.includes('409')) {
         // Already exists, update instead
         await this.syncMerchant(merchant);
       } else {
-        console.error(`[MerchantSync] Failed to create merchant: ${error.message}`);
+        logger.error(`[MerchantSync] Failed to create merchant: ${error.message}`);
       }
     }
   }
@@ -142,7 +144,7 @@ class MerchantCommerceSync {
         }
       );
     } catch (error) {
-      console.error(`[MerchantSync] Failed to sync customer metrics: ${error.message}`);
+      logger.error(`[MerchantSync] Failed to sync customer metrics: ${error.message}`);
     }
   }
 
@@ -176,16 +178,16 @@ class MerchantCommerceSync {
           }
         }
       );
-      console.log(`[MerchantSync] Cross-sell relationship synced`);
+      logger.info(`[MerchantSync] Cross-sell relationship synced`);
     } catch (error) {
-      console.error(`[MerchantSync] Failed to sync cross-sell: ${error.message}`);
+      logger.error(`[MerchantSync] Failed to sync cross-sell: ${error.message}`);
     }
   }
 
   /**
    * Get merchant from Commerce Graph
    */
-  async getMerchant(merchantId: string): Promise<any> {
+  async getMerchant(merchantId: string): Promise<unknown> {
     try {
       const response = await axios.get(
         `${COMMERCE_GRAPH_URL}/api/merchants/${merchantId}`,
@@ -197,7 +199,7 @@ class MerchantCommerceSync {
       );
       return response.data.data;
     } catch (error) {
-      console.error(`[MerchantSync] Failed to get merchant: ${error.message}`);
+      logger.error(`[MerchantSync] Failed to get merchant: ${error.message}`);
       return null;
     }
   }
@@ -205,7 +207,7 @@ class MerchantCommerceSync {
   /**
    * Get competitor merchants
    */
-  async getCompetitors(merchantId: string): Promise<any[]> {
+  async getCompetitors(merchantId: string): Promise<unknown[]> {
     try {
       const response = await axios.get(
         `${COMMERCE_GRAPH_URL}/api/merchants/${merchantId}/competitors`,
@@ -217,7 +219,7 @@ class MerchantCommerceSync {
       );
       return response.data.data || [];
     } catch (error) {
-      console.error(`[MerchantSync] Failed to get competitors: ${error.message}`);
+      logger.error(`[MerchantSync] Failed to get competitors: ${error.message}`);
       return [];
     }
   }
@@ -225,7 +227,7 @@ class MerchantCommerceSync {
   /**
    * Get cross-sell partners
    */
-  async getCrossSellPartners(merchantId: string): Promise<any[]> {
+  async getCrossSellPartners(merchantId: string): Promise<unknown[]> {
     try {
       const response = await axios.get(
         `${COMMERCE_GRAPH_URL}/api/merchants/${merchantId}/cross-sell-partners`,
@@ -237,7 +239,7 @@ class MerchantCommerceSync {
       );
       return response.data.data || [];
     } catch (error) {
-      console.error(`[MerchantSync] Failed to get cross-sell partners: ${error.message}`);
+      logger.error(`[MerchantSync] Failed to get cross-sell partners: ${error.message}`);
       return [];
     }
   }
@@ -269,9 +271,9 @@ class MerchantCommerceSync {
           }
         }
       );
-      console.log(`[MerchantSync] Metrics updated for ${merchantId}`);
+      logger.info(`[MerchantSync] Metrics updated for ${merchantId}`);
     } catch (error) {
-      console.error(`[MerchantSync] Failed to update metrics: ${error.message}`);
+      logger.error(`[MerchantSync] Failed to update metrics: ${error.message}`);
     }
   }
 }

@@ -149,7 +149,7 @@ export class GraphEngine {
 
     try {
       const setClauses: string[] = ['c.updated_at = datetime()'];
-      const params: Record<string, any> = { userId };
+      const params: Record<string, unknown> = { userId };
 
       if (properties.primary_email !== undefined) {
         setClauses.push('c.email = $email');
@@ -369,7 +369,7 @@ export class GraphEngine {
       const relationships: GraphRelationship[] = [];
 
       for (const record of result.records) {
-        const consumer = record.get('c') as any;
+        const consumer = record.get('c') as unknown;
         nodes.push({
           id: consumer.properties.user_id,
           labels: ['Consumer'],
@@ -382,7 +382,7 @@ export class GraphEngine {
         const rels = record.get('rels') || [];
 
         for (let i = 0; i < connectedNodes.length; i++) {
-          const node = connectedNodes[i] as any;
+          const node = connectedNodes[i] as unknown;
           nodes.push({
             id: node.properties.device_id || node.properties.user_id || `node_${i}`,
             labels: node.labels,
@@ -391,7 +391,7 @@ export class GraphEngine {
             updated_at: new Date().toISOString(),
           });
 
-          const rel = rels[i] as any;
+          const rel = rels[i] as unknown;
           if (rel) {
             relationships.push({
               type: rel.type,
@@ -562,8 +562,8 @@ export class GraphEngine {
       const edges: GraphRelationship[] = [];
 
       for (const record of result.records) {
-        const graphNodes = record.get('nodes') as any[];
-        const graphRels = record.get('relationships') as any[];
+        const graphNodes = record.get('nodes') as unknown[];
+        const graphRels = record.get('relationships') as unknown[];
 
         for (const node of graphNodes) {
           nodes.push({

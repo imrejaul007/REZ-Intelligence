@@ -68,8 +68,32 @@ Context engine that determines routing context for the REZ commerce platform. An
 ## Status
 
 - [x] Service foundation
-- [ ] Session context
-- [ ] Device detection
-- [ ] Location context
-- [ ] Time context
-- [ ] Behavioral context
+- [x] Session context
+- [x] Device detection
+- [x] Location context
+- [x] Time context
+- [x] Behavioral context
+- [x] Weather multipliers
+- [x] Holiday calendar (India)
+- [x] Traffic multipliers
+- [x] Unified context service
+
+## Context Multipliers
+
+### Weather Impact
+
+| Condition | Outdoor | Indoor | Delivery | Ride |
+|-----------|--------|--------|----------|------|
+| Clear | 1.2x | 0.9x | 0.85x | 1.1x |
+| Rain | 0.4x | 1.4x | 1.5x | 1.3x |
+| Hot | 0.6x | 1.3x | 1.4x | 1.5x |
+| Cold | 0.5x | 1.4x | 1.2x | 1.3x |
+
+### Time Slot Impact
+
+| Slot | Hours | Delivery | Ride | Dining |
+|------|-------|----------|------|--------|
+| Breakfast | 7-10 | 1.3x | 1.1x | 1.4x |
+| Lunch | 12-14 | 1.5x | 1.3x | 1.6x |
+| Dinner | 19-22 | 1.6x | 1.4x | 1.8x |
+| Late Night | 22-5 | 1.2x | 1.1x | 1.0x |

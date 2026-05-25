@@ -477,14 +477,14 @@ export class MessageProcessor {
 
   private createError(code: string, message: string): Error {
     const error = new Error(message);
-    (error as any).code = code;
+    (error as unknown).code = code;
     return error;
   }
 
   private createErrorDetails(error: unknown): ErrorDetails {
     if (error instanceof Error) {
       return {
-        code: (error as any).code || 'PROCESSING_ERROR',
+        code: (error as unknown).code || 'PROCESSING_ERROR',
         message: error.message,
         details: { stack: error.stack },
         recoverable: true,

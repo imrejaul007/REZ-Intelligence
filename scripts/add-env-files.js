@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 #!/usr/bin/env node
 /**
  * Script to create .env.example files for all REZ-Intelligence services
@@ -78,13 +80,13 @@ function createEnvExample(serviceName) {
   const envContent = ENV_TEMPLATE.replace(/REPLACE_WITH_SERVICE_NAME/g, serviceName.toLowerCase().replace(/-/g, '_'));
 
   fs.writeFileSync(envPath, envContent);
-  console.log('Created: ' + envPath);
+  logger.info('Created: ' + envPath);
 
   return true;
 }
 
 // Run for all services
-console.log('Creating .env.example files for all REZ-Intelligence services...\n');
+logger.info('Creating .env.example files for all REZ-Intelligence services...\n');
 
 const services = getServices();
 let successCount = 0;
@@ -94,10 +96,10 @@ for (const service of services) {
     createEnvExample(service);
     successCount++;
   } catch (error) {
-    console.log('ERROR: ' + service + ' - ' + error.message);
+    logger.info('ERROR: ' + service + ' - ' + error.message);
   }
 }
 
-console.log('\n=== Summary ===');
-console.log('Created: ' + successCount + ' .env.example files');
-console.log('Total services: ' + services.length);
+logger.info('\n=== Summary ===');
+logger.info('Created: ' + successCount + ' .env.example files');
+logger.info('Total services: ' + services.length);

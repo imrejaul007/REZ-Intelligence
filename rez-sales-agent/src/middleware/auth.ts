@@ -5,7 +5,8 @@
  * All /api routes require X-Internal-Token header.
  */
 
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } import logger from './utils/logger';
+import from 'express';
 import crypto from 'crypto';
 
 const INTERNAL_SERVICE_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
@@ -65,9 +66,9 @@ function verifyInternalToken(token: string): boolean {
 export function requireInternalAuth(req: Request, res: Response, next: NextFunction): void {
   // Skip authentication in development if no tokens configured
   if (NODE_ENV !== 'production' && !INTERNAL_SERVICE_TOKEN && Object.keys(serviceTokens).length === 0) {
-    console.warn('[AUTH] Running in development mode without authentication');
-    (req as any).isInternalService = true;
-    (req as any).serviceName = 'development';
+    logger.warn('[AUTH] Running in development mode without authentication');
+    (req as unknown).isInternalService = true;
+    (req as unknown).serviceName = 'development';
     return next();
   }
 
@@ -106,8 +107,8 @@ export function requireInternalAuth(req: Request, res: Response, next: NextFunct
   }
 
   // Mark request as authenticated
-  (req as any).isInternalService = true;
-  (req as any).serviceName = 'internal-service';
+  (req as unknown).isInternalService = true;
+  (req as unknown).serviceName = 'internal-service';
 
   logger.debug('Authentication successful', {
     path: req.path,
@@ -124,8 +125,8 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction): v
   const token = req.headers['x-internal-token'] as string;
 
   if (token && verifyInternalToken(token)) {
-    (req as any).isInternalService = true;
-    (req as any).serviceName = 'internal-service';
+    (req as unknown).isInternalService = true;
+    (req as unknown).serviceName = 'internal-service';
   }
 
   next();

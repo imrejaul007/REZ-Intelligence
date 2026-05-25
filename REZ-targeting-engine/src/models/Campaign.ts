@@ -11,7 +11,7 @@ export interface ICampaign extends Document {
       exclusions: string[];
       recency_days: number;
       min_orders: number;
-      custom_conditions?: Record<string, any>;
+      custom_conditions?: Record<string, unknown>;
     };
     content: {
       ad_template_id: string;
@@ -51,7 +51,7 @@ export interface ICampaign extends Document {
   start_date?: Date;
   end_date?: Date;
   created_by: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 const TargetingSchema = new Schema({

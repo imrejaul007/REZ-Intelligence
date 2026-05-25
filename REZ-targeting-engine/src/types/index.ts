@@ -5,7 +5,7 @@ export interface TargetingRules {
   exclusions: string[];
   recency_days: number;
   min_orders: number;
-  custom_conditions?: Record<string, any>;
+  custom_conditions?: Record<string, unknown>;
 }
 
 export interface ContentRules {
@@ -49,7 +49,7 @@ export interface Campaign {
   start_date?: Date;
   end_date?: Date;
   created_by: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ABTestConfig {
@@ -87,7 +87,7 @@ export interface SegmentCriteria {
 export interface SegmentCondition {
   field: string;
   operator: 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'nin' | 'between' | 'contains';
-  value: any;
+  value;
 }
 
 export interface AdTemplate {
@@ -113,7 +113,7 @@ export interface TemplateContent {
   cta_url?: string;
   image_url?: string;
   deep_link?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface TemplateDesign {

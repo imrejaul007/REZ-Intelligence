@@ -21,8 +21,8 @@ export interface ToneConfig {
 export interface EducationIntent {
   type: string;
   confidence: number;
-  entities: Record<string, any>;
-  parameters: Record<string, any>;
+  entities: Record<string, unknown>;
+  parameters: Record<string, unknown>;
 }
 
 export interface CourseRecommendation {
@@ -129,7 +129,7 @@ export interface ApiResponse<T> {
   error?: {
     code: string;
     message: string;
-    details?: any;
+    details?;
   };
   meta?: {
     timestamp: string;
@@ -141,7 +141,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: Date;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ChatSession {

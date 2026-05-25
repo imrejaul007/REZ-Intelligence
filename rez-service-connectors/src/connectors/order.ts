@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * Order Service Connector
  *
@@ -295,7 +297,7 @@ function getInternalToken(): string {
     const tokens = JSON.parse(tokensJson);
     return tokens.orchestrator || tokens.order || '';
   } catch {
-    console.warn('[OrderConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+    logger.warn('[OrderConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
     return '';
   }
 }

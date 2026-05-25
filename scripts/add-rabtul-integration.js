@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 #!/usr/bin/env node
 /**
  * Script to add RABTUL integration to all REZ-Intelligence services
@@ -514,23 +516,23 @@ function addIntegration(serviceDir, serviceName) {
   const rabtulContent = RABTUL_PLATFORM_TEMPLATE.replace(/SERVICE_NAME/g, serviceName);
   const rabtulPath = path.join(integrationsDir, 'rabtulPlatform.ts');
   fs.writeFileSync(rabtulPath, rabtulContent);
-  console.log('Created: ' + rabtulPath);
+  logger.info('Created: ' + rabtulPath);
 
   // Create REZ Intelligence integration
   const intelligencePath = path.join(integrationsDir, 'rezIntelligence.ts');
   fs.writeFileSync(intelligencePath, REZ_INTELLIGENCE_TEMPLATE);
-  console.log('Created: ' + intelligencePath);
+  logger.info('Created: ' + intelligencePath);
 
   // Create index file
   const indexPath = path.join(integrationsDir, 'index.ts');
   fs.writeFileSync(indexPath, INTEGRATION_INDEX_TEMPLATE);
-  console.log('Created: ' + indexPath);
+  logger.info('Created: ' + indexPath);
 
   return true;
 }
 
 // Run for all missing services
-console.log('Adding RABTUL integration to REZ-Intelligence services...\n');
+logger.info('Adding RABTUL integration to REZ-Intelligence services...\n');
 
 let successCount = 0;
 let failCount = 0;
@@ -541,7 +543,7 @@ for (const service of MISSING_SERVICES) {
 
   // Check if service directory exists
   if (!fs.existsSync(serviceDir)) {
-    console.log('SKIP: ' + service + ' (directory not found)');
+    logger.info('SKIP: ' + service + ' (directory not found)');
     skipCount++;
     continue;
   }
@@ -549,7 +551,7 @@ for (const service of MISSING_SERVICES) {
   // Check if src directory exists
   const srcDir = path.join(serviceDir, 'src');
   if (!fs.existsSync(srcDir)) {
-    console.log('SKIP: ' + service + ' (no src directory)');
+    logger.info('SKIP: ' + service + ' (no src directory)');
     skipCount++;
     continue;
   }
@@ -558,13 +560,13 @@ for (const service of MISSING_SERVICES) {
     addIntegration(serviceDir, service);
     successCount++;
   } catch (error) {
-    console.log('ERROR: ' + service + ' - ' + error.message);
+    logger.info('ERROR: ' + service + ' - ' + error.message);
     failCount++;
   }
 }
 
-console.log('\n=== Summary ===');
-console.log('Success: ' + successCount);
-console.log('Skipped: ' + skipCount);
-console.log('Failed: ' + failCount);
-console.log('Total: ' + MISSING_SERVICES.length);
+logger.info('\n=== Summary ===');
+logger.info('Success: ' + successCount);
+logger.info('Skipped: ' + skipCount);
+logger.info('Failed: ' + failCount);
+logger.info('Total: ' + MISSING_SERVICES.length);

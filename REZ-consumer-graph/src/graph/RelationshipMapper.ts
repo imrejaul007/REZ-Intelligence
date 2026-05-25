@@ -28,7 +28,7 @@ export interface RelationshipDefinition {
   type: RelationshipType;
   sourceLabel: string;
   targetLabel: string;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
   weight?: number;
   bidirectional?: boolean;
 }
@@ -247,7 +247,7 @@ export class RelationshipMapper {
   /**
    * Validate relationship properties
    */
-  validateProperties(type: RelationshipType, properties: Record<string, any>): {
+  validateProperties(type: RelationshipType, properties: Record<string, unknown>): {
     valid: boolean;
     errors: string[];
   } {
@@ -280,12 +280,12 @@ export class RelationshipMapper {
     type: RelationshipType,
     source: string,
     target: string,
-    properties?: Record<string, any>
+    properties?: Record<string, unknown>
   ): GraphRelationship {
     const def = this.definitions.get(type);
     const now = new Date().toISOString();
 
-    const defaultProps: Record<string, any> = {
+    const defaultProps: Record<string, unknown> = {
       created_at: now,
     };
 

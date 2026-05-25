@@ -111,7 +111,7 @@ export async function fetchLocationSignals(userId: string): Promise<LocationSign
 
     if (result.success && result.data) {
       // Handle various response formats
-      const data = result.data as any;
+      const data = result.data as unknown;
       return {
         segments: data.segments || data.location?.segments || [],
         patterns: data.patterns || data.location?.patterns || [],
@@ -123,7 +123,7 @@ export async function fetchLocationSignals(userId: string): Promise<LocationSign
     logger.debug(`Location signals unavailable for user ${userId}, using defaults`);
     return getDefaultLocationSignals();
 
-  } catch (error: any) {
+  } catch (error) {
     logger.warn(`Error fetching location signals for ${userId}`, { error: error.message });
     return getDefaultLocationSignals();
   }
@@ -136,7 +136,7 @@ export async function fetchBehavioralSignals(userId: string): Promise<Behavioral
     const result = await fetchWithTimeout<ServiceSignalResponse>(url);
 
     if (result.success && result.data) {
-      const data = result.data as any;
+      const data = result.data as unknown;
       return {
         buyerType: data.buyerType || data.behavioral?.buyerType || 'standard',
         cashbackSensitivity: data.cashbackSensitivity || data.behavioral?.cashbackSensitivity || 50,
@@ -149,7 +149,7 @@ export async function fetchBehavioralSignals(userId: string): Promise<Behavioral
     logger.debug(`Behavioral signals unavailable for user ${userId}, using defaults`);
     return getDefaultBehavioralSignals();
 
-  } catch (error: any) {
+  } catch (error) {
     logger.warn(`Error fetching behavioral signals for ${userId}`, { error: error.message });
     return getDefaultBehavioralSignals();
   }
@@ -162,7 +162,7 @@ export async function fetchSocialSignals(userId: string): Promise<SocialSignals>
     const result = await fetchWithTimeout<ServiceSignalResponse>(url);
 
     if (result.success && result.data) {
-      const data = result.data as any;
+      const data = result.data as unknown;
       return {
         influenceTier: data.influenceTier || data.social?.influenceTier || 'low',
         referralCount: data.referralCount || data.social?.referralCount || 0,
@@ -174,7 +174,7 @@ export async function fetchSocialSignals(userId: string): Promise<SocialSignals>
     logger.debug(`Social signals unavailable for user ${userId}, using defaults`);
     return getDefaultSocialSignals();
 
-  } catch (error: any) {
+  } catch (error) {
     logger.warn(`Error fetching social signals for ${userId}`, { error: error.message });
     return getDefaultSocialSignals();
   }
@@ -187,7 +187,7 @@ export async function fetchCompetitorSignals(userId: string): Promise<Competitor
     const result = await fetchWithTimeout<ServiceSignalResponse>(url);
 
     if (result.success && result.data) {
-      const data = result.data as any;
+      const data = result.data as unknown;
       return {
         loyaltyScore: data.loyaltyScore || data.competitor?.loyaltyScore || 50,
         switchRisk: data.switchRisk || data.competitor?.switchRisk || 'low',
@@ -199,7 +199,7 @@ export async function fetchCompetitorSignals(userId: string): Promise<Competitor
     logger.debug(`Competitor signals unavailable for user ${userId}, using defaults`);
     return getDefaultCompetitorSignals();
 
-  } catch (error: any) {
+  } catch (error) {
     logger.warn(`Error fetching competitor signals for ${userId}`, { error: error.message });
     return getDefaultCompetitorSignals();
   }

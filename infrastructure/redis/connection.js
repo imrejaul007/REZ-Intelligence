@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * Redis Cloud Connection Manager
  * Handles Redis Cloud (or Upstash) connections with clustering support
@@ -58,12 +60,12 @@ class RedisConnection {
       });
 
       this.client.on('connect', () => {
-        console.log('Redis connected');
+        logger.info('Redis connected');
         this.isConnected = true;
       });
 
       this.client.on('reconnecting', () => {
-        console.log('Redis reconnecting...');
+        logger.info('Redis reconnecting...');
       });
 
       await this.client.connect();

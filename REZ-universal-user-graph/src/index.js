@@ -1,5 +1,6 @@
 import 'dotenv/config';
-import express from 'express';
+import express import logger from './utils/logger';
+import from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { UserGraph } from './userGraph.js';
@@ -333,8 +334,8 @@ async function startServer() {
     await identityResolver.connect();
 
     app.listen(PORT, () => {
-      console.log(`Universal User Graph service running on port ${PORT}`);
-      console.log(`Health check: http://localhost:${PORT}/health`);
+      logger.info(`Universal User Graph service running on port ${PORT}`);
+      logger.info(`Health check: http://localhost:${PORT}/health`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
@@ -344,7 +345,7 @@ async function startServer() {
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('Shutting down gracefully...');
+  logger.info('Shutting down gracefully...');
   await userGraph.disconnect();
   await identityResolver.disconnect();
   process.exit(0);

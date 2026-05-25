@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ UGC Engine - Content Service
  * User-generated content with moderation
@@ -103,14 +105,14 @@ export class UGCService {
    * Upvote content
    */
   async upvote(contentId: string, userId: string): Promise<void> {
-    console.log(`User ${userId} upvoted ${contentId}`);
+    logger.info(`User ${userId} upvoted ${contentId}`);
   }
 
   /**
    * Downvote content
    */
   async downvote(contentId: string, userId: string): Promise<void> {
-    console.log(`User ${userId} downvoted ${contentId}`);
+    logger.info(`User ${userId} downvoted ${contentId}`);
   }
 
   /**
@@ -176,14 +178,14 @@ export class UGCService {
    * Feature content
    */
   async featureContent(contentId: string): Promise<void> {
-    console.log(`Featured content: ${contentId}`);
+    logger.info(`Featured content: ${contentId}`);
   }
 
   /**
    * Verify content (e.g., verified purchase)
    */
   async verifyContent(contentId: string, orderId: string): Promise<void> {
-    console.log(`Verified content ${contentId} for order ${orderId}`);
+    logger.info(`Verified content ${contentId} for order ${orderId}`);
   }
 }
 

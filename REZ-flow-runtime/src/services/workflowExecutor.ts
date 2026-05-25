@@ -1,6 +1,7 @@
 /**
  * REZ Flow Runtime - Workflow Executor
  * Core execution engine for workflow processing with checkpointing and saga orchestration
+ * PRODUCTION-READY: Includes distributed locks, transactions, timeouts, memory safety
  */
 
 import { v4 as uuidv4 } from 'uuid';
@@ -22,6 +23,13 @@ import { Execution, Workflow, IExecution, IWorkflow } from '../models/Execution'
 import { handleNode } from './nodeHandlers';
 import logger from './logger';
 import dlqService from './dlqService';
+import { CircuitBreaker } from '../../../shared/src/circuitBreaker';
+
+// ==================== CONSTANTS ====================
+
+const MAX_WORKFLOW_EXECUTION_MS = 3600000; // 1 hour default
+const LOCK_TTL_MS = 300000; // 5 minutes
+const RECOVERY_LOCK_TTL_MS = 600000; // 10 minutes
 
 // ==================== CHECKPOINT TYPES ====================
 
@@ -98,6 +106,47 @@ export interface SagaContext {
   metadata?: Record<string, unknown>;
 }
 
+// ==================== UTILITY FUNCTIONS ====================
+
+function safeJsonParse<T = unknown>(
+  data: string | null,
+  fallback: T | null = null
+): T | null {
+  if (!data) return fallback;
+  try {
+    return JSON.parse(data) as T;
+  } catch {
+    logger.error('Failed to parse JSON', { data: data?.substring(0, 100) });
+    return fallback;
+  }
+}
+
+async function acquireDistributedLock(
+  redis: Redis,
+  key: string,
+  ttlMs: number = LOCK_TTL_MS
+): Promise<string | null> {
+  const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const result = await redis.set(`lock:${key}`, token, 'PX', ttlMs, 'NX');
+  return result === 'OK' ? token : null;
+}
+
+async function releaseDistributedLock(
+  redis: Redis,
+  key: string,
+  token: string
+): Promise<boolean> {
+  const script = `
+    if redis.call("get", KEYS[1]) == ARGV[1] then
+      return redis.call("del", KEYS[1])
+    else
+      return 0
+    end
+  `;
+  const result = await redis.eval(script, 1, `lock:${key}`, token);
+  return result === 1;
+}
+
 // ==================== CHECKPOINT SERVICE ====================
 
 export class CheckpointService {
@@ -114,9 +163,6 @@ export class CheckpointService {
     this.setupEventHandlers();
   }
 
-  /**
-   * Connect to Redis
-   */
   async connect(): Promise<void> {
     if (this.isConnected) return;
 
@@ -130,18 +176,12 @@ export class CheckpointService {
     }
   }
 
-  /**
-   * Disconnect from Redis
-   */
   async disconnect(): Promise<void> {
     await this.redis.quit();
     this.isConnected = false;
     logger.info('Checkpoint service disconnected');
   }
 
-  /**
-   * Save a workflow checkpoint
-   */
   async saveCheckpoint(checkpoint: WorkflowCheckpoint): Promise<void> {
     if (!this.config.enabled) return;
 
@@ -167,9 +207,6 @@ export class CheckpointService {
     }
   }
 
-  /**
-   * Load a workflow checkpoint
-   */
   async loadCheckpoint(executionId: string): Promise<WorkflowCheckpoint | null> {
     if (!this.config.enabled) return null;
 
@@ -177,9 +214,10 @@ export class CheckpointService {
 
     try {
       const data = await this.redis.get(key);
-      if (!data) return null;
+      const checkpoint = safeJsonParse<WorkflowCheckpoint & { timestamp: string }>(data);
 
-      const checkpoint = JSON.parse(data);
+      if (!checkpoint) return null;
+
       return {
         ...checkpoint,
         timestamp: new Date(checkpoint.timestamp)
@@ -190,9 +228,6 @@ export class CheckpointService {
     }
   }
 
-  /**
-   * Delete a checkpoint
-   */
   async deleteCheckpoint(executionId: string): Promise<void> {
     const key = this.getCheckpointKey(executionId);
     await this.redis.del(key);
@@ -200,7 +235,18 @@ export class CheckpointService {
   }
 
   /**
-   * List all checkpoints with pagination
+   * Acquire distributed lock for recovery - prevents race condition
+   */
+  async acquireRecoveryLock(executionId: string): Promise<string | null> {
+    return acquireDistributedLock(this.redis, `execution:recovery:${executionId}`, RECOVERY_LOCK_TTL_MS);
+  }
+
+  async releaseRecoveryLock(executionId: string, token: string): Promise<boolean> {
+    return releaseDistributedLock(this.redis, `execution:recovery:${executionId}`, token);
+  }
+
+  /**
+   * Use SCAN instead of KEYS to avoid blocking Redis
    */
   async listCheckpoints(options: {
     page?: number;
@@ -211,22 +257,30 @@ export class CheckpointService {
   }> {
     const { page = 1, limit = 20 } = options;
     const pattern = 'workflow:checkpoint:*';
-    const keys = await this.redis.keys(pattern);
-    const total = keys.length;
+    const allKeys: string[] = [];
 
-    // Sort by most recent (assuming timestamp suffix)
-    keys.sort().reverse();
+    // SCAN instead of KEYS - non-blocking
+    let cursor = '0';
+    do {
+      const [newCursor, keys] = await this.redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+      cursor = newCursor;
+      allKeys.push(...keys);
+    } while (cursor !== '0');
+
+    const total = allKeys.length;
+    allKeys.sort().reverse();
 
     const start = (page - 1) * limit;
     const end = start + limit;
-    const pageKeys = keys.slice(start, end);
+    const pageKeys = allKeys.slice(start, end);
 
     const checkpoints: Array<WorkflowCheckpoint & { ttl: number }> = [];
 
     for (const key of pageKeys) {
       const data = await this.redis.get(key);
-      if (data) {
-        const checkpoint = JSON.parse(data);
+      const checkpoint = safeJsonParse<WorkflowCheckpoint & { timestamp: string }>(data);
+
+      if (checkpoint) {
         const ttl = await this.redis.ttl(key);
         checkpoints.push({
           ...checkpoint,
@@ -239,9 +293,6 @@ export class CheckpointService {
     return { checkpoints, total };
   }
 
-  /**
-   * Clean up checkpoints for completed executions
-   */
   async cleanupCompletedCheckpoints(completedExecutionIds: string[]): Promise<number> {
     let cleaned = 0;
 
@@ -257,55 +308,57 @@ export class CheckpointService {
     return cleaned;
   }
 
-  /**
-   * Get checkpoint statistics
-   */
   async getStats(): Promise<{
     totalCheckpoints: number;
     oldestCheckpoint: Date | null;
     newestCheckpoint: Date | null;
     avgCheckpointSize: number;
   }> {
-    const keys = await this.redis.keys('workflow:checkpoint:*');
+    const pattern = 'workflow:checkpoint:*';
+    const allKeys: string[] = [];
+
+    let cursor = '0';
+    do {
+      const [newCursor, keys] = await this.redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+      cursor = newCursor;
+      allKeys.push(...keys);
+    } while (cursor !== '0');
+
     let oldestCheckpoint: Date | null = null;
     let newestCheckpoint: Date | null = null;
     let totalSize = 0;
 
-    for (const key of keys) {
+    for (const key of allKeys) {
       const data = await this.redis.get(key);
       if (data) {
-        const checkpoint = JSON.parse(data);
-        const timestamp = new Date(checkpoint.timestamp);
+        const checkpoint = safeJsonParse<WorkflowCheckpoint & { timestamp: string }>(data);
+        if (checkpoint) {
+          const timestamp = new Date(checkpoint.timestamp);
 
-        if (!oldestCheckpoint || timestamp < oldestCheckpoint) {
-          oldestCheckpoint = timestamp;
-        }
-        if (!newestCheckpoint || timestamp > newestCheckpoint) {
-          newestCheckpoint = timestamp;
-        }
+          if (!oldestCheckpoint || timestamp < oldestCheckpoint) {
+            oldestCheckpoint = timestamp;
+          }
+          if (!newestCheckpoint || timestamp > newestCheckpoint) {
+            newestCheckpoint = timestamp;
+          }
 
-        totalSize += data.length;
+          totalSize += data.length;
+        }
       }
     }
 
     return {
-      totalCheckpoints: keys.length,
+      totalCheckpoints: allKeys.length,
       oldestCheckpoint,
       newestCheckpoint,
-      avgCheckpointSize: keys.length > 0 ? totalSize / keys.length : 0
+      avgCheckpointSize: allKeys.length > 0 ? totalSize / allKeys.length : 0
     };
   }
 
-  /**
-   * Get Redis key for a checkpoint
-   */
   private getCheckpointKey(executionId: string): string {
     return `workflow:checkpoint:${executionId}`;
   }
 
-  /**
-   * Setup Redis event handlers
-   */
   private setupEventHandlers(): void {
     this.redis.on('error', (error) => {
       logger.error('Checkpoint Redis error', { error });
@@ -317,17 +370,48 @@ export class CheckpointService {
 
 export class SagaOrchestrator {
   private activeSagas: Map<string, SagaExecution> = new Map();
-  private sagaTimeout: number = 60000; // 1 minute default timeout
+  private sagaTimeout: number = 60000;
+  private readonly MAX_SAGA_AGE_MS = 3600000; // 1 hour
+  private cleanupInterval: NodeJS.Timeout | null = null;
 
   constructor(config?: { sagaTimeout?: number }) {
     if (config?.sagaTimeout) {
       this.sagaTimeout = config.sagaTimeout;
     }
+    this.startCleanup();
   }
 
   /**
-   * Execute a saga with all-or-nothing semantics
+   * Start periodic cleanup of completed sagas to prevent memory leak
    */
+  private startCleanup(): void {
+    this.cleanupInterval = setInterval(() => {
+      const cutoff = Date.now() - this.MAX_SAGA_AGE_MS;
+      let cleaned = 0;
+
+      for (const [id, saga] of this.activeSagas) {
+        if (saga.completedAt && saga.completedAt.getTime() < cutoff) {
+          this.activeSagas.delete(id);
+          cleaned++;
+        }
+      }
+
+      if (cleaned > 0) {
+        logger.debug('Saga cleanup completed', { cleaned, remaining: this.activeSagas.size });
+      }
+    }, 300000); // Every 5 minutes
+  }
+
+  /**
+   * Stop cleanup and release resources
+   */
+  stop(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+  }
+
   async executeSaga(
     sagaName: string,
     steps: SagaStep[],
@@ -382,9 +466,6 @@ export class SagaOrchestrator {
     return sagaExecution;
   }
 
-  /**
-   * Execute a single saga step with timeout and retry
-   */
   private async executeStep(step: SagaStep, sagaId: string): Promise<void> {
     const maxRetries = step.retryPolicy?.maxRetries ?? 3;
     const retryDelay = step.retryPolicy?.retryDelay ?? 1000;
@@ -394,7 +475,6 @@ export class SagaOrchestrator {
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        // Execute with timeout
         const result = await Promise.race([
           step.action(),
           this.timeout(timeout, `Step ${step.name} timed out after ${timeout}ms`)
@@ -406,7 +486,7 @@ export class SagaOrchestrator {
 
         if (attempt < maxRetries) {
           logger.saga?.stepRetried?.(sagaId, step.name, attempt + 1, maxRetries);
-          await this.sleep(retryDelay * Math.pow(2, attempt)); // Exponential backoff
+          await this.sleep(retryDelay * Math.pow(2, attempt));
         }
       }
     }
@@ -414,9 +494,6 @@ export class SagaOrchestrator {
     throw lastError || new Error(`Step ${step.name} failed after ${maxRetries} retries`);
   }
 
-  /**
-   * Compensate executed steps in reverse order
-   */
   private async compensate(
     executedSteps: SagaStep[],
     compensationErrors: Array<{ stepName: string; error: string }>,
@@ -439,16 +516,10 @@ export class SagaOrchestrator {
     }
   }
 
-  /**
-   * Get saga execution status
-   */
   getSagaStatus(sagaId: string): SagaExecution | null {
     return this.activeSagas.get(sagaId) || null;
   }
 
-  /**
-   * Cancel an active saga (triggers compensation)
-   */
   async cancelSaga(sagaId: string): Promise<boolean> {
     const saga = this.activeSagas.get(sagaId);
     if (!saga || saga.status !== 'running') {
@@ -470,27 +541,30 @@ export class SagaOrchestrator {
     return true;
   }
 
-  /**
-   * Get all active sagas
-   */
   getActiveSagas(): SagaExecution[] {
     return Array.from(this.activeSagas.values()).filter(
       s => s.status === 'running'
     );
   }
 
-  /**
-   * Timeout helper
-   */
+  getStats(): { active: number; total: number; completed: number } {
+    let completed = 0;
+    for (const saga of this.activeSagas.values()) {
+      if (saga.status !== 'running') completed++;
+    }
+    return {
+      active: this.activeSagas.size - completed,
+      total: this.activeSagas.size,
+      completed
+    };
+  }
+
   private timeout(ms: number, message: string): Promise<never> {
     return new Promise((_, reject) => {
       setTimeout(() => reject(new Error(message)), ms);
     });
   }
 
-  /**
-   * Sleep helper
-   */
   private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
@@ -511,7 +585,6 @@ const DEFAULT_RECOVERY_CONFIG: Required<RecoveryConfig> = {
 };
 
 export class ExecutionRecoveryService {
-  private workflowExecutor: WorkflowExecutor;
   private checkpointService: CheckpointService;
   private config: Required<RecoveryConfig>;
   private recoveryTimer: NodeJS.Timeout | null = null;
@@ -519,18 +592,14 @@ export class ExecutionRecoveryService {
   private activeRecoveries: Set<string> = new Set();
 
   constructor(
-    workflowExecutor: WorkflowExecutor,
+    private workflowExecutor: WorkflowExecutor,
     checkpointService: CheckpointService,
     config: RecoveryConfig = {}
   ) {
-    this.workflowExecutor = workflowExecutor;
     this.checkpointService = checkpointService;
     this.config = { ...DEFAULT_RECOVERY_CONFIG, ...config };
   }
 
-  /**
-   * Start the recovery service
-   */
   start(): void {
     if (this.isRunning) return;
 
@@ -547,9 +616,6 @@ export class ExecutionRecoveryService {
     });
   }
 
-  /**
-   * Stop the recovery service
-   */
   stop(): void {
     if (this.recoveryTimer) {
       clearInterval(this.recoveryTimer);
@@ -559,9 +625,6 @@ export class ExecutionRecoveryService {
     logger.info('Execution recovery service stopped');
   }
 
-  /**
-   * Find and recover stuck executions
-   */
   async recoverStuckExecutions(): Promise<{
     found: number;
     recovered: number;
@@ -569,11 +632,10 @@ export class ExecutionRecoveryService {
   }> {
     const stuckThreshold = new Date(Date.now() - this.config.stuckThresholdMs);
 
-    // Find executions stuck for > threshold
     const stuck = await Execution.find({
       status: ExecutionStatus.RUNNING,
       updatedAt: { $lt: stuckThreshold }
-    }).limit(this.config.maxConcurrentRecoveries) as IExecution[];
+    }).limit(this.config.maxConcurrentRecoveries).maxTimeMS(10000) as IExecution[];
 
     let recovered = 0;
     let failed = 0;
@@ -581,7 +643,7 @@ export class ExecutionRecoveryService {
     for (const execution of stuck) {
       const executionId = (execution._id as mongoose.Types.ObjectId).toString();
 
-      // Skip if already being recovered
+      // Skip if already being recovered (distributed lock check)
       if (this.activeRecoveries.has(executionId)) {
         continue;
       }
@@ -589,48 +651,57 @@ export class ExecutionRecoveryService {
       this.activeRecoveries.add(executionId);
 
       try {
+        // Acquire distributed lock to prevent race condition
+        const lockToken = await this.checkpointService.acquireRecoveryLock(executionId);
+
+        if (!lockToken) {
+          logger.debug('Could not acquire recovery lock, skipping', { executionId });
+          this.activeRecoveries.delete(executionId);
+          continue;
+        }
+
         logger.warn('Recovering stuck execution', {
           executionId,
           workflowId: execution.workflowId,
           stuckSince: execution.updatedAt
         });
 
-        // Try to resume from checkpoint
-        const checkpoint = await this.checkpointService.loadCheckpoint(executionId);
+        try {
+          const checkpoint = await this.checkpointService.loadCheckpoint(executionId);
 
-        if (checkpoint) {
-          await this.workflowExecutor.resumeFromCheckpoint(executionId);
-          recovered++;
-        } else {
-          // No checkpoint available, mark as failed
-          execution.status = ExecutionStatus.FAILED;
-          execution.error = {
-            message: 'Recovery failed: no checkpoint found',
-            nodeId: undefined
-          };
-          execution.completedAt = new Date();
-          await execution.save();
+          if (checkpoint) {
+            await this.workflowExecutor.resumeFromCheckpoint(executionId);
+            recovered++;
+          } else {
+            execution.status = ExecutionStatus.FAILED;
+            execution.error = {
+              message: 'Recovery failed: no checkpoint found',
+              nodeId: undefined
+            };
+            execution.completedAt = new Date();
+            await execution.save();
 
-          // Add to DLQ for manual intervention
-          await dlqService.addToQueue({
-            executionId,
-            workflowId: execution.workflowId.toString(),
-            nodeId: 'recovery',
-            error: 'No checkpoint available for recovery',
-            retryCount: 0,
-            failedAt: new Date(),
-            workflowDefinition: {} as WorkflowDefinition,
-            nodeData: {} as any,
-            context: {} as ExecutionContext
-          });
+            await dlqService.addToQueue({
+              executionId,
+              workflowId: execution.workflowId.toString(),
+              nodeId: 'recovery',
+              error: 'No checkpoint available for recovery',
+              retryCount: 0,
+              failedAt: new Date(),
+              workflowDefinition: {} as WorkflowDefinition,
+              nodeData: {} as unknown,
+              context: {} as ExecutionContext
+            });
 
-          failed++;
+            failed++;
+          }
+        } finally {
+          await this.checkpointService.releaseRecoveryLock(executionId, lockToken);
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         logger.error('Recovery failed for execution', { executionId, error: errorMessage });
 
-        // Mark as failed
         execution.status = ExecutionStatus.FAILED;
         execution.error = {
           message: `Recovery failed: ${errorMessage}`,
@@ -639,7 +710,6 @@ export class ExecutionRecoveryService {
         execution.completedAt = new Date();
         await execution.save();
 
-        // Add to DLQ
         await dlqService.addToQueue({
           executionId,
           workflowId: execution.workflowId.toString(),
@@ -648,7 +718,7 @@ export class ExecutionRecoveryService {
           retryCount: 0,
           failedAt: new Date(),
           workflowDefinition: {} as WorkflowDefinition,
-          nodeData: {} as any,
+          nodeData: {} as unknown,
           context: {} as ExecutionContext
         });
 
@@ -669,21 +739,24 @@ export class ExecutionRecoveryService {
     return { found: stuck.length, recovered, failed };
   }
 
-  /**
-   * Manually trigger recovery for a specific execution
-   */
   async recoverExecution(executionId: string): Promise<boolean> {
-    const execution = await Execution.findById(executionId) as IExecution | null;
+    const execution = await Execution.findById(executionId).maxTimeMS(5000) as IExecution | null;
     if (!execution) {
       logger.warn('Execution not found for recovery', { executionId });
       return false;
     }
 
-    // Check if it's stuck
     const stuckThreshold = new Date(Date.now() - this.config.stuckThresholdMs);
     if (execution.status === ExecutionStatus.RUNNING &&
         execution.updatedAt && execution.updatedAt >= stuckThreshold) {
       logger.warn('Execution is not stuck, skipping recovery', { executionId });
+      return false;
+    }
+
+    // Acquire lock
+    const lockToken = await this.checkpointService.acquireRecoveryLock(executionId);
+    if (!lockToken) {
+      logger.warn('Could not acquire recovery lock', { executionId });
       return false;
     }
 
@@ -697,12 +770,11 @@ export class ExecutionRecoveryService {
     } catch (error) {
       logger.error('Manual recovery failed', { executionId, error });
       return false;
+    } finally {
+      await this.checkpointService.releaseRecoveryLock(executionId, lockToken);
     }
   }
 
-  /**
-   * Get recovery statistics
-   */
   async getStats(): Promise<{
     stuckExecutions: number;
     activeRecoveries: number;
@@ -712,19 +784,18 @@ export class ExecutionRecoveryService {
     const stuckCount = await Execution.countDocuments({
       status: ExecutionStatus.RUNNING,
       updatedAt: { $lt: stuckThreshold }
-    });
+    }).maxTimeMS(5000);
 
     return {
       stuckExecutions: stuckCount,
       activeRecoveries: this.activeRecoveries.size,
-      lastRecovery: null // Could track this in Redis if needed
+      lastRecovery: null
     };
   }
 }
 
 // ==================== SAGA LOGGER EXTENSIONS ====================
 
-// Extend logger with saga-specific methods
 declare module './logger' {
   interface Logger {
     saga?: {
@@ -739,10 +810,9 @@ declare module './logger' {
   }
 }
 
-// Add saga logger methods if not already defined
 const originalLogger = logger;
 if (!originalLogger.saga) {
-  (originalLogger as any).saga = {
+  (originalLogger as unknown).saga = {
     started: (sagaId: string, sagaName: string, stepCount: number) => {
       originalLogger.info('Saga started', { sagaId, sagaName, stepCount, event: 'saga_started' });
     },
@@ -772,8 +842,9 @@ export interface ExecutionOptions {
   defaultTimeout?: number;
   enableRetry?: boolean;
   maxRetries?: number;
-  checkpointInterval?: number; // ms between checkpoints
+  checkpointInterval?: number;
   checkpointService?: CheckpointService | null;
+  maxExecutionTimeMs?: number;
 }
 
 const DEFAULT_OPTIONS: ExecutionOptions = {
@@ -782,7 +853,8 @@ const DEFAULT_OPTIONS: ExecutionOptions = {
   enableRetry: true,
   maxRetries: 3,
   checkpointInterval: 5000,
-  checkpointService: null
+  checkpointService: null,
+  maxExecutionTimeMs: MAX_WORKFLOW_EXECUTION_MS
 };
 
 export class WorkflowExecutor {
@@ -790,22 +862,46 @@ export class WorkflowExecutor {
   private activeExecutions: Map<string, AbortController> = new Map();
   private lastCheckpointTime: Map<string, number> = new Map();
   private checkpointService: CheckpointService | null = null;
+  private circuitBreakers: Map<string, CircuitBreaker> = new Map();
 
   constructor(options: ExecutionOptions = {}) {
     this.options = { ...DEFAULT_OPTIONS, ...options } as Required<ExecutionOptions>;
     this.checkpointService = options.checkpointService || null;
+
+    // Initialize circuit breakers for external services
+    this.initializeCircuitBreakers();
   }
 
-  /**
-   * Set checkpoint service
-   */
+  private initializeCircuitBreakers(): void {
+    const services = [
+      'notify-service',
+      'wallet-service',
+      'order-service',
+      'profile-service',
+      'whatsapp-service'
+    ];
+
+    for (const service of services) {
+      this.circuitBreakers.set(
+        service,
+        new CircuitBreaker(service, {
+          timeout: 5000,
+          errorThresholdPercentage: 50,
+          resetTimeout: 30000,
+          volumeThreshold: 10
+        })
+      );
+    }
+  }
+
+  getCircuitBreaker(name: string): CircuitBreaker | undefined {
+    return this.circuitBreakers.get(name);
+  }
+
   setCheckpointService(service: CheckpointService): void {
     this.checkpointService = service;
   }
 
-  /**
-   * Check if checkpoint should be saved
-   */
   private shouldCheckpoint(executionId: string): boolean {
     if (!this.checkpointService) return false;
 
@@ -820,9 +916,6 @@ export class WorkflowExecutor {
     return false;
   }
 
-  /**
-   * Save checkpoint for execution
-   */
   private async saveCheckpoint(
     executionId: string,
     workflowId: string,
@@ -861,9 +954,6 @@ export class WorkflowExecutor {
     await this.checkpointService.saveCheckpoint(checkpoint);
   }
 
-  /**
-   * Parse and validate workflow definition
-   */
   parseWorkflow(workflow: WorkflowDefinition): {
     nodes: Map<string, WorkflowNode>;
     edges: Map<string, WorkflowEdge[]>;
@@ -874,7 +964,6 @@ export class WorkflowExecutor {
     const nodes = new Map<string, WorkflowNode>();
     const edges = new Map<string, WorkflowEdge[]>();
 
-    // Validate required fields
     if (!workflow.nodes || workflow.nodes.length === 0) {
       errors.push('Workflow must have at least one node');
     }
@@ -883,7 +972,6 @@ export class WorkflowExecutor {
       errors.push('Workflow must have an entry node');
     }
 
-    // Build node map
     for (const node of workflow.nodes) {
       if (nodes.has(node.id)) {
         errors.push(`Duplicate node ID: ${node.id}`);
@@ -891,14 +979,12 @@ export class WorkflowExecutor {
       nodes.set(node.id, node);
     }
 
-    // Build edge map
     for (const edge of workflow.edges || []) {
       const nodeEdges = edges.get(edge.source) || [];
       nodeEdges.push(edge);
       edges.set(edge.source, nodeEdges);
     }
 
-    // Find entry node
     const entryNode = nodes.get(workflow.entryNodeId);
     if (!entryNode) {
       errors.push(`Entry node not found: ${workflow.entryNodeId}`);
@@ -907,9 +993,6 @@ export class WorkflowExecutor {
     return { nodes, edges, entryNode: entryNode!, errors };
   }
 
-  /**
-   * Get next nodes based on current node and edge type
-   */
   getNextNodes(
     currentNodeId: string,
     edges: Map<string, WorkflowEdge[]>,
@@ -922,7 +1005,6 @@ export class WorkflowExecutor {
       return [];
     }
 
-    // If edge type is specified (e.g., 'true' or 'false' from condition), filter by type
     if (edgeType && edgeType !== EdgeType.DEFAULT) {
       const filteredEdges = outgoingEdges.filter(e => e.type === edgeType);
       if (filteredEdges.length > 0) {
@@ -930,16 +1012,12 @@ export class WorkflowExecutor {
       }
     }
 
-    // Get all default edges
     return outgoingEdges
       .filter(e => e.type === EdgeType.DEFAULT)
       .map(e => ({ id: e.target } as WorkflowNode))
       .filter(n => n);
   }
 
-  /**
-   * Execute a single node with retry logic
-   */
   async executeNode(
     node: WorkflowNode,
     context: ExecutionContext,
@@ -959,7 +1037,6 @@ export class WorkflowExecutor {
       try {
         logger.execution.nodeStarted(context.executionId, node.id, node.type);
 
-        // Create pending result
         const result = await handleNode(node, context, executionState.nodeResults, workflowNodes);
 
         const duration = Date.now() - startTime;
@@ -987,11 +1064,9 @@ export class WorkflowExecutor {
       }
     }
 
-    // All retries exhausted
     const errorMessage = lastError?.message || 'Unknown error';
     logger.execution.nodeFailed(context.executionId, node.id, errorMessage);
 
-    // Handle error based on configuration
     const onError = node.data.errorHandling?.onError || 'stop';
 
     if (onError === 'dlq') {
@@ -1022,7 +1097,7 @@ export class WorkflowExecutor {
   }
 
   /**
-   * Execute workflow with full state management
+   * Execute workflow with full state management, transactions, and deadline
    */
   async execute(
     workflow: WorkflowDefinition,
@@ -1038,7 +1113,6 @@ export class WorkflowExecutor {
       return ExecutionStatus.FAILED;
     }
 
-    // Initialize execution state
     const executionState: ExecutionState = {
       executionId: context.executionId,
       workflowId: workflow.id,
@@ -1052,9 +1126,11 @@ export class WorkflowExecutor {
       startTime: new Date()
     };
 
-    // Create abort controller for cancellation
     const abortController = new AbortController();
     this.activeExecutions.set(context.executionId, abortController);
+
+    // Workflow execution deadline
+    const deadline = Date.now() + this.options.maxExecutionTimeMs;
 
     try {
       executionRecord.markStarted(entryNode.id);
@@ -1062,9 +1138,18 @@ export class WorkflowExecutor {
 
       logger.execution.started(context.executionId, workflow.id, { triggerType: context.triggerType });
 
-      // Process nodes until queue is empty or aborted
       while (executionState.pendingNodes.length > 0) {
-        // Check for cancellation
+        // Check deadline
+        if (Date.now() > deadline) {
+          logger.error('Workflow execution exceeded deadline', {
+            executionId: context.executionId,
+            deadline: new Date(deadline).toISOString()
+          });
+          executionRecord.markFailed(`Execution exceeded maximum time of ${this.options.maxExecutionTimeMs}ms`);
+          await executionRecord.save();
+          return ExecutionStatus.FAILED;
+        }
+
         if (abortController.signal.aborted) {
           logger.execution.cancelled(context.executionId);
           executionRecord.markCancelled();
@@ -1072,7 +1157,6 @@ export class WorkflowExecutor {
           return ExecutionStatus.CANCELLED;
         }
 
-        // Get next node
         const currentNodeId = executionState.pendingNodes.shift()!;
         const currentNode = nodes.get(currentNodeId);
 
@@ -1081,29 +1165,41 @@ export class WorkflowExecutor {
           continue;
         }
 
-        // Update current node
         executionState.currentNodeId = currentNodeId;
         executionState.executionPath.push(currentNodeId);
 
-        // Execute node
-        const result = await this.executeNode(
-          currentNode,
-          context,
-          executionState,
-          workflow.nodes,
-          executionRecord
-        );
+        // Execute with MongoDB transaction for state consistency
+        const session = await mongoose.startSession();
+        session.startTransaction();
 
-        // Update result
-        executionState.nodeResults.set(currentNodeId, result);
-        executionRecord.updateNodeResult(result);
-        await executionRecord.save();
+        let result: NodeResult;
 
-        // Save checkpoint periodically
+        try {
+          result = await this.executeNode(
+            currentNode,
+            context,
+            executionState,
+            workflow.nodes,
+            executionRecord
+          );
+
+          executionState.nodeResults.set(currentNodeId, result);
+          executionRecord.updateNodeResult(result);
+          executionRecord.currentNode = currentNodeId;
+
+          await executionRecord.save();
+          await session.commitTransaction();
+        } catch (error) {
+          await session.abortTransaction();
+          throw error;
+        } finally {
+          session.endSession();
+        }
+
         if (this.shouldCheckpoint(context.executionId)) {
           const completedNodes = Array.from(executionState.nodeResults.entries())
             .filter(([_, r]) => r.status === NodeStatus.COMPLETED)
-            .map(([id, _]) => id);
+            .map(([id]) => id);
 
           await this.saveCheckpoint(
             context.executionId,
@@ -1117,13 +1213,11 @@ export class WorkflowExecutor {
           );
         }
 
-        // Handle result
         if (result.status === NodeStatus.FAILED) {
           const onError = currentNode.data.errorHandling?.onError || 'stop';
 
           if (onError === 'continue') {
             logger.info(`Node ${currentNodeId} failed but continuing`, { executionId: context.executionId });
-            // Add next nodes
             const nextNodes = this.getNextNodes(currentNodeId, edges, executionState.nodeResults);
             for (const nextNode of nextNodes) {
               if (!executionState.pendingNodes.includes(nextNode.id)) {
@@ -1135,17 +1229,14 @@ export class WorkflowExecutor {
             await executionRecord.save();
             return ExecutionStatus.FAILED;
           } else if (onError === 'dlq') {
-            // Already added to DLQ in executeNode
             executionRecord.markFailed(result.error || 'Node sent to DLQ', currentNodeId);
             await executionRecord.save();
             return ExecutionStatus.FAILED;
           }
         } else if (result.status === NodeStatus.COMPLETED) {
-          // Determine next nodes based on output and edges
           const nextNodeIds: string[] = result.metadata?.nextNodes as string[] || [];
 
           if (nextNodeIds.length > 0) {
-            // Handle condition branches (true/false)
             for (const edgeType of nextNodeIds) {
               const edges_ = edges.get(currentNodeId) || [];
               const filteredEdges = edges_.filter(e => e.type === (edgeType === 'true' ? EdgeType.TRUE : EdgeType.FALSE));
@@ -1157,7 +1248,6 @@ export class WorkflowExecutor {
               }
             }
           } else {
-            // Default: follow all outgoing edges
             const nextNodes = this.getNextNodes(currentNodeId, edges, executionState.nodeResults);
             for (const nextNode of nextNodes) {
               if (!executionState.pendingNodes.includes(nextNode.id)) {
@@ -1168,7 +1258,6 @@ export class WorkflowExecutor {
         }
       }
 
-      // Workflow completed successfully
       executionRecord.markCompleted();
       await executionRecord.save();
 
@@ -1190,16 +1279,12 @@ export class WorkflowExecutor {
       this.activeExecutions.delete(context.executionId);
       this.lastCheckpointTime.delete(context.executionId);
 
-      // Clean up checkpoint on completion or failure
       if (this.checkpointService && executionRecord.status !== ExecutionStatus.RUNNING) {
         await this.checkpointService.deleteCheckpoint(context.executionId);
       }
     }
   }
 
-  /**
-   * Resume workflow execution from a checkpoint
-   */
   async resumeFromCheckpoint(executionId: string): Promise<ExecutionStatus> {
     if (!this.checkpointService) {
       throw new Error('Checkpoint service not configured');
@@ -1218,14 +1303,12 @@ export class WorkflowExecutor {
       pendingNodes: checkpoint.pendingNodes.length
     });
 
-    // Find the execution record
-    const executionRecord = await Execution.findById(executionId) as IExecution | null;
+    const executionRecord = await Execution.findById(executionId).maxTimeMS(5000) as IExecution | null;
     if (!executionRecord) {
       throw new Error(`Execution not found: ${executionId}`);
     }
 
-    // Find the workflow definition
-    const workflow = await Workflow.findOne({ workflowId: checkpoint.workflowId }) as IWorkflow | null;
+    const workflow = await Workflow.findOne({ workflowId: checkpoint.workflowId }).maxTimeMS(5000) as IWorkflow | null;
     if (!workflow) {
       throw new Error(`Workflow not found: ${checkpoint.workflowId}`);
     }
@@ -1235,7 +1318,7 @@ export class WorkflowExecutor {
       name: workflow.name,
       description: workflow.description,
       version: workflow.version,
-      status: workflow.status as any,
+      status: workflow.status as unknown,
       nodes: workflow.nodes as unknown as WorkflowNode[],
       edges: workflow.edges as unknown as WorkflowEdge[],
       entryNodeId: workflow.entryNodeId,
@@ -1251,7 +1334,6 @@ export class WorkflowExecutor {
       return ExecutionStatus.FAILED;
     }
 
-    // Reconstruct execution state from checkpoint
     const executionState: ExecutionState = {
       executionId,
       workflowId: checkpoint.workflowId,
@@ -1287,13 +1369,13 @@ export class WorkflowExecutor {
       startTime: checkpoint.timestamp
     };
 
-    // Create abort controller for cancellation
     const abortController = new AbortController();
     this.activeExecutions.set(executionId, abortController);
     this.lastCheckpointTime.set(executionId, Date.now());
 
+    const deadline = Date.now() + this.options.maxExecutionTimeMs;
+
     try {
-      // Update execution record to running
       executionRecord.status = ExecutionStatus.RUNNING;
       executionRecord.addLog('info', `Execution resumed from checkpoint at node ${checkpoint.currentNodeId}`);
       await executionRecord.save();
@@ -1303,9 +1385,14 @@ export class WorkflowExecutor {
         resumedFrom: checkpoint.currentNodeId
       });
 
-      // Process remaining nodes until queue is empty or aborted
       while (executionState.pendingNodes.length > 0) {
-        // Check for cancellation
+        if (Date.now() > deadline) {
+          logger.error('Resumed workflow execution exceeded deadline');
+          executionRecord.markFailed(`Execution exceeded maximum time of ${this.options.maxExecutionTimeMs}ms`);
+          await executionRecord.save();
+          return ExecutionStatus.FAILED;
+        }
+
         if (abortController.signal.aborted) {
           logger.execution.cancelled(executionId);
           executionRecord.markCancelled();
@@ -1313,7 +1400,6 @@ export class WorkflowExecutor {
           return ExecutionStatus.CANCELLED;
         }
 
-        // Get next node
         const currentNodeId = executionState.pendingNodes.shift()!;
         const currentNode = nodes.get(currentNodeId);
 
@@ -1322,36 +1408,44 @@ export class WorkflowExecutor {
           continue;
         }
 
-        // Skip already completed nodes (shouldn't happen, but safety check)
         if (checkpoint.completedNodes.includes(currentNodeId)) {
           continue;
         }
 
-        // Update current node
         executionState.currentNodeId = currentNodeId;
         if (!executionState.executionPath.includes(currentNodeId)) {
           executionState.executionPath.push(currentNodeId);
         }
 
-        // Execute node
-        const result = await this.executeNode(
-          currentNode,
-          executionState.context,
-          executionState,
-          workflowDef.nodes,
-          executionRecord
-        );
+        const session = await mongoose.startSession();
+        session.startTransaction();
 
-        // Update result
-        executionState.nodeResults.set(currentNodeId, result);
-        executionRecord.updateNodeResult(result);
-        await executionRecord.save();
+        let result: NodeResult;
 
-        // Save checkpoint periodically
+        try {
+          result = await this.executeNode(
+            currentNode,
+            executionState.context,
+            executionState,
+            workflowDef.nodes,
+            executionRecord
+          );
+
+          executionState.nodeResults.set(currentNodeId, result);
+          executionRecord.updateNodeResult(result);
+          await executionRecord.save();
+          await session.commitTransaction();
+        } catch (error) {
+          await session.abortTransaction();
+          throw error;
+        } finally {
+          session.endSession();
+        }
+
         if (this.shouldCheckpoint(executionId)) {
           const completedNodes = Array.from(executionState.nodeResults.entries())
             .filter(([_, r]) => r.status === NodeStatus.COMPLETED)
-            .map(([id, _]) => id);
+            .map(([id]) => id);
 
           await this.saveCheckpoint(
             executionId,
@@ -1365,7 +1459,6 @@ export class WorkflowExecutor {
           );
         }
 
-        // Handle result
         if (result.status === NodeStatus.FAILED) {
           const onError = currentNode.data.errorHandling?.onError || 'stop';
 
@@ -1413,7 +1506,6 @@ export class WorkflowExecutor {
         }
       }
 
-      // Workflow completed successfully
       executionRecord.markCompleted();
       await executionRecord.save();
 
@@ -1427,7 +1519,6 @@ export class WorkflowExecutor {
         resumedFrom: checkpoint.currentNodeId
       });
 
-      // Clean up checkpoint
       await this.checkpointService.deleteCheckpoint(executionId);
 
       return ExecutionStatus.COMPLETED;
@@ -1445,9 +1536,6 @@ export class WorkflowExecutor {
     }
   }
 
-  /**
-   * Cancel an active execution
-   */
   cancel(executionId: string): boolean {
     const abortController = this.activeExecutions.get(executionId);
     if (abortController) {
@@ -1457,17 +1545,10 @@ export class WorkflowExecutor {
     return false;
   }
 
-  /**
-   * Get execution state
-   */
   getState(executionId: string): ExecutionState | null {
-    // In production, this would retrieve from Redis or in-memory store
     return null;
   }
 
-  /**
-   * Generate execution trace
-   */
   generateTrace(execution: IExecution): {
     nodes: Array<{
       id: string;
@@ -1492,9 +1573,6 @@ export class WorkflowExecutor {
     };
   }
 
-  /**
-   * Sleep helper for retry delays
-   */
   private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }

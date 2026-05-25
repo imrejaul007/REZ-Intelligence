@@ -669,7 +669,7 @@ export class IdentityResolver {
         id: userId || `u_${uuidv4()}`,
         phone: data?.phone as string | undefined,
         email: data?.email as string | undefined,
-        apps: data?.appId ? [{ appId: data.appId as any, userId: data.userId as string }] : [],
+        apps: data?.appId ? [{ appId: data.appId as unknown, userId: data.userId as string }] : [],
         profile: {
           name: {
             first: (data?.name as string | undefined)?.split(' ')[0],
@@ -742,7 +742,7 @@ export class IdentityResolver {
       if (!existingApp) {
         updates['apps'] = [
           ...(user.apps || []),
-          { appId: data.appId as any, userId: data.userId as string, linkedAt: now },
+          { appId: data.appId as unknown, userId: data.userId as string, linkedAt: now },
         ];
         results.changes.push('apps');
       }

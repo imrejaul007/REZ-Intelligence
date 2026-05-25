@@ -252,7 +252,7 @@ router.get('/segments/:segment', async (req: Request, res: Response) => {
     }
 
     const limit = parseInt(req.query.limit as string) || 100;
-    const result = await socialSignalsService.getUsersBySegment(segment as any, limit);
+    const result = await socialSignalsService.getUsersBySegment(segment as unknown, limit);
 
     res.json(result);
   } catch (error) {

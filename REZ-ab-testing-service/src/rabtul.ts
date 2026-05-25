@@ -15,7 +15,7 @@ export async function rewardUser(userId: string, amount: number) {
   try { await axios.post(`${WALLET}/api/wallet/add`, { userId, amount, reason: 'ab_test_participation' }, { headers: { 'Content-Type': 'application/json', 'X-Internal-Token': TOKEN } }); return { success: true }; }
   catch { return { success: false }; }
 }
-export async function publishEvent(type: string, data: Record<string, any>) {
+export async function publishEvent(type: string, data: Record<string, unknown>) {
   try { await axios.post(`${EVENT}/api/events/publish`, { type: `ab.${type}`, source: 'REZ-ab-testing-service', data }, { headers: { 'X-Internal-Token': TOKEN } }); return { success: true }; }
   catch { return { success: false }; }
 }

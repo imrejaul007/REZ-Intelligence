@@ -67,7 +67,7 @@ export interface TaskResult {
   agentId: string;
   output: unknown;
   confidence: number;
-  recommendations?: string[];
+  recommendations?: RecommendedAction[];
   actions?: RecommendedAction[];
   metadata: Record<string, unknown>;
 }
@@ -116,8 +116,9 @@ export interface ConflictResolution {
 
 export interface AgentHealth {
   agentId: string;
-  status: 'healthy' | 'degraded' | 'unhealthy';
+  status: 'healthy' | 'degraded' | 'unhealthy' | 'active' | 'busy';
   lastHeartbeat: Date;
+  lastActive?: Date;
   tasksProcessed: number;
   successRate: number;
   avgResponseTime: number;

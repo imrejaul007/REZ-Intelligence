@@ -184,7 +184,7 @@ router.post('/exercises', validateRequest(exerciseQuerySchema), async (req: Requ
     }
 
     if (difficulty) {
-      exercises = exercises.filter((e: any) => e.difficulty === difficulty);
+      exercises = exercises.filter((e) => e.difficulty === difficulty);
     }
 
     const finalExercises = exercises.slice(0, limit);

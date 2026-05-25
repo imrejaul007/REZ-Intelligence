@@ -2,7 +2,8 @@
  * REZ Fleet Management - Main Entry
  */
 
-import express from 'express';
+import express import logger from './utils/logger';
+import from 'express';
 import { routingService } from './services/RoutingService';
 import { surgePricingService } from './services/SurgePricingService';
 import { incentiveService } from './services/IncentiveService';
@@ -49,7 +50,7 @@ app.post('/api/surge/calculate', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Fleet Management running on port ${PORT}`);
+  logger.info(`Fleet Management running on port ${PORT}`);
 });
 
 export default app;

@@ -22,7 +22,7 @@ const router = Router();
 // Validation schemas
 const enrichPayloadSchema = z.object({
   source: z.enum(['identity', 'cdp', 'orders', 'signals', 'manual']),
-  data: z.record(z.any()),
+  data: z.record(z.unknown()),
   timestamp: z.string().datetime().optional()
 });
 
@@ -73,7 +73,7 @@ router.get('/profile/:userId', internalAuth, async (req: Request, res: Response)
       data: profile
     });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error fetching profile', { error: error.message, userId: req.params.userId });
     res.status(500).json({
       success: false,
@@ -99,7 +99,7 @@ router.get('/profile/:userId/signals', internalAuth, async (req: Request, res: R
       data: signals
     });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error fetching signals', { error: error.message, userId: req.params.userId });
     res.status(500).json({
       success: false,
@@ -135,7 +135,7 @@ router.get('/profile/:userId/segments', internalAuth, async (req: Request, res: 
       }
     });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error fetching segments', { error: error.message, userId: req.params.userId });
     res.status(500).json({
       success: false,
@@ -167,7 +167,7 @@ router.get('/profile/:userId/activity', internalAuth, async (req: Request, res: 
       data: profile.activity
     });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error fetching activity', { error: error.message, userId: req.params.userId });
     res.status(500).json({
       success: false,
@@ -209,7 +209,7 @@ router.post('/profile/:userId/enrich', internalAuth, async (req: Request, res: R
       enrichedFrom: payload.source
     });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error enriching profile', { error: error.message, userId: req.params.userId });
     res.status(500).json({
       success: false,
@@ -250,7 +250,7 @@ router.post('/profile/merge', internalAuth, async (req: Request, res: Response) 
       strategy: request.strategy || 'latest-wins'
     });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error merging profiles', { error: error.message });
     res.status(500).json({
       success: false,
@@ -287,7 +287,7 @@ router.get('/profiles/search', internalAuth, async (req: Request, res: Response)
       query
     });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error searching profiles', { error: error.message });
     res.status(500).json({
       success: false,
@@ -322,7 +322,7 @@ router.get('/segments/:segment/members', internalAuth, async (req: Request, res:
       segment
     });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error fetching segment members', { error: error.message, segment: req.params.segment });
     res.status(500).json({
       success: false,
@@ -346,7 +346,7 @@ router.get('/segments/stats', internalAuth, async (req: Request, res: Response) 
       totalSegments: Object.keys(stats).length
     });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error fetching segment stats', { error: error.message });
     res.status(500).json({
       success: false,
@@ -386,7 +386,7 @@ router.patch('/profile/:userId/segments', internalAuth, async (req: Request, res
       data: updatedProfile
     });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error updating segments', { error: error.message, userId: req.params.userId });
     res.status(500).json({
       success: false,
@@ -418,7 +418,7 @@ router.delete('/profile/:userId', internalAuth, async (req: Request, res: Respon
       message: `Profile ${userId} deleted`
     });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error deleting profile', { error: error.message, userId: req.params.userId });
     res.status(500).json({
       success: false,
@@ -457,7 +457,7 @@ router.post('/profiles/lookup', internalAuth, async (req: Request, res: Response
       data: profile
     });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error looking up profile', { error: error.message });
     res.status(500).json({
       success: false,

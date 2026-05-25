@@ -164,7 +164,7 @@ export class MomentEngine {
               daysUntilExpiry
             },
             offers: [{
-              merchantId: 'any',
+              merchantId: 'unknown',
               merchantName: 'Any Merchant',
               offerType: 'coin_multiplier',
               cashback: 0,
@@ -195,7 +195,7 @@ export class MomentEngine {
               riskLevel: wallet.streakRisk
             },
             offers: [{
-              merchantId: 'any',
+              merchantId: 'unknown',
               merchantName: 'Favorite Merchant',
               offerType: 'streak_booster',
               cashback: 10,
@@ -247,7 +247,7 @@ export class MomentEngine {
               tier: birthday.tier
             },
             offers: [{
-              merchantId: 'any',
+              merchantId: 'unknown',
               merchantName: 'Birthday Partner',
               offerType: 'birthday_bonus',
               cashback: birthday.tier === 'platinum' ? 25 : birthday.tier === 'gold' ? 20 : 15,
@@ -288,7 +288,7 @@ export class MomentEngine {
               years: anniversary.years
             },
             offers: [{
-              merchantId: 'any',
+              merchantId: 'unknown',
               merchantName: 'Loyalty Partner',
               offerType: 'anniversary_bonus',
               cashback: Math.min(10 + anniversary.years * 2, 25),
@@ -341,7 +341,7 @@ export class MomentEngine {
               reason: predictions.churnReason
             },
             offers: [{
-              merchantId: 'any',
+              merchantId: 'unknown',
               merchantName: 'Come Back Special',
               offerType: 'retention_offer',
               cashback: Math.round(predictions.churnRisk * 15),
@@ -372,7 +372,7 @@ export class MomentEngine {
               tier: predictions.tier
             },
             offers: [{
-              merchantId: 'any',
+              merchantId: 'unknown',
               merchantName: 'Premium Partner',
               offerType: 'premium_exclusive',
               cashback: 15,
@@ -498,7 +498,7 @@ export class MomentEngine {
               signals: topIntent.signals
             },
             offers: [{
-              merchantId: 'any',
+              merchantId: 'unknown',
               merchantName: `${topIntent.category} Partners`,
               offerType: 'intent_match',
               cashback: 10,
@@ -525,7 +525,7 @@ export class MomentEngine {
                 reason: opp.reason
               },
               offers: [{
-                merchantId: 'any',
+                merchantId: 'unknown',
                 merchantName: `${opp.toCategory} Merchants`,
                 offerType: 'cross_sell',
                 cashback: 15,

@@ -14,7 +14,7 @@ export interface EmailMessage {
 export interface EmailTemplate {
   to: string;
   template: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 }
 
 export interface Attachment {
@@ -58,7 +58,7 @@ class EmailService {
       });
 
       return { success: true, messageId: info.messageId };
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Failed to send email', {
         error: error.message,
         to: message.to
@@ -104,7 +104,7 @@ class EmailService {
       });
 
       return { success: true, messageId: info.messageId };
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Failed to send email with attachment', { error: error.message });
       return { success: false, error: error.message };
     }
@@ -130,7 +130,7 @@ class EmailService {
       });
 
       return { success: true, messageId: 'sendgrid' };
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message };
     }
   }
@@ -139,7 +139,7 @@ class EmailService {
     return html.replace(/<[^>]*>/g, '');
   }
 
-  private interpolate(template: string, data: Record<string, any>): string {
+  private interpolate(template: string, data: Record<string, unknown>): string {
     return template.replace(/\{\{(\w+)\}\}/g, (_, key) => data[key] || '');
   }
 
@@ -160,7 +160,7 @@ class EmailService {
         },
         timeout: 30000
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Failed to send to orchestrator', { error: error.message });
     }
   }

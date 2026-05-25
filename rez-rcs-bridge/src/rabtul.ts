@@ -27,7 +27,7 @@ export async function sendRCS(params: {
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true, messageId: res.data.messageId };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -53,7 +53,7 @@ export async function sendRCSWithCards(params: {
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true, messageId: res.data.messageId };
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error.message };
   }
 }
@@ -67,7 +67,7 @@ export async function getRCSStatus(messageId: string): Promise<{ status: string;
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { status: res.data.status };
-  } catch (error: any) {
+  } catch (error) {
     return { status: 'unknown', error: error.message };
   }
 }

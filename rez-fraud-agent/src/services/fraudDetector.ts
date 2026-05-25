@@ -264,7 +264,7 @@ export class FraudDetector {
     }
 
     for (const check of checks) {
-      const result = await this.blacklistService.check(check.type as any, check.value);
+      const result = await this.blacklistService.check(check.type as unknown, check.value);
       if (result.isBlacklisted) {
         return {
           isBlacklisted: true,
@@ -437,7 +437,7 @@ export class FraudDetector {
     const processingTimeMs = Date.now() - params.startTime;
 
     return {
-      decision: params.decision as any,
+      decision: params.decision as unknown,
       riskScore: params.riskScore,
       riskLevel: this.riskScorer.getRiskLevel(params.riskScore),
       detectedPatterns: params.detectedPatterns,

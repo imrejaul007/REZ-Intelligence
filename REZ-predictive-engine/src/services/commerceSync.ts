@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ-predictive-engine → Commerce Graph Sync
  *
@@ -60,9 +62,9 @@ class PredictionCommerceSync {
           }
         }
       );
-      console.log(`[PredictionSync] Predictions synced for ${update.userId}`);
+      logger.info(`[PredictionSync] Predictions synced for ${update.userId}`);
     } catch (error) {
-      console.error(`[PredictionSync] Failed to sync predictions: ${error.message}`);
+      logger.error(`[PredictionSync] Failed to sync predictions: ${error.message}`);
     }
   }
 
@@ -95,9 +97,9 @@ class PredictionCommerceSync {
           }
         }
       );
-      console.log(`[PredictionSync] LTV synced for ${userId}`);
+      logger.info(`[PredictionSync] LTV synced for ${userId}`);
     } catch (error) {
-      console.error(`[PredictionSync] Failed to sync LTV: ${error.message}`);
+      logger.error(`[PredictionSync] Failed to sync LTV: ${error.message}`);
     }
   }
 
@@ -127,9 +129,9 @@ class PredictionCommerceSync {
           }
         }
       );
-      console.log(`[PredictionSync] Churn risk synced for ${userId}`);
+      logger.info(`[PredictionSync] Churn risk synced for ${userId}`);
     } catch (error) {
-      console.error(`[PredictionSync] Failed to sync churn risk: ${error.message}`);
+      logger.error(`[PredictionSync] Failed to sync churn risk: ${error.message}`);
     }
   }
 
@@ -163,9 +165,9 @@ class PredictionCommerceSync {
           }
         }
       );
-      console.log(`[PredictionSync] Spend prediction synced for ${userId}`);
+      logger.info(`[PredictionSync] Spend prediction synced for ${userId}`);
     } catch (error) {
-      console.error(`[PredictionSync] Failed to sync spend prediction: ${error.message}`);
+      logger.error(`[PredictionSync] Failed to sync spend prediction: ${error.message}`);
     }
   }
 
@@ -190,16 +192,16 @@ class PredictionCommerceSync {
           }
         }
       );
-      console.log(`[PredictionSync] Batch synced ${predictions.length} predictions`);
+      logger.info(`[PredictionSync] Batch synced ${predictions.length} predictions`);
     } catch (error) {
-      console.error(`[PredictionSync] Failed to sync batch: ${error.message}`);
+      logger.error(`[PredictionSync] Failed to sync batch: ${error.message}`);
     }
   }
 
   /**
    * Get moment triggers based on predictions
    */
-  async getChurnMoments(): Promise<any[]> {
+  async getChurnMoments(): Promise<unknown[]> {
     try {
       const response = await axios.get(
         `${COMMERCE_GRAPH_URL}/api/moments/churn-risk`,
@@ -211,7 +213,7 @@ class PredictionCommerceSync {
       );
       return response.data.data?.moments || [];
     } catch (error) {
-      console.error(`[PredictionSync] Failed to get churn moments: ${error.message}`);
+      logger.error(`[PredictionSync] Failed to get churn moments: ${error.message}`);
       return [];
     }
   }
@@ -231,7 +233,7 @@ class PredictionCommerceSync {
       );
       return response.data.data?.customers || [];
     } catch (error) {
-      console.error(`[PredictionSync] Failed to get high-value customers: ${error.message}`);
+      logger.error(`[PredictionSync] Failed to get high-value customers: ${error.message}`);
       return [];
     }
   }

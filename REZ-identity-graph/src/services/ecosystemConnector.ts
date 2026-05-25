@@ -56,17 +56,17 @@ export async function onFraudDetected(userId: string, fraudScore: number): Promi
 // QUERIES
 // ============================================
 
-export async function getUnifiedProfile(userId: string): Promise<any> {
+export async function getUnifiedProfile(userId: string): Promise<unknown> {
   const response = await axios.get(`${ECOSYSTEM_URL}/api/v1/profile/${userId}`);
   return response.data;
 }
 
-export async function getUserTransactions(userId: string): Promise<any[]> {
+export async function getUserTransactions(userId: string): Promise<unknown[]> {
   const response = await axios.get(`${ECOSYSTEM_URL}/api/loyalty/transactions/${userId}`);
   return response.data.transactions || [];
 }
 
-export async function getUserSignals(userId: string): Promise<any[]> {
+export async function getUserSignals(userId: string): Promise<unknown[]> {
   const response = await axios.get(`${SIGNALS_URL}/api/users/${userId}/signals`);
   return response.data.signals || [];
 }

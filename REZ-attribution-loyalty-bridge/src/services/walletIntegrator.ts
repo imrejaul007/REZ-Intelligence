@@ -122,7 +122,7 @@ export class WalletIntegrator {
         transactionId,
         coinsAwarded
       };
-    } catch (error: any) {
+    } catch (error) {
       console.error('Cashback award failed:', error);
       return {
         success: false,
@@ -138,7 +138,7 @@ export class WalletIntegrator {
     customerId: string;
     action: string;
     channel: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }): Promise<CashbackResult> {
     const { customerId, action, channel, metadata } = data;
 
@@ -172,7 +172,7 @@ export class WalletIntegrator {
         transactionId,
         coinsAwarded: points
       };
-    } catch (error: any) {
+    } catch (error) {
       return {
         success: false,
         error: error.message
@@ -183,7 +183,7 @@ export class WalletIntegrator {
   /**
    * Get cashback history for customer
    */
-  async getCashbackHistory(customerId: string): Promise<any[]> {
+  async getCashbackHistory(customerId: string): Promise<unknown[]> {
     try {
       const response = await axios.get(
         `${WALLET_SERVICE_URL}/api/v1/transactions`,
@@ -302,7 +302,7 @@ export class WalletIntegrator {
     points: number;
     action: string;
     channel: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }): Promise<void> {
     await axios.post(
       `${LOYALTY_SERVICE_URL}/api/v1/points/credit`,

@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 #!/usr/bin/env node
 /**
  * Script to add RABTUL integration to all REZ-Intelligence services
@@ -429,28 +431,28 @@ function addIntegration(serviceDir, serviceName) {
   const rabtulContent = RABTUL_PLATFORM_TEMPLATE.replace(/SERVICE_NAME/g, serviceName);
   const rabtulPath = path.join(integrationsDir, 'rabtulPlatform.ts');
   fs.writeFileSync(rabtulPath, rabtulContent);
-  console.log('Created: ' + rabtulPath);
+  logger.info('Created: ' + rabtulPath);
 
   // Create REZ Intelligence integration
   const intelligencePath = path.join(integrationsDir, 'rezIntelligence.ts');
   fs.writeFileSync(intelligencePath, REZ_INTELLIGENCE_TEMPLATE);
-  console.log('Created: ' + intelligencePath);
+  logger.info('Created: ' + intelligencePath);
 
   // Create index file
   const indexPath = path.join(integrationsDir, 'index.ts');
   fs.writeFileSync(indexPath, INTEGRATION_INDEX_TEMPLATE);
-  console.log('Created: ' + indexPath);
+  logger.info('Created: ' + indexPath);
 
   return true;
 }
 
 // Run
-console.log('Finding services without RABTUL integration...\n');
+logger.info('Finding services without RABTUL integration...\n');
 
 const missingServices = findServicesWithoutIntegration();
 
-console.log('Found ' + missingServices.length + ' services without integration\n');
-console.log('Adding RABTUL integration...\n');
+logger.info('Found ' + missingServices.length + ' services without integration\n');
+logger.info('Adding RABTUL integration...\n');
 
 let successCount = 0;
 let failCount = 0;
@@ -462,12 +464,12 @@ for (const service of missingServices) {
     addIntegration(serviceDir, service);
     successCount++;
   } catch (error) {
-    console.log('ERROR: ' + service + ' - ' + error.message);
+    logger.info('ERROR: ' + service + ' - ' + error.message);
     failCount++;
   }
 }
 
-console.log('\n=== Summary ===');
-console.log('Success: ' + successCount);
-console.log('Failed: ' + failCount);
-console.log('Total: ' + missingServices.length);
+logger.info('\n=== Summary ===');
+logger.info('Success: ' + successCount);
+logger.info('Failed: ' + failCount);
+logger.info('Total: ' + missingServices.length);

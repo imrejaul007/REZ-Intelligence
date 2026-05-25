@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 import 'dotenv/config';
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -626,9 +628,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 // Start Server
 async function main() {
-  console.error("REZ Payment MCP Server started");
-  console.error(`Payment Service URL: ${PAYMENT_SERVICE_URL}`);
-  console.error(`Real API: ${USE_REAL_API ? 'ENABLED' : 'DISABLED (set USE_REAL_PAYMENT=true to enable)'}`);
+  logger.error("REZ Payment MCP Server started");
+  logger.error(`Payment Service URL: ${PAYMENT_SERVICE_URL}`);
+  logger.error(`Real API: ${USE_REAL_API ? 'ENABLED' : 'DISABLED (set USE_REAL_PAYMENT=true to enable)'}`);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);

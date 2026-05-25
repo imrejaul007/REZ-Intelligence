@@ -48,7 +48,7 @@ router.post('/', async (req: Request, res: Response) => {
         domain: config.domain,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[ClientRoutes] Failed to register client', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -73,7 +73,7 @@ router.get('/', async (req: Request, res: Response) => {
         industry: c.industry,
       })),
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[ClientRoutes] Failed to get clients', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -94,7 +94,7 @@ router.get('/:clientId', async (req: Request, res: Response) => {
     }
 
     res.json({ success: true, client });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[ClientRoutes] Failed to get client', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -123,7 +123,7 @@ router.put('/:clientId', async (req: Request, res: Response) => {
       success: true,
       message: `Client ${clientId} updated`,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[ClientRoutes] Failed to update client', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -144,7 +144,7 @@ router.delete('/:clientId', async (req: Request, res: Response) => {
       success: true,
       message: `Client ${clientId} deleted (stub)`,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[ClientRoutes] Failed to delete client', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -184,7 +184,7 @@ router.post('/:clientId/email', async (req: Request, res: Response) => {
       message: 'Email configuration updated',
       email: supportEmail || client.email,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[ClientRoutes] Failed to configure email', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -213,7 +213,7 @@ router.get('/:clientId/email', async (req: Request, res: Response) => {
         hasCustomTemplate: !!client.autoResponseTemplate,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[ClientRoutes] Failed to get email config', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -246,7 +246,7 @@ router.post('/:clientId/routing', async (req: Request, res: Response) => {
       message: 'Routing rules updated',
       rules,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[ClientRoutes] Failed to set routing rules', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -270,7 +270,7 @@ router.get('/:clientId/routing', async (req: Request, res: Response) => {
       success: true,
       rules: client.routingRules || [],
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[ClientRoutes] Failed to get routing rules', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -310,7 +310,7 @@ router.post('/:clientId/branding', async (req: Request, res: Response) => {
       message: 'Branding updated',
       branding: { color: updated.color, logo: updated.logo, language: updated.language },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[ClientRoutes] Failed to set branding', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -342,7 +342,7 @@ router.post('/:clientId/responses', async (req: Request, res: Response) => {
       success: true,
       message: 'Custom responses updated',
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[ClientRoutes] Failed to set responses', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -365,7 +365,7 @@ router.get('/:clientId/stats', async (req: Request, res: Response) => {
       success: true,
       stats,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[ClientRoutes] Failed to get stats', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -404,7 +404,7 @@ router.post('/process-email', async (req: Request, res: Response) => {
         sentiment: result.parsed.sentiment,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[ClientRoutes] Failed to process email', error);
     res.status(500).json({ success: false, error: error.message });
   }

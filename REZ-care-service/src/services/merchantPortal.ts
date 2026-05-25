@@ -321,7 +321,7 @@ class MerchantPortalService {
   /**
    * Get response time trends
    */
-  async getResponseTrends(merchantId: string, days: number = 7): Promise<any[]> {
+  async getResponseTrends(merchantId: string, days: number = 7): Promise<unknown[]> {
     try {
       const res = await axios.get(
         `${REZ_CARE_URL}/api/merchant/${merchantId}/trends/response`,
@@ -340,7 +340,7 @@ class MerchantPortalService {
   /**
    * Get support team members
    */
-  async getTeamMembers(merchantId: string): Promise<any[]> {
+  async getTeamMembers(merchantId: string): Promise<unknown[]> {
     try {
       const res = await axios.get(
         `${REZ_CARE_URL}/api/merchant/${merchantId}/team`,
@@ -378,7 +378,7 @@ class MerchantPortalService {
   /**
    * Get merchant settings
    */
-  async getSettings(merchantId: string): Promise<any> {
+  async getSettings(merchantId: string): Promise<unknown> {
     try {
       const res = await axios.get(
         `${REZ_CARE_URL}/api/merchant/${merchantId}/settings`,
@@ -393,7 +393,7 @@ class MerchantPortalService {
   /**
    * Update merchant settings
    */
-  async updateSettings(merchantId: string, settings: any): Promise<boolean> {
+  async updateSettings(merchantId: string, settings): Promise<boolean> {
     try {
       await axios.put(
         `${REZ_CARE_URL}/api/merchant/${merchantId}/settings`,

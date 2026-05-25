@@ -247,16 +247,16 @@ export class CopilotAdapter implements ChannelAdapter {
     res: Response
   ): Promise<void> {
     copilotLogger.debug('Handling invoke activity', {
-      name: (activity as any).name,
+      name: (activity as unknown).name,
     });
 
     // Handle specific invoke types
-    const invokeName = (activity as any).name;
+    const invokeName = (activity as unknown).name;
 
     switch (invokeName) {
       case 'quickReply':
         // Handle quick reply selection
-        const replyValue = (activity as any).value?.selectedOption?.value;
+        const replyValue = (activity as unknown).value?.selectedOption?.value;
         if (replyValue) {
           const payload: IncomingMessage = {
             message: replyValue,
@@ -273,7 +273,7 @@ export class CopilotAdapter implements ChannelAdapter {
 
       case 'cardAction':
         // Handle card action
-        const actionData = (activity as any).value?.action?.data;
+        const actionData = (activity as unknown).value?.action?.data;
         if (actionData) {
           const payload: IncomingMessage = {
             message: actionData,
@@ -299,8 +299,8 @@ export class CopilotAdapter implements ChannelAdapter {
    */
   private extractMessageText(activity: CopilotActivity): string | null {
     // Text message
-    if ((activity as any).text) {
-      return (activity as any).text;
+    if ((activity as unknown).text) {
+      return (activity as unknown).text;
     }
 
     // Attachment content
@@ -392,7 +392,7 @@ export class CopilotAdapter implements ChannelAdapter {
 
     // Add HTML if present
     if (message.content.html) {
-      (activity as any).html = message.content.html;
+      (activity as unknown).html = message.content.html;
     }
 
     // Add attachments

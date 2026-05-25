@@ -78,7 +78,7 @@ router.get(
     const { channel, is_active, limit, offset } = req.query;
 
     const result = await adTemplateService.listTemplates({
-      channel: channel as any,
+      channel: channel as unknown,
       is_active: is_active === 'true' ? true : is_active === 'false' ? false : undefined,
       limit: limit ? parseInt(limit as string) : undefined,
       offset: offset ? parseInt(offset as string) : undefined

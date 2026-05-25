@@ -285,7 +285,7 @@ class CustomerService {
   async getOrderHistory(
     userId: string,
     options: { limit?: number; offset?: number; status?: string } = {}
-  ): Promise<{ orders: any[]; total: number }> {
+  ): Promise<{ orders: unknown[]; total: number }> {
     try {
       const { limit = 20, offset = 0, status } = options;
       const params = new URLSearchParams({

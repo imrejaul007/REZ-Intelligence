@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 import type {
   SegmentRule,
   SegmentDefinition,
@@ -164,7 +166,7 @@ export function evaluateRule(rule: SegmentRule, userData: UserData): boolean {
 
   const operatorFn = operators[rule.operator];
   if (!operatorFn) {
-    console.warn(`Unknown operator: ${rule.operator}`);
+    logger.warn(`Unknown operator: ${rule.operator}`);
     return false;
   }
 

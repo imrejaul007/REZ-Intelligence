@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>REZ Platform Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #0a0a0f;
+      --card: #12121a;
+      --border: #1e1e28;
+      --text: #e4e4e7;
+      --muted: #71717a;
+      --accent: #8b5cf6;
+      --green: #22c55e;
+      --yellow: #eab308;
+      --red: #ef4444;
+      --blue: #3b82f6;
+    }
+    body { font-family: 'SF Mono', monospace; background: var(--bg); color: var(--text); min-height: 100vh; }
+    .header { padding: 20px 32px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .logo { font-size: 20px; font-weight: 600; }
+    .status-badge { display: flex; gap: 8px; align-items: center; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+    .dot.live { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .main { padding: 32px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+    .card-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+    .card-title { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .card-value { font-size: 32px; font-weight: 600; margin: 16px 0; }
+    .metric-sub { font-size: 12px; color: var(--muted); }
+    .services { display: flex; flex-direction: column; gap: 16px; }
+    .service { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--bg); border-radius: 8px; }
+    .service-name { font-weight: 500; }
+    .service-port { font-size: 12px; color: var(--muted); }
+    .service-status { font-size: 12px; padding: 4px 12px; border-radius: 100px; background: var(--bg); }
+    .status-running { color: var(--green); background: rgba(34, 197, 94, 0.1); }
+    .status-stopped { color: var(--red); background: rgba(239, 68, 68, 0.1); }
+    .btn { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; font-family: inherit; }
+    .btn-primary { background: var(--accent); border-color: var(--accent); }
+    .console { background: var(--bg); border-radius: 12px; padding: 20px; font-size: 12px; height: 200px; overflow-y: auto; }
+    .log-line { margin: 4px 0; }
+    .log-time { color: var(--muted); margin-right: 8px; }
+    .log-info { color: var(--blue); }
+    .log-success { color: var(--green); }
+    .log-error { color: var(--red); }
+    .input-group { margin-bottom: 16px; }
+    label { display: block; margin-bottom: 4px; font-size: 12px; color: var(--muted); }
+    input, textarea { width: 100%; padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: inherit; }
+    textarea { resize: vertical; min-height: 100px; }
+    .actions { display: flex; gap: 8px; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">REZ Platform</div>
+    <div class="status-badge">
+      <div class="dot live"></div>
+      <span>All Systems Operational</span>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="grid">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Executions</span>
+          <span style="color: var(--green)">+12%</span>
+        </div>
+        <div class="card-value">1,247</div>
+        <div class="metric-sub">Completed today</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Running</span>
+        </div>
+        <div class="card-value">8</div>
+        <div class="metric-sub">Active workflows</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">DLQ</span>
+        </div>
+        <div class="card-value" style="color: var(--yellow)">3</div>
+        <div class="metric-sub">Failed executions</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Timeline Events</span>
+        </div>
+        <div class="card-value">45.2K</div>
+        <div class="metric-sub">Processed today</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">WhatsApp</span>
+        </div>
+        <div class="card-value">892</div>
+        <div class="metric-sub">Messages sent today</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Sessions</span>
+        </div>
+        <div class="card-value">234</div>
+        <div class="metric-sub">Active conversations</div>
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top: 24px;">
+      <div class="card" style="grid-column: span 2;">
+        <div class="card-header">
+          <span class="card-title">Services</span>
+        </div>
+        <div class="services">
+          <div class="service">
+            <div>
+              <div class="service-name">REZ Flow Runtime</div>
+              <div class="service-port">Port 4200</div>
+            </div>
+            <div class="service-status status-running" id="status-flow">Checking...</div>
+          </div>
+          <div class="service">
+            <div>
+              <div class="service-name">REZ Memory Layer</div>
+              <div class="service-port">Port 4201</div>
+            </div>
+            <div class="service-status status-running" id="status-memory">Checking...</div>
+          </div>
+          <div class="service">
+            <div>
+              <div class="service-name">REZ WhatsApp</div>
+              <div class="service-port">Port 4202</div>
+            </div>
+            <div class="service-status status-running" id="status-whatsapp">Checking...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Console</span>
+        </div>
+        <div class="console" id="console">
+          <div class="log-line"><span class="log-time">System ready</span><span class="log-info"> Dashboard loaded</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top: 24px;">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Send WhatsApp</span>
+        </div>
+        <div class="input-group">
+          <label>Phone Number</label>
+          <input type="text" id="phone" placeholder="+919876543210">
+        </div>
+        <div class="input-group">
+          <label>Message</label>
+          <textarea id="message" placeholder="Hello..."></textarea>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Trigger Workflow</span>
+        </div>
+        <div class="input-group">
+          <label>Workflow ID</label>
+          <input type="text" id="workflowId" placeholder="workflow_id">
+        </div>
+        <div class="input-group">
+          <label>Variables (JSON)</label>
+          <textarea id="variables" placeholder='{"userId": "user_123"}'></textarea>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="triggerWorkflow()">Execute</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Get Timeline</span>
+        </div>
+        <div class="input-group">
+          <label>User ID</label>
+          <input type="text" id="userId" placeholder="user_123">
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="getTimeline()">Fetch</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const BASE = 'http://localhost';
+    const TOKEN = 'dev-token';
+    const HEADERS = { 'Content-Type': 'application/json', 'X-Internal-Token': TOKEN };
+
+    function log(msg, type = 'info') {
+      const console = document.getElementById('console');
+      const time = new Date().toLocaleTimeString();
+      const div = document.createElement('div');
+      div.className = 'log-line';
+      div.innerHTML = `<span class="log-time">${time}</span><span class="log-${type}">[${type.toUpperCase()}] ${msg}</span>`;
+      console.appendChild(div);
+      console.scrollTop = console.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const phone = document.getElementById('phone').value;
+      const message = document.getElementById('message').value;
+      log(`Sending to ${phone}...`);
+      try {
+        const res = await fetch(`${BASE}:4202/api/whatsapp/send`, {
+          method: 'POST',
+          headers: HEADERS,
+          body: JSON.stringify({ to: phone, message })
+        });
+        const data = await res.json();
+        if (data.success) log(`Sent: ${data.data?.messageId || 'OK'}`, 'success');
+        else log(`Error: ${data.error?.message}`, 'error');
+      } catch (e) { log(`Connection failed`, 'error'); }
+    }
+
+    async function triggerWorkflow() {
+      const workflowId = document.getElementById('workflowId').value;
+      const vars = document.getElementById('variables').value;
+      log(`Triggering ${workflowId}...`);
+      try {
+        const res = await fetch(`${BASE}:4200/api/executions`, {
+          method: 'POST',
+          headers: HEADERS,
+          body: JSON.stringify({ workflowId, trigger: { type: 'manual' }, variables: JSON.parse(vars || '{}') })
+        });
+        const data = await res.json();
+        if (data.success) log(`Started: ${data.data?.executionId}`, 'success');
+        else log(`Error`, 'error');
+      } catch (e) { log(`Connection failed`, 'error'); }
+    }
+
+    async function getTimeline() {
+      const userId = document.getElementById('userId').value;
+      log(`Fetching timeline...`);
+      try {
+        const res = await fetch(`${BASE}:4201/api/timeline/${userId}`, { headers: HEADERS });
+        const data = await res.json();
+        log(`Events: ${data.data?.length || 0}`, 'success');
+      } catch (e) { log(`Connection failed`, 'error'); }
+    }
+
+    async function checkService(id, port) {
+      const el = document.getElementById(id);
+      try {
+        const res = await fetch(`${BASE}:${port}/health`, { headers: HEADERS });
+        el.textContent = res.ok ? 'Running' : 'Stopped';
+        el.className = `service-status ${res.ok ? 'status-running' : 'status-stopped'}`;
+      } catch { el.textContent = 'Stopped'; el.className = 'service-status status-stopped'; }
+    }
+
+    setInterval(() => {
+      checkService('status-flow', 4200);
+      checkService('status-memory', 4201);
+      checkService('status-whatsapp', 4202);
+    }, 10000);
+
+    checkService('status-flow', 4200);
+    checkService('status-memory', 4201);
+    checkService('status-whatsapp', 4202);
+  </script>
+</body>
+</html>
+</parameter>

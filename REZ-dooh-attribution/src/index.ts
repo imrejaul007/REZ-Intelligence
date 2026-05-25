@@ -3,7 +3,8 @@
  * Track DOOH impressions to conversions
  */
 
-import express from 'express';
+import express import logger from './utils/logger';
+import from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { v4 as uuidv4 } from 'uuid';
@@ -176,7 +177,7 @@ app.post('/api/attribute', (req, res) => {
       timestamp: new Date(conversion.timestamp),
     };
 
-    const touchpointList: DOOHTouchpoint[] = tpList.map((tp: any) => ({
+    const touchpointList: DOOHTouchpoint[] = tpList.map((tp) => ({
       ...tp,
       timestamp: new Date(tp.timestamp),
     }));
@@ -349,7 +350,7 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 });
 
 app.listen(PORT, () => {
-  console.log(`[${new Date().toISOString()}] DOOH Attribution running on port ${PORT}`);
+  logger.info(`[${new Date().toISOString()}] DOOH Attribution running on port ${PORT}`);
 });
 
 export default app;

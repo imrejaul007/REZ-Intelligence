@@ -17,6 +17,24 @@ export interface WhisperTranscriptionOptions {
   responseFormat?: 'json' | 'text' | 'srt' | 'verbose_json' | 'vtt';
 }
 
+// PRODUCTION FIX: Audio size and duration limits to prevent cost attacks
+const MAX_AUDIO_SIZE_MB = 25;
+const MAX_AUDIO_SIZE_BYTES = MAX_AUDIO_SIZE_MB * 1024 * 1024;
+const MAX_AUDIO_DURATION_SECONDS = 120;
+
+function validateAudioSize(sizeBytes: number): void {
+  if (sizeBytes > MAX_AUDIO_SIZE_BYTES) {
+    throw new Error(
+      `Audio file size ${(sizeBytes / 1024 / 1024).toFixed(2)}MB exceeds maximum allowed ${MAX_AUDIO_SIZE_MB}MB`
+    );
+  }
+}
+
+function estimateAudioDuration(sizeBytes: number): number {
+  // Rough estimate: ~1KB per second for compressed audio
+  return sizeBytes / 1024;
+}
+
 export interface WhisperResponse {
   text: string;
   language?: string;
@@ -49,6 +67,17 @@ export class SpeechToTextService {
 
       const fileStream = fs.createReadStream(filePath);
       const fileSize = fs.statSync(filePath).size;
+
+      // PRODUCTION FIX: Validate audio size before processing
+      validateAudioSize(fileSize);
+      const estimatedDuration = estimateAudioDuration(fileSize);
+      if (estimatedDuration > MAX_AUDIO_DURATION_SECONDS) {
+        logger.warn('[STT] Audio duration exceeds limit', {
+          estimated: estimatedDuration,
+          max: MAX_AUDIO_DURATION_SECONDS,
+          filePath,
+        });
+      }
 
       const response = await this.client.audio.transcriptions.create({
         file: fileStream,
@@ -98,6 +127,16 @@ export class SpeechToTextService {
     const startTime = Date.now();
 
     try {
+      // PRODUCTION FIX: Validate audio size before processing
+      validateAudioSize(buffer.length);
+      const estimatedDuration = estimateAudioDuration(buffer.length);
+      if (estimatedDuration > MAX_AUDIO_DURATION_SECONDS) {
+        logger.warn('[STT] Audio duration exceeds limit', {
+          estimated: estimatedDuration,
+          max: MAX_AUDIO_DURATION_SECONDS,
+        });
+      }
+
       logAIService('Whisper', 'transcribe_from_buffer', {
         filename,
         size: buffer.length
@@ -148,13 +187,16 @@ export class SpeechToTextService {
     try {
       logAIService('Whisper', 'transcribe_from_url', { audioUrl });
 
-      // Download the audio file
+      // Download the audio file with size limit
       const response = await axios.get(audioUrl, {
         responseType: 'arraybuffer',
         headers: {
           'Authorization': `Basic ${Buffer.from(this.config.apiKey).toString('base64')}`
         },
-        timeout: 30000
+        timeout: 30000,
+        // PRODUCTION FIX: Limit max response size to prevent memory exhaustion
+        maxContentLength: MAX_AUDIO_SIZE_BYTES,
+        maxBodyLength: MAX_AUDIO_SIZE_BYTES,
       });
 
       const buffer = Buffer.from(response.data);

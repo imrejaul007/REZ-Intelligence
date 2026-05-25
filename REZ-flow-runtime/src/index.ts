@@ -481,9 +481,9 @@ async function start(): Promise<void> {
         env: config.nodeEnv,
         pid: process.pid
       });
-      console.log(`\n🚀 REZ Flow Runtime running on port ${config.port}`);
-      console.log(`   Health: http://localhost:${config.port}/health`);
-      console.log(`   API: http://localhost:${config.port}/api`);
+      logger.info(`\n🚀 REZ Flow Runtime running on port ${config.port}`);
+      logger.info(`   Health: http://localhost:${config.port}/health`);
+      logger.info(`   API: http://localhost:${config.port}/api`);
     });
 
     // Graceful shutdown

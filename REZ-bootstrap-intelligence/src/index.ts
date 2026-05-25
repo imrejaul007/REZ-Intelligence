@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ Bootstrap Intelligence - Entry Point
  *
@@ -6,7 +8,7 @@
 
 const PORT = process.env.PORT || 4115;
 
-console.log(`Bootstrap Intelligence starting on port ${PORT}`);
+logger.info(`Bootstrap Intelligence starting on port ${PORT}`);
 console.log('[READY] Bootstrap Intelligence`);
 
 export {};

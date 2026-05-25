@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 'use strict';
 
 require('dotenv').config();
@@ -16,7 +18,7 @@ const logger = {
 const REQUIRED_ENV = ['MONGODB_URI', 'REDIS_URL', 'INTERNAL_SERVICE_TOKEN'];
 for (const env of REQUIRED_ENV) {
   if (!process.env[env]) {
-    console.error(`FATAL: ${env} is required`);
+    logger.error(`FATAL: ${env} is required`);
     process.exit(1);
   }
 }
@@ -569,7 +571,7 @@ async function start() {
     await initRedis();
 
     app.listen(PORT, () => {
-      console.log(`Unified Recommendations running on port ${PORT}`);
+      logger.info(`Unified Recommendations running on port ${PORT}`);
     });
   } catch (err) {
     logger.error('Startup failed', { error: err.message });

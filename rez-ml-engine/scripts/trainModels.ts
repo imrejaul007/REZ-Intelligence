@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ ML Engine - Model Training Script
  *
@@ -111,7 +113,7 @@ function determineSegment(sample: TrainingSample): string {
  * Train recommendation model
  */
 function trainRecommendationModel(samples: TrainingSample[]): ModelWeights {
-  console.log(`Training recommendation model with ${samples.length} samples...`);
+  logger.info(`Training recommendation model with ${samples.length} samples...`);
 
   // Learn optimal weights using gradient descent (simplified)
   const featureNames = [
@@ -163,7 +165,7 @@ function trainRecommendationModel(samples: TrainingSample[]): ModelWeights {
  * Train churn prediction model
  */
 function trainChurnModel(samples: TrainingSample[]): ModelWeights {
-  console.log(`Training churn model with ${samples.length} samples...`);
+  logger.info(`Training churn model with ${samples.length} samples...`);
 
   // Churn-specific weights (recency is most important)
   const weights = {
@@ -224,7 +226,7 @@ function predict(sample: TrainingSample, model: ModelWeights): {
  * Main training function
  */
 async function main() {
-  console.log('=== REZ ML Engine - Model Training ===\n');
+  logger.info('=== REZ ML Engine - Model Training ===\n');
 
   // Load training data
   const dataPath = path.join(__dirname, '../../training-data.json');
@@ -233,17 +235,17 @@ async function main() {
   if (fs.existsSync(dataPath)) {
     const data = fs.readFileSync(dataPath, 'utf-8');
     samples = JSON.parse(data);
-    console.log(`Loaded ${samples.length} training samples from ${dataPath}`);
+    logger.info(`Loaded ${samples.length} training samples from ${dataPath}`);
   } else {
-    console.log('No training data found. Generating mock data...');
+    logger.info('No training data found. Generating mock data...');
     // Generate mock data for demo
     samples = generateMockData(1000);
     fs.writeFileSync(dataPath, JSON.stringify(samples, null, 2));
-    console.log(`Generated ${samples.length} mock samples`);
+    logger.info(`Generated ${samples.length} mock samples`);
   }
 
   // Train models
-  console.log('\n--- Training Models ---');
+  logger.info('\n--- Training Models ---');
 
   const recommendationModel = trainRecommendationModel(samples);
   const churnModel = trainChurnModel(samples);
@@ -258,16 +260,16 @@ async function main() {
     path.join(modelsDir, 'recommendation-model.json'),
     JSON.stringify(recommendationModel, null, 2)
   );
-  console.log(`Saved recommendation model: ${recommendationModel.version}`);
+  logger.info(`Saved recommendation model: ${recommendationModel.version}`);
 
   fs.writeFileSync(
     path.join(modelsDir, 'churn-model.json'),
     JSON.stringify(churnModel, null, 2)
   );
-  console.log(`Saved churn model: ${churnModel.version}`);
+  logger.info(`Saved churn model: ${churnModel.version}`);
 
   // Test predictions
-  console.log('\n--- Sample Predictions ---');
+  logger.info('\n--- Sample Predictions ---');
   const testSample = samples[0];
   if (testSample) {
     const prediction = predict(testSample, recommendationModel);
@@ -275,7 +277,7 @@ async function main() {
     console.log('Prediction:', prediction);
   }
 
-  console.log('\n=== Training Complete ===');
+  logger.info('\n=== Training Complete ===');
 }
 
 /**

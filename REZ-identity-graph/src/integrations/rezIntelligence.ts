@@ -3,6 +3,8 @@
  * Connects to AI/ML services
  */
 
+import { ServiceUnavailableError } from '../../../../shared/rez-errors/src/index.js';
+
 const INTENT_SERVICE_URL = process.env.INTENT_SERVICE_URL || 'https://rez-intent-predictor.onrender.com';
 const PREDICTIVE_SERVICE_URL = process.env.PREDICTIVE_ENGINE_URL || 'https://REZ-predictive-engine.onrender.com';
 const SIGNAL_SERVICE_URL = process.env.SIGNAL_AGGREGATOR_URL || 'https://REZ-signal-aggregator.onrender.com';
@@ -23,7 +25,7 @@ async function internalRequest(url, options = {}) {
   });
 
   if (!response.ok) {
-    throw new Error(`Intelligence API error: ${response.status}`);
+    throw new ServiceUnavailableError('Intelligence API', `HTTP ${response.status}`);
   }
 
   return response.json();

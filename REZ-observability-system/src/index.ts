@@ -90,7 +90,7 @@ setInterval(() => {
 app.listen(PORT, () => {
   logger.info(`REZ Observability System running on port ${PORT}`, 'system');
 
-  console.log(`
+  logger.info(`
 ╔═══════════════════════════════════════════════════════════════╗
 ║                                                               ║
 ║   REZ OBSERVABILITY SYSTEM                                    ║

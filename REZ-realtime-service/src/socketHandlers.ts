@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 import { Server, Socket } from 'socket.io';
 import { LiveActivityStore } from './stores/liveActivityStore.js';
 import { config } from './config.js';
@@ -10,13 +12,13 @@ interface AuthenticatedSocket extends Socket {
 export function setupSocketHandlers(io: Server, store: LiveActivityStore) {
   // Connection handler
   io.on('connection', (socket: AuthenticatedSocket) => {
-    console.log(`[Socket] Client connected: ${socket.id}`);
+    logger.info(`[Socket] Client connected: ${socket.id}`);
     socket.channels = new Set();
 
     // Authentication (simplified - in production, validate JWT)
     socket.on('authenticate', (data: { userId: string }) => {
       socket.userId = data.userId;
-      console.log(`[Socket] User authenticated: ${data.userId} (${socket.id})`);
+      logger.info(`[Socket] User authenticated: ${data.userId} (${socket.id})`);
       socket.emit('authenticated', { success: true });
     });
 
@@ -27,7 +29,7 @@ export function setupSocketHandlers(io: Server, store: LiveActivityStore) {
         socket.join(channel);
         socket.channels?.add(channel);
       });
-      console.log(`[Socket] ${socket.id} subscribed to: ${channels.join(', ')}`);
+      logger.info(`[Socket] ${socket.id} subscribed to: ${channels.join(', ')}`);
       socket.emit('subscribed', { channels });
     });
 
@@ -64,9 +66,9 @@ export function setupSocketHandlers(io: Server, store: LiveActivityStore) {
 
     // Disconnect handler
     socket.on('disconnect', (reason: string) => {
-      console.log(`[Socket] Client disconnected: ${socket.id} (${reason})`);
+      logger.info(`[Socket] Client disconnected: ${socket.id} (${reason})`);
       if (socket.userId) {
-        console.log(`[Socket] User disconnected: ${socket.userId}`);
+        logger.info(`[Socket] User disconnected: ${socket.userId}`);
       }
     });
 
@@ -85,7 +87,7 @@ export function setupSocketHandlers(io: Server, store: LiveActivityStore) {
         .filter((s: Socket) => (s as AuthenticatedSocket).userId === userId);
 
       if (userSockets.length >= config.maxConnectionsPerUser) {
-        console.log(`[Socket] Rate limit: User ${userId} has too many connections`);
+        logger.info(`[Socket] Rate limit: User ${userId} has too many connections`);
         return next(new Error('Too many connections'));
       }
     }
@@ -93,5 +95,5 @@ export function setupSocketHandlers(io: Server, store: LiveActivityStore) {
     next();
   });
 
-  console.log('[Socket] Handlers initialized');
+  logger.info('[Socket] Handlers initialized');
 }

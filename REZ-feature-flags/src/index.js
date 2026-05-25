@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ Feature Flags Service
  * Centralized feature flag management with per-tenant overrides
@@ -465,9 +467,9 @@ app.post('/flags/tenant/:tenantId/bulk', async (req, res) => {
 });
 
 mongoose.connect(MONGODB).then(() => {
-  console.log(`Feature Flags Service connected to MongoDB`);
+  logger.info(`Feature Flags Service connected to MongoDB`);
   app.listen(PORT, () => {
-    console.log(`Feature Flags Service running on port ${PORT}`);
+    logger.info(`Feature Flags Service running on port ${PORT}`);
     console.log('Default flags:', Object.keys(DEFAULT_FLAGS));
   });
 }).catch(err => {

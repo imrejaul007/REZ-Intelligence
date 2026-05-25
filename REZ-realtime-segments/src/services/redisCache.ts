@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 import Redis from 'ioredis';
 import config from '../config/index.js';
 import type { CachedEvaluation, SegmentEvaluationResult } from '../types/index.js';
@@ -30,7 +32,7 @@ export async function connectRedis(): Promise<void> {
 
     await redisClient.connect();
     isConnected = true;
-    console.log(`Redis connected to ${config.redis.url}`);
+    logger.info(`Redis connected to ${config.redis.url}`);
 
     redisClient.on('error', (err) => {
       console.error('Redis connection error:', err);
@@ -38,12 +40,12 @@ export async function connectRedis(): Promise<void> {
     });
 
     redisClient.on('close', () => {
-      console.warn('Redis connection closed');
+      logger.warn('Redis connection closed');
       isConnected = false;
     });
 
     redisClient.on('reconnecting', () => {
-      console.log('Redis reconnecting...');
+      logger.info('Redis reconnecting...');
     });
   } catch (error) {
     console.error('Failed to connect to Redis:', error);
@@ -60,7 +62,7 @@ export async function disconnectRedis(): Promise<void> {
     await redisClient.quit();
     redisClient = null;
     isConnected = false;
-    console.log('Redis disconnected');
+    logger.info('Redis disconnected');
   } catch (error) {
     console.error('Error disconnecting from Redis:', error);
     throw error;

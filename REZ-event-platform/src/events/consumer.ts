@@ -123,7 +123,7 @@ async function handleInventoryLow(job: Job): Promise<void> {
   logger.info('Processing inventory.low event', {
     jobId: job.id,
     eventId: event.id,
-    inventoryId: (event as any).payload?.inventoryId,
+    inventoryId: (event as unknown).payload?.inventoryId,
   });
 
   // ReZ Mind integration stub
@@ -147,8 +147,8 @@ async function handleOrderCompleted(job: Job): Promise<void> {
   logger.info('Processing order.completed event', {
     jobId: job.id,
     eventId: event.id,
-    orderId: (event as any).payload?.orderId,
-    total: (event as any).payload?.total,
+    orderId: (event as unknown).payload?.orderId,
+    total: (event as unknown).payload?.total,
   });
 
   // ReZ Mind integration stub
@@ -173,8 +173,8 @@ async function handlePaymentSuccess(job: Job): Promise<void> {
   logger.info('Processing payment.success event', {
     jobId: job.id,
     eventId: event.id,
-    paymentId: (event as any).payload?.paymentId,
-    amount: (event as any).payload?.amount,
+    paymentId: (event as unknown).payload?.paymentId,
+    amount: (event as unknown).payload?.amount,
   });
 
   // ReZ Mind integration stub
@@ -195,7 +195,7 @@ async function handlePaymentSuccess(job: Job): Promise<void> {
  */
 async function handleAdImpression(job: Job): Promise<void> {
   const { event } = job.data as { event: Event; publishedAt: string };
-  const payload = (event as any).payload;
+  const payload = (event as unknown).payload;
 
   logger.info('Processing ad.impression event', {
     jobId: job.id,
@@ -215,7 +215,7 @@ async function handleAdImpression(job: Job): Promise<void> {
  */
 async function handleAdClick(job: Job): Promise<void> {
   const { event } = job.data as { event: Event; publishedAt: string };
-  const payload = (event as any).payload;
+  const payload = (event as unknown).payload;
 
   logger.info('Processing ad.click event', {
     jobId: job.id,
@@ -232,7 +232,7 @@ async function handleAdClick(job: Job): Promise<void> {
  */
 async function handleConversion(job: Job): Promise<void> {
   const { event } = job.data as { event: Event; publishedAt: string };
-  const payload = (event as any).payload;
+  const payload = (event as unknown).payload;
 
   logger.info('Processing conversion event', {
     jobId: job.id,
@@ -252,7 +252,7 @@ async function handleConversion(job: Job): Promise<void> {
  */
 async function handleCampaignCreated(job: Job): Promise<void> {
   const { event } = job.data as { event: Event; publishedAt: string };
-  const payload = (event as any).payload;
+  const payload = (event as unknown).payload;
 
   logger.info('Processing campaign.created event', {
     jobId: job.id,
@@ -269,7 +269,7 @@ async function handleCampaignCreated(job: Job): Promise<void> {
  */
 async function handleVoucherIssued(job: Job): Promise<void> {
   const { event } = job.data as { event: Event; publishedAt: string };
-  const payload = (event as any).payload;
+  const payload = (event as unknown).payload;
 
   logger.info('Processing voucher.issued event', {
     jobId: job.id,
@@ -286,7 +286,7 @@ async function handleVoucherIssued(job: Job): Promise<void> {
  */
 async function handleNotificationSent(job: Job): Promise<void> {
   const { event } = job.data as { event: Event; publishedAt: string };
-  const payload = (event as any).payload;
+  const payload = (event as unknown).payload;
 
   logger.info('Processing notification.sent event', {
     jobId: job.id,
@@ -303,7 +303,7 @@ async function handleNotificationSent(job: Job): Promise<void> {
  */
 async function handleNotificationOpened(job: Job): Promise<void> {
   const { event } = job.data as { event: Event; publishedAt: string };
-  const payload = (event as any).payload;
+  const payload = (event as unknown).payload;
 
   logger.info('Processing notification.opened event', {
     jobId: job.id,

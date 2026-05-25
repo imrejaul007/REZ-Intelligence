@@ -167,7 +167,7 @@ export class ProactiveDetectionService {
   }): Promise<ProactiveAlert[]> {
     await this.connect();
 
-    const query: any = { status: { $in: ['active', 'investigating'] } };
+    const query: unknown = { status: { $in: ['active', 'investigating'] } };
     if (filters?.type) query.type = filters.type;
     if (filters?.severity) query.severity = filters.severity;
 
@@ -176,13 +176,13 @@ export class ProactiveDetectionService {
       .sort({ detectedAt: -1 })
       .limit(100);
 
-    return alerts.map(a => a.toObject() as any);
+    return alerts.map(a => a.toObject() as unknown);
   }
 
   /**
    * Create alert manually
    */
-  async createAlert(data: any): Promise<any> {
+  async createAlert(data): Promise<unknown> {
     await this.connect();
 
     const alert = new ProactiveAlertModel({
@@ -198,7 +198,7 @@ export class ProactiveDetectionService {
     await this.executeAlertActions(alert);
 
     logger.info('Alert created', { alertId: alert._id, type: alert.type });
-    return alert.toObject() as any;
+    return alert.toObject() as unknown;
   }
 
   /**
@@ -215,7 +215,7 @@ export class ProactiveDetectionService {
     alert.resolution = resolution;
     alert.resolvedBy = resolvedBy || 'system';
 
-    (alert as any).actions.push({
+    (alert as unknown).actions.push({
       type: 'resolved',
       timestamp: new Date(),
       details: resolution,
@@ -225,7 +225,7 @@ export class ProactiveDetectionService {
     await alert.save();
 
     logger.info('Alert resolved', { alertId, resolution });
-    return alert.toObject() as any;
+    return alert.toObject() as unknown;
   }
 
   /**
@@ -465,7 +465,7 @@ export class ProactiveDetectionService {
     });
   }
 
-  private async executeAlertActions(alert: any): Promise<void> {
+  private async executeAlertActions(alert): Promise<void> {
     const actions: { type: string; timestamp: Date; details: string; performedBy: string }[] = [];
 
     switch (alert.type) {
@@ -584,7 +584,7 @@ export class ProactiveDetectionService {
     }
   }
 
-  private async escalateToSupervisor(customerId: string, alert: any): Promise<void> {
+  private async escalateToSupervisor(customerId: string, alert): Promise<void> {
     try {
       await axios.post(
         `${SERVICE_URLS.support}/api/tickets`,

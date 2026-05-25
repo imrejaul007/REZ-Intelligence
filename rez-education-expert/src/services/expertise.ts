@@ -54,7 +54,7 @@ export class ExpertiseService {
   }
 
   private createCourseRecommendation(
-    category: any,
+    category,
     skill: string,
     matchScore: number,
     userLevel: string

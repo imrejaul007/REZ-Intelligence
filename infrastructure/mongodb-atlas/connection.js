@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * MongoDB Atlas Connection Manager
  * Handles connection pooling, retry logic, and failover
@@ -68,18 +70,18 @@ class MongoAtlasConnection {
 
     try {
       await mongoose.connect(uri, options);
-      console.log(`Connected to MongoDB Atlas: ${dbName}`);
+      logger.info(`Connected to MongoDB Atlas: ${dbName}`);
 
       mongoose.connection.on('error', (err) => {
         console.error('MongoDB connection error:', err);
       });
 
       mongoose.connection.on('disconnected', () => {
-        console.warn('MongoDB disconnected');
+        logger.warn('MongoDB disconnected');
       });
 
       mongoose.connection.on('reconnected', () => {
-        console.log('MongoDB reconnected');
+        logger.info('MongoDB reconnected');
       });
 
       return mongoose.connection;
@@ -103,7 +105,7 @@ class MongoAtlasConnection {
 
   async disconnect() {
     await mongoose.disconnect();
-    console.log('Disconnected from MongoDB Atlas');
+    logger.info('Disconnected from MongoDB Atlas');
   }
 
   getConnection(database = 'intelligence') {

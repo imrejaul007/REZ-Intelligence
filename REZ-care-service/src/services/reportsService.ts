@@ -302,7 +302,7 @@ export class ReportsService {
       merchants: merchants.map((m, i) => ({
         merchantId: `MERCHANT-${i + 1}`,
         ...m
-      })) as any,
+      })) as unknown,
       summary: {
         totalMerchants: 8,
         goodMerchants: 2,

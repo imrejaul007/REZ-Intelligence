@@ -74,7 +74,7 @@ export class RezCareIntegration {
       }
 
       return false;
-    } catch (error: any) {
+    } catch (error) {
       if (error.response?.status === 409) {
         logger.info(`[REZ Care] Already registered: ${this.config.SERVICE_NAME}`);
         return true;
@@ -101,7 +101,7 @@ export class RezCareIntegration {
           ...metrics,
         }
       );
-    } catch (error: any) {
+    } catch (error) {
       logger.debug(`[REZ Care] Metrics report failed: ${error.message}`);
     }
   }
@@ -109,7 +109,7 @@ export class RezCareIntegration {
   /**
    * Send ticket context to REZ Care for cross-referencing
    */
-  async syncTicketContext(ticketId: string, context: any): Promise<void> {
+  async syncTicketContext(ticketId: string, context): Promise<void> {
     try {
       await this.http.post(
         `${this.config.REZ_CARE_URL}/api/internal/expert/context`,
@@ -119,7 +119,7 @@ export class RezCareIntegration {
           context,
         }
       );
-    } catch (error: any) {
+    } catch (error) {
       logger.debug(`[REZ Care] Context sync failed: ${error.message}`);
     }
   }
@@ -127,13 +127,13 @@ export class RezCareIntegration {
   /**
    * Get customer history from REZ Care
    */
-  async getCustomerHistory(customerId: string): Promise<any> {
+  async getCustomerHistory(customerId: string): Promise<unknown> {
     try {
       const response = await this.http.get(
         `${this.config.REZ_CARE_URL}/api/internal/customer/${customerId}/history`
       );
       return response.data;
-    } catch (error: any) {
+    } catch (error) {
       logger.debug(`[REZ Care] Customer history fetch failed: ${error.message}`);
       return null;
     }
@@ -176,7 +176,7 @@ export class RezCareIntegration {
           ...conversation,
         }
       );
-    } catch (error: any) {
+    } catch (error) {
       logger.debug(`[REZ Care] Conversation log failed: ${error.message}`);
     }
   }

@@ -67,7 +67,7 @@ export const SALON_INTENTS: SalonIntent[] = [
       'availability',
       'when can i book',
       'next available',
-      'any openings',
+      'unknown openings',
       'available on {date}'
     ],
     requiredEntities: [],
@@ -352,7 +352,7 @@ export function extractEntities(message: string): EntityExtraction {
     }
   }
 
-  if (message.toLowerCase().includes('any') || message.toLowerCase().includes('no preference')) {
+  if (message.toLowerCase().includes('unknown') || message.toLowerCase().includes('no preference')) {
     entities.flexible = true;
   }
 

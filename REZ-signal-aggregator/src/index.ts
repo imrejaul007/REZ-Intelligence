@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import mongoose from 'mongoose';
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import winston from 'winston';
 import axios from 'axios';
 import { z } from 'zod';
@@ -36,6 +36,31 @@ export const SIGNAL_WEIGHTS = {
 export type SignalType = keyof typeof SIGNAL_WEIGHTS;
 
 // ============================================
+// Signal Source Reliability Configuration
+// ============================================
+
+// Historical reliability of each signal source (based on past accuracy)
+export const SIGNAL_SOURCE_RELIABILITY: Record<SignalType, number> = {
+  location: 0.85,      // Location data is fairly reliable
+  behavioral: 0.90,    // Behavioral signals are most reliable
+  social: 0.75,        // Social signals have moderate reliability
+  competitor: 0.70,    // Competitor signals have lower reliability
+  engagement: 0.88,   // Engagement signals are reliable
+};
+
+// Default freshness scores (freshness decays over time)
+const FRESHNESS_HALF_LIFE_MS = 5 * 60 * 1000; // 5 minutes
+
+// Causality strength (how much this signal type predicts outcomes)
+export const SIGNAL_CAUSALITY_STRENGTH: Record<SignalType, number> = {
+  location: 0.3,       // Low causality
+  behavioral: 0.7,     // High causality
+  social: 0.5,        // Moderate causality
+  competitor: 0.4,    // Low-moderate causality
+  engagement: 0.6,     // Moderate-high causality
+};
+
+// ============================================
 // Types & Interfaces
 // ============================================
 
@@ -47,12 +72,41 @@ export interface SignalScores {
   engagement: number;
 }
 
+// NEW: Signal Quality Metadata
+export interface SignalQualityMetadata {
+  reliability: number;      // 0-100, how reliable is this signal source
+  freshness: number;         // 0-100, how recent is the data (100 = just updated)
+  confidence: number;       // 0-100, our confidence in this score
+  causalityStrength: number; // 0-1, how strongly this signal causes outcomes
+  isStale: boolean;        // true if data is old
+  lastUpdated: Date;        // timestamp of last update
+}
+
+export interface SignalScoresWithQuality {
+  location: number;
+  behavioral: number;
+  social: number;
+  competitor: number;
+  engagement: number;
+  quality: {
+    location: SignalQualityMetadata;
+    behavioral: SignalQualityMetadata;
+    social: SignalQualityMetadata;
+    competitor: SignalQualityMetadata;
+    engagement: SignalQualityMetadata;
+  };
+}
+
 export interface UnifiedSignalScore {
   userId: string;
   signals: SignalScores;
   overall: number;
   segments: string[];
   computedAt: Date;
+  // NEW: Quality metadata
+  qualityScore: number;     // 0-100, overall quality of signals
+  signalCoverage: number;  // 0-100, what percentage of signals are available
+  dataAge: number;         // milliseconds since oldest signal update
 }
 
 export interface SegmentMembership {
@@ -68,6 +122,9 @@ export interface SignalSummary {
   topSignals: Array<{ type: SignalType; score: number }>;
   segmentCount: number;
   lastUpdated: Date;
+  // NEW
+  qualityScore: number;
+  signalCoverage: number;
 }
 
 export interface RealTimeSignals {
@@ -82,6 +139,8 @@ export interface RealTimeSignals {
     engagement: number;
   };
   timestamp: Date;
+  // NEW: Quality per signal
+  signalQualities: Record<SignalType, SignalQualityMetadata>;
 }
 
 // ============================================
@@ -113,6 +172,103 @@ export function computeOverall(signals: SignalScores): number {
     signals.competitor * SIGNAL_WEIGHTS.competitor +
     signals.engagement * SIGNAL_WEIGHTS.engagement
   );
+}
+
+// NEW: Compute quality metadata for a single signal
+function computeSignalQuality(
+  type: SignalType,
+  timestamp: Date,
+  score: number
+): SignalQualityMetadata {
+  const now = Date.now();
+  const ageMs = now - timestamp.getTime();
+  const ageHours = ageMs / (1000 * 60 * 60);
+
+  // Freshness: 100 when just updated, decays to 0 after 1 hour
+  const freshness = Math.max(0, Math.min(100, 100 - (ageHours * 100)));
+
+  // Confidence based on freshness and reliability
+  const reliability = SIGNAL_SOURCE_RELIABILITY[type] * 100;
+  const confidence = Math.round((freshness * 0.6 + reliability * 0.4));
+
+  // Causality strength (static per signal type)
+  const causalityStrength = SIGNAL_CAUSALITY_STRENGTH[type];
+
+  // Stale if data is older than 30 minutes
+  const isStale = ageMs > 30 * 60 * 1000;
+
+  return {
+    reliability,
+    freshness: Math.round(freshness),
+    confidence,
+    causalityStrength,
+    isStale,
+    lastUpdated: timestamp,
+  };
+}
+
+// NEW: Compute quality scores for all signals
+function computeSignalQualities(
+  fetchedSignals: FetchedSignal[]
+): Record<SignalType, SignalQualityMetadata> {
+  const qualities: Partial<Record<SignalType, SignalQualityMetadata>> = {};
+
+  for (const signal of fetchedSignals) {
+    qualities[signal.type] = computeSignalQuality(
+      signal.type,
+      signal.timestamp,
+      signal.score
+    );
+  }
+
+  // Ensure all signal types have quality metadata
+  const allTypes: SignalType[] = ['location', 'behavioral', 'social', 'competitor', 'engagement'];
+  for (const type of allTypes) {
+    if (!qualities[type]) {
+      qualities[type] = {
+        reliability: SIGNAL_SOURCE_RELIABILITY[type] * 100,
+        freshness: 0,
+        confidence: 0,
+        causalityStrength: SIGNAL_CAUSALITY_STRENGTH[type],
+        isStale: true,
+        lastUpdated: new Date(0),
+      };
+    }
+  }
+
+  return qualities as Record<SignalType, SignalQualityMetadata>;
+}
+
+// NEW: Compute overall quality score
+function computeOverallQuality(
+  qualities: Record<SignalType, SignalQualityMetadata>,
+  fetchedSignals: FetchedSignal[]
+): { qualityScore: number; signalCoverage: number; dataAge: number } {
+  const types: SignalType[] = ['location', 'behavioral', 'social', 'competitor', 'engagement'];
+
+  // Signal coverage: what percentage of signals are present
+  const presentSignals = fetchedSignals.length;
+  const signalCoverage = (presentSignals / types.length) * 100;
+
+  // Average confidence across all signals
+  let totalConfidence = 0;
+  let oldestTimestamp = Date.now();
+
+  for (const type of types) {
+    const quality = qualities[type];
+    totalConfidence += quality.confidence;
+    if (quality.lastUpdated.getTime() < oldestTimestamp) {
+      oldestTimestamp = quality.lastUpdated.getTime();
+    }
+  }
+
+  const avgConfidence = totalConfidence / types.length;
+  const qualityScore = Math.round(avgConfidence * (signalCoverage / 100));
+
+  // Data age: milliseconds since oldest signal
+  const dataAge = Date.now() - oldestTimestamp;
+
+  return { qualityScore, signalCoverage: Math.round(signalCoverage), dataAge };
 }
 
 export function evaluateSegments(signals: SignalScores, overall: number): string[] {
@@ -179,6 +335,10 @@ const unifiedSignalSchema = new mongoose.Schema<UnifiedSignalScore>({
   overall: { type: Number, default: 0, min: 0, max: 100 },
   segments: { type: [String], default: [] },
   computedAt: { type: Date, default: Date.now },
+  // NEW: Quality metadata
+  qualityScore: { type: Number, default: 0, min: 0, max: 100 },
+  signalCoverage: { type: Number, default: 0, min: 0, max: 100 },
+  dataAge: { type: Number, default: 0 }, // milliseconds
 });
 
 const segmentMembershipSchema = new mongoose.Schema<SegmentMembership & { userId: string }>({
@@ -398,12 +558,20 @@ async function aggregateSignals(userId: string, bypassCache: boolean = false): P
   // Evaluate segments
   const segments = evaluateSegments(signals, overall);
 
+  // NEW: Compute quality metadata
+  const signalQualities = computeSignalQualities(fetchedSignals);
+  const { qualityScore, signalCoverage, dataAge } = computeOverallQuality(signalQualities, fetchedSignals);
+
   const unifiedSignal: UnifiedSignalScore = {
     userId,
     signals,
     overall,
     segments,
     computedAt: new Date(),
+    // NEW: Quality metadata
+    qualityScore,
+    signalCoverage,
+    dataAge,
   };
 
   // Save to MongoDB
@@ -488,12 +656,16 @@ async function getRealTimeSignals(userId: string): Promise<RealTimeSignals> {
     engagement: signals.engagement > 70 ? 1 : signals.engagement < 30 ? -1 : 0,
   };
 
+  // NEW: Compute signal qualities for real-time
+  const signalQualities = computeSignalQualities(fetchedSignals);
+
   const realtimeSignals: RealTimeSignals = {
     userId,
     signals,
     overall,
     velocity,
     timestamp: new Date(),
+    signalQualities,
   };
 
   // Cache with short TTL
@@ -581,6 +753,9 @@ app.get('/signals/:userId/summary', async (req: Request, res: Response) => {
       topSignals,
       segmentCount: signals.segments.length,
       lastUpdated: signals.computedAt,
+      // NEW
+      qualityScore: signals.qualityScore,
+      signalCoverage: signals.signalCoverage,
     };
 
     res.json({
@@ -593,6 +768,43 @@ app.get('/signals/:userId/summary', async (req: Request, res: Response) => {
       return;
     }
     logger.error('Error fetching signal summary:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// GET /signals/quality/:userId - Get signal quality metadata (NEW)
+app.get('/signals/quality/:userId', async (req: Request, res: Response) => {
+  try {
+    const { userId } = userIdParamsSchema.parse(req.params);
+
+    // Fetch fresh signals to get quality
+    const signalPromises = SIGNAL_SOURCES.map(source => fetchSignalFromSource(source, userId));
+    const fetchedSignals = await Promise.all(signalPromises);
+    const signalQualities = computeSignalQualities(fetchedSignals);
+    const { qualityScore, signalCoverage, dataAge } = computeOverallQuality(signalQualities, fetchedSignals);
+
+    res.json({
+      success: true,
+      data: {
+        userId,
+        qualityScore,
+        signalCoverage,
+        dataAgeMs: dataAge,
+        signalQualities,
+        sources: fetchedSignals.map(s => ({
+          type: s.type,
+          score: s.score,
+          timestamp: s.timestamp,
+          quality: signalQualities[s.type],
+        })),
+      },
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ success: false, error: error.errors });
+      return;
+    }
+    logger.error('Error fetching signal quality:', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });

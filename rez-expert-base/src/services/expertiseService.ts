@@ -180,7 +180,7 @@ After analyzing "${intent.input}", I recommend considering the following factors
 2. Common pitfalls to avoid
 3. Key considerations for your situation
 
-Would you like me to elaborate on any of these recommendations?`;
+Would you like me to elaborate on unknown of these recommendations?`;
   }
 
   private generateExplanationResponse(intent: IIntent, domain: string): string {

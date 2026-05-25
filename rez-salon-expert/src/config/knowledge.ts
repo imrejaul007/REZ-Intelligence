@@ -414,7 +414,7 @@ export const MAKEUP_SERVICES: SalonService[] = [
     name: 'Special Occasion Makeup',
     category: 'makeup',
     subcategory: 'occasion',
-    description: 'Glamorous makeup for parties, proms, galas, or any special event.',
+    description: 'Glamorous makeup for parties, proms, galas, or unknown special event.',
     duration: 60,
     price: 100,
     priceRange: { min: 75, max: 175 },

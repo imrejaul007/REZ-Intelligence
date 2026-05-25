@@ -63,7 +63,7 @@ export async function sendSignal(userId: string, action: string, data: object): 
   });
 }
 
-export async function getUserProfile(userId: string): Promise<any> {
+export async function getUserProfile(userId: string): Promise<unknown> {
   const response = await axios.get(`${ECOSYSTEM_URL}/api/v1/profile/${userId}`);
   return response.data.profile;
 }

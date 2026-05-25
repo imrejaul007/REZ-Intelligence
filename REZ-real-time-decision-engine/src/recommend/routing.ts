@@ -15,7 +15,7 @@ export interface RecommendationContext {
   viewedItems?: string[];
   cartItems?: CartItem[];
   searchQuery?: string;
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
   timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'night';
   dayOfWeek?: 'weekday' | 'weekend';
   deviceType?: 'mobile' | 'desktop' | 'tablet';
@@ -46,7 +46,7 @@ export interface Recommendation {
   price: number;
   title: string;
   imageUrl?: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface RecommendationResult {
@@ -257,7 +257,7 @@ export class RecommendationRouter {
 
   private async generateByStrategy(
     strategy: RecommendationStrategy,
-    context: RecommendationContext & { userPreferences?: any; userHistory?: any },
+    context: RecommendationContext & { userPreferences?; userHistory?: unknown },
     limit: number
   ): Promise<Recommendation[]> {
     switch (strategy) {
@@ -282,7 +282,7 @@ export class RecommendationRouter {
     }
   }
 
-  private async generatePersonalized(context: any, limit: number): Promise<Recommendation[]> {
+  private async generatePersonalized(context, limit: number): Promise<Recommendation[]> {
     // In production, this would call ML model / recommendation service
     const userPreferences = context.userPreferences || {};
 
@@ -317,7 +317,7 @@ export class RecommendationRouter {
     ].slice(0, limit);
   }
 
-  private async generateTrending(context: any, limit: number): Promise<Recommendation[]> {
+  private async generateTrending(context, limit: number): Promise<Recommendation[]> {
     return [
       {
         itemId: `TREND-1-${Date.now()}`,
@@ -340,7 +340,7 @@ export class RecommendationRouter {
     ].slice(0, limit);
   }
 
-  private async generateSimilar(context: any, limit: number): Promise<Recommendation[]> {
+  private async generateSimilar(context, limit: number): Promise<Recommendation[]> {
     const viewedItems = context.viewedItems || [];
     return [
       {
@@ -355,7 +355,7 @@ export class RecommendationRouter {
     ].slice(0, limit);
   }
 
-  private async generateFrequentlyBoughtTogether(context: any, limit: number): Promise<Recommendation[]> {
+  private async generateFrequentlyBoughtTogether(context, limit: number): Promise<Recommendation[]> {
     const cartItems = context.cartItems || [];
     return cartItems.flatMap(cartItem => [
       {
@@ -370,7 +370,7 @@ export class RecommendationRouter {
     ]).slice(0, limit);
   }
 
-  private async generateNewArrivals(context: any, limit: number): Promise<Recommendation[]> {
+  private async generateNewArrivals(context, limit: number): Promise<Recommendation[]> {
     return [
       {
         itemId: `NEW-1-${Date.now()}`,
@@ -384,7 +384,7 @@ export class RecommendationRouter {
     ].slice(0, limit);
   }
 
-  private async generateCrossSell(context: any, limit: number): Promise<Recommendation[]> {
+  private async generateCrossSell(context, limit: number): Promise<Recommendation[]> {
     const cartItems = context.cartItems || [];
     return cartItems.map(cartItem => ({
       itemId: `CROSS-${cartItem.itemId}`,
@@ -397,7 +397,7 @@ export class RecommendationRouter {
     })).slice(0, limit);
   }
 
-  private async generateUpsell(context: any, limit: number): Promise<Recommendation[]> {
+  private async generateUpsell(context, limit: number): Promise<Recommendation[]> {
     const cartItems = context.cartItems || [];
     return cartItems.map(cartItem => ({
       itemId: `UPSELL-${cartItem.itemId}`,
@@ -410,7 +410,7 @@ export class RecommendationRouter {
     })).slice(0, limit);
   }
 
-  private async generateContextual(context: any, limit: number): Promise<Recommendation[]> {
+  private async generateContextual(context, limit: number): Promise<Recommendation[]> {
     const timeOfDay = context.timeOfDay || 'afternoon';
     const dayOfWeek = context.dayOfWeek || 'weekday';
 
@@ -444,7 +444,7 @@ export class RecommendationRouter {
   private scoreAndRank(
     recommendations: Recommendation[],
     context: RecommendationContext,
-    userPreferences: any
+    userPreferences: unknown
   ): Recommendation[] {
     // Apply contextual boosting
     const boosted = recommendations.map(rec => {
@@ -508,7 +508,7 @@ export class RecommendationRouter {
     return parts.join(', ');
   }
 
-  private async fetchUserPreferences(userId: string): Promise<any> {
+  private async fetchUserPreferences(userId: string): Promise<unknown> {
     // Would fetch from User Service / Preference Service
     return {
       preferredCategories: ['electronics', 'accessories'],
@@ -517,7 +517,7 @@ export class RecommendationRouter {
     };
   }
 
-  private async fetchUserHistory(userId: string): Promise<any> {
+  private async fetchUserHistory(userId: string): Promise<unknown> {
     // Would fetch from User Service / Analytics
     return {
       recentViews: [],

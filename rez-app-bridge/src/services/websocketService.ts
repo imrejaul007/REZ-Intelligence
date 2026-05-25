@@ -75,7 +75,7 @@ export class WebSocketService {
 
     // Setup global notification emitter
     if (typeof global !== 'undefined') {
-      (global as any).emitNotification = (userId: string, notification: unknown) => {
+      (global as unknown).emitNotification = (userId: string, notification: unknown) => {
         this.emitToUser(userId, 'notification', notification);
       };
     }

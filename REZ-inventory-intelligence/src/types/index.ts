@@ -137,7 +137,7 @@ export type StockMovement = z.infer<typeof StockMovementSchema>;
 // API Response Types
 export const ApiResponseSchema = z.object({
   success: z.boolean(),
-  data: z.any().optional(),
+  data: z.unknown().optional(),
   error: z.string().optional(),
   message: z.string().optional(),
 });

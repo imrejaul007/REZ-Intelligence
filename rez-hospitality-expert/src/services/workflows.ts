@@ -39,14 +39,14 @@ export const CHECK_IN_WORKFLOW: CheckInWorkflow = {
     {
       order: 3,
       action: 'CONFIRM_RESERVATION',
-      prompt: 'Review room type, dates, rate, and any special requests or packages.',
+      prompt: 'Review room type, dates, rate, and unknown special requests or packages.',
       requiredFields: ['roomType', 'checkInDate', 'checkOutDate', 'rate'],
       optionalFields: ['packageDetails', 'promoCode'],
     },
     {
       order: 4,
       action: 'COLLECT_PAYMENT',
-      prompt: 'Process any outstanding balance or take payment authorization.',
+      prompt: 'Process unknown outstanding balance or take payment authorization.',
       requiredFields: ['paymentMethod', 'authorization'],
       optionalFields: ['partialPayment', 'depositAmount'],
     },
@@ -105,14 +105,14 @@ export const CHECK_OUT_WORKFLOW: CheckOutWorkflow = {
     {
       order: 2,
       action: 'REVIEW_CHARGES',
-      prompt: 'Review all charges: room, taxes, incidentals, and any additional services.',
+      prompt: 'Review all charges: room, taxes, incidentals, and unknown additional services.',
       requiredFields: ['folio'],
       optionalFields: ['itemizedBill'],
     },
     {
       order: 3,
       action: 'HANDLE_INCIDENTS',
-      prompt: 'Address any billing questions or disputes.',
+      prompt: 'Address unknown billing questions or disputes.',
       requiredFields: [],
       optionalFields: ['disputeReason', 'adjustmentRequest'],
     },
@@ -205,7 +205,7 @@ export const ROOM_SERVICE_WORKFLOW = {
     {
       order: 2,
       action: 'CONFIRM_ORDER',
-      prompt: 'Repeat order back for confirmation, note any special requests.',
+      prompt: 'Repeat order back for confirmation, note unknown special requests.',
       requiredFields: ['items'],
       optionalFields: ['specialInstructions'],
     },

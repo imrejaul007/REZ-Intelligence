@@ -232,7 +232,7 @@ app.get('/api/inventory/:id/sync', async (req, res) => {
 app.get('/api/products', async (req, res) => {
   const { merchant_id, category, vertical, location_id } = req.query;
 
-  const query: any = {};
+  const query: unknown = {};
   if (merchant_id) query.merchant_id = merchant_id;
   if (category) query.categories = category;
   if (vertical) query.verticals = vertical;

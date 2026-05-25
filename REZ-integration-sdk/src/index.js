@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 'use strict';
 
 /**
@@ -636,6 +638,6 @@ module.exports = {
 //   window.REZIntegration = REZIntegration;
 // }
 
-console.log('REZ Integration SDK loaded. Initialize with:');
-console.log('  const rez = new REZIntegration({ appId: "your-app", apiKey: "your-key" });');
-console.log('  await rez.init({ userId: "user123" });');
+logger.info('REZ Integration SDK loaded. Initialize with:');
+logger.info('  const rez = new REZIntegration({ appId: "your-app", apiKey: "your-key" });');
+logger.info('  await rez.init({ userId: "user123" });');

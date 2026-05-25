@@ -3,7 +3,8 @@
  * REST API for serving machine learning features in the ReZ platform
  */
 
-import express, { Application, Request, Response, NextFunction } from 'express';
+import express, { Application, Request, Response, NextFunction } import logger from './utils/logger';
+import from 'express';
 import mongoose, { ConnectOptions } from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -59,7 +60,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
   res.on('finish', () => {
     const duration = Date.now() - start;
-    console.log(`${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms`);
+    logger.info(`${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms`);
   });
   next();
 });
@@ -249,18 +250,18 @@ const connectDatabase = async (): Promise<void> => {
     };
 
     await mongoose.connect(appConfig.mongoUri, options);
-    console.log('Connected to MongoDB');
+    logger.info('Connected to MongoDB');
 
     mongoose.connection.on('error', (err) => {
       console.error('MongoDB connection error:', err);
     });
 
     mongoose.connection.on('disconnected', () => {
-      console.warn('MongoDB disconnected. Attempting to reconnect...');
+      logger.warn('MongoDB disconnected. Attempting to reconnect...');
     });
 
     mongoose.connection.on('reconnected', () => {
-      console.log('MongoDB reconnected');
+      logger.info('MongoDB reconnected');
     });
   } catch (error) {
     console.error('Failed to connect to MongoDB:', error);
@@ -270,12 +271,12 @@ const connectDatabase = async (): Promise<void> => {
 
 // Graceful shutdown
 const gracefulShutdown = async (signal: string): Promise<void> => {
-  console.log(`${signal} received. Starting graceful shutdown...`);
+  logger.info(`${signal} received. Starting graceful shutdown...`);
 
   try {
     // Close MongoDB connection
     await mongoose.connection.close();
-    console.log('MongoDB connection closed');
+    logger.info('MongoDB connection closed');
 
     process.exit(0);
   } catch (error) {
@@ -295,7 +296,7 @@ const startServer = async (): Promise<void> => {
 
     // Start Express server
     app.listen(appConfig.port, () => {
-      console.log(`
+      logger.info(`
 ╔══════════════════════════════════════════════════════════════╗
 ║                    ML Feature Store Server                     ║
 ╠══════════════════════════════════════════════════════════════╣

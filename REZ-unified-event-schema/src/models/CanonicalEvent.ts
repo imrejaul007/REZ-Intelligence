@@ -46,7 +46,7 @@ export interface CanonicalEvent {
   country?: string;
 
   // Metadata
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   tags: string[];
 }
 

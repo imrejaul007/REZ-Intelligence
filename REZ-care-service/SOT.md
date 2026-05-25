@@ -1,6 +1,6 @@
 # REZ Care Service - Source of Truth
 # Complete Technical Documentation
-# Version: 3.1.0 | Updated: May 22, 2026
+# Version: 3.3.0 | Updated: May 22, 2026
 
 ---
 
@@ -25,7 +25,7 @@
 
 ## Overview
 
-**REZ Care Service v3.1.0** is an AI Commerce Recovery & Customer Intelligence Platform that provides unified customer support across all channels.
+**REZ Care Service v3.3.0** is an AI Commerce Recovery & Customer Intelligence Platform that provides unified customer support across all channels.
 
 ### Service Information
 
@@ -53,6 +53,9 @@
 - Unified profile (via Unified Profile)
 - Workflow automation (via Workflow Builder)
 - RAG/Knowledge (via Vector Search)
+- Subscription billing (multi-tenant SaaS)
+- Usage-based overage pricing
+- MRR/ARR tracking
 
 ---
 
@@ -132,7 +135,8 @@ REZ-care-service/
 │   │   ├── clientRoutes.ts           # Multi-tenant (11K lines)
 │   │   ├── merchantRoutes.ts         # Merchant portal (12K lines)
 │   │   ├── upsellRoutes.ts           # Upsells (4.6K lines)
-│   │   └── smartUpsellRoutes.ts      # Smart upsells (6.2K lines)
+│   │   ├── smartUpsellRoutes.ts      # Smart upsells (6.2K lines)
+│   │   └── subscriptionRoutes.ts     # Subscription billing (430+ lines)
 │   │
 │   ├── services/
 │   │   ├── agentManagementService.ts    # Agent routing (16K)
@@ -161,6 +165,7 @@ REZ-care-service/
 │   │   ├── merchantPortal.ts            # Merchant portal (9.9K)
 │   │   ├── emailPoller.ts               # Email polling (6K)
 │   │   ├── supportMetricsService.ts     # Metrics (9.2K)
+│   │   ├── subscriptionService.ts       # Subscription billing (520+)
 │   │   ├── serviceConnector.ts          # Service connector
 │   │   └── serviceIntegrations.ts       # Integration helper
 │   │
@@ -374,6 +379,35 @@ REZ-care-service/
 | `/api/merchant` | Merchant portal |
 | `/api/upsell` | Upsell engine |
 | `/api/smart-upsell` | Smart upsell engine |
+| `/api/subscription` | Subscription billing & tiers |
+
+### Subscription (`/api/subscription/*`)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/plans` | Get all pricing plans |
+| GET | `/plans/:tier` | Get plan by tier |
+| POST | `/` | Create subscription (start trial) |
+| GET | `/:clientId` | Get subscription for client |
+| GET | `/` | Get all subscriptions (admin) |
+| POST | `/:clientId/upgrade` | Upgrade tier |
+| POST | `/:clientId/billing` | Change billing cycle |
+| POST | `/:clientId/cancel` | Cancel subscription |
+| POST | `/:clientId/convert` | Convert trial to paid |
+| GET | `/:clientId/usage` | Get current month usage |
+| GET | `/:clientId/usage/history` | Get usage history |
+| POST | `/:clientId/usage` | Record usage |
+| GET | `/:clientId/billing/amount` | Calculate billing amount |
+| GET | `/:clientId/features/:feature` | Check feature access |
+| POST | `/:clientId/check-limits` | Check usage limits |
+| GET | `/admin/stats` | Get subscription statistics |
+| POST | `/:clientId/convert` | Convert trial to paid (initiate payment) |
+| POST | `/:clientId/confirm-payment` | Confirm payment after webhook |
+| POST | `/:clientId/refund` | Process refund |
+| GET | `/:clientId/invoices` | Get client invoices |
+| GET | `/invoices/:invoiceId` | Get invoice by ID |
+| POST | `/webhook/razorpay` | Razorpay webhook handler |
+| POST | `/webhook/payment` | RABTUL payment webhook handler |
 
 ---
 
@@ -409,12 +443,16 @@ REZ-care-service/
 | `merchantPortal.ts` | 9.9K | Merchant portal |
 | `emailPoller.ts` | 6K | Email polling |
 | `supportMetricsService.ts` | 9.2K | Metrics |
+| `subscriptionService.ts` | 520+ | Subscription & billing |
 
 ### Integration Services (src/integrations/)
 
 | Service | Connects To | Purpose |
 |---------|-------------|---------|
 | `ecosystemServices.ts` | Memory (4201), Profile (4060), Workflow (4045), Vector (4127) | Ecosystem integration |
+| `rezIntelligence.ts` | Intent (4018), Predictive (4123), Signals (4121) | AI services |
+| `rabtulPlatform.ts` | Auth, Wallet, Notifications, Profile | RABTUL platform |
+| `rabtulPayment.ts` | Payment (4001) | RABTUL payment gateway |
 | `rezIntelligence.ts` | Intent (4018), Predictive (4123), Signals (4121) | AI services |
 | `rabtulPlatform.ts` | Auth, Wallet, Notifications, Profile | RABTUL platform |
 
@@ -563,6 +601,89 @@ const health = await checkAllServicesHealth();
 
 ---
 
+## RABTUL Payment Integration (src/rabtulPayment.ts)
+
+### Overview
+
+REZ Care integrates with **RABTUL Payment Service (Port 4001)** for payment processing via Razorpay.
+
+### Features
+
+- **Payment Initiation**: Create payment orders via Razorpay
+- **Refund Processing**: Process refunds through Razorpay
+- **Invoice Generation**: Generate and track invoices
+- **Webhook Handling**: Handle payment success/failure events
+
+### Payment Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                         PAYMENT FLOW                                             │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  1. TRIAL EXPIRES / USER UPGRADES                                               │
+│     POST /api/subscription/:clientId/convert                                     │
+│                                                                                  │
+│  2. REZ CARE → RABTUL PAYMENT                                                   │
+│     POST /api/pay/initiate (Razorpay order)                                      │
+│     Returns: razorpayOrderId, payment amount                                     │
+│                                                                                  │
+│  3. USER COMPLETES PAYMENT                                                       │
+│     Via Razorpay checkout page                                                   │
+│                                                                                  │
+│  4. RAZORPAY → RABTUL → REZ CARE WEBHOOK                                        │
+│     POST /api/subscription/webhook/razorpay                                       │
+│     Event: payment.captured                                                       │
+│                                                                                  │
+│  5. REZ CARE CONFIRMS SUBSCRIPTION                                              │
+│     subscriptionService.confirmPayment()                                         │
+│     status → 'active'                                                           │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### API Usage
+
+```typescript
+import { rabtulPayment, invoiceGenerator } from './rabtulPayment';
+
+// Create payment order
+const result = await rabtulPayment.createPaymentOrder({
+  clientId: 'merchant_123',
+  amount: 4999,
+  description: 'REZ Care Pro subscription',
+  metadata: { subscriptionId: 'sub_123', tier: 'pro' }
+});
+// Returns: { success: true, razorpayOrderId: 'order_xxx' }
+
+// Process refund
+const refund = await rabtulPayment.processRefund({
+  paymentId: 'pay_xxx',
+  amount: 1000,
+  reason: 'Customer requested'
+});
+// Returns: { success: true, refundId: 'rfnd_xxx' }
+
+// Generate invoice
+const invoice = invoiceGenerator.generateInvoice({
+  subscriptionId: 'sub_xxx',
+  clientId: 'merchant_123',
+  amount: 4999,
+  periodStart: new Date(),
+  periodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+});
+```
+
+### Webhook Events
+
+| Event | Action |
+|-------|--------|
+| `payment.captured` | Activate subscription |
+| `payment.failed` | Log failure, notify user |
+| `refund.processed` | Update invoice, notify user |
+
+---
+
 ## Routes
 
 ### Route Mounting (src/index.ts)
@@ -587,6 +708,9 @@ app.use('/api/merchant', merchantRoutes);
 // Upsell Routes
 app.use('/api/upsell', upsellRoutes);
 app.use('/api/smart-upsell', smartUpsellRoutes);
+
+// Subscription & Billing Routes
+app.use('/api/subscription', subscriptionRoutes);
 
 // WhatsApp Routes
 app.use('/api/whatsapp', whatsappRoutes);
@@ -684,6 +808,110 @@ interface KnowledgeSearchResult {
   category: string;
   similarity: number;
   metadata?: Record<string, any>;
+}
+```
+
+### Subscription Types (src/services/subscriptionService.ts)
+
+```typescript
+// Subscription Tier
+enum SubscriptionTier {
+  LITE = 'lite',
+  PRO = 'pro',
+  ENTERPRISE = 'enterprise'
+}
+
+// Billing Cycle
+enum BillingCycle {
+  MONTHLY = 'monthly',
+  YEARLY = 'yearly'
+}
+
+// Subscription
+interface Subscription {
+  id: string;
+  clientId: string;
+  tier: SubscriptionTier;
+  status: 'active' | 'trial' | 'suspended' | 'cancelled';
+  billingCycle: BillingCycle;
+  startedAt: Date;
+  expiresAt: Date;
+  trialEndsAt?: Date;
+  features: string[];
+  limits: SubscriptionLimits;
+}
+
+// Usage Metrics
+interface UsageMetrics {
+  clientId: string;
+  month: string; // YYYY-MM
+  ticketsUsed: number;
+  agentsUsed: number;
+  brandsUsed: number;
+  apiCalls: number;
+  storageUsed: number;
+  overage: OverageMetrics;
+}
+
+// Overage Metrics
+interface OverageMetrics {
+  ticketsOverage: number;
+  apiCallsOverage: number;
+  storageOverage: number;
+}
+
+// Pricing Plan
+interface PricingPlan {
+  tier: SubscriptionTier;
+  name: string;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  currency: string;
+  limits: SubscriptionLimits;
+  features: string[];
+}
+
+// Pricing Plans
+const PRICING_PLANS = {
+  lite: {
+    tier: 'lite',
+    name: 'REZ Care Lite',
+    monthlyPrice: 999,    // ₹999/month
+    yearlyPrice: 9990,    // ₹9990/year (17% off)
+    limits: { ticketsPerMonth: 100, agents: 2, brands: 1, apiCalls: 10000, storage: 100 }
+  },
+  pro: {
+    tier: 'pro',
+    name: 'REZ Care Pro',
+    monthlyPrice: 4999,   // ₹4,999/month
+    yearlyPrice: 49990,   // ₹49,990/year
+    limits: { ticketsPerMonth: -1, agents: 10, brands: 3, apiCalls: 100000, storage: 1000 }
+  },
+  enterprise: {
+    tier: 'enterprise',
+    name: 'REZ Care Enterprise',
+    monthlyPrice: 0,      // Custom pricing
+    yearlyPrice: 0,
+    limits: { ticketsPerMonth: -1, agents: -1, brands: -1, apiCalls: -1, storage: -1 }
+  }
+};
+
+// Overage Pricing
+const OVERAGE_PRICING = {
+  tickets: 10,           // ₹10 per ticket over limit
+  apiCalls: 0.01,        // ₹0.01 per API call over limit
+  storage: 1,            // ₹1 per MB over limit
+  additionalAgent: 499,  // ₹499/month per additional agent
+  additionalBrand: 999   // ₹999/month per additional brand
+};
+
+// Subscription Statistics
+interface SubscriptionStats {
+  totalSubscriptions: number;
+  byTier: Record<SubscriptionTier, number>;
+  byStatus: Record<string, number>;
+  totalMRR: number;
+  totalARR: number;
 }
 ```
 
@@ -799,6 +1027,18 @@ WHATSAPP_WEBHOOK_VERIFY_TOKEN=
 - [x] Platform comparison
 - [x] Agent leaderboard
 - [x] Merchant reports
+
+### Revenue & Billing
+- [x] Multi-tier subscription (Lite/Pro/Enterprise)
+- [x] Monthly/Yearly billing cycles
+- [x] Usage-based limits (tickets, agents, brands, API, storage)
+- [x] Overage pricing
+- [x] Trial periods (14 days, 25 tickets)
+- [x] Subscription upgrade/downgrade
+- [x] Subscription cancellation
+- [x] Billing amount calculation
+- [x] MRR/ARR tracking
+- [x] Subscription statistics dashboard
 
 ### Autonomous Actions
 - [x] Auto-refund
@@ -1016,6 +1256,305 @@ Before starting any work on REZ Care:
 
 ---
 
+## Human-Agent Copilot UI
+
+**Location:** `RTNM-Group/rez-care-command-center/`
+
+### Overview
+
+The Human-Agent Copilot is an AI-powered unified workspace for support agents.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                     REZ Care Human-Agent Copilot                                     │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐  ┌─────────────────────────┐  ┌─────────────────────┐            │
+│  │  TICKET     │  │  CONVERSATION +         │  │  CUSTOMER 360       │            │
+│  │  QUEUE      │  │  RESPONSE COMPOSER      │  │  CONTEXT PANEL      │            │
+│  │             │  │                         │  │                     │            │
+│  │  - Filters  │  │  - Message thread       │  │  - Identity         │            │
+│  │  - Priority │  │  - AI suggestions       │  │  - LTV/Risk        │            │
+│  │  - Sentiment│  │  - Quick actions       │  │  - Segments        │            │
+│  │  - Status   │  │  - KB articles         │  │  - History          │            │
+│  └─────────────┘  └─────────────────────────┘  └─────────────────────┘            │
+│                                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────────────┐  │
+│  │  AI COPILOT BAR                                                              │  │
+│  │  [ Refund ] [ Compensate ] [ Escalate ] [ Note ] [ Transfer ] [ Resolve ]    │  │
+│  └─────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### File Structure
+
+```
+rez-care-command-center/
+├── app/
+│   ├── copilot/
+│   │   └── page.tsx              # Copilot page route
+│   ├── components/
+│   │   └── copilot/
+│   │       ├── AgentWorkspace.tsx    # Main 3-column layout
+│   │       ├── TicketQueue.tsx       # Left column - ticket list
+│   │       ├── ConversationThread.tsx # Center - messages + composer
+│   │       ├── Customer360Panel.tsx  # Right - customer context
+│   │       ├── AICopilotBar.tsx    # Bottom - AI suggestions + actions
+│   │       ├── ResponseComposer.tsx  # Text input with AI suggestions
+│   │       └── index.ts             # Export barrel
+│   ├── lib/
+│   │   └── copilotApi.ts           # API client functions
+│   └── layout.tsx
+└── docs/
+    └── COPILOT.md                   # Copilot documentation
+```
+
+### Components
+
+| Component | Purpose |
+|-----------|---------|
+| `AgentWorkspace.tsx` | Main 3-column layout, state management, Socket.IO |
+| `TicketQueue.tsx` | Filterable ticket list with real-time updates |
+| `ConversationThread.tsx` | Message thread with AI suggestions |
+| `Customer360Panel.tsx` | Customer context with overview/timeline/history tabs |
+| `AICopilotBar.tsx` | One-click actions (Refund, Compensate, Escalate, Resolve) |
+| `ResponseComposer.tsx` | Text input with AI ghost text suggestions |
+
+### Features
+
+- [x] 3-column workspace layout
+- [x] Ticket queue with filters (status, priority, sentiment)
+- [x] Conversation thread with message bubbles
+- [x] Customer 360 panel (identity, value, risk, loyalty)
+- [x] AI suggestion banner
+- [x] Response composer with suggestion integration
+- [x] One-click actions (Refund, Compensate, Escalate)
+- [x] WebSocket real-time updates
+- [x] Knowledge base article previews
+- [x] Navigation between Dashboard and Copilot views
+
+### Running
+
+```bash
+cd RTNM-Group/rez-care-command-center
+npm install
+npm run dev
+```
+
+Access:
+- Dashboard: http://localhost:3000/
+- Copilot: http://localhost:3000/copilot
+- Subscription: http://localhost:3000/subscription
+
+---
+
+## Revenue Layer (Subscription & Billing)
+
+**Location:** `RTNM-Group/rez-care-command-center/app/subscription/`
+
+### Overview
+
+The Revenue Layer implements multi-tenant SaaS monetization with tiered subscription plans, usage tracking, and billing management.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                         REZ CARE REVENUE LAYER                                       │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────────────┐   │
+│  │                         PRICING TIERS                                        │   │
+│  ├─────────────────────────────────────────────────────────────────────────────┤   │
+│  │                                                                              │   │
+│  │  ┌─────────────┐   ┌─────────────┐   ┌─────────────────────────────┐       │   │
+│  │  │    LITE     │   │     PRO     │   │        ENTERPRISE           │       │   │
+│  │  │   ₹999/mo   │   │   ₹4,999/mo │   │        Custom               │       │   │
+│  │  │             │   │             │   │                             │       │   │
+│  │  │ • 100 tickets│   │ • Unlimited │   │ • Unlimited everything     │       │   │
+│  │  │ • 2 agents   │   │ • 10 agents │   │ • White-label               │       │   │
+│  │  │ • 1 brand    │   │ • 3 brands  │   │ • Dedicated SLA             │       │   │
+│  │  │ • 10K API    │   │ • 100K API  │   │ • Custom integrations       │       │   │
+│  │  │ • 100MB      │   │ • 1GB       │   │ • Account manager           │       │   │
+│  │  └─────────────┘   └─────────────┘   └─────────────────────────────┘       │   │
+│  └─────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────────────┐   │
+│  │                         SUBSCRIPTION FLOW                                    │   │
+│  ├─────────────────────────────────────────────────────────────────────────────┤   │
+│  │                                                                              │   │
+│  │  TRIAL (14 days)  ──→  ACTIVE  ──→  CANCELLED (grace period)               │   │
+│  │      ↓                   ↓                                                 │   │
+│  │  Upgrade           Change tier / cycle                                      │   │
+│  │                                                                              │   │
+│  └─────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────────────┐   │
+│  │                         USAGE TRACKING                                       │   │
+│  ├─────────────────────────────────────────────────────────────────────────────┤   │
+│  │                                                                              │   │
+│  │  Per-month metrics: tickets, agents, brands, API calls, storage             │   │
+│  │  Overage pricing: ₹10/ticket, ₹0.01/API, ₹1/MB                            │   │
+│  │                                                                              │   │
+│  └─────────────────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### File Structure
+
+```
+rez-care-command-center/
+├── app/
+│   └── subscription/
+│       └── page.tsx              # Subscription dashboard (510 lines)
+└── (Backend)
+    └── REZ-care-service/src/
+        ├── services/
+        │   └── subscriptionService.ts  # Subscription logic (520+ lines)
+        └── routes/
+            └── subscriptionRoutes.ts     # API endpoints (430+ lines)
+```
+
+### Pricing Plans
+
+| Tier | Monthly | Yearly | Savings | Tickets | Agents | Brands | API | Storage |
+|------|---------|--------|---------|---------|--------|--------|-----|---------|
+| **Lite** | ₹999 | ₹9,990 | 17% | 100/mo | 2 | 1 | 10K | 100MB |
+| **Pro** | ₹4,999 | ₹49,990 | 17% | Unlimited | 10 | 3 | 100K | 1GB |
+| **Enterprise** | Custom | Custom | - | Unlimited | Unlimited | Unlimited | Unlimited | Unlimited |
+
+### Overage Pricing
+
+| Resource | Rate |
+|----------|------|
+| Additional tickets | ₹10/ticket |
+| Additional API calls | ₹0.01/call |
+| Additional storage | ₹1/MB |
+| Additional agent | ₹499/month |
+| Additional brand | ₹999/month |
+
+### Dashboard Tabs
+
+| Tab | Purpose |
+|-----|---------|
+| **Pricing** | Display all plans with features and pricing, upgrade buttons |
+| **Subscription** | Current subscription status, trial end date, upgrade/cancel actions |
+| **Usage** | Usage meters for tickets, agents, API calls, storage with progress bars |
+| **Admin** | Revenue cards (MRR, ARR), subscription breakdown by tier and status |
+
+### API Usage
+
+```typescript
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4058';
+
+// Get all pricing plans
+const plans = await fetch(`${API_BASE}/api/subscription/plans`);
+
+// Get subscription for client
+const { subscription, usage } = await fetch(`${API_BASE}/api/subscription/${clientId}`);
+
+// Upgrade tier
+await fetch(`${API_BASE}/api/subscription/${clientId}/upgrade`, {
+  method: 'POST',
+  body: JSON.stringify({ tier: 'pro' })
+});
+
+// Check limits
+const { withinLimits, overages } = await fetch(
+  `${API_BASE}/api/subscription/${clientId}/check-limits`,
+  { method: 'POST' }
+);
+
+// Get admin stats
+const stats = await fetch(`${API_BASE}/api/subscription/admin/stats`);
+
+// Record usage
+await fetch(`${API_BASE}/api/subscription/${clientId}/usage`, {
+  method: 'POST',
+  body: JSON.stringify({ tickets: 5, apiCalls: 100 })
+});
+```
+
+### Subscription Lifecycle
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                         SUBSCRIPTION LIFECYCLE                                    │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  1. CREATE TRIAL                                                                 │
+│     POST /api/subscription                                                       │
+│     → status: 'trial', trialEndsAt: +14 days                                   │
+│                                                                                  │
+│  2. CONVERT TO PAID (trial ends or user upgrades)                               │
+│     POST /api/subscription/:clientId/convert                                     │
+│     → status: 'active', expiresAt: +1 month                                     │
+│                                                                                  │
+│  3. BILLING CYCLE (monthly/yearly)                                               │
+│     POST /api/subscription/:clientId/billing                                    │
+│     → Change billingCycle to 'monthly' or 'yearly'                             │
+│                                                                                  │
+│  4. USAGE TRACKING                                                               │
+│     POST /api/subscription/:clientId/usage                                      │
+│     → Record usage metrics per month                                             │
+│                                                                                  │
+│  5. OVERAGE HANDLING                                                            │
+│     POST /api/subscription/:clientId/check-limits                                │
+│     → Calculate overage charges if limits exceeded                              │
+│                                                                                  │
+│  6. TIER UPGRADE                                                                │
+│     POST /api/subscription/:clientId/upgrade                                     │
+│     → Update tier, limits, features                                             │
+│                                                                                  │
+│  7. CANCEL                                                                      │
+│     POST /api/subscription/:clientId/cancel                                      │
+│     → status: 'cancelled', continue until billing period ends                   │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Integration Points
+
+| External Service | Purpose |
+|-----------------|---------|
+| RABTUL Payment | Payment collection |
+| RABTUL Wallet | Store credits for overage |
+| RABTUL Notifications | Payment reminders, trial expiry |
+| Memory Layer | Store usage history |
+
+### Running
+
+```bash
+# Start backend
+cd REZ-Intelligence/REZ-care-service
+npm run dev
+
+# Start dashboard
+cd RTNM-Group/rez-care-command-center
+npm run dev
+```
+
+### Test Endpoints
+
+```bash
+# Get plans
+curl http://localhost:4058/api/subscription/plans
+
+# Get subscription
+curl http://localhost:4058/api/subscription/demo_merchant
+
+# Get admin stats
+curl http://localhost:4058/api/subscription/admin/stats
+
+# Check limits
+curl -X POST http://localhost:4058/api/subscription/demo_merchant/check-limits
+```
+
+---
+
+---
+
 ## Version History
 
 | Date | Version | Changes |
@@ -1023,9 +1562,11 @@ Before starting any work on REZ Care:
 | May 21, 2026 | 3.0 | Initial release |
 | May 22, 2026 | 3.1 | Ecosystem integrations added |
 | May 22, 2026 | 3.1 | SOT.md created (consolidated documentation) |
+| May 22, 2026 | 3.2 | Revenue Layer added (subscription, billing, multi-tenant SaaS) |
+| May 22, 2026 | 3.3 | RABTUL Payment integration (Razorpay), invoice generation, webhook handlers |
 
 ---
 
 **Last Updated:** May 22, 2026
-**Version:** 3.1.0
+**Version:** 3.3.0
 **Maintainer:** REZ-Intelligence Team

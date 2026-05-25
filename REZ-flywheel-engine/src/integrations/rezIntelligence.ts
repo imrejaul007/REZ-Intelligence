@@ -12,7 +12,7 @@ const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 /**
  * Make authenticated internal API request
  */
-async function internalRequest(url: string, options: RequestInit = {}): Promise<any> {
+async function internalRequest(url: string, options: RequestInit = {}): Promise<unknown> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'X-Internal-Token': INTERNAL_TOKEN,

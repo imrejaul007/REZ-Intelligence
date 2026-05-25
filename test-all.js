@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 #!/usr/bin/env node
 'use strict';
 
@@ -38,24 +40,24 @@ function httpGet(port, path) {
 }
 
 async function testService(service) {
-  console.log(`\n${'='.repeat(50)}`);
-  console.log(`Testing: ${service.name}`);
-  console.log(`Port: ${service.port}`);
+  logger.info(`\n${'='.repeat(50)}`);
+  logger.info(`Testing: ${service.name}`);
+  logger.info(`Port: ${service.port}`);
   console.log('='.repeat(50));
 
   for (const endpoint of service.endpoints) {
     try {
       const result = await httpGet(service.port, endpoint);
       if (result.status === 200) {
-        console.log(`  ✓ ${endpoint} - OK (${result.status})`);
+        logger.info(`  ✓ ${endpoint} - OK (${result.status})`);
         results.passed++;
       } else {
-        console.log(`  ✗ ${endpoint} - FAILED (${result.status})`);
+        logger.info(`  ✗ ${endpoint} - FAILED (${result.status})`);
         results.failed++;
         results.errors.push({ service: service.name, endpoint, status: result.status });
       }
     } catch (err) {
-      console.log(`  ✗ ${endpoint} - ERROR (${err.message})`);
+      logger.info(`  ✗ ${endpoint} - ERROR (${err.message})`);
       results.failed++;
       results.errors.push({ service: service.name, endpoint, error: err.message });
     }
@@ -63,8 +65,8 @@ async function testService(service) {
 }
 
 async function testFlywheelLogic() {
-  console.log(`\n${'='.repeat(50)}`);
-  console.log('Testing: Flywheel Logic');
+  logger.info(`\n${'='.repeat(50)}`);
+  logger.info('Testing: Flywheel Logic');
   console.log('='.repeat(50));
 
   const tests = [
@@ -76,10 +78,10 @@ async function testFlywheelLogic() {
   for (const test of tests) {
     try {
       await test.fn();
-      console.log(`  ✓ ${test.name}`);
+      logger.info(`  ✓ ${test.name}`);
       results.passed++;
     } catch (err) {
-      console.log(`  ✗ ${test.name}: ${err.message}`);
+      logger.info(`  ✗ ${test.name}: ${err.message}`);
       results.failed++;
       results.errors.push({ test: test.name, error: err.message });
     }
@@ -121,9 +123,9 @@ async function testReorderScore() {
   const mediumRepeat = calculateScore(Date.now() - 5 * 24 * 60 * 60 * 1000, 3, 300);
   if (mediumRepeat < 50 || mediumRepeat > 80) throw new Error(`Expected score 50-80 for medium repeat, got ${mediumRepeat}`);
 
-  console.log(`    Recent High-Value: ${recentHighValue} (expected >= 80)`);
-  console.log(`    Dormant Low-Value: ${dormantLowValue} (expected < 30)`);
-  console.log(`    Medium Repeat: ${mediumRepeat} (expected 50-80)`);
+  logger.info(`    Recent High-Value: ${recentHighValue} (expected >= 80)`);
+  logger.info(`    Dormant Low-Value: ${dormantLowValue} (expected < 30)`);
+  logger.info(`    Medium Repeat: ${mediumRepeat} (expected 50-80)`);
 }
 
 async function testEventRecording() {
@@ -147,18 +149,18 @@ async function testNudgeTrigger() {
 }
 
 async function testAgentSchemas() {
-  console.log(`\n${'='.repeat(50)}`);
-  console.log('Testing: Agent Schemas');
+  logger.info(`\n${'='.repeat(50)}`);
+  logger.info('Testing: Agent Schemas');
   console.log('='.repeat(50));
 
   // Test commerce agents
   try {
     const commerceAgents = require('./REZ-commerce-agents/src/agents.js');
     const agentCount = Array.isArray(commerceAgents.agents) ? commerceAgents.agents.length : Object.keys(commerceAgents.agents || {}).length;
-    console.log(`  ✓ Commerce Agents: ${agentCount} agents`);
+    logger.info(`  ✓ Commerce Agents: ${agentCount} agents`);
     results.passed++;
   } catch (err) {
-    console.log(`  ✗ Commerce Agents: ${err.message}`);
+    logger.info(`  ✗ Commerce Agents: ${err.message}`);
     results.failed++;
   }
 
@@ -166,20 +168,20 @@ async function testAgentSchemas() {
   try {
     const userAgents = require('./REZ-user-agents/src/agents.js');
     const agentCount = Array.isArray(userAgents.AGENTS) ? userAgents.AGENTS.length : userAgents.agents?.length || 0;
-    console.log(`  ✓ User Agents: ${agentCount} agents`);
+    logger.info(`  ✓ User Agents: ${agentCount} agents`);
     results.passed++;
   } catch (err) {
-    console.log(`  ✗ User Agents: ${err.message}`);
+    logger.info(`  ✗ User Agents: ${err.message}`);
     results.failed++;
   }
 }
 
 async function runAllTests() {
-  console.log('\n' + '═'.repeat(60));
-  console.log('REZ INTELLIGENCE - END-TO-END TEST SUITE');
+  logger.info('\n' + '═'.repeat(60));
+  logger.info('REZ INTELLIGENCE - END-TO-END TEST SUITE');
   console.log('═'.repeat(60));
-  console.log(`Time: ${new Date().toISOString()}`);
-  console.log(`Services to test: ${services.length}`);
+  logger.info(`Time: ${new Date().toISOString()}`);
+  logger.info(`Services to test: ${services.length}`);
   console.log('═'.repeat(60));
 
   // Test flywheel logic (no server needed)
@@ -189,29 +191,29 @@ async function runAllTests() {
   await testAgentSchemas();
 
   // Test endpoints (requires servers running)
-  console.log(`\n${'='.repeat(50)}`);
-  console.log('Testing: Service Endpoints');
+  logger.info(`\n${'='.repeat(50)}`);
+  logger.info('Testing: Service Endpoints');
   console.log('='.repeat(50));
-  console.log('(Skipping live endpoint tests - start servers to test)');
+  logger.info('(Skipping live endpoint tests - start servers to test)');
 
   // Summary
-  console.log('\n' + '═'.repeat(60));
-  console.log('TEST SUMMARY');
+  logger.info('\n' + '═'.repeat(60));
+  logger.info('TEST SUMMARY');
   console.log('═'.repeat(60));
-  console.log(`  Passed: ${results.passed}`);
-  console.log(`  Failed: ${results.failed}`);
-  console.log(`  Total:  ${results.passed + results.failed}`);
+  logger.info(`  Passed: ${results.passed}`);
+  logger.info(`  Failed: ${results.failed}`);
+  logger.info(`  Total:  ${results.passed + results.failed}`);
 
   if (results.errors.length > 0) {
-    console.log('\nErrors:');
-    results.errors.forEach(e => console.log(`  - ${e.service || e.test}: ${e.endpoint || e.error}`));
+    logger.info('\nErrors:');
+    results.errors.forEach(e => logger.info(`  - ${e.service || e.test}: ${e.endpoint || e.error}`));
   }
 
-  console.log('\n' + '═'.repeat(60));
+  logger.info('\n' + '═'.repeat(60));
   if (results.failed === 0) {
-    console.log('✓ ALL TESTS PASSED');
+    logger.info('✓ ALL TESTS PASSED');
   } else {
-    console.log(`✗ ${results.failed} TEST(S) FAILED`);
+    logger.info(`✗ ${results.failed} TEST(S) FAILED`);
   }
   console.log('═'.repeat(60) + '\n');
 

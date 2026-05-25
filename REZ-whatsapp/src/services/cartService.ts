@@ -130,7 +130,7 @@ export class CartService {
       }
 
       // Update quantity
-      (session as any).updateCartItem(productId, quantity);
+      (session as unknown).updateCartItem(productId, quantity);
       session.lastActivity = new Date();
       await session.save();
 
@@ -170,7 +170,7 @@ export class CartService {
         return { success: false, error: 'Session not found' };
       }
 
-      (session as any).removeFromCart(productId);
+      (session as unknown).removeFromCart(productId);
       session.lastActivity = new Date();
       await session.save();
 
@@ -318,7 +318,7 @@ export class CartService {
         return { success: false, error: 'Session not found' };
       }
 
-      const metadata = session.metadata as any;
+      const metadata = session.metadata as unknown;
       const currentDiscount = metadata?.discountCode;
       if (!currentDiscount) {
         return { success: false, error: 'No discount applied' };
@@ -359,12 +359,12 @@ export class CartService {
    */
   private calculateCartSummary(session: ISession): CartSummary {
     const items = session.context.cart;
-    const itemCount = items.reduce((sum: number, item: any) => sum + item.quantity, 0);
-    const subtotal = (session as any).getCartTotal?.() || items.reduce((sum: number, item: any) => sum + (item.price || 0) * (item.quantity || 0), 0);
+    const itemCount = items.reduce((sum: number, item) => sum + item.quantity, 0);
+    const subtotal = (session as unknown).getCartTotal?.() || items.reduce((sum: number, item) => sum + (item.price || 0) * (item.quantity || 0), 0);
 
     // Calculate discount
     let discount = 0;
-    const metadata = session.metadata as any || {};
+    const metadata = session.metadata as unknown || {};
     const discountCode = metadata.discountCode;
     const discountAmount = metadata.discountAmount;
     const discountType = metadata.discountType;
@@ -495,9 +495,9 @@ export class CartService {
             existingItem.quantity + item.quantity,
             this.maxQuantityPerItem
           );
-          (targetSession as any).updateCartItem?.(item.productId, newQty);
+          (targetSession as unknown).updateCartItem?.(item.productId, newQty);
         } else {
-          (targetSession as any).addToCart?.(item);
+          (targetSession as unknown).addToCart?.(item);
         }
       }
 

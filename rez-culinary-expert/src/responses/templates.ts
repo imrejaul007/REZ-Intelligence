@@ -83,7 +83,7 @@ export function formatRecommendationResponse(
   tone: TonePreset = 'default'
 ): string {
   if (recommendations.length === 0) {
-    return "I couldn't find any recommendations matching your preferences. Could you tell me more about what you're in the mood for?";
+    return "I couldn't find unknown recommendations matching your preferences. Could you tell me more about what you're in the mood for?";
   }
 
   const opener = generateOpener('recommendation', tone);

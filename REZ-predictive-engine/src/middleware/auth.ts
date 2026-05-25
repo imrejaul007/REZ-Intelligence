@@ -88,7 +88,7 @@ export function optionalAuthMiddleware(req: Request, res: Response, next: NextFu
   const token = req.headers['x-internal-token'] as string | undefined;
 
   if (token) {
-    (req as any).authenticatedToken = token;
+    (req as unknown).authenticatedToken = token;
   }
 
   next();
@@ -125,7 +125,7 @@ export function requestIdMiddleware(req: Request, res: Response, next: NextFunct
   const requestId = (req.headers['x-request-id'] as string) ||
     generateRequestId();
 
-  (req as any).requestId = requestId;
+  (req as unknown).requestId = requestId;
   res.setHeader('X-Request-Id', requestId);
 
   next();

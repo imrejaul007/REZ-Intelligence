@@ -307,7 +307,7 @@ export class WhatsAppAdapter implements ChannelAdapter {
   /**
    * Get Twilio client
    */
-  private getTwilioClient(): any {
+  private getTwilioClient(): unknown {
     // In production, import Twilio SDK
     // const twilio = require('twilio');
     // return twilio(config.channels.whatsapp.twilio.accountSid, config.channels.whatsapp.twilio.authToken);

@@ -125,7 +125,7 @@ export function serviceRateLimiter(
 
   // In production, use Redis for distributed rate limiting
   // This is a simple in-memory implementation
-  const rateLimitStore = (req.app.locals as Record<string, unknown>).rateLimitStore as Map<string, { count: number; resetTime: number }> || new Map();
+  const rateLimitStore = (req.app.locals as unknown).rateLimitStore as Map<string, { count: number; resetTime: number }> || new Map();
 
   const now = Date.now();
   const limit = 1000; // requests per window

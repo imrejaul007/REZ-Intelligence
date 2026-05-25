@@ -82,7 +82,7 @@ export const GuestSchema = z.object({
   email: z.string().email().optional(),
   phone: z.string().optional(),
   tier: z.nativeEnum(GuestTier).default(GuestTier.STANDARD),
-  preferences: z.record(z.any()).optional(),
+  preferences: z.record(z.unknown()).optional(),
   notes: z.string().optional(),
 });
 
@@ -121,7 +121,7 @@ export const ChatMessageSchema = z.object({
   role: z.enum(['guest', 'agent', 'system']),
   content: z.string(),
   intent: z.nativeEnum(HospitalityIntent).optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.unknown()).optional(),
   timestamp: z.string().datetime(),
 });
 
@@ -132,7 +132,7 @@ export const ConversationContextSchema = z.object({
   currentIntent: z.nativeEnum(HospitalityIntent).optional(),
   conversationHistory: z.array(ChatMessageSchema),
   recentRequests: z.array(ServiceRequestSchema),
-  preferences: z.record(z.any()).optional(),
+  preferences: z.record(z.unknown()).optional(),
   language: z.string().default('en'),
   createdAt: z.string().datetime(),
   lastActivity: z.string().datetime(),

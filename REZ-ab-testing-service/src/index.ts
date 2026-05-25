@@ -3,7 +3,8 @@
  * Experimentation and feature flag management
  */
 
-import express, { Request, Response } from 'express';
+import express, { Request, Response } import logger from './utils/logger';
+import from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { config } from 'dotenv';
@@ -220,12 +221,12 @@ const startServer = () => {
 
   if (process.env.MONGODB_URI) {
     mongoose.connect(MONGODB_URI)
-      .then(() => console.log('Connected to MongoDB'))
+      .then(() => logger.info('Connected to MongoDB'))
       .catch((err) => console.warn('MongoDB connection failed, using in-memory storage:', err.message));
   }
 
   app.listen(PORT, () => {
-    console.log(`A/B Testing service running on port ${PORT}`);
+    logger.info(`A/B Testing service running on port ${PORT}`);
   });
 };
 

@@ -8,6 +8,7 @@
 import mongoose, { Schema, Model } from 'mongoose';
 import axios from 'axios';
 import { logger } from '../utils/logger';
+import { generateCommunicationId } from '../utils/idGenerator';
 
 interface IMerchantCommunication {
   communicationId: string;
@@ -16,7 +17,7 @@ interface IMerchantCommunication {
   channel: string;
   status: string;
   priority: string;
-  actions: any[];
+  actions: unknown[];
 }
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-care';
@@ -244,7 +245,7 @@ export class MerchantCommunicationService {
     agentId?: string;
     agentName?: string;
     agentType?: 'human' | 'ai';
-  }): Promise<any> {
+  }): Promise<unknown> {
     await this.connect();
 
     const {
@@ -268,7 +269,7 @@ export class MerchantCommunicationService {
     } = params;
 
     // Generate communication ID
-    const communicationId = `COMM-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+    const communicationId = generateCommunicationId();
 
     // Generate message from template
     const template = ISSUE_TEMPLATES[issueCategory as keyof typeof ISSUE_TEMPLATES]?.[priority === 'urgent' || priority === 'high' ? 'urgent' : 'standard'] || ISSUE_TEMPLATES.food_quality.standard;
@@ -375,7 +376,7 @@ export class MerchantCommunicationService {
       };
     }
 
-    (communication as any).actions.push({
+    (communication as unknown).actions.push({
       type: 'resolved',
       takenBy: 'system',
       takenAt: new Date(),
@@ -388,7 +389,7 @@ export class MerchantCommunicationService {
     await this.notifyCustomer(communication);
 
     logger.info('Merchant communication resolved', { communicationId });
-    return communication as any;
+    return communication as unknown;
   }
   async escalate(communicationId: string, escalationNote: string): Promise<IMerchantCommunication | null> {
     await this.connect();
@@ -399,7 +400,7 @@ export class MerchantCommunicationService {
     communication.status = 'escalated';
     communication.priority = 'urgent';
 
-    (communication as any).actions.push({
+    (communication as unknown).actions.push({
       type: 'escalated',
       takenBy: 'system',
       takenAt: new Date(),
@@ -416,7 +417,7 @@ export class MerchantCommunicationService {
     await communication.save();
 
     logger.info('Merchant communication escalated', { communicationId });
-    return communication as any;
+    return communication as unknown;
   }
 
   /**
@@ -426,10 +427,10 @@ export class MerchantCommunicationService {
     status?: string;
     limit?: number;
     offset?: number;
-  }): Promise<any[]> {
+  }): Promise<unknown[]> {
     await this.connect();
 
-    const query: any = { partnerId };
+    const query: unknown = { partnerId };
     if (options?.status) query.status = options.status;
 
     const communications = await MerchantCommunication.find(query)
@@ -443,7 +444,7 @@ export class MerchantCommunicationService {
   /**
    * Get all communications for a ticket
    */
-  async getTicketCommunications(ticketId: string): Promise<any[]> {
+  async getTicketCommunications(ticketId: string): Promise<unknown[]> {
     await this.connect();
     return MerchantCommunication.find({ ticketId }).sort({ createdAt: -1 });
   }
@@ -457,15 +458,15 @@ export class MerchantCommunicationService {
     priority?: string;
     limit?: number;
   }): Promise<{
-    pending: any[];
-    acknowledged: any[];
-    inProgress: any[];
-    resolved: any[];
-    urgent: any[];
+    pending: unknown[];
+    acknowledged: unknown[];
+    inProgress: unknown[];
+    resolved: unknown[];
+    urgent: unknown[];
   }> {
     await this.connect();
 
-    const query: any = {};
+    const query: unknown = {};
     if (params.partnerType) query.partnerType = params.partnerType;
     if (params.status) query.status = params.status;
     if (params.priority) query.priority = params.priority;
@@ -491,7 +492,7 @@ export class MerchantCommunicationService {
     avgResponseTime: number;
     resolutionRate: number;
     issueCategories: Record<string, number>;
-    recentIssues: any[];
+    recentIssues: unknown[];
   }> {
     await this.connect();
 
@@ -544,7 +545,7 @@ export class MerchantCommunicationService {
     return result;
   }
 
-  private async sendViaChannel(communication: any, message: string, channel: string): Promise<void> {
+  private async sendViaChannel(communication, message: string, channel: string): Promise<void> {
     const partnerContact = communication.partnerPhone || communication.partnerEmail;
 
     if (!partnerContact) {
@@ -595,7 +596,7 @@ export class MerchantCommunicationService {
     }
   }
 
-  private async notifyAgent(communication: any): Promise<void> {
+  private async notifyAgent(communication): Promise<void> {
     try {
       await axios.post(`${SERVICE_URLS.notifications}/api/notifications/send`, {
         userId: communication.initiatedBy?.agentId || 'support-team',
@@ -616,7 +617,7 @@ export class MerchantCommunicationService {
     }
   }
 
-  private async notifyCustomer(communication: any): Promise<void> {
+  private async notifyCustomer(communication): Promise<void> {
     try {
       await axios.post(`${SERVICE_URLS.notifications}/api/notifications/send`, {
         userId: communication.customerId,

@@ -88,7 +88,7 @@ export const schemas = {
 // VALIDATION FUNCTION
 // ============================================
 
-export function validate(schema: Record<string, any>, data: any): { valid: boolean; errors: Record<string, string> } {
+export function validate(schema: Record<string, unknown>, data): { valid: boolean; errors: Record<string, string> } {
   const errors: Record<string, string> = {};
 
   for (const [field, rules] of Object.entries(schema)) {
@@ -198,7 +198,7 @@ export function notFoundHandler(req: Request, res: Response) {
 // ASYNC HANDLER
 // ============================================
 
-export function asyncHandler(fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) {
+export function asyncHandler(fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>) {
   return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
@@ -210,9 +210,9 @@ export function asyncHandler(fn: (req: Request, res: Response, next: NextFunctio
 
 export function withServiceFallback(
   serviceName: string,
-  fallback: any,
-  operation: () => Promise<any>
-): Promise<any> {
+  fallback,
+  operation: () => Promise<unknown>
+): Promise<unknown> {
   return operation().catch((error) => {
     logger.warn(`[Fallback] ${serviceName} unavailable, using fallback`, error.message);
     return fallback;

@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * Base service client with retry logic and error handling
  */
@@ -52,7 +54,7 @@ export class ServiceClient {
     // Request interceptor for logging
     this.client.interceptors.request.use(
       (config) => {
-        console.debug(`[${this.serviceName}] ${config.method?.toUpperCase()} ${config.url}`);
+        logger.debug(`[${this.serviceName}] ${config.method?.toUpperCase()} ${config.url}`);
         return config;
       },
       (error) => {
@@ -64,7 +66,7 @@ export class ServiceClient {
     // Response interceptor for logging
     this.client.interceptors.response.use(
       (response) => {
-        console.debug(`[${this.serviceName}] Response ${response.status}`);
+        logger.debug(`[${this.serviceName}] Response ${response.status}`);
         return response;
       },
       (error: AxiosError) => {

@@ -10,7 +10,7 @@ const SIGNAL_URL = process.env.SIGNAL_AGGREGATOR_URL || 'http://localhost:4121';
 const IDENTITY_URL = process.env.IDENTITY_URL || 'http://localhost:4050';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
-async function request(url: string, options: RequestInit = {}): Promise<any> {
+async function request(url: string, options: RequestInit = {}): Promise<unknown> {
   const res = await fetch(url, {
     ...options,
     headers: {
@@ -25,12 +25,12 @@ async function request(url: string, options: RequestInit = {}): Promise<any> {
 
 // Intent Prediction
 export const intent = {
-  predict: async (userId: string, context?: Record<string, any>) =>
+  predict: async (userId: string, context?: Record<string, unknown>) =>
     request(`${INTENT_URL}/api/intent/predict`, {
       method: 'POST',
       body: JSON.stringify({ user_id: userId, context }),
     }),
-  captureSignal: async (signal: any) =>
+  captureSignal: async (signal) =>
     request(`${INTENT_URL}/api/intent/capture`, {
       method: 'POST',
       body: JSON.stringify(signal),
@@ -69,12 +69,12 @@ export const segments = {
 
 // Signal Aggregator
 export const signals = {
-  record: async (signal: any) =>
+  record: async (signal) =>
     request(`${SIGNAL_URL}/api/signals`, {
       method: 'POST',
       body: JSON.stringify(signal),
     }),
-  query: async (filters: any) =>
+  query: async (filters) =>
     request(`${SIGNAL_URL}/api/signals/query`, {
       method: 'POST',
       body: JSON.stringify(filters),

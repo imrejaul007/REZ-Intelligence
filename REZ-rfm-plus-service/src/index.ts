@@ -3,7 +3,8 @@
  * Advanced customer segmentation beyond RFM
  */
 
-import express from 'express';
+import express import logger from './utils/logger';
+import from 'express';
 import mongoose from 'mongoose';
 import { rfmService } from './services/rfmService';
 
@@ -41,6 +42,6 @@ app.post('/api/recalculate', async (_req, res) => {
   res.json(result);
 });
 
-app.listen(PORT, () => console.log(`RFM++ on ${PORT}`));
+app.listen(PORT, () => logger.info(`RFM++ on ${PORT}`));
 
-mongoose.connect(MONGODB_URI).then(() => console.log('MongoDB connected'));
+mongoose.connect(MONGODB_URI).then(() => logger.info('MongoDB connected'));

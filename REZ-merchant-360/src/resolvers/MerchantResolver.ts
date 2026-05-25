@@ -199,7 +199,7 @@ export class MerchantResolver {
       );
 
       return { success: true, merchant };
-    } catch (error: any) {
+    } catch (error) {
       return {
         success: false,
         error: error.message || 'Failed to create merchant',
@@ -244,7 +244,7 @@ export class MerchantResolver {
       );
 
       return { success: true, merchant: validated };
-    } catch (error: any) {
+    } catch (error) {
       return {
         success: false,
         error: error.message || 'Failed to update merchant',
@@ -266,7 +266,7 @@ export class MerchantResolver {
       // Note: In production, this would also remove from database
       // For now, just clear from in-memory graph
       return { success: true };
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message };
     }
   }
@@ -347,7 +347,7 @@ export class MerchantResolver {
       );
 
       return { success: true, merchant: updated };
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message };
     }
   }

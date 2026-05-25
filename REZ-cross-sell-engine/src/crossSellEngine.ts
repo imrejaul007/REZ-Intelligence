@@ -277,7 +277,7 @@ class CrossSellEngine {
   // Private Methods
   // ============================================================================
 
-  private async getUserPurchaseHistory(userId: string): Promise<any[]> {
+  private async getUserPurchaseHistory(userId: string): Promise<unknown[]> {
     try {
       const response = await axios.get(
         `${GRAPH_SERVICE_URL}/api/edges/user/${userId}/purchases`,
@@ -306,7 +306,7 @@ class CrossSellEngine {
     location: { lat: number; lng: number } | null
   ): Promise<{ id: string; name: string; rating: number }[]> {
     try {
-      const params: any = { category };
+      const params: unknown = { category };
       if (location) {
         params.lat = location.lat;
         params.lng = location.lng;
@@ -323,7 +323,7 @@ class CrossSellEngine {
     }
   }
 
-  private getTopCategories(history: any[]): { name: string; score: number }[] {
+  private getTopCategories(history: unknown[]): { name: string; score: number }[] {
     const categoryScores: Record<string, number> = {};
 
     for (const item of history) {
@@ -339,7 +339,7 @@ class CrossSellEngine {
       .slice(0, 5);
   }
 
-  private isAlreadyCustomer(history: any[], merchantId: string): boolean {
+  private isAlreadyCustomer(history: unknown[], merchantId: string): boolean {
     return history.some(h => h.merchantId === merchantId && h.visits > 3);
   }
 

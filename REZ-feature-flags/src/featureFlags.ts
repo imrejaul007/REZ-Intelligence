@@ -270,7 +270,7 @@ async function trackFlagEvaluation(flagId: string, userId: string): Promise<void
  * Express middleware to inject flags for user
  */
 export function featureFlagsMiddleware() {
-  return async (req: any, res: any, next: any) => {
+  return async (req, res, next) => {
     const userId = req.user?.id || req.query.user_id;
 
     if (!userId) {

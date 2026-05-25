@@ -5,7 +5,8 @@
  * Creates viral growth loops
  */
 
-import express from 'express';
+import express import logger from './utils/logger';
+import from 'express';
 import axios from 'axios';
 
 const router = express.Router();
@@ -214,7 +215,7 @@ async function updateMediaTargeting(userId: string, action: string): Promise<voi
   } catch {}
 }
 
-async function getFlywheelRecommendations(userId: string, action: string): Promise<any[]> {
+async function getFlywheelRecommendations(userId: string, action: string): Promise<unknown[]> {
   try {
     const res = await axios.post(`${CDP_URL}/api/recommend`, {
       user_id: userId,
@@ -228,7 +229,7 @@ async function getFlywheelRecommendations(userId: string, action: string): Promi
   }
 }
 
-async function checkViralThreshold(userId: string): Promise<any> {
+async function checkViralThreshold(userId: string): Promise<unknown> {
   try {
     const res = await axios.get(`${CDP_URL}/api/profiles/${userId}/viral`, {
       headers: { 'X-Internal-Token': INTERNAL_KEY }
@@ -240,11 +241,11 @@ async function checkViralThreshold(userId: string): Promise<any> {
 }
 
 async function joinFlywheelLoop(userId: string, loopId: string): Promise<void> {
-  console.log(`User ${userId} joined flywheel loop ${loopId}`);
+  logger.info(`User ${userId} joined flywheel loop ${loopId}`);
 }
 
 async function triggerFlywheelStep(userId: string, loopId: string, step: number): Promise<void> {
-  console.log(`User ${userId} triggered step ${step} of ${loopId}`);
+  logger.info(`User ${userId} triggered step ${step} of ${loopId}`);
 }
 
 function getLoopAction(loopId: string, step: number): string {

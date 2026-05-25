@@ -52,8 +52,8 @@ const UserIntelligenceSchema = new mongoose.Schema({
 }, { timestamps: true, collection: 'user_intelligence' });
 
 // Initialize models
-let Intent: mongoose.Model<any>;
-let UserIntelligence: mongoose.Model<any>;
+let Intent: mongoose.Model<unknown>;
+let UserIntelligence: mongoose.Model<unknown>;
 
 async function initModels() {
   if (mongoose.connection.readyState !== 1) {
@@ -67,7 +67,7 @@ async function initModels() {
  * Get user intents from Intent Graph
  * Tries MongoDB first, then falls back to HTTP call
  */
-export async function getUserIntents(userId: string, limit: number = 20): Promise<any[]> {
+export async function getUserIntents(userId: string, limit: number = 20): Promise<unknown[]> {
   try {
     await initModels();
 
@@ -98,7 +98,7 @@ export async function getUserIntents(userId: string, limit: number = 20): Promis
  * Get user intelligence profile
  * Combines intents into a user profile
  */
-export async function getUserProfile(userId: string): Promise<any> {
+export async function getUserProfile(userId: string): Promise<unknown> {
   try {
     await initModels();
 
@@ -125,7 +125,7 @@ export async function getUserProfile(userId: string): Promise<any> {
     // Derive affinities from intents
     const categoryScores: Record<string, { score: number; intents: string[]; lastSeen: Date }> = {};
 
-    intents.forEach((intent: any) => {
+    intents.forEach((intent) => {
       const cat = intent.category || 'GENERAL';
       if (!categoryScores[cat]) {
         categoryScores[cat] = { score: 0, intents: [], lastSeen: new Date(0) };
@@ -156,11 +156,11 @@ export async function getUserProfile(userId: string): Promise<any> {
     if (affinities.length >= 3) segments.push('multi_category');
 
     // Calculate behavior metrics
-    const fulfilledIntents = intents.filter((i: any) => i.status === 'FULFILLED');
+    const fulfilledIntents = intents.filter((i) => i.status === 'FULFILLED');
     const behavior = {
       totalIntents: intents.length,
       fulfilledRate: fulfilledIntents.length / intents.length,
-      avgConfidence: intents.reduce((sum: number, i: any) => sum + (i.confidence || 0.3), 0) / intents.length,
+      avgConfidence: intents.reduce((sum: number, i) => sum + (i.confidence || 0.3), 0) / intents.length,
     };
 
     // Calculate predictions
@@ -207,7 +207,7 @@ export async function getUsersWithIntent(category?: string, limit: number = 100)
   try {
     await initModels();
 
-    const query: any = { status: 'ACTIVE' };
+    const query: unknown = { status: 'ACTIVE' };
     if (category) {
       query.category = category;
     }
@@ -218,7 +218,7 @@ export async function getUsersWithIntent(category?: string, limit: number = 100)
       .limit(limit)
       .lean();
 
-    return [...new Set(intents.map((i: any) => i.userId))];
+    return [...new Set(intents.map((i) => i.userId))];
   } catch (error) {
     console.error('[UserIntelligence] Error getting users with intent:', error);
     return [];
@@ -228,7 +228,7 @@ export async function getUsersWithIntent(category?: string, limit: number = 100)
 /**
  * Get dormant users (for re-engagement)
  */
-export async function getDormantUsers(daysThreshold: number = 7, limit: number = 100): Promise<any[]> {
+export async function getDormantUsers(daysThreshold: number = 7, limit: number = 100): Promise<unknown[]> {
   try {
     await initModels();
 
@@ -246,7 +246,7 @@ export async function getDormantUsers(daysThreshold: number = 7, limit: number =
       { $limit: limit },
     ]);
 
-    return dormant.map((d: any) => ({
+    return dormant.map((d) => ({
       userId: d._id,
       category: d.category,
       lastSeenAt: d.lastSeenAt,
@@ -260,7 +260,7 @@ export async function getDormantUsers(daysThreshold: number = 7, limit: number =
 }
 
 // Helper functions for predictions
-function calculateChurnRisk(intents: any[]): number {
+function calculateChurnRisk(intents: unknown[]): number {
   if (intents.length === 0) return 0.5;
 
   const now = Date.now();
@@ -280,7 +280,7 @@ function calculateChurnRisk(intents: any[]): number {
   return Math.min(inactiveRisk + fulfillmentRisk, 1);
 }
 
-function calculatePurchaseProbability(intents: any[]): number {
+function calculatePurchaseProbability(intents: unknown[]): number {
   if (intents.length === 0) return 0;
 
   const fulfilled = intents.filter(i => i.status === 'FULFILLED').length;
@@ -295,7 +295,7 @@ function calculatePurchaseProbability(intents: any[]): number {
   return Math.min(prob, 1);
 }
 
-function calculateLTV(intents: any[]): number {
+function calculateLTV(intents: unknown[]): number {
   const fulfilled = intents.filter(i => i.status === 'FULFILLED');
 
   // Estimate from metadata

@@ -6,7 +6,7 @@ export interface FraudCheckRequest {
   transactionId: string;
   amount?: number;
   context?: 'purchase' | 'redemption' | 'transfer' | 'offer_redemption';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface FraudCheckResult {

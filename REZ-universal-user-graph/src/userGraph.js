@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 import { MongoClient, ObjectId } from 'mongodb';
 import Redis from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
@@ -32,7 +34,7 @@ export class UserGraph {
     const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
     this.redis = new Redis(redisUrl);
 
-    console.log('UserGraph connected to MongoDB and Redis');
+    logger.info('UserGraph connected to MongoDB and Redis');
   }
 
   async disconnect() {
@@ -42,7 +44,7 @@ export class UserGraph {
     if (this.redis) {
       await this.redis.quit();
     }
-    console.log('UserGraph disconnected');
+    logger.info('UserGraph disconnected');
   }
 
   async createIndexes() {
@@ -97,7 +99,7 @@ export class UserGraph {
       const intentData = await this.fetchFromIntentGraph(user);
       enriched.intentGraph = intentData;
     } catch (error) {
-      console.warn(`Failed to enrich from Intent Graph: ${error.message}`);
+      logger.warn(`Failed to enrich from Intent Graph: ${error.message}`);
     }
 
     // Fetch data from Consumer Graph
@@ -105,7 +107,7 @@ export class UserGraph {
       const consumerData = await this.fetchFromConsumerGraph(user);
       enriched.consumerGraph = consumerData;
     } catch (error) {
-      console.warn(`Failed to enrich from Consumer Graph: ${error.message}`);
+      logger.warn(`Failed to enrich from Consumer Graph: ${error.message}`);
     }
 
     // Fetch financial data from Wallet
@@ -113,7 +115,7 @@ export class UserGraph {
       const walletData = await this.fetchFromWallet(user);
       enriched.wallet = walletData;
     } catch (error) {
-      console.warn(`Failed to enrich from Wallet: ${error.message}`);
+      logger.warn(`Failed to enrich from Wallet: ${error.message}`);
     }
 
     // Fetch support history
@@ -121,7 +123,7 @@ export class UserGraph {
       const supportData = await this.fetchFromSupport(user);
       enriched.supportHistory = supportData;
     } catch (error) {
-      console.warn(`Failed to enrich from Support: ${error.message}`);
+      logger.warn(`Failed to enrich from Support: ${error.message}`);
     }
 
     return enriched;

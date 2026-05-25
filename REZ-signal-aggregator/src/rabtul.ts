@@ -16,7 +16,7 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; erro
       headers: { 'Authorization': `Bearer ${token}`, 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { valid: res.data.success };
-  } catch (error: any) {
+  } catch (error) {
     return { valid: false, error: error.message };
   }
 }
@@ -43,7 +43,7 @@ export async function notifyAtRiskUser(userId: string): Promise<{ success: boole
   } catch { return { success: false }; }
 }
 
-export async function publishSignal(signalType: string, data: Record<string, any>): Promise<{ success: boolean }> {
+export async function publishSignal(signalType: string, data: Record<string, unknown>): Promise<{ success: boolean }> {
   try {
     await axios.post(`${EVENT_BUS_URL}/api/events/publish`, {
       type: `signal.${signalType}`,

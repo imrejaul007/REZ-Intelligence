@@ -1,3 +1,5 @@
+import { logger } from '../utils/logger';
+
 /**
  * REZ Agent Orchestrator - Real-Time Event Bus
  *
@@ -87,22 +89,22 @@ export class EventBus {
   private initializeDefaultSubscriptions() {
     // Agent heartbeat monitoring
     this.subscribe('agent.heartbeat', async (event) => {
-      console.log(`Agent heartbeat: ${event.source}`);
+      logger.info(`Agent heartbeat: ${event.source}`);
     });
 
     // Anomaly detection
     this.subscribe('anomaly.detected', async (event) => {
-      console.log(`Anomaly detected: ${JSON.stringify(event.payload)}`);
+      logger.info(`Anomaly detected: ${JSON.stringify(event.payload)}`);
     });
 
     // Inventory alerts
     this.subscribe('inventory.low', async (event) => {
-      console.log(`Low inventory alert: ${event.source}`);
+      logger.info(`Low inventory alert: ${event.source}`);
     });
 
     // Customer churn risk
     this.subscribe('customer.churn_risk', async (event) => {
-      console.log(`Churn risk for customer: ${event.source}`);
+      logger.info(`Churn risk for customer: ${event.source}`);
     });
   }
 
@@ -313,7 +315,7 @@ export class EventBus {
     if (!filters) return true;
 
     for (const [key, value] of Object.entries(filters)) {
-      const eventValue = (event as Record<string, unknown>)[key];
+      const eventValue = (event as unknown as Record<string, unknown>)[key];
       if (eventValue !== value) return false;
     }
 

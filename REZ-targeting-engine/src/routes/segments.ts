@@ -131,7 +131,7 @@ router.post(
       })
     );
 
-    const matchingSegments = results.filter(r => r.found !== false && (r as any).matches);
+    const matchingSegments = results.filter(r => r.found !== false && (r as unknown).matches);
 
     res.json({
       success: true,
@@ -142,7 +142,7 @@ router.post(
         results,
         recommendation: matchingSegments.length > 0
           ? `User matches ${matchingSegments.length} of ${target_segments.length} target segments`
-          : 'User does not match any target segments'
+          : 'User does not match unknown target segments'
       }
     });
   })

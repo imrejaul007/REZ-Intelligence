@@ -498,7 +498,7 @@ export class RetailExpert {
       responseMessage += this.formatProductCard(product);
     }
 
-    responseMessage += "\nWould you like more details on any of these, or refine your search?";
+    responseMessage += "\nWould you like more details on unknown of these, or refine your search?";
 
     return {
       success: true,
@@ -589,7 +589,7 @@ export class RetailExpert {
       responseMessage += `| ${p.name} | ${price} | ${p.rating}/5 | ${p.inStock ? 'Yes' : 'No'} | ${features} |\n`;
     }
 
-    responseMessage += "\nWould you like more details on any of these items?";
+    responseMessage += "\nWould you like more details on unknown of these items?";
 
     return {
       success: true,
@@ -810,7 +810,7 @@ export class RetailExpert {
         responseMessage += `**${item.product.name}** - $${item.product.price}\n`;
       }
 
-      responseMessage += "\nWould you like to add any of these to your cart?";
+      responseMessage += "\nWould you like to add unknown of these to your cart?";
 
       return {
         success: true,

@@ -128,7 +128,7 @@ export class CustomerAggregator {
       );
 
       return {
-        customers: (response.data || []).map((d: any) =>
+        customers: (response.data || []).map((d) =>
           this.mapToCustomer(d)
         ),
         total: response.total || 0,
@@ -148,7 +148,7 @@ export class CustomerAggregator {
         `${serviceUrls.intelligence.unifiedProfile}/api/profile/${userId}/segments`
       );
 
-      return (response.segments || []).map((s: any) => ({
+      return (response.segments || []).map((s) => ({
         id: s.id,
         name: s.name,
         type: s.type || 'BEHAVIORAL',
@@ -171,7 +171,7 @@ export class CustomerAggregator {
    */
   async getCustomerSmartTags(
     userId: string,
-    orderHistory?: any[]
+    orderHistory?: unknown[]
   ): Promise<InternalSmartTag[]> {
     const tags: InternalSmartTag[] = [];
 
@@ -372,7 +372,7 @@ export class CustomerAggregator {
   /**
    * Analyze order patterns for smart tags
    */
-  private analyzeOrderPatterns(orders?: any[]): {
+  private analyzeOrderPatterns(orders?: unknown[]): {
     avgOrderValue: number;
     storeAvgOrderValue: number;
     orderCount: number;
@@ -395,9 +395,9 @@ export class CustomerAggregator {
       };
     }
 
-    const totalSpend = orders.reduce((sum: number, o: any) => sum + (o.total || 0), 0);
+    const totalSpend = orders.reduce((sum: number, o) => sum + (o.total || 0), 0);
     const avgOrderValue = totalSpend / orders.length;
-    const merchants = new Set(orders.map((o: any) => o.storeId));
+    const merchants = new Set(orders.map((o) => o.storeId));
 
     let weekendVisits = 0;
     let nightOrders = 0;
@@ -432,11 +432,11 @@ export class CustomerAggregator {
   private mergeCustomerData(
     userId: string,
     sources: {
-      intelligence: any;
-      now: any;
-      media: any;
-      predictions?: any;
-      rfm?: any;
+      intelligence;
+      now;
+      media;
+      predictions?;
+      rfm?;
     }
   ): InternalCustomer {
     const intelligence = sources.intelligence || {};
@@ -459,7 +459,7 @@ export class CustomerAggregator {
 
     // Lifetime data from orders
     const orders = now.orders || [];
-    const totalSpend = orders.reduce((sum: number, o: any) => sum + (o.total || 0), 0);
+    const totalSpend = orders.reduce((sum: number, o) => sum + (o.total || 0), 0);
     const lifetime: InternalLifetime = {
       tenureDays: now.tenureDays || 0,
       totalOrders: orders.length,
@@ -518,7 +518,7 @@ export class CustomerAggregator {
       ...(intelligence.segments || []),
       ...(now.segments || []),
       ...(media.segments || []),
-    ].map((s: any, i: number) => ({
+    ].map((s, i: number) => ({
       id: s.id || `segment-${i}`,
       name: s.name,
       type: s.type || 'BEHAVIORAL',
@@ -576,7 +576,7 @@ export class CustomerAggregator {
     };
   }
 
-  private mapToCustomer(data: any): InternalCustomer {
+  private mapToCustomer(data): InternalCustomer {
     return {
       id: data.userId || data.id,
       userId: data.userId || data.id,
@@ -615,7 +615,7 @@ export class CustomerAggregator {
         productAffinity: [],
         preferredChannels: ['APP_PUSH'],
       },
-      segments: (data.segments || []).map((s: any) => ({
+      segments: (data.segments || []).map((s) => ({
         id: s.id,
         name: s.name,
         type: s.type || 'BEHAVIORAL',
@@ -640,12 +640,12 @@ export class CustomerAggregator {
 
   private async fetchFromService(
     url: string,
-    options?: any
-  ): Promise<any> {
+    options?: unknown
+  ): Promise<unknown> {
     try {
       const response = await this.axiosInstance.get(url, options);
       return response.data;
-    } catch (error: any) {
+    } catch (error) {
       if (error.response) {
         logger.debug('Service unavailable', {
           url,

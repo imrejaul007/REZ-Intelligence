@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * Base AI Plugin Template
  * Use this as a template for creating new vertical AI plugins
@@ -23,13 +25,13 @@ export class RestaurantAIPlugin implements AIPlugin {
   description = 'AI for Restaurant vertical';
   events: string[];
   models: string[];
-  api: any = {};
+  api: unknown = {};
 
   private config: AIPluginConfig | null = null;
 
   async init(config: AIPluginConfig): Promise<void> {
     this.config = config;
-    console.log('[Restaurant AI] Initialized');
+    logger.info('[Restaurant AI] Initialized');
 
     // Set up API handlers
     this.api = {
@@ -41,11 +43,11 @@ export class RestaurantAIPlugin implements AIPlugin {
   }
 
   async shutdown(): Promise<void> {
-    console.log('[Restaurant AI] Shutting down');
+    logger.info('[Restaurant AI] Shutting down');
   }
 
   // Demand Forecast
-  private async predictDemandForecast(req: any, res: any): Promise<void> {
+  private async predictDemandForecast(req, res): Promise<void> {
     const { storeId, date, context } = req.body;
 
     // Use existing ReZ Mind services
@@ -79,7 +81,7 @@ export class RestaurantAIPlugin implements AIPlugin {
   }
 
   // Menu Recommendations
-  private async recommendMenu(req: any, res: any): Promise<void> {
+  private async recommendMenu(req, res): Promise<void> {
     const { userId, storeId, context } = req.query;
 
     // Use ReZ Mind personalization
@@ -117,7 +119,7 @@ export class RestaurantAIPlugin implements AIPlugin {
   }
 
   // Store Insights
-  private async getStoreInsights(req: any, res: any): Promise<void> {
+  private async getStoreInsights(req, res): Promise<void> {
     const { storeId } = req.params;
 
     const insights = {

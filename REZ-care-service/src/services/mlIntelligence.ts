@@ -104,7 +104,7 @@ class MLIntelligence {
   }
 
   // MERCHANT BRAIN
-  async getMerchantSuggestions(merchantId: string, context: any): Promise<string[]> {
+  async getMerchantSuggestions(merchantId: string, context): Promise<string[]> {
     try {
       const res = await axios.post(`${ML_URLS.merchantBrain}/suggest`, { merchantId, ...context }, {
         headers: mlHeaders,
@@ -117,7 +117,7 @@ class MLIntelligence {
   }
 
   // DELIVERY TRACKING
-  async getLiveTracking(orderId: string): Promise<any> {
+  async getLiveTracking(orderId: string): Promise<unknown> {
     try {
       const res = await axios.get(`${ML_URLS.deliveryTracking}/${orderId}`, {
         headers: mlHeaders,
@@ -143,7 +143,7 @@ class MLIntelligence {
   }
 
   // ENRICH TICKET
-  async enrichTicket(ticket: any): Promise<any> {
+  async enrichTicket(ticket): Promise<unknown> {
     const [churn, ltv, sentiment] = await Promise.all([
       this.getChurnRisk(ticket.customerId),
       this.getLTV(ticket.customerId),

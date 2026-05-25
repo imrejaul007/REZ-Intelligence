@@ -20,7 +20,7 @@ const platformConfig: PlatformConfig = {
   token: INTERNAL_TOKEN,
 };
 
-async function internalRequest(path: string, options: RequestInit = {}): Promise<any> {
+async function internalRequest(path: string, options: RequestInit = {}): Promise<unknown> {
   const response = await fetch(`${platformConfig.baseUrl}${path}`, {
     ...options,
     headers: {
@@ -103,7 +103,7 @@ export const notificationOperations = {
   /**
    * Send push notification
    */
-  async sendPush(userId: string, title: string, body: string, data?: Record<string, any>): Promise<void> {
+  async sendPush(userId: string, title: string, body: string, data?: Record<string, unknown>): Promise<void> {
     await internalRequest(`${NOTIFICATION_URL}/api/notifications/push`, {
       method: 'POST',
       body: JSON.stringify({
@@ -152,7 +152,7 @@ export const analyticsOperations = {
   /**
    * Track agent action
    */
-  async trackAgentAction(agentType: string, action: string, properties?: Record<string, any>): Promise<void> {
+  async trackAgentAction(agentType: string, action: string, properties?: Record<string, unknown>): Promise<void> {
     await internalRequest(`${ANALYTICS_URL}/api/track`, {
       method: 'POST',
       body: JSON.stringify({
@@ -168,7 +168,7 @@ export const analyticsOperations = {
   /**
    * Get dashboard data
    */
-  async getDashboard(metric: string, period: string): Promise<any> {
+  async getDashboard(metric: string, period: string): Promise<unknown> {
     return internalRequest(`${ANALYTICS_URL}/api/dashboard/${metric}`, {
       method: 'GET',
     });
@@ -177,7 +177,7 @@ export const analyticsOperations = {
   /**
    * Get user analytics
    */
-  async getUserAnalytics(userId: string): Promise<any> {
+  async getUserAnalytics(userId: string): Promise<unknown> {
     return internalRequest(`${ANALYTICS_URL}/api/users/${userId}/analytics`);
   },
 };
@@ -190,14 +190,14 @@ export const profileOperations = {
   /**
    * Get user profile
    */
-  async getProfile(userId: string): Promise<any> {
+  async getProfile(userId: string): Promise<unknown> {
     return internalRequest(`${PROFILE_URL}/api/profiles/${userId}`);
   },
 
   /**
    * Update user profile
    */
-  async updateProfile(userId: string, updates: Record<string, any>): Promise<any> {
+  async updateProfile(userId: string, updates: Record<string, unknown>): Promise<unknown> {
     return internalRequest(`${PROFILE_URL}/api/profiles/${userId}`, {
       method: 'PATCH',
       body: JSON.stringify(updates),

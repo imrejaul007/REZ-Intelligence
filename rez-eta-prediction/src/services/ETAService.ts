@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ ETA Prediction - ETA Service
  * ML-based delivery time prediction
@@ -175,7 +177,7 @@ export class ETAService {
     const mape = (error / actualMinutes) * 100;
 
     // Log for model retraining
-    console.log(`ETA Update: order=${orderId}, error=${error.toFixed(1)}min, mape=${mape.toFixed(1)}%`);
+    logger.info(`ETA Update: order=${orderId}, error=${error.toFixed(1)}min, mape=${mape.toFixed(1)}%`);
 
     // In production: save to training data for periodic model retraining
   }

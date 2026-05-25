@@ -70,7 +70,7 @@ What's your fitness goal today?`;
 export const FOLLOW_UP_QUESTIONS = [
   "What's your current fitness level? (Beginner, Intermediate, or Advanced)",
   "What type of workouts do you enjoy? (Strength, Cardio, HIIT, Yoga, etc.)",
-  "Do you have any equipment available? (Gym, Home Equipment, No Equipment)",
+  "Do you have unknown equipment available? (Gym, Home Equipment, No Equipment)",
   "How many days per week can you dedicate to exercise?",
   "Any specific areas you want to focus on?"
 ];

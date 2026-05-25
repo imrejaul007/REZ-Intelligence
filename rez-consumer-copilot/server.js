@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -30,5 +32,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`REZ Consumer Copilot running on port ${PORT}`);
+  logger.info(`REZ Consumer Copilot running on port ${PORT}`);
 });

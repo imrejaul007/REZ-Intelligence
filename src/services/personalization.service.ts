@@ -2,7 +2,10 @@
  * Personalization - User Embeddings + Recommendations
  */
 
+import Redis from 'ioredis';
 import { embed, cosine } from './embeddings.service';
+
+const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 
 const USER_EMBED = 'user_embed:';
 const ITEM_EMBED = 'item_embed:';

@@ -21,7 +21,7 @@ export interface ITemplate extends Document {
   updatedAt: Date;
   metadata: Record<string, unknown>;
   validateForSending(): Promise<{ valid: boolean; errors: string[] }>;
-  whatsapp: any;
+  whatsapp;
 }
 
 const TemplateButtonSchema = new Schema<TemplateButton>(

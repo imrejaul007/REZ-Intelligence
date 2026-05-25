@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * Payment Service Connector
  *
@@ -232,7 +234,7 @@ function getInternalToken(): string {
     const tokens = JSON.parse(tokensJson);
     return tokens.orchestrator || tokens.payment || '';
   } catch {
-    console.warn('[PaymentConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+    logger.warn('[PaymentConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
     return '';
   }
 }

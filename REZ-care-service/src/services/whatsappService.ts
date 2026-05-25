@@ -15,7 +15,7 @@ export interface WhatsAppMessage {
   type: 'text' | 'image' | 'document' | 'location' | 'contacts' | 'sticker' | 'reaction' | 'interactive';
   text?: { body: string };
   image?: { id: string; mime_type: string; sha256: string; url?: string };
-  interactive?: any;
+  interactive?;
 }
 
 export interface WhatsAppWebhook {
@@ -39,8 +39,8 @@ export interface WhatsAppWebhook {
           status: 'sent' | 'delivered' | 'read' | 'failed';
           timestamp: string;
           recipient_id: string;
-          conversation?: any;
-          pricing?: any;
+          conversation?;
+          pricing?;
         }>;
       };
       field: string;
@@ -135,7 +135,7 @@ class WhatsAppService {
         success: true,
         messageId: response.data.messages?.[0]?.id,
       };
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[WhatsApp] Send failed', { to, error: error.message });
       return { success: false, error: error.response?.data?.error?.message || error.message };
     }
@@ -148,14 +148,14 @@ class WhatsAppService {
     to: string,
     templateName: string,
     languageCode: string = 'en',
-    components?: Array<{ type: string; parameters: Array<{ type: string; text?: string; currency?: any; date_time?: any }> }>
+    components?: Array<{ type: string; parameters: Array<{ type: string; text?: string; currency?; date_time?: unknown }> }>
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     if (this.isRateLimited(to)) {
       return { success: false, error: 'Rate limited. Try again later.' };
     }
 
     try {
-      const payload: any = {
+      const payload: unknown = {
         messaging_product: 'whatsapp',
         recipient_type: 'individual',
         to,
@@ -179,7 +179,7 @@ class WhatsAppService {
         success: true,
         messageId: response.data.messages?.[0]?.id,
       };
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[WhatsApp] Template send failed', { to, templateName, error: error.message });
       return { success: false, error: error.response?.data?.error?.message || error.message };
     }
@@ -220,7 +220,7 @@ class WhatsAppService {
         success: true,
         messageId: response.data.messages?.[0]?.id,
       };
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[WhatsApp] Buttons send failed', { to, error: error.message });
       return { success: false, error: error.response?.data?.error?.message || error.message };
     }
@@ -264,7 +264,7 @@ class WhatsAppService {
         success: true,
         messageId: response.data.messages?.[0]?.id,
       };
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[WhatsApp] List send failed', { to, error: error.message });
       return { success: false, error: error.response?.data?.error?.message || error.message };
     }
@@ -281,7 +281,7 @@ class WhatsAppService {
         message_id: messageId,
       });
       return true;
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('[WhatsApp] Mark read failed', { messageId, error: error.message });
       return false;
     }
@@ -340,7 +340,7 @@ class WhatsAppService {
     try {
       const response = await this.http.get(`/${this.config.businessAccountId}/message_templates`);
       return response.data.data || [];
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[WhatsApp] Get templates failed', { error: error.message });
       return [];
     }

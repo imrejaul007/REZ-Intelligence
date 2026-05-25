@@ -91,9 +91,9 @@ Please remember that while I can provide helpful information, I am not a substit
 
 How can I help you today?`;
 
-export const DISCLAIMER = `**Important Disclaimer**: The information provided here is for educational purposes only and should not replace professional medical advice, diagnosis, or treatment. Always consult with a qualified healthcare provider for any medical concerns.`;
+export const DISCLAIMER = `**Important Disclaimer**: The information provided here is for educational purposes only and should not replace professional medical advice, diagnosis, or treatment. Always consult with a qualified healthcare provider for unknown medical concerns.`;
 
-export const URGENT_CARE_REMINDER = `If you're experiencing any of the following symptoms, please seek immediate medical attention or call emergency services:
+export const URGENT_CARE_REMINDER = `If you're experiencing unknown of the following symptoms, please seek immediate medical attention or call emergency services:
 - Chest pain or pressure
 - Difficulty breathing
 - Severe or sudden onset symptoms

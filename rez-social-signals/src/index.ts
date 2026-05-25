@@ -1,4 +1,5 @@
-import express, { Express, Request, Response } from 'express';
+import express, { Express, Request, Response } import logger from './utils/logger';
+import from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -72,12 +73,12 @@ app.use(errorHandler);
 // Database connection and server start
 async function startServer(): Promise<void> {
   try {
-    console.log('Connecting to MongoDB...');
+    logger.info('Connecting to MongoDB...');
     await mongoose.connect(MONGODB_URI);
-    console.log('Connected to MongoDB');
+    logger.info('Connected to MongoDB');
 
     app.listen(PORT, () => {
-      console.log(`
+      logger.info(`
 ╔════════════════════════════════════════════════════════════╗
 ║                                                            ║
 ║   REZ Social Signals Service                               ║
@@ -109,13 +110,13 @@ async function startServer(): Promise<void> {
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM received. Shutting down gracefully...');
+  logger.info('SIGTERM received. Shutting down gracefully...');
   await mongoose.connection.close();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
-  console.log('SIGINT received. Shutting down gracefully...');
+  logger.info('SIGINT received. Shutting down gracefully...');
   await mongoose.connection.close();
   process.exit(0);
 });

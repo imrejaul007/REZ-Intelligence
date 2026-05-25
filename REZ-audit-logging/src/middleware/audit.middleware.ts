@@ -44,12 +44,12 @@ export const auditAction = (options: AuditMiddlewareOptions) => {
       }
 
       auditService.logEvent({
-        eventType: (options.eventType || 'api_call') as any,
+        eventType: (options.eventType || 'api_call') as unknown,
         action: options.action || `${req.method} ${req.path}`,
         resource: options.resource || req.path.split('/')[1] || 'unknown',
         resourceId: req.params.id,
-        userId: (req as any).user?.id,
-        userEmail: (req as any).user?.email,
+        userId: (req as unknown).user?.id,
+        userEmail: (req as unknown).user?.email,
         ipAddress: req.ip || req.connection.remoteAddress,
         userAgent: req.headers['user-agent'],
         status: statusResult,
@@ -75,8 +75,8 @@ export const auditMiddleware = async (req: Request, res: Response, next: NextFun
     action: `${req.method} ${req.path}`,
     resource: req.path.split('/')[1] || 'unknown',
     resourceId: req.params.id,
-    userId: (req as any).user?.id,
-    userEmail: (req as any).user?.email,
+    userId: (req as unknown).user?.id,
+    userEmail: (req as unknown).user?.email,
     ipAddress: req.ip || req.connection.remoteAddress,
     userAgent: req.headers['user-agent'],
     status: 'success',

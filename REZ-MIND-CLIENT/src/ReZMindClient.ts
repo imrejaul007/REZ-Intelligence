@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * REZ Mind Client - Bidirectional Integration
  *
@@ -39,7 +41,7 @@ interface MindEvent {
   type: string;
   source: string;
   target: string | '*';
-  payload: any;
+  payload;
   timestamp: Date;
   metadata?: {
     merchantId?: string;
@@ -54,7 +56,7 @@ interface Insight {
   targetService?: string;
   confidence: number;
   reasoning: string;
-  payload: any;
+  payload;
   timestamp: Date;
 }
 
@@ -156,7 +158,7 @@ class ReZMindClient {
       this.emitter.emit(type, event);
 
       return response.data.eventId || event.id;
-    } catch (error: any) {
+    } catch (error) {
       console.error(`[ReZ Mind] Failed to emit ${type}:`, error.message);
 
       // Queue for retry
@@ -234,15 +236,15 @@ class ReZMindClient {
 
   on(eventType: string, handler: (event: MindEvent) => void): void;
   on(eventType: string, handler: (insight: Insight) => void): void;
-  on(eventType: string, handler: (data: any) => void): void {
+  on(eventType: string, handler: (data) => void): void {
     this.emitter.on(eventType, handler);
   }
 
-  once(eventType: string, handler: (data: any) => void): void {
+  once(eventType: string, handler: (data) => void): void {
     this.emitter.once(eventType, handler);
   }
 
-  off(eventType: string, handler?: (data: any) => void): void {
+  off(eventType: string, handler?: (data) => void): void {
     if (handler) {
       this.emitter.off(eventType, handler);
     } else {
@@ -264,7 +266,7 @@ class ReZMindClient {
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
-        console.log(`[ReZ Mind] WebSocket connected to ${wsUrl}`);
+        logger.info(`[ReZ Mind] WebSocket connected to ${wsUrl}`);
         this.connected = true;
 
         // Authenticate with service name
@@ -287,7 +289,7 @@ class ReZMindClient {
       };
 
       this.ws.onclose = () => {
-        console.log('[ReZ Mind] WebSocket disconnected, reconnecting...');
+        logger.info('[ReZ Mind] WebSocket disconnected, reconnecting...');
         this.connected = false;
         setTimeout(() => this.connectWebSocket(), 5000);
       };
@@ -301,7 +303,7 @@ class ReZMindClient {
     }
   }
 
-  private handleMessage(message: any): void {
+  private handleMessage(message): void {
     if (message.type === 'event' || message.type === 'insight') {
       const event = message as MindEvent;
       this.emitter.emit(event.type, event);
@@ -374,30 +376,30 @@ export function getGlobalReZMindClient(): ReZMindClient {
 
 // Backward compatibility
 export const rezMindMerchant = {
-  sendOrderCompleted: async (data: any) => {
+  sendOrderCompleted: async (data) => {
     const client = getGlobalReZMindClient();
     return client.emitOrderCompleted(data);
   },
-  sendInventoryLow: async (data: any) => {
+  sendInventoryLow: async (data) => {
     const client = getGlobalReZMindClient();
     return client.emitInventoryLow(data);
   },
-  sendPaymentSuccess: async (data: any) => {
+  sendPaymentSuccess: async (data) => {
     const client = getGlobalReZMindClient();
     return client.emit('merchant:payment:success', data);
   },
 };
 
 export const rezMindConsumer = {
-  sendSearch: async (data: any) => {
+  sendSearch: async (data) => {
     const client = getGlobalReZMindClient();
     return client.emitSearch(data);
   },
-  sendItemViewed: async (data: any) => {
+  sendItemViewed: async (data) => {
     const client = getGlobalReZMindClient();
     return client.emitItemViewed(data);
   },
-  sendOrder: async (data: any) => {
+  sendOrder: async (data) => {
     const client = getGlobalReZMindClient();
     return client.emit(CONSUMER_EVENTS.ORDER_PLACED, data);
   },

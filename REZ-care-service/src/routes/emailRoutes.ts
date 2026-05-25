@@ -74,7 +74,7 @@ router.post('/webhook/ses', async (req: Request, res: Response) => {
         body: mail.content || '',
         date: mail.mail.timestamp,
         messageId: mail.mail.messageId,
-        inReplyTo: mail.mail.headers?.find((h: any) => h.name === 'In-Reply-To')?.value,
+        inReplyTo: mail.mail.headers?.find((h) => h.name === 'In-Reply-To')?.value,
       };
 
       emailIntegration.processEmailPipeline(email).catch(err => {
@@ -132,7 +132,7 @@ router.post('/webhook/postmark', async (req: Request, res: Response) => {
       subject: Subject,
       body: TextBody,
       html: HtmlBody,
-      attachments: Attachments?.map((a: any) => a.Name),
+      attachments: Attachments?.map((a) => a.Name),
       date: new Date().toISOString(),
       messageId: MessageID,
       inReplyTo: InReplyTo,
@@ -179,7 +179,7 @@ router.post('/submit', async (req: Request, res: Response) => {
       response: result.response,
       parsed: result.parsed,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[Email] Manual submission failed', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -212,7 +212,7 @@ router.post('/preview', async (req: Request, res: Response) => {
       parsed,
       suggestedResponse: response,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[Email] Preview failed', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -246,7 +246,7 @@ router.get('/templates', async (req: Request, res: Response) => {
         id: 'resolved',
         name: 'Issue Resolved',
         subject: 'Resolved: {{subject}}',
-        body: 'Hi {{name}},\n\nYour support ticket has been resolved.\n\nIf you have any further questions, please don\'t hesitate to reach out.\n\nTicket ID: {{ticketId}}\n\nBest regards,\nReZ Support Team',
+        body: 'Hi {{name}},\n\nYour support ticket has been resolved.\n\nIf you have unknown further questions, please don\'t hesitate to reach out.\n\nTicket ID: {{ticketId}}\n\nBest regards,\nReZ Support Team',
       },
       {
         id: 'followup',
@@ -277,7 +277,7 @@ router.post('/generate', async (req: Request, res: Response) => {
       },
       resolved: {
         subject: 'Resolved: {{subject}}',
-        body: 'Hi {{name}},\n\nYour support ticket has been resolved.\n\nIf you have any further questions, please don\'t hesitate to reach out.\n\nTicket ID: {{ticketId}}\n\nBest regards,\nReZ Support Team',
+        body: 'Hi {{name}},\n\nYour support ticket has been resolved.\n\nIf you have unknown further questions, please don\'t hesitate to reach out.\n\nTicket ID: {{ticketId}}\n\nBest regards,\nReZ Support Team',
       },
     };
 
@@ -301,7 +301,7 @@ router.post('/generate', async (req: Request, res: Response) => {
       subject,
       body,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('[Email] Template generation failed', error);
     res.status(500).json({ success: false, error: error.message });
   }

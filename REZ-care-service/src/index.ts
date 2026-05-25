@@ -1,11 +1,13 @@
 /**
- * REZ Care Service v3.0
+ * REZ Care Service v3.3
  * Complete Support Operating System
  *
  * INTEGRATES with:
  * - REZ-support-copilot (4033) - Sentiment, history, AI suggestions
  * - REZ-merchant-intelligence (4122) - Merchant insights
  * - rez-knowledge-base-service (4005) - KB search
+ * - RABTUL Services (Auth, Wallet, Payment, Notifications)
+ * - REZ Intelligence (Intent, Predictive, Signals)
  *
  * UNIQUE VALUE:
  * - CSAT surveys & tracking
@@ -18,6 +20,7 @@
  * - Escalation engine
  * - WhatsApp support
  * - Reports & analytics
+ * - Subscription billing (Razorpay)
  */
 
 import express, { Request, Response, NextFunction } from 'express';
@@ -52,25 +55,103 @@ import upsellRoutes from './routes/upsellRoutes';
 import smartUpsellRoutes from './routes/smartUpsellRoutes';
 import whatsappRoutes from './routes/whatsappRoutes';
 import ecosystemRoutes from './routes/ecosystemRoutes';
+import subscriptionRoutes from './routes/subscriptionRoutes';
+import { subscriptionService } from './services/subscriptionService';
+
+// Middleware imports
+import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { rateLimits } from './middleware/rateLimit';
+import { initializeRABTULCircuitBreakers, circuitBreakerRegistry } from './utils/circuitBreaker';
 
 const app = express();
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 4058;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-care';
 
-// Middleware
-app.use(helmet());
-app.use(cors());
-app.use(express.json());
+// ============================================
+// CORS CONFIGURATION (Fixed for production)
+// ============================================
+
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://rez-care.onrender.com',
+      'https://rez-admin.onrender.com',
+    ];
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman)
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    // Check if origin is allowed
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      logger.warn(`[CORS] Blocked origin: ${origin}`);
+      callback(new Error(`Origin ${origin} not allowed by CORS policy`));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Internal-Token',
+    'X-Customer-Id',
+    'X-Customer-Phone',
+    'x-razorpay-signature',
+  ],
+  exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
+  maxAge: 86400, // 24 hours
+};
+
+// Middleware setup
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'", ...allowedOrigins],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
+
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 
 // Request logging
 app.use((req: Request, res: Response, next: NextFunction) => {
-  logger.info(`${req.method} ${req.path}`);
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    logger.info(`${req.method} ${req.path} ${res.statusCode} ${duration}ms`);
+  });
   next();
 });
 
-// Import error handlers
-import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+// Rate limiting - apply to all routes (skip internal/health)
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.path === '/health' || req.path.startsWith('/api/services')) {
+    return next();
+  }
+  if (req.headers['x-internal-token']) {
+    return rateLimits.internal(req, res, next);
+  }
+  return rateLimits.api(req, res, next);
+});
+
+// Initialize RABTUL circuit breakers
+initializeRABTULCircuitBreakers();
 
 // Initialize all services
 const csatService = new CSATService();
@@ -87,12 +168,22 @@ const reportsService = new ReportsService();
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {
+  // Include circuit breaker stats
+  const circuitStats = circuitBreakerRegistry.getAllStats();
+  const hasOpenCircuits = circuitBreakerRegistry.hasOpenCircuits();
+
   res.json({
     status: 'healthy',
     service: 'REZ Care Service',
-    version: '3.1.0',
+    version: '3.3.0',
     uptime: process.uptime(),
     description: 'AI Commerce Recovery & Customer Intelligence Platform',
+    circuitBreakers: circuitStats.map(s => ({
+      name: s.name,
+      state: s.state,
+      uptime: `${s.uptime.toFixed(1)}%`,
+    })),
+    hasDegradedServices: hasOpenCircuits,
     integrates: [
       'REZ-support-copilot (sentiment, history)',
       'REZ-merchant-intelligence (insights)',
@@ -115,7 +206,9 @@ app.get('/health', (req: Request, res: Response) => {
       'customer-timeline',
       'unified-profile',
       'workflow-automation',
-      'rag-knowledge'
+      'rag-knowledge',
+      'subscription-billing',
+      'multi-tenant-saas'
     ],
     ecosystem: '/api/ecosystem/health'
   });
@@ -778,6 +871,12 @@ app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/ecosystem', ecosystemRoutes);
 
 // ============================================
+// SUBSCRIPTION & BILLING ROUTES
+// Multi-tenant SaaS: Lite/Pro/Enterprise tiers
+// ============================================
+app.use('/api/subscription', subscriptionRoutes);
+
+// ============================================
 // ESCALATION ROUTES
 // ============================================
 
@@ -851,7 +950,7 @@ app.get('/api/reports/csat-trends', async (req: Request, res: Response) => {
     const trends = await reportsService.getCSATTrends({
       start: start ? new Date(start as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
       end: end ? new Date(end as string) : new Date(),
-      granularity: (granularity as any) || 'day'
+      granularity: (granularity as unknown) || 'day'
     });
     res.json({ success: true, data: trends });
   } catch (error) {
@@ -914,7 +1013,7 @@ app.get('/api/reports/merchants', async (req: Request, res: Response) => {
     const report = await reportsService.getMerchantIssuesReport({
       start: start ? new Date(start as string) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
       end: end ? new Date(end as string) : new Date(),
-      sortBy: sortBy as any,
+      sortBy: sortBy as unknown,
       limit: limit ? parseInt(limit as string) : 10
     });
     res.json({ success: true, data: report });

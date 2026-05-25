@@ -1,3 +1,5 @@
+import logger from './utils/logger';
+
 /**
  * Alert Service
  * Sends alerts when services fail or circuit breakers open
@@ -95,7 +97,7 @@ export async function sendRecoveryAlert(
     await sendWebhookAlert(config.alert.webhookUrl, alert);
   }
 
-  console.log(`[RECOVERY] ${serviceName}: ${alert.message}`);
+  logger.info(`[RECOVERY] ${serviceName}: ${alert.message}`);
 }
 
 /**

@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import twilio from 'twilio';
-import crypto from 'crypto';
+import Redis from 'ioredis';
 import {
   WebhookEvent,
   WebhookValue,
@@ -13,30 +13,67 @@ import { SessionManager } from '../services/sessionManager';
 import { CartService } from '../services/cartService';
 import { ConversationEngine } from '../services/conversationEngine';
 import { OrderService } from '../services/orderService';
-import { verifyTwilioWebhook, AuthenticatedRequest } from '../middleware/auth';
+import { verifyTwilioWebhook, AuthenticatedRequest, maskPII, validateWebhookPayload } from '../middleware/auth';
 import { logger } from '../utils/logger';
 
 // ============================================
-// Retry Configuration
+// CONSTANTS
 // ============================================
 
 const MAX_MESSAGE_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 const TWILIO_RATE_LIMIT_CODE = 20429;
+const DEDUP_TTL_SECONDS = 3600; // 1 hour deduplication window
 
-// In-memory deduplication store (use Redis in production)
-const processedMessages = new Map<string, number>();
-const DEDUP_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+// ============================================
+// REDIS CLIENT
+// ============================================
 
-// Clean up old entries periodically
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, timestamp] of processedMessages.entries()) {
-    if (now - timestamp > DEDUP_WINDOW_MS) {
-      processedMessages.delete(key);
-    }
+let redisClient: Redis | null = null;
+
+function getRedis(): Redis {
+  if (!redisClient) {
+    redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+      maxRetriesPerRequest: null,
+      enableReadyCheck: false,
+    });
   }
-}, 60000);
+  return redisClient;
+}
+
+// ============================================
+// IDEMPOTENCY CHECK
+// ============================================
+
+async function isDuplicate(messageId: string): Promise<boolean> {
+  const redis = getRedis();
+  const key = `webhook:twilio:dedup:${messageId}`;
+  const result = await redis.set(key, '1', 'EX', DEDUP_TTL_SECONDS, 'NX');
+  return result !== 'OK';
+}
+
+// ============================================
+// SETUP
+// ============================================
+
+function setupErrorHandlers(): void {
+  process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Rejection', {
+      reason: reason instanceof Error ? reason.message : String(reason),
+      stack: reason instanceof Error ? reason.stack : undefined
+    });
+  });
+
+  process.on('uncaughtException', (error) => {
+    logger.error('Uncaught Exception', {
+      error: error.message,
+      stack: error.stack
+    });
+    process.exit(1);
+  });
+}
+
+setupErrorHandlers();
 
 export function createWebhookRoutes(
   sessionManager: SessionManager,
@@ -50,24 +87,36 @@ export function createWebhookRoutes(
 
   /**
    * POST /webhook/whatsapp
-   * Main webhook endpoint for incoming WhatsApp messages
+   * Main webhook endpoint with Redis-based deduplication
    */
   router.post(
     '/whatsapp',
     verifyTwilioWebhook,
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+      // Validate payload
+      const validation = validateWebhookPayload(req.body);
+      if (!validation.valid) {
+        logger.warn('Invalid webhook payload', { error: validation.error });
+        res.status(400).json({ success: false, error: validation.error });
+        return;
+      }
+
       const webhookData: WebhookEvent = req.body;
 
       try {
-        // Respond immediately to WhatsApp
+        // Respond immediately to WhatsApp (best practice)
         res.status(200).send('OK');
 
-        // Process in background
+        // Process in background with error handling
         processWebhookEvent(webhookData).catch((error) => {
-          logger.error('Webhook processing failed', { error, webhookData });
+          logger.error('Webhook processing failed', {
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
         });
       } catch (error) {
-        logger.error('Webhook handler error', { error });
+        logger.error('Webhook handler error', {
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
         res.status(500).send('Error processing webhook');
       }
     }
@@ -75,18 +124,26 @@ export function createWebhookRoutes(
 
   /**
    * POST /webhook/whatsapp/test
-   * Test endpoint for webhook without Twilio signature
+   * Test endpoint without Twilio signature
    */
   router.post(
     '/whatsapp/test',
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+      const validation = validateWebhookPayload(req.body);
+      if (!validation.valid) {
+        res.status(400).json({ success: false, error: validation.error });
+        return;
+      }
+
       const webhookData: WebhookEvent = req.body;
 
       try {
         res.status(200).send('OK');
         await processWebhookEvent(webhookData);
       } catch (error) {
-        logger.error('Test webhook failed', { error });
+        logger.error('Test webhook failed', {
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
         res.status(500).json({ error: 'Test failed' });
       }
     }
@@ -100,20 +157,21 @@ export function createWebhookRoutes(
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
-
-    // Verify token (should match configured verify token)
     const verifyToken = process.env.TWILIO_VERIFY_TOKEN || 'my_verify_token';
 
     if (mode === 'subscribe' && token === verifyToken) {
       logger.info('Webhook verified successfully');
       res.status(200).send(challenge);
     } else {
-      logger.warn('Webhook verification failed', { mode, token });
+      logger.warn('Webhook verification failed', { mode });
       res.status(403).send('Forbidden');
     }
   });
 
-  // Process incoming webhook events
+  // ============================================
+  // PROCESSING FUNCTIONS
+  // ============================================
+
   async function processWebhookEvent(event: WebhookEvent): Promise<void> {
     if (!event.entry || event.entry.length === 0) {
       return;
@@ -127,12 +185,10 @@ export function createWebhookRoutes(
 
         const value = change.value as WebhookValue;
 
-        // Process incoming messages
         if (value.messages) {
           await processMessages(value);
         }
 
-        // Process status updates
         if (value.statuses) {
           await processStatuses(value);
         }
@@ -144,12 +200,11 @@ export function createWebhookRoutes(
     for (const message of value.messages || []) {
       const messageId = message.id;
 
-      // Deduplication check
-      if (processedMessages.has(messageId)) {
-        logger.debug('Duplicate message ignored', { messageId });
+      // Redis-based deduplication
+      if (await isDuplicate(messageId)) {
+        logger.debug('Duplicate message ignored', { messageId: maskPII(messageId) });
         continue;
       }
-      processedMessages.set(messageId, Date.now());
 
       try {
         const from = message.from;
@@ -157,16 +212,15 @@ export function createWebhookRoutes(
         const timestamp = new Date(parseInt(message.timestamp) * 1000);
 
         logger.info('Incoming WhatsApp message', {
-          from,
+          from: maskPII(from),
           type: messageType,
-          messageId,
+          messageId: maskPII(messageId),
         });
 
-        // Find or create session
+        // Find or create session with distributed lock
         let session = await sessionManager.getSessionByUser(from);
 
         if (!session) {
-          // Create new session
           session = await sessionManager.createSession({
             userId: from,
             phoneNumber: from,
@@ -176,12 +230,12 @@ export function createWebhookRoutes(
             },
           });
 
-          // Send welcome message
-          await twilioClient.messages.create({
-            from: `whatsapp:${whatsappPhoneNumber}`,
-            to: `whatsapp:${from}`,
-            body: 'Hello! Welcome to our store. How can I help you today?',
-          });
+          // Send welcome message with retry and jitter
+          await sendWithRetry(
+            from,
+            'Hello! Welcome to our store. How can I help you today?',
+            0
+          );
 
           continue;
         }
@@ -190,73 +244,71 @@ export function createWebhookRoutes(
         await sessionManager.extendSession(session.sessionId);
 
         // Extract message content
-        let content = '';
-        switch (messageType) {
-          case 'text':
-            content = message.text?.body || '';
-            break;
-          case 'image':
-            content = '[Image received]';
-            break;
-          case 'audio':
-            content = '[Audio received]';
-            break;
-          case 'video':
-            content = '[Video received]';
-            break;
-          case 'document':
-            content = `[Document: ${message.document?.filename}]`;
-            break;
-          case 'location':
-            content = `[Location: ${message.location?.name || 'shared location'}]`;
-            break;
-          case 'interactive':
-            if (message.interactive?.button_reply) {
-              content = message.interactive.button_reply.title;
-            } else if (message.interactive?.list_reply) {
-              content = message.interactive.list_reply.title;
-            }
-            break;
-          default:
-            content = `[${messageType} message]`;
-        }
+        const content = extractMessageContent(message);
 
-        // Add user message to session
+        // Add user message to session with lock
         await sessionManager.addMessage(session.sessionId, 'user', content, messageId);
 
-        // Handle interactive responses
+        // Handle response
         if (messageType === 'interactive') {
           await handleInteractiveResponse(session, message);
         } else {
-          // Process through conversation engine
           const result = await conversationEngine.processTurn(content, session.sessionId);
-
-          // Send response
           await sendResponseMessage(session.sessionId, from, result.response.message, result.response.actions);
         }
 
         logger.info('Message processed successfully', {
-          messageId,
-          from,
+          messageId: maskPII(messageId),
+          from: maskPII(from),
           type: messageType,
         });
       } catch (error) {
         logger.error('Failed to process message', {
-          messageId,
-          error,
+          messageId: maskPII(messageId),
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
 
-        // Send error message to user
+        // Send error message with retry
         try {
-          await twilioClient.messages.create({
-            from: `whatsapp:${whatsappPhoneNumber}`,
-            to: `whatsapp:${message.from}`,
-            body: 'Sorry, I encountered an error processing your message. Please try again.',
-          });
+          await sendWithRetry(
+            message.from,
+            'Sorry, I encountered an error processing your message. Please try again.',
+            0
+          );
         } catch (sendError) {
-          logger.error('Failed to send error message', { sendError });
+          logger.error('Failed to send error message', {
+            error: sendError instanceof Error ? sendError.message : 'Unknown error'
+          });
         }
       }
+    }
+  }
+
+  function extractMessageContent(message: NonNullable<WebhookValue['messages']>[0]): string {
+    const messageType = message.type;
+
+    switch (messageType) {
+      case 'text':
+        return message.text?.body || '';
+      case 'image':
+        return '[Image received]';
+      case 'audio':
+        return '[Audio received]';
+      case 'video':
+        return '[Video received]';
+      case 'document':
+        return `[Document: ${message.document?.filename}]`;
+      case 'location':
+        return `[Location: ${message.location?.name || 'shared location'}]`;
+      case 'interactive':
+        if (message.interactive?.button_reply) {
+          return message.interactive.button_reply.title;
+        } else if (message.interactive?.list_reply) {
+          return message.interactive.list_reply.title;
+        }
+        return '';
+      default:
+        return `[${messageType} message]`;
     }
   }
 
@@ -272,7 +324,6 @@ export function createWebhookRoutes(
       const buttonId = interactive.button_reply.id;
       const buttonTitle = interactive.button_reply.title;
 
-      // Route based on button
       switch (buttonId) {
         case 'view_products':
         case 'search':
@@ -296,9 +347,7 @@ export function createWebhookRoutes(
           await sendResponseMessage(session.sessionId, message.from, `You selected: ${buttonTitle}`, undefined);
       }
     } else if (interactive?.list_reply) {
-      const listId = interactive.list_reply.id;
       const listTitle = interactive.list_reply.title;
-
       const result = await conversationEngine.processTurn(listTitle, session.sessionId);
       await sendResponseMessage(session.sessionId, message.from, result.response.message, result.response.actions);
     }
@@ -310,18 +359,16 @@ export function createWebhookRoutes(
     message: string,
     actions?: Array<{ type: string; title: string; payload?: string }>
   ): Promise<void> {
-    await sendWithRetry(sessionId, to, message, actions, 0);
+    await sendWithRetry(to, message, 0);
   }
 
   /**
-   * Send message with retry logic for rate limits
+   * Send message with retry and jitter to prevent thundering herd
    */
   async function sendWithRetry(
-    sessionId: string,
     to: string,
     message: string,
-    actions?: Array<{ type: string; title: string; payload?: string }>,
-    retryCount: number = 0
+    retryCount: number
   ): Promise<void> {
     try {
       const messageData: Record<string, unknown> = {
@@ -330,99 +377,50 @@ export function createWebhookRoutes(
         body: message,
       };
 
-      if (actions && actions.length > 0) {
-        // Send as interactive list for 3+ actions, buttons for 1-2
-        if (actions.length >= 3) {
-          messageData.contentSid = 'list_template';
-          messageData.contentVariables = JSON.stringify({
-            '1': message,
-          });
-        } else {
-          // Use quick reply buttons
-          const buttons = actions.slice(0, 3).map((action) => ({
-            type: 'reply',
-            reply: {
-              id: action.payload || action.title.toLowerCase().replace(/\s+/g, '_'),
-              title: action.title.substring(0, 25),
-            },
-          }));
+      await twilioClient.messages.create(messageData as unknown as Parameters<typeof twilioClient.messages.create>[0]);
 
-          messageData.content = JSON.stringify({
-            type: 'interactive',
-            interactive: {
-              type: 'buttons',
-              header: { type: 'text', text: 'Menu' },
-              body: { text: message },
-              action: { buttons },
-            },
-          });
-        }
-      }
-
-      const sentMessage = await twilioClient.messages.create(messageData as unknown as Parameters<typeof twilioClient.messages.create>[0]);
-
-      // Add assistant message to session
-      await sessionManager.addMessage(sessionId, 'assistant', message, sentMessage.sid);
-
-      logger.info('Response message sent', {
-        sessionId,
-        to,
-        sid: sentMessage.sid,
-        status: sentMessage.status,
+      logger.info('Message sent', {
+        to: maskPII(to),
+        bodyLength: message.length
       });
     } catch (error: unknown) {
       const twilioError = error as { code?: number; message?: string };
       const errorCode = twilioError.code;
       const errorMessage = twilioError.message || '';
 
-      // Check for rate limit error
+      // Rate limit error
       if (errorCode === TWILIO_RATE_LIMIT_CODE ||
           errorMessage.includes('429') ||
           errorMessage.includes('rate limit')) {
 
         if (retryCount < MAX_MESSAGE_RETRIES) {
-          const delay = RETRY_DELAY_MS * Math.pow(2, retryCount); // Exponential backoff
-          logger.warn(`Twilio rate limited, retrying in ${delay}ms`, {
-            sessionId,
-            to,
+          // Exponential backoff with jitter
+          const baseDelay = RETRY_DELAY_MS * Math.pow(2, retryCount);
+          const jitter = Math.random() * 0.3 * baseDelay;
+          const delay = baseDelay + jitter;
+
+          logger.warn('Twilio rate limited, retrying', {
+            to: maskPII(to),
             retryCount: retryCount + 1,
-            maxRetries: MAX_MESSAGE_RETRIES,
+            delay
           });
 
-          // Wait and retry
           await new Promise(resolve => setTimeout(resolve, delay));
-          return sendWithRetry(sessionId, to, message, actions, retryCount + 1);
+          return sendWithRetry(to, message, retryCount + 1);
         }
 
         logger.error('Max retries exceeded for rate limit', {
-          sessionId,
-          to,
+          to: maskPII(to),
           retryCount,
         });
       }
 
-      logger.error('Failed to send response message', {
-        sessionId,
-        to,
-        error,
+      logger.error('Failed to send message', {
+        to: maskPII(to),
+        error: errorMessage,
         errorCode,
         retryCount,
       });
-
-      // Try sending a simple text message as fallback
-      if (actions && actions.length > 0 && retryCount === 0) {
-        logger.info('Retrying with simplified message', { sessionId, to });
-        try {
-          const fallbackMessage = await twilioClient.messages.create({
-            from: `whatsapp:${whatsappPhoneNumber}`,
-            to: `whatsapp:${to}`,
-            body: `${message}\n\nOptions:\n${actions.slice(0, 3).map((a, i) => `${i + 1}. ${a.title}`).join('\n')}`,
-          });
-          await sessionManager.addMessage(sessionId, 'assistant', message, fallbackMessage.sid);
-        } catch (fallbackError) {
-          logger.error('Fallback message also failed', { sessionId, to, fallbackError });
-        }
-      }
     }
   }
 
@@ -432,27 +430,18 @@ export function createWebhookRoutes(
       const newStatus = status.status;
 
       logger.info('Message status update', {
-        messageId,
+        messageId: maskPII(messageId),
         status: newStatus,
-        recipient: status.recipient_id,
+        recipient: maskPII(status.recipient_id),
       });
 
-      // Update order status if linked to order
+      // Handle delivery/read notifications
       if (newStatus === 'delivered' || newStatus === 'read') {
-        // Look up order by message metadata
-        // This would integrate with order service to update delivery status
-      }
-
-      // Update broadcast results if applicable
-      if (newStatus === 'delivered') {
-        // Update broadcast delivery stats
-      } else if (newStatus === 'read') {
-        // Update broadcast read stats
+        // Update order status if linked
       } else if (newStatus === 'failed') {
-        // Log failed message
         logger.warn('Message delivery failed', {
-          messageId,
-          recipient: status.recipient_id,
+          messageId: maskPII(messageId),
+          recipient: maskPII(status.recipient_id),
           errors: status.errors,
         });
       }
