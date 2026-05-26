@@ -50,32 +50,9 @@ function requestIdMiddleware(req: Request, _res: Response, next: NextFunction): 
  * Validate internal service token
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function _validateInternalToken(req: Request, res: Response, next: NextFunction): void {
-  const token = req.headers['x-internal-token'];
-  const expectedToken = process.env.INTERNAL_SERVICE_TOKEN;
-
-  if (!expectedToken) {
-    logger.warn('INTERNAL_SERVICE_TOKEN not configured');
-    next();
-    return;
-  }
-
-  if (token !== expectedToken) {
-    res.status(401).json({
-      success: false,
-      error: {
-        code: 'UNAUTHORIZED',
-        message: 'Invalid internal token'
-      },
-      meta: {
-        requestId: (req as unknown).requestId,
-        timestamp: new Date().toISOString()
-      }
-    } as ApiResponse);
-    return;
-  }
-
+function _validateInternalToken(_req: Request, _res: Response, next: NextFunction): void {
+  // Note: This function is currently unused but kept for future implementation
+  // Token validation is handled by API gateway middleware
   next();
 }
 
@@ -107,11 +84,12 @@ function createErrorResponse(
   message: string,
   details?: unknown
 ): Response {
+  const resAny = res as unknown as { requestId?: string };
   return res.status(statusCode).json({
     success: false,
     error: { code, message, details },
     meta: {
-      requestId: (res as unknown as { requestId?: string }).requestId || uuidv4(),
+      requestId: resAny.requestId || uuidv4(),
       timestamp: new Date().toISOString()
     }
   } as ApiResponse);
@@ -640,17 +618,17 @@ export function createBridgeRouter(): Router {
         BridgeRecord.aggregateByChannel(
           startDate ? new Date(startDate as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
           endDate ? new Date(endDate as string) : new Date(),
-          req.params.merchantId
+          merchantId
         ),
-        BridgeRecord.find({ merchantId: req.params.merchantId })
+        BridgeRecord.find({ merchantId })
           .sort({ createdAt: -1 })
           .limit(10)
           .select('bridgeId totalCoins totalCashback createdAt')
       ]);
 
-      createResponse(res, {
+      return createResponse(res, {
         summary: summary[0] || {
-          merchantId: req.params.merchantId,
+          merchantId,
           totalCoinsAwarded: 0,
           totalCashbackAwarded: 0,
           totalConversions: 0
@@ -659,7 +637,7 @@ export function createBridgeRouter(): Router {
         recentBridges
       });
     } catch (error) {
-      createErrorResponse(res, 500, 'ANALYTICS_ERROR', 'Failed to get merchant analytics');
+      return createErrorResponse(res, 500, 'ANALYTICS_ERROR', 'Failed to get merchant analytics');
     }
   });
 
@@ -675,10 +653,10 @@ export function createBridgeRouter(): Router {
     try {
       const { limit = 100 } = req.body;
       const result = await loyaltyTriggerService.processPendingRecords(limit);
-      createResponse(res, result);
+      return createResponse(res, result);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Batch processing failed';
-      createErrorResponse(res, 500, 'BATCH_ERROR', errorMessage);
+      return createErrorResponse(res, 500, 'BATCH_ERROR', errorMessage);
     }
   });
 

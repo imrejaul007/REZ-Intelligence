@@ -105,7 +105,7 @@ router.get('/:id', requestId, authenticate, async (req: AuthenticatedRequest, re
     const userId = req.userId!;
     const { id } = req.params;
 
-    const memory = await memoryService.getMemory(id, userId);
+    const memory = await memoryService.getMemory(id!, userId);
 
     if (!memory) {
       res.status(404).json({

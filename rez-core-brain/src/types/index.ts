@@ -117,6 +117,7 @@ export interface IContextualData {
 export interface IIntelligenceMetrics {
   userId: string;
   engagement: {
+    totalSessions: number;
     dailyActiveDays: number;
     averageSessionLength: number;
     interactionFrequency: number;

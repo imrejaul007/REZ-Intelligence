@@ -3,7 +3,7 @@
  * Tracks all attribution-to-loyalty bridge transactions
  */
 
-import mongoose, { Schema, Document, Model, Types } from 'mongoose';
+import mongoose, { Schema, Document, Model } from 'mongoose';
 import { ChannelType } from '../types/schemas.js';
 
 // ============================================

@@ -169,11 +169,12 @@ sessionSchema.statics.findOrCreate = async function (
   userId: string,
   agentId?: string
 ): Promise<ISessionDocument> {
-  let session = await this.findActiveByUser(userId);
+  const Model = this as unknown as ISessionModel;
+  let session = await Model.findActiveByUser(userId);
 
   if (!session) {
     const sessionId = `sess_${crypto.randomUUID()}`;
-    session = await this.create({
+    session = await Model.create({
       id: sessionId,
       userId,
       agentId,

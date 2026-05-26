@@ -312,7 +312,7 @@ export class CashbackEngine {
    */
   async getCampaignMultiplier(
     campaignId?: string,
-    merchantId?: string,
+    _merchantId?: string,
     channel?: ChannelType
   ): Promise<number> {
     if (!campaignId) {

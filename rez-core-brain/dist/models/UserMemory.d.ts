@@ -19,6 +19,6 @@ export interface IMemoryModel extends Model<IMemoryDocument> {
         skip?: number;
     }): Promise<IMemoryDocument[]>;
 }
-export declare const Memory: Model<IMemoryDocument>;
+export declare const Memory: IMemoryModel;
 export default Memory;
 //# sourceMappingURL=UserMemory.d.ts.map

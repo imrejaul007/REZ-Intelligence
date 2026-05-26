@@ -37,7 +37,7 @@ const searchMemoriesSchema = zod_1.z.object({
 router.post('/', auth_1.requestId, auth_1.authenticate, async (req, res) => {
     try {
         const userId = req.userId;
-        const requestId = req.requestId;
+        const requestIdVal = req.requestId || 'unknown';
         const validation = createMemorySchema.safeParse(req.body);
         if (!validation.success) {
             res.status(400).json({
@@ -52,15 +52,21 @@ router.post('/', auth_1.requestId, auth_1.authenticate, async (req, res) => {
         }
         const memory = await memoryService_1.memoryService.createMemory({
             userId,
-            ...validation.data,
+            content: validation.data.content,
+            type: validation.data.type,
+            metadata: validation.data.metadata,
+            importance: validation.data.importance,
+            tags: validation.data.tags,
+            source: validation.data.source,
+            ttlSeconds: validation.data.ttlSeconds,
         });
-        logger_1.logger.info(`Memory created: ${memory.id}`, { requestId, userId });
+        logger_1.logger.info(`Memory created: ${memory.id}`, { requestId: requestIdVal, userId });
         res.status(201).json({
             success: true,
             data: memory,
             meta: {
                 timestamp: new Date(),
-                requestId,
+                requestId: requestIdVal,
             },
         });
     }
@@ -357,8 +363,14 @@ router.post('/batch', auth_1.requestId, auth_1.authenticate, async (req, res) =>
             return;
         }
         const memoriesWithUserId = validation.data.memories.map((m) => ({
-            ...m,
             userId,
+            content: m.content,
+            type: m.type,
+            metadata: m.metadata,
+            importance: m.importance,
+            tags: m.tags,
+            source: m.source,
+            ttlSeconds: m.ttlSeconds,
         }));
         const memories = await memoryService_1.memoryService.batchCreateMemories(memoriesWithUserId);
         logger_1.logger.info(`Batch created ${memories.length} memories`);

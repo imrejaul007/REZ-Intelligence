@@ -1,4 +1,8 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
+
+interface RequestWithRequestId extends Request {
+  requestId?: string;
+}
 import mongoose from 'mongoose';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -14,7 +18,7 @@ import sessionRoutes from './routes/session.routes';
 import personalizationRoutes from './routes/personalization.routes';
 
 // Import middleware
-import { requestId, internalAuth } from './middleware/auth';
+import { internalAuth, requestId } from './middleware/auth';
 
 // Import services
 import { memoryService } from './services/memoryService';
@@ -68,7 +72,7 @@ app.get('/health', async (req: Request, res: Response) => {
     },
     meta: {
       timestamp: new Date(),
-      requestId: (req as Request & { requestId?: string }).requestId,
+      requestId: (req as RequestWithRequestId).requestId,
     },
   });
 });
@@ -87,7 +91,7 @@ app.get('/ready', async (req: Request, res: Response) => {
       },
       meta: {
         timestamp: new Date(),
-        requestId: (req as Request & { requestId?: string }).requestId,
+        requestId: (req as RequestWithRequestId).requestId,
       },
     });
   } catch (error) {
@@ -127,7 +131,7 @@ app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
   logger.error('Unhandled error', {
     error: err.message,
     stack: err.stack,
-    requestId: (req as Request & { requestId?: string }).requestId,
+    requestId: (req as RequestWithRequestId).requestId,
     path: req.path,
   });
 
@@ -139,7 +143,7 @@ app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
     },
     meta: {
       timestamp: new Date(),
-      requestId: (req as Request & { requestId?: string }).requestId,
+      requestId: (req as RequestWithRequestId).requestId,
     },
   });
 });
