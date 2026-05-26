@@ -214,7 +214,8 @@ export async function getSegmentMembers(
   }
 
   const key = getCacheKey(CACHE_KEYS.SEGMENT_MEMBERS, segmentId);
-  return await redisClient.srandmember(key, limit, offset);
+  const allMembers = await redisClient.smembers(key);
+  return allMembers.slice(offset, offset + limit);
 }
 
 // Get user's segments (fast lookup)

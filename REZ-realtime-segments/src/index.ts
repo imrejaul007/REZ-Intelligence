@@ -12,7 +12,7 @@ import config from './config/index.js';
 import { connectDatabase, disconnectDatabase } from './database/index.js';
 import { connectRedis, disconnectRedis } from './services/redisCache.js';
 import { startWebhookProcessor, stopWebhookProcessor } from './services/webhookEmitter.js';
-import { DEFAULT_SEGMENTS } from './services/segmentEngine.js';
+import { DEFAULT_SEGMENTS, createMockUserData } from './services/segmentEngine.js';
 import segmentRoutes from './routes/segments.js';
 import { initializeBehaviorTracker, disconnectBehaviorTracker } from './services/behaviorTracker.js';
 import type { ApiResponse } from './types/index.js';

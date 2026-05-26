@@ -31,8 +31,10 @@ import type {
   SegmentEvaluationResult,
   UserData,
   SegmentStats,
-  UserSegmentMembership
+  UserSegmentMembership,
+  SegmentRule
 } from '../types/index.js';
+import { SegmentDefinitionSchema } from '../types/index.js';
 
 // Get all segments (from DB or defaults)
 export async function getAllSegments(): Promise<SegmentDefinition[]> {
@@ -510,25 +512,28 @@ export async function createSegment(
       throw new Error(`Segment already exists: ${segment.segmentId}`);
     }
 
-    // Create in database
-    await SegmentDefinitionModel.create({
+    // Validate and transform rules with default logic
+    const validatedSegment = SegmentDefinitionSchema.parse({
       segmentId: segment.segmentId,
       name: segment.name,
       description: segment.description || '',
       rules: segment.rules,
-      refreshInterval: segment.refreshInterval || 60,
+      refreshInterval: segment.refreshInterval || 60
+    });
+
+    // Create in database
+    await SegmentDefinitionModel.create({
+      segmentId: validatedSegment.segmentId,
+      name: validatedSegment.name,
+      description: validatedSegment.description,
+      rules: validatedSegment.rules,
+      refreshInterval: validatedSegment.refreshInterval,
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
 
-    return {
-      segmentId: segment.segmentId,
-      name: segment.name,
-      description: segment.description || '',
-      rules: segment.rules,
-      refreshInterval: segment.refreshInterval || 60,
-    };
+    return validatedSegment;
   } catch (error) {
     // If DB fails, return the segment as-is (will be in-memory only)
     console.warn('Failed to create segment in DB, using in-memory:', error);
