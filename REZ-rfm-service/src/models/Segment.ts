@@ -3,6 +3,12 @@ import { ISegment } from '../types/index.js';
 
 export interface ISegmentDocument extends ISegment, Document {}
 
+export interface ISegmentModel extends Model<ISegmentDocument> {
+  findByCode(code: string): Promise<ISegmentDocument | null>;
+  findByRFMCode(rfmCode: string): Promise<ISegmentDocument | null>;
+  getAllOrdered(): Promise<ISegmentDocument[]>;
+}
+
 const SegmentSchema = new Schema<ISegmentDocument>(
   {
     name: {
@@ -60,7 +66,7 @@ SegmentSchema.statics.getAllOrdered = async function (): Promise<ISegmentDocumen
   return this.find().sort({ code: 1 });
 };
 
-export const Segment: Model<ISegmentDocument> = mongoose.model<ISegmentDocument>(
+export const Segment = mongoose.model<ISegmentDocument, ISegmentModel>(
   'Segment',
   SegmentSchema
 );

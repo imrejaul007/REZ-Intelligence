@@ -19,7 +19,7 @@ import {
   ForecastMethod,
 } from '../types/inventory.types.js';
 import { DemandData, ProductMaster } from '../models/schemas.js';
-import { apiLogger as logger } from './utils/logger.js';
+import { apiLogger as logger } from '../utils/logger.js';
 import { startOfDay, subDays, parseISO, format } from 'date-fns';
 
 const router = Router();

@@ -134,7 +134,7 @@ RFMScoreSchema.statics.getSegmentDistribution = async function (): Promise<Recor
   }, {} as Record<string, number>);
 };
 
-export const RFMScore: Model<IRFMScoreDocument> = mongoose.model<IRFMScoreDocument>(
+export const RFMScore = mongoose.model<IRFMScoreDocument, IRFMScoreModel>(
   'RFMScore',
   RFMScoreSchema
 );

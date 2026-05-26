@@ -17,7 +17,7 @@ import {
   roundTo,
   clamp,
 } from '../utils/math.js';
-import { optimizationLogger as logger } from './utils/logger.js';
+import { optimizationLogger as logger } from '../utils/logger.js';
 import config from '../config/index.js';
 import { subDays, startOfDay } from 'date-fns';
 
