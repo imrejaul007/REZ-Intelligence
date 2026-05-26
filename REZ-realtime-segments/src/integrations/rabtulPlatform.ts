@@ -225,7 +225,10 @@ const segmentHandlers: Record<string, (userId: string, userData?: unknown) => Pr
     await segmentActions.rewardPowerUser(userId);
   },
   at_risk: async (userId, userData) => {
-    const riskLevel = userData?.signals?.competitor?.switchRisk || 'HIGH';
+    const userDataRecord = userData as Record<string, unknown> | undefined;
+    const signals = userDataRecord?.signals as Record<string, unknown> | undefined;
+    const competitor = signals?.competitor as Record<string, string> | undefined;
+    const riskLevel = competitor?.switchRisk || 'HIGH';
     await segmentActions.notifyAtRiskUser(userId, riskLevel);
   },
   dormant: async (userId) => {

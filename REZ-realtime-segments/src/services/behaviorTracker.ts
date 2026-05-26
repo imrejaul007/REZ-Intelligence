@@ -467,10 +467,12 @@ export async function calculateCrossSessionData(
   const eventsBySession = events.reduce(
     (acc, e) => {
       const sessionId = e.sessionId;
-      if (!acc[sessionId]) acc[sessionId] = { total: 0, hasPurchase: false };
-      acc[sessionId].total++;
-      if (['order_completed', 'purchase'].includes(e.eventType)) {
-        acc[sessionId].hasPurchase = true;
+      if (sessionId) {
+        if (!acc[sessionId]) acc[sessionId] = { total: 0, hasPurchase: false };
+        acc[sessionId].total++;
+        if (['order_completed', 'purchase'].includes(e.eventType)) {
+          acc[sessionId].hasPurchase = true;
+        }
       }
       return acc;
     },
@@ -635,7 +637,7 @@ export async function getEventAggregation(
   );
 
   const uniqueSessions = new Set(events.map((e) => e.sessionId)).size;
-  const sessionIds = [...new Set(events.map((e) => e.sessionId).filter((id): id is string => id !== undefined))];
+  const sessionIds: string[] = [...new Set(events.map((e) => e.sessionId).filter((id): id is string => id !== undefined))];
   const sessionsData = await Promise.all(
     sessionIds.map((id) => redisClient!.hgetall(keys.sessionData(id)))
   );

@@ -266,7 +266,7 @@ async function fetchUserData(userId: string): Promise<UserData | null> {
     });
 
     if (response.ok) {
-      const data = await response.json();
+      const data = await response.json() as Record<string, unknown>;
       return mapExternalUserData(data);
     }
   } catch {
@@ -791,11 +791,6 @@ export async function getSegmentAnalytics(
     console.error('Failed to get segment analytics:', error);
     return null;
   }
-}
-
-// Refresh segment definitions
-export async function refreshSegmentDefinitions(): Promise<SegmentDefinition[]> {
-  return getAllSegments();
 }
 
 export default {
