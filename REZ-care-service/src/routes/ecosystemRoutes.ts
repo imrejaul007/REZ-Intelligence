@@ -9,7 +9,7 @@
  */
 
 import express, { Request, Response } from 'express';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import {
   memoryLayer,
   unifiedProfile,

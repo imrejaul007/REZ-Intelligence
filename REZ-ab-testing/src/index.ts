@@ -13,7 +13,6 @@ import {
   VariantResult,
   ControlResult,
   Results,
-  CreateExperimentRequest,
   RecordConversionRequest,
 } from './types.js';
 
@@ -128,7 +127,7 @@ function timingSafeCompare(a: string, b: string): boolean {
 function verifyToken(token: string): boolean {
   if (INTERNAL_TOKEN && timingSafeCompare(token, INTERNAL_TOKEN)) return true;
   try {
-    const tokens = JSON.parse(TOKENS_JSON);
+    const tokens = JSON.parse(TOKENS_JSON) as Record<string, string>;
     return Object.values(tokens).some((t: string) => timingSafeCompare(token, t));
   } catch {
     return false;
@@ -177,7 +176,8 @@ app.post('/api/experiments', requireAuth, asyncHandler(async (req: Request, res:
 app.get('/api/experiments/:experimentId', requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const experiment = await Experiment.findOne({ experimentId: req.params.experimentId });
   if (!experiment) {
-    return res.status(404).json({ error: 'Experiment not found' });
+    res.status(404).json({ error: 'Experiment not found' });
+    return;
   }
   res.json({ success: true, experiment });
 }));
@@ -205,7 +205,8 @@ app.post('/api/experiments/:experimentId/start', requireAuth, asyncHandler(async
   );
 
   if (!experiment) {
-    return res.status(404).json({ error: 'Experiment not found' });
+    res.status(404).json({ error: 'Experiment not found' });
+    return;
   }
 
   logger.info(`Experiment ${experiment.experimentId} started`);
@@ -223,7 +224,8 @@ app.post('/api/experiments/:experimentId/stop', requireAuth, asyncHandler(async 
   );
 
   if (!experiment) {
-    return res.status(404).json({ error: 'Experiment not found' });
+    res.status(404).json({ error: 'Experiment not found' });
+    return;
   }
 
   // Calculate final results
@@ -245,7 +247,8 @@ app.get('/api/experiments/:experimentId/variant', requireAuth, asyncHandler(asyn
   const experimentId = req.params.experimentId;
 
   if (!userId) {
-    return res.status(400).json({ error: 'userId is required' });
+    res.status(400).json({ error: 'userId is required' });
+    return;
   }
 
   // Check if already assigned
@@ -255,12 +258,14 @@ app.get('/api/experiments/:experimentId/variant', requireAuth, asyncHandler(asyn
     // Get experiment
     const experiment = await Experiment.findOne({ experimentId });
     if (!experiment || experiment.status !== ExperimentStatus.RUNNING) {
-      return res.status(404).json({ error: 'Experiment not found or not running' });
+      res.status(404).json({ error: 'Experiment not found or not running' });
+      return;
     }
 
     // Check audience rules
     if (!experimentEngine.matchesAudience(experiment, appId)) {
-      return res.json({ success: true, variantId: null, reason: 'not_in_audience' });
+      res.json({ success: true, variantId: null, reason: 'not_in_audience' });
+      return;
     }
 
     // Assign variant based on weights
@@ -298,7 +303,8 @@ app.post('/api/conversions', requireAuth, asyncHandler(async (req: Request, res:
   );
 
   if (!assignment) {
-    return res.status(404).json({ error: 'Assignment not found' });
+    res.status(404).json({ error: 'Assignment not found' });
+    return;
   }
 
   res.json({ success: true });
@@ -323,7 +329,8 @@ app.get('/api/users/:userId/experiments', requireAuth, asyncHandler(async (req: 
 app.get('/api/experiments/:experimentId/results', requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const experiment = await Experiment.findOne({ experimentId: req.params.experimentId });
   if (!experiment) {
-    return res.status(404).json({ error: 'Experiment not found' });
+    res.status(404).json({ error: 'Experiment not found' });
+    return;
   }
 
   // Calculate real-time results
@@ -425,8 +432,12 @@ app.get('/health', (_req: Request, res: Response) => {
 
 app.get('/ready', asyncHandler(async (_req: Request, res: Response) => {
   try {
-    await mongoose.connection.db.admin().ping();
-    res.json({ status: 'ready' });
+    if (mongoose.connection.db) {
+      await mongoose.connection.db.admin().ping();
+      res.json({ status: 'ready' });
+    } else {
+      res.status(503).json({ status: 'not ready' });
+    }
   } catch {
     res.status(503).json({ status: 'not ready' });
   }

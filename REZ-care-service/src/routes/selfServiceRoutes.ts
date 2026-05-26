@@ -9,7 +9,7 @@
  */
 
 import express, { Request, Response } from 'express';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { SelfServiceService } from '../services/selfServiceService';
 import { CrossPlatformIssueMemory } from '../services/crossPlatformIssueMemory';
 
@@ -17,8 +17,14 @@ const router = express.Router();
 const selfService = new SelfServiceService();
 const crossPlatformMemory = new CrossPlatformIssueMemory();
 
+// Extended request interface
+interface CustomerRequest extends Request {
+  customerId?: string;
+  phone?: string;
+}
+
 // Middleware to extract customer from token/phone
-async function extractCustomer(req: Request, res: Response, next: Function) {
+async function extractCustomer(req: CustomerRequest, res: Response, next: Function) {
   // In real app, extract from JWT token
   // For now, use header or body
   const customerId = req.headers['x-customer-id'] || req.body?.customerId;
@@ -28,8 +34,8 @@ async function extractCustomer(req: Request, res: Response, next: Function) {
     return res.status(401).json({ error: 'Customer ID or phone required' });
   }
 
-  (req as unknown).customerId = customerId || phone;
-  (req as unknown).phone = phone || customerId;
+  req.customerId = (customerId || phone) as string;
+  req.phone = (phone || customerId) as string;
   next();
 }
 
@@ -40,9 +46,9 @@ async function extractCustomer(req: Request, res: Response, next: Function) {
 /**
  * Get available self-service actions for customer
  */
-router.get('/actions', extractCustomer, async (req: Request, res: Response) => {
+router.get('/actions', extractCustomer, async (req: CustomerRequest, res: Response) => {
   try {
-    const { customerId } = req as unknown;
+    const customerId = req.customerId as string;
     const actions = await selfService.getAvailableActions(customerId);
 
     res.json({
@@ -62,9 +68,9 @@ router.get('/actions', extractCustomer, async (req: Request, res: Response) => {
 /**
  * Execute self-service action
  */
-router.post('/execute', extractCustomer, async (req: Request, res: Response) => {
+router.post('/execute', extractCustomer, async (req: CustomerRequest, res: Response) => {
   try {
-    const { customerId } = req as unknown;
+    const customerId = req.customerId as string;
     const { actionType, actionData } = req.body;
 
     if (!actionType) {
@@ -91,9 +97,9 @@ router.post('/execute', extractCustomer, async (req: Request, res: Response) => 
 /**
  * Quick retry payment
  */
-router.post('/retry-payment', extractCustomer, async (req: Request, res: Response) => {
+router.post('/retry-payment', extractCustomer, async (req: CustomerRequest, res: Response) => {
   try {
-    const { customerId } = req as unknown;
+    const customerId = req.customerId as string;
     const { orderId } = req.body;
 
     if (!orderId) {
@@ -119,9 +125,9 @@ router.post('/retry-payment', extractCustomer, async (req: Request, res: Respons
 /**
  * Quick sync wallet
  */
-router.post('/sync-wallet', extractCustomer, async (req: Request, res: Response) => {
+router.post('/sync-wallet', extractCustomer, async (req: CustomerRequest, res: Response) => {
   try {
-    const { customerId } = req as unknown;
+    const customerId = req.customerId as string;
     const result = await selfService.syncWallet(customerId);
 
     res.json({
@@ -140,9 +146,9 @@ router.post('/sync-wallet', extractCustomer, async (req: Request, res: Response)
 /**
  * Retry cashback
  */
-router.post('/retry-cashback', extractCustomer, async (req: Request, res: Response) => {
+router.post('/retry-cashback', extractCustomer, async (req: CustomerRequest, res: Response) => {
   try {
-    const { customerId } = req as unknown;
+    const customerId = req.customerId as string;
     const { transactionId } = req.body;
 
     const result = await selfService.retryCashback(customerId, transactionId);
@@ -168,9 +174,9 @@ router.post('/retry-cashback', extractCustomer, async (req: Request, res: Respon
 /**
  * Get customer's issue history
  */
-router.get('/history', extractCustomer, async (req: Request, res: Response) => {
+router.get('/history', extractCustomer, async (req: CustomerRequest, res: Response) => {
   try {
-    const { customerId } = req as unknown;
+    const customerId = req.customerId as string;
     const history = await crossPlatformMemory.getCustomerIssueHistory(customerId);
 
     res.json({
@@ -190,9 +196,9 @@ router.get('/history', extractCustomer, async (req: Request, res: Response) => {
 /**
  * Get similar past issues (for self-help)
  */
-router.get('/similar-issues', extractCustomer, async (req: Request, res: Response) => {
+router.get('/similar-issues', extractCustomer, async (req: CustomerRequest, res: Response) => {
   try {
-    const { customerId } = req as unknown;
+    const customerId = req.customerId as string;
     const { category, platform } = req.query;
 
     const issues = await crossPlatformMemory.findSimilarIssues({
@@ -218,9 +224,9 @@ router.get('/similar-issues', extractCustomer, async (req: Request, res: Respons
 /**
  * Get issue predictions and prevention tips
  */
-router.get('/predictions', extractCustomer, async (req: Request, res: Response) => {
+router.get('/predictions', extractCustomer, async (req: CustomerRequest, res: Response) => {
   try {
-    const { customerId } = req as unknown;
+    const customerId = req.customerId as string;
     const predictions = await crossPlatformMemory.predictCustomerIssues(customerId);
 
     res.json({
@@ -244,9 +250,10 @@ router.get('/predictions', extractCustomer, async (req: Request, res: Response) 
 /**
  * Submit new issue (self-service)
  */
-router.post('/report-issue', extractCustomer, async (req: Request, res: Response) => {
+router.post('/report-issue', extractCustomer, async (req: CustomerRequest, res: Response) => {
   try {
-    const { customerId, phone } = req as unknown;
+    const customerId = req.customerId as string;
+    const phone = req.phone as string;
     const {
       platform,
       category,
@@ -285,9 +292,10 @@ router.post('/report-issue', extractCustomer, async (req: Request, res: Response
         issueId: result.issue.issueId,
         isRepeatIssue: result.isRepeatIssue,
         suggestions: result.suggestions,
-        suggestedActions: suggestedActions.filter((a) =>
-          a.category === category || a.priority === 'quick'
-        ),
+        suggestedActions: suggestedActions.filter((a) => {
+          const action = a as unknown as { category: string; priority: string };
+          return action.category === category || action.priority === 'quick';
+        }),
         message: 'Issue reported successfully. We\'ll get back to you soon.'
       }
     });
@@ -304,9 +312,9 @@ router.post('/report-issue', extractCustomer, async (req: Request, res: Response
 /**
  * Submit CSAT rating
  */
-router.post('/rate', extractCustomer, async (req: Request, res: Response) => {
+router.post('/rate', extractCustomer, async (req: CustomerRequest, res: Response) => {
   try {
-    const { customerId } = req as unknown;
+    const customerId = req.customerId as string;
     const { ticketId, rating, comment } = req.body;
 
     // In real app, save to CSAT collection

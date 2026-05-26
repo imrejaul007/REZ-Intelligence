@@ -98,7 +98,7 @@ export class AppService {
       // Validate input
       const validated = MessageSchema.safeParse({ userId, message });
       if (!validated.success) {
-        logger.warn('Invalid message format', { userId, errors: validated.error.errors });
+        logger.warn('Invalid message format', { userId, errors: validated.error.issues });
         return {
           success: false,
           responseId,
@@ -255,7 +255,7 @@ export class AppService {
     try {
       const validated = InAppNotificationSchema.safeParse(notification);
       if (!validated.success) {
-        logger.warn('Invalid notification format', { errors: validated.error.errors });
+        logger.warn('Invalid notification format', { errors: validated.error.issues });
         throw new Error('Invalid notification format');
       }
 

@@ -12,8 +12,8 @@
  * This is the brain of the hyperlocal commerce network.
  */
 
-import express, { Request, Response, NextFunction } import logger from './utils/logger';
-import from 'express';
+import express, { Request, Response, NextFunction } from 'express';
+import { logger } from './utils/logger.js';
 import mongoose, { Schema, Document } from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';

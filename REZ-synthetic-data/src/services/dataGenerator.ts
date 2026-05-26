@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { Dataset, SchemaField, SyntheticDataRequest, GenerationResult, DataQualityReport } from '../types/index.js';
-import { logger } from '../utils/logger.js';
+import { logger } from './utils/logger.js';
 
 export class DataGenerator {
   private seed: number = Date.now();
@@ -40,20 +40,22 @@ export class DataGenerator {
       .filter(f => ['email', 'phone', 'name', 'address'].includes(f.type))
       .map(f => f.name);
 
-    const fieldStats: Record<string, unknown> = {};
+    const fieldStats: Record<string, { min?: number; max?: number; mean?: number; unique: number }> = {};
     for (const field of schema) {
+      const fieldName = field.name;
       if (field.type === 'number') {
-        const values = data.map(d => d[field.name]).filter(v => typeof v === 'number') as number[];
-        fieldStats[field.name] = {
+        const values = data.map(d => d[fieldName]).filter(v => typeof v === 'number') as number[];
+        fieldStats[fieldName] = {
           min: Math.min(...values),
           max: Math.max(...values),
-          mean: values.reduce((a, b) => a + b, 0) / values.length
+          mean: values.reduce((a, b) => a + b, 0) / values.length,
+          unique: new Set(data.map(d => d[fieldName])).size
+        };
+      } else {
+        fieldStats[fieldName] = {
+          unique: new Set(data.map(d => d[fieldName])).size
         };
       }
-      fieldStats[field.name] = {
-        ...fieldStats[field.name],
-        unique: new Set(data.map(d => d[field.name])).size
-      };
     }
 
     return {
@@ -117,11 +119,11 @@ export class DataGenerator {
     return result;
   }
 
-  private generateNumber(field: SchemaField, options): number {
+  private generateNumber(field: SchemaField, options: { addNoise?: boolean; noiseLevel?: number }): number {
     const min = field.min ?? 0;
     const max = field.max ?? 1000;
 
-    if (options.addNoise && options.noiseLevel) {
+    if (options?.addNoise && options?.noiseLevel) {
       const noise = (this.seededRandom() - 0.5) * 2 * (max - min) * options.noiseLevel;
       return Math.round((min + this.seededRandom() * (max - min) + noise) * 100) / 100;
     }
@@ -184,16 +186,18 @@ export class DataGenerator {
   }
 
   async anonymizeData(data: unknown[], fieldsToAnonymize: string[], preserveFormat: boolean = true): Promise<unknown[]> {
-    return data.map(record => {
-      const anonymized = { ...record };
+    return data.map((record: unknown) => {
+      const recordObj = record as Record<string, unknown>;
+      const anonymized: Record<string, unknown> = { ...recordObj };
 
       for (const field of fieldsToAnonymize) {
         if (field in anonymized) {
-          if (preserveFormat && typeof anonymized[field] === 'string') {
-            anonymized[field] = this.anonymizeWithFormat(anonymized[field]);
-          } else if (typeof anonymized[field] === 'string' && anonymized[field].includes('@')) {
+          const value = anonymized[field];
+          if (preserveFormat && typeof value === 'string') {
+            anonymized[field] = this.anonymizeWithFormat(value);
+          } else if (typeof value === 'string' && value.includes('@')) {
             anonymized[field] = 'user' + Math.floor(this.seededRandom() * 100000) + '@anonymized.com';
-          } else if (typeof anonymized[field] === 'string' && anonymized[field].match(/^\+91/)) {
+          } else if (typeof value === 'string' && value.match(/^\+91/)) {
             anonymized[field] = '+91 999 XXXXX' + Math.floor(this.seededRandom() * 10000);
           } else {
             anonymized[field] = '[REDACTED]';
@@ -219,8 +223,8 @@ export class DataGenerator {
       address: this.generateAddress(),
       age: Math.floor(this.seededRandom() * 50) + 18,
       isActive: this.seededRandom() > 0.2,
-      createdAt: this.generateDate({ name: 'createdAt', type: 'date', min: '2020-01-01' } as unknown),
-      lastLogin: this.generateDate({ name: 'lastLogin', type: 'date', min: '2024-01-01' } as unknown)
+      createdAt: this.generateDate({ name: 'createdAt', type: 'date', minLength: '2020-01-01' } as unknown as SchemaField),
+      lastLogin: this.generateDate({ name: 'lastLogin', type: 'date', minLength: '2024-01-01' } as unknown as SchemaField)
     }));
   }
 
@@ -251,7 +255,7 @@ export class DataGenerator {
       status: statuses[Math.floor(this.seededRandom() * statuses.length)],
       paymentMethod: paymentMethods[Math.floor(this.seededRandom() * paymentMethods.length)],
       items: Math.floor(this.seededRandom() * 10) + 1,
-      createdAt: this.generateDate({ name: 'createdAt', type: 'date', min: '2024-01-01' } as unknown)
+      createdAt: this.generateDate({ name: 'createdAt', type: 'date', minLength: '2024-01-01' } as unknown as SchemaField)
     }));
   }
 
@@ -264,7 +268,7 @@ export class DataGenerator {
     const issues: string[] = [];
 
     for (const field of schema) {
-      const values = data.map(d => d[field.name]);
+      const values = data.map(d => (d as Record<string, unknown>)[field.name]);
       const nonNull = values.filter(v => v !== null && v !== undefined).length;
       if (nonNull / data.length > 0.95) completeFields++;
 
@@ -299,8 +303,11 @@ export class DataGenerator {
     };
   }
 
-  private validateValue(value, field: SchemaField): boolean {
-    if (value === null || value === undefined) return !field.required;
+  private validateValue(value: unknown, field: SchemaField): boolean {
+    if (value === null || value === undefined) {
+      const fieldWithRequired = field as { required?: boolean };
+      return !fieldWithRequired.required;
+    }
 
     switch (field.type) {
       case 'email':
@@ -312,7 +319,7 @@ export class DataGenerator {
       case 'boolean':
         return typeof value === 'boolean';
       case 'date':
-        return !isNaN(Date.parse(value));
+        return typeof value === 'string' && !isNaN(Date.parse(value));
       case 'uuid':
         return typeof value === 'string' && value.match(/^[0-9a-f]{8}-[0-9a-f]{4}/i) !== null;
       default:

@@ -8,7 +8,7 @@ import env from '../config/index.js';
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
 // Custom log format
-const logFormat = printf(({ level, message, timestamp, stack, ...metadata }) => {
+const logFormat = printf(({ level, message, timestamp, stack, ...metadata }: { level: string; message: string; timestamp?: string; stack?: string; [key: string]: unknown }) => {
   let log = `${timestamp} [${level}]: ${message}`;
 
   if (Object.keys(metadata).length > 0) {

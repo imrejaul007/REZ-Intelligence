@@ -3,6 +3,7 @@
  * Manages hotel bookings, preferences, and experiences
  */
 
+import crypto from 'crypto';
 import winston from 'winston';
 import { ConsumerGraph } from '../ConsumerGraph';
 
@@ -38,6 +39,16 @@ export interface StaySummary {
   avg_rating: number;
   favorite_hotels: string[];
   last_stay: string;
+}
+
+export interface HotelReview {
+  review_id: string;
+  booking_id: string;
+  hotel_id: string;
+  rating: number;
+  categories: Record<string, number>;
+  comment?: string;
+  created_at: string;
 }
 
 export class HotelModule {
@@ -92,7 +103,7 @@ export class HotelModule {
 
     const newBooking: HotelBooking = {
       ...booking,
-      booking_id: `hotel_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      booking_id: `${crypto.randomUUID()}`,
       user_id: userId,
       status: 'confirmed',
       created_at: new Date().toISOString(),
@@ -237,7 +248,7 @@ export class HotelModule {
     // Create new
     const newPref: HotelPreference = {
       ...preference,
-      preference_id: `pref_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      preference_id: `${crypto.randomUUID()}`,
       user_id: userId,
       created_at: new Date().toISOString(),
     };
@@ -287,16 +298,6 @@ export class HotelModule {
   // REVIEWS
   // ============================================
 
-  interface HotelReview {
-    review_id: string;
-    booking_id: string;
-    hotel_id: string;
-    rating: number;
-    categories: Record<string, number>;
-    comment?: string;
-    created_at: string;
-  }
-
   /**
    * Add hotel review
    */
@@ -309,7 +310,7 @@ export class HotelModule {
     comment?: string
   ): Promise<HotelReview> {
     const review: HotelReview = {
-      review_id: `review_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      review_id: `${crypto.randomUUID()}`,
       booking_id: bookingId,
       hotel_id: hotelId,
       rating,

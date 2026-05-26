@@ -7,7 +7,7 @@
  */
 
 import axios from 'axios';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 // Expert Service URLs
 const EXPERT_URLS = {
@@ -29,7 +29,7 @@ export interface ExpertContext {
   sessionId?: string;
   platform: string;
   industry?: string;
-  [key: string];
+  [key: string]: unknown;
 }
 
 export interface ExpertResponse {
@@ -219,7 +219,8 @@ export class ExpertRouter {
 
       return null;
     } catch (error) {
-      logger.warn(`[ExpertRouter] ${expertType} expert error: ${error.message}`);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.warn(`[ExpertRouter] ${expertType} expert error: ${errorMsg}`);
       return null;
     }
   }
@@ -266,7 +267,8 @@ export class ExpertRouter {
         confidence: 0,
       };
     } catch (error) {
-      logger.error(`[ExpertRouter] Copilot error: ${error.message}`);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`[ExpertRouter] Copilot error: ${errorMsg}`);
       return {
         success: false,
         response: "Service temporarily unavailable. Our team will contact you shortly.",

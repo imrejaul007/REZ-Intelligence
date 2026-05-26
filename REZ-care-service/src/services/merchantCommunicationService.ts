@@ -7,7 +7,7 @@
 
 import mongoose, { Schema, Model } from 'mongoose';
 import axios from 'axios';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { generateCommunicationId } from '../utils/idGenerator';
 
 interface IMerchantCommunication {
@@ -376,7 +376,8 @@ export class MerchantCommunicationService {
       };
     }
 
-    (communication as unknown).actions.push({
+    communication.actions = communication.actions || [];
+    (communication.actions as unknown as Array<{ type: string; takenBy: string; takenAt: Date; details: string }>).push({
       type: 'resolved',
       takenBy: 'system',
       takenAt: new Date(),
@@ -389,7 +390,7 @@ export class MerchantCommunicationService {
     await this.notifyCustomer(communication);
 
     logger.info('Merchant communication resolved', { communicationId });
-    return communication as unknown;
+    return communication as unknown as IMerchantCommunication;
   }
   async escalate(communicationId: string, escalationNote: string): Promise<IMerchantCommunication | null> {
     await this.connect();
@@ -400,7 +401,8 @@ export class MerchantCommunicationService {
     communication.status = 'escalated';
     communication.priority = 'urgent';
 
-    (communication as unknown).actions.push({
+    communication.actions = communication.actions || [];
+    (communication.actions as unknown as Array<{ type: string; takenBy: string; takenAt: Date; details: string }>).push({
       type: 'escalated',
       takenBy: 'system',
       takenAt: new Date(),
@@ -417,7 +419,7 @@ export class MerchantCommunicationService {
     await communication.save();
 
     logger.info('Merchant communication escalated', { communicationId });
-    return communication as unknown;
+    return communication as unknown as IMerchantCommunication;
   }
 
   /**
@@ -427,13 +429,13 @@ export class MerchantCommunicationService {
     status?: string;
     limit?: number;
     offset?: number;
-  }): Promise<unknown[]> {
+  }): Promise<IMerchantCommunication[]> {
     await this.connect();
 
-    const query: unknown = { partnerId };
+    const query: Record<string, unknown> = { partnerId };
     if (options?.status) query.status = options.status;
 
-    const communications = await MerchantCommunication.find(query)
+    const communications = await MerchantCommunication.find(query as Record<string, unknown>)
       .sort({ createdAt: -1 })
       .limit(options?.limit || 50)
       .skip(options?.offset || 0);
@@ -458,15 +460,15 @@ export class MerchantCommunicationService {
     priority?: string;
     limit?: number;
   }): Promise<{
-    pending: unknown[];
-    acknowledged: unknown[];
-    inProgress: unknown[];
-    resolved: unknown[];
-    urgent: unknown[];
+    pending: IMerchantCommunication[];
+    acknowledged: IMerchantCommunication[];
+    inProgress: IMerchantCommunication[];
+    resolved: IMerchantCommunication[];
+    urgent: IMerchantCommunication[];
   }> {
     await this.connect();
 
-    const query: unknown = {};
+    const query: Record<string, unknown> = {};
     if (params.partnerType) query.partnerType = params.partnerType;
     if (params.status) query.status = params.status;
     if (params.priority) query.priority = params.priority;
@@ -481,7 +483,13 @@ export class MerchantCommunicationService {
       MerchantCommunication.find({ ...query, priority: 'urgent', status: { $ne: 'resolved' } }).sort({ createdAt: -1 }).limit(limit)
     ]);
 
-    return { pending, acknowledged, inProgress, resolved, urgent };
+    return {
+      pending: pending as unknown as IMerchantCommunication[],
+      acknowledged: acknowledged as unknown as IMerchantCommunication[],
+      inProgress: inProgress as unknown as IMerchantCommunication[],
+      resolved: resolved as unknown as IMerchantCommunication[],
+      urgent: urgent as unknown as IMerchantCommunication[]
+    };
   }
 
   /**
@@ -545,7 +553,7 @@ export class MerchantCommunicationService {
     return result;
   }
 
-  private async sendViaChannel(communication, message: string, channel: string): Promise<void> {
+  private async sendViaChannel(communication: InstanceType<typeof MerchantCommunication>, message: string, channel: string): Promise<void> {
     const partnerContact = communication.partnerPhone || communication.partnerEmail;
 
     if (!partnerContact) {
@@ -596,7 +604,7 @@ export class MerchantCommunicationService {
     }
   }
 
-  private async notifyAgent(communication): Promise<void> {
+  private async notifyAgent(communication: InstanceType<typeof MerchantCommunication>): Promise<void> {
     try {
       await axios.post(`${SERVICE_URLS.notifications}/api/notifications/send`, {
         userId: communication.initiatedBy?.agentId || 'support-team',
@@ -617,7 +625,7 @@ export class MerchantCommunicationService {
     }
   }
 
-  private async notifyCustomer(communication): Promise<void> {
+  private async notifyCustomer(communication: InstanceType<typeof MerchantCommunication>): Promise<void> {
     try {
       await axios.post(`${SERVICE_URLS.notifications}/api/notifications/send`, {
         userId: communication.customerId,

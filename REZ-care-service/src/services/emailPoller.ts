@@ -8,7 +8,7 @@
 import Imap from 'imap';
 import { simpleParser } from 'mailparser';
 import { emailIntegration, EmailMessage } from './emailIntegration';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export interface IMAPConfig {
   user: string;
@@ -163,10 +163,10 @@ class EmailPoller {
             }
           });
 
-          msg.on('body', async (stream) => {
+          msg.on('body', async (stream: unknown) => {
             try {
-              const parsed = await simpleParser(stream as unknown);
-              const email = this.convertToEmailMessage(parsed, uid);
+              const parsed = await simpleParser(stream as unknown as Parameters<typeof simpleParser>[0]);
+              const email = this.convertToEmailMessage(parsed as unknown as Record<string, unknown>, uid);
 
               logger.info('[EmailPoller] Processing email', {
                 from: email.from,
@@ -201,17 +201,22 @@ class EmailPoller {
   /**
    * Convert mailparser parsed email to EmailMessage
    */
-  private convertToEmailMessage(parsed, uid?: number | null): EmailMessage {
+  private convertToEmailMessage(parsed: Record<string, unknown>, uid?: number | null): EmailMessage {
+    const fromValue = parsed.from as { value?: Array<{ text?: string }>; text?: string } | undefined;
+    const toValue = parsed.to as { value?: Array<{ text?: string }>; text?: string } | undefined;
+    const attachments = parsed.attachments as Array<{ filename?: string }> | undefined;
+    const dateValue = parsed.date as Date | undefined;
+
     return {
-      from: parsed.from?.value?.[0]?.text || parsed.from?.text || '',
-      to: parsed.to?.value?.[0]?.text || parsed.to?.text || '',
-      subject: parsed.subject || '',
-      body: parsed.text || parsed.textAsHtml || '',
-      html: parsed.html || undefined,
-      attachments: parsed.attachments?.map((a) => a.filename) || [],
-      date: parsed.date?.toISOString() || new Date().toISOString(),
-      messageId: parsed.messageId || `imap-${uid || Date.now()}`,
-      inReplyTo: parsed.inReplyTo || undefined,
+      from: fromValue?.value?.[0]?.text || fromValue?.text || '',
+      to: toValue?.value?.[0]?.text || toValue?.text || '',
+      subject: (parsed.subject as string) || '',
+      body: (parsed.text as string) || (parsed.textAsHtml as string) || '',
+      html: (parsed.html as string) || undefined,
+      attachments: attachments?.map((a: { filename?: string }) => a.filename) || [],
+      date: dateValue?.toISOString() || new Date().toISOString(),
+      messageId: (parsed.messageId as string) || `imap-${uid || Date.now()}`,
+      inReplyTo: (parsed.inReplyTo as string) || undefined,
     };
   }
 

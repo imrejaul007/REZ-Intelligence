@@ -32,7 +32,7 @@ export const logger = winston.createLogger({
 
 export const log = {
   info: (stage: string, message: string, data: Record<string, unknown> = {}): void => {
-    const entry: LogEntry = {
+    const _entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level: 'INFO',
       stage,
@@ -42,7 +42,7 @@ export const log = {
     logger.info(message, { stage, ...data });
   },
   warn: (stage: string, message: string, data: Record<string, unknown> = {}): void => {
-    const entry: LogEntry = {
+    const _entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level: 'WARN',
       stage,
@@ -52,7 +52,7 @@ export const log = {
     logger.warn(message, { stage, ...data });
   },
   error: (stage: string, message: string, data: Record<string, unknown> = {}): void => {
-    const entry: LogEntry = {
+    const _entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level: 'ERROR',
       stage,

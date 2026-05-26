@@ -24,7 +24,7 @@ router.post(
     if (!validationResult.success) {
       throw new ValidationError(
         'Invalid request body',
-        validationResult.error.errors
+        validationResult.error.issues
       );
     }
 
@@ -73,7 +73,7 @@ router.post(
     if (!validationResult.success) {
       throw new ValidationError(
         'Invalid request body',
-        validationResult.error.errors
+        validationResult.error.issues
       );
     }
 
@@ -124,7 +124,7 @@ router.post(
     if (!validationResult.success) {
       throw new ValidationError(
         'Invalid request body',
-        validationResult.error.errors
+        validationResult.error.issues
       );
     }
 
@@ -174,7 +174,7 @@ router.post(
     if (!validationResult.success) {
       throw new ValidationError(
         'Invalid request body',
-        validationResult.error.errors
+        validationResult.error.issues
       );
     }
 

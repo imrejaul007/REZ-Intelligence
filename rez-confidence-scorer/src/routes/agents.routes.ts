@@ -9,7 +9,7 @@ import {
   NotFoundError,
 } from '../middleware/errorHandler';
 import { AgentStatus } from '../types';
-import { logger } from '../utils/logger';
+import logger from '../utils/logger';
 
 const router = Router();
 
@@ -45,7 +45,7 @@ router.post(
     if (!validationResult.success) {
       throw new ValidationError(
         'Invalid request body',
-        validationResult.error.errors
+        validationResult.error.issues
       );
     }
 
@@ -206,7 +206,7 @@ router.put(
     if (!validationResult.success) {
       throw new ValidationError(
         'Invalid request body',
-        validationResult.error.errors
+        validationResult.error.issues
       );
     }
 
@@ -296,7 +296,7 @@ router.post(
     if (!validationResult.success) {
       throw new ValidationError(
         'Invalid request body',
-        validationResult.error.errors
+        validationResult.error.issues
       );
     }
 

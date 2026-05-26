@@ -191,7 +191,7 @@ router.post('/profile/:userId/enrich', internalAuth, async (req: Request, res: R
       return res.status(400).json({
         success: false,
         error: 'Invalid payload',
-        details: parseResult.error.errors
+        details: parseResult.error.issues
       });
     }
 
@@ -231,7 +231,7 @@ router.post('/profile/merge', internalAuth, async (req: Request, res: Response) 
       return res.status(400).json({
         success: false,
         error: 'Invalid payload',
-        details: parseResult.error.errors
+        details: parseResult.error.issues
       });
     }
 
@@ -272,7 +272,7 @@ router.get('/profiles/search', internalAuth, async (req: Request, res: Response)
       return res.status(400).json({
         success: false,
         error: 'Invalid query parameters',
-        details: parseResult.error.errors
+        details: parseResult.error.issues
       });
     }
 

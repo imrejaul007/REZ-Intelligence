@@ -436,11 +436,11 @@ export class GraphService {
     const operations = consumers.map((c) => ({
       updateOne: {
         filter: { userId: c.userId },
-        update: { $set: { ...c, type: 'consumer', updatedAt: new Date() } },
+        update: { $set: { ...c, type: 'consumer' as const, updatedAt: new Date() } },
         upsert: true,
       },
     }));
-    const result = await ConsumerModel.bulkWrite(operations as unknown[]);
+    const result = await ConsumerModel.bulkWrite(operations as any[]);
     return result.upsertedCount + result.modifiedCount;
   }
 
@@ -448,11 +448,11 @@ export class GraphService {
     const operations = merchants.map((m) => ({
       updateOne: {
         filter: { merchantId: m.merchantId },
-        update: { $set: { ...m, type: 'merchant', updatedAt: new Date() } },
+        update: { $set: { ...m, type: 'merchant' as const, updatedAt: new Date() } },
         upsert: true,
       },
     }));
-    const result = await MerchantModel.bulkWrite(operations as unknown[]);
+    const result = await MerchantModel.bulkWrite(operations as any[]);
     return result.upsertedCount + result.modifiedCount;
   }
 

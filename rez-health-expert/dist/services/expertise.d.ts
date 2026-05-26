@@ -1,4 +1,4 @@
-import { AppointmentRequest, Appointment, PatientProfile, AppointmentType, SpecialtyType, SymptomInfo, UrgencyLevel } from './healthExpert';
+import { AppointmentRequest, Appointment, PatientProfile, AppointmentType, SpecialtyType, SymptomInfo, UrgencyLevel } from './healthExpert.js';
 export declare function validateEnv(): void;
 export declare function createAppointmentRequest(patient: PatientProfile, appointmentType: AppointmentType, options?: {
     specialty?: SpecialtyType;

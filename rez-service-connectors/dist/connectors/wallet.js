@@ -1,13 +1,17 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.WalletConnector = void 0;
+exports.getWalletConnector = getWalletConnector;
+const logger_1 = __importDefault(require("./utils/logger"));
 /**
  * Wallet Service Connector
  *
  * Connects to rez-wallet-service (Port 4002) for wallet operations,
  * balance management, credits, and debits.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.WalletConnector = void 0;
-exports.getWalletConnector = getWalletConnector;
 const client_1 = require("../utils/client");
 const DEFAULT_CONFIG = {
     timeout: 30000,
@@ -213,7 +217,7 @@ function getInternalToken() {
         return tokens.orchestrator || tokens.wallet || '';
     }
     catch {
-        console.warn('[WalletConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+        logger_1.default.warn('[WalletConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
         return '';
     }
 }

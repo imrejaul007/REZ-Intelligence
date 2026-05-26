@@ -11,6 +11,7 @@
  */
 
 import express from 'express';
+import { randomInt } from 'crypto';
 import { logger } from './utils/logger.js';
 
 const app = express();
@@ -29,7 +30,7 @@ interface Feature {
   created_at: string;
   computed_from: string[]; // Source features
   transformation: string; // SQL or function
-  freshness: 'realtime' | 'hourly' | 'daily';
+  freshness: 'realtime' | 'hourly' | 'daily' | 'weekly';
 }
 
 interface FeatureValue {
@@ -558,7 +559,7 @@ app.post('/api/serving/online', async (req, res) => {
       values[featureName] = latest.value;
     } else {
       // Return default based on data type
-      values[featureName] = getDefaultValue(features.get(featureName)?.data_type);
+      values[featureName] = getDefaultValue(features.get(featureName)?.data_type ?? undefined);
     }
   }
 
@@ -581,9 +582,9 @@ app.post('/api/serving/online/batch', async (req, res) => {
   }
 
   const group = featureGroups.get(feature_group);
-  const featuresToFetch = group?.features || [];
+  const featuresToFetch: string[] = group?.features || [];
 
-  const results = [];
+  const results: { entity_id: string; features: Record<string, unknown> }[] = [];
 
   for (const entityId of entities) {
     const values: Record<string, unknown> = {};
@@ -595,7 +596,7 @@ app.post('/api/serving/online/batch', async (req, res) => {
       if (featureValuesList && featureValuesList.length > 0) {
         values[featureName] = featureValuesList[featureValuesList.length - 1].value;
       } else {
-        values[featureName] = getDefaultValue(features.get(featureName)?.data_type);
+        values[featureName] = getDefaultValue(features.get(featureName)?.data_type ?? undefined);
       }
     }
 
@@ -781,7 +782,7 @@ app.get('/api/compute/:job_id', (req, res) => {
   res.json({
     job_id: req.params.job_id,
     status: 'completed',
-    rows_computed: Math.floor(Math.random() * 10000),
+    rows_computed: randomInt(10000),
     started_at: new Date(Date.now() - 60000).toISOString(),
     completed_at: new Date().toISOString()
   });
@@ -863,10 +864,10 @@ app.get('/api/monitor/drift', async (req, res) => {
 // HELPERS
 // ============================================
 
-function getDefaultValue(feature?: Feature): unknown {
-  if (!feature) return null;
+function getDefaultValue(dataType?: string): unknown {
+  if (!dataType) return null;
 
-  switch (feature.data_type) {
+  switch (dataType) {
     case 'int':
     case 'float':
       return 0;

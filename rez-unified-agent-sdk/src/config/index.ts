@@ -94,7 +94,7 @@ export function createDefaultLogger(label?: string): Logger {
       format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.colorize(),
-        winston.format.printf(({ timestamp, level, message, ...meta }) => {
+        winston.format.printf(({ timestamp, level, message, ...meta }: { timestamp?: string; level: string; message: string; [key: string]: unknown }) => {
           const metaStr = Object.keys(meta).length ? JSON.stringify(meta) : '';
           const labelStr = label ? `[${label}] ` : '';
           return `${timestamp} ${level}: ${labelStr}${message} ${metaStr}`;
@@ -124,7 +124,7 @@ export function validateConfig(config: unknown): SDKConfig {
   const result = SDKConfigSchema.safeParse(config);
 
   if (!result.success) {
-    const errors = result.error.errors.map(
+    const errors = result.error.issues.map(
       (e) => `Field '${e.path.join('.')}' ${e.message}`,
     );
     throw new Error(`SDK Configuration validation failed:\n${errors.join('\n')}`);

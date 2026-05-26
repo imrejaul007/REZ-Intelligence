@@ -1,4 +1,10 @@
 import logger from './utils/logger';
+import crypto from 'crypto';
+
+// Crypto-based random number generator for secure randomness
+function secureRandom(): number {
+  return parseInt(crypto.randomBytes(4).toString('hex'), 16) / 0xFFFFFFFF;
+}
 
 /**
  * REZ Log Aggregator MCP Server
@@ -174,12 +180,12 @@ function generateMockLogs(count: number = 100): LogEntry[] {
   const now = Date.now();
 
   for (let i = 0; i < count; i++) {
-    const service = SERVICES[Math.floor(Math.random() * SERVICES.length)];
+    const service = SERVICES[Math.floor(secureRandom() * SERVICES.length)];
     const levels: LogEntry["level"][] = ["DEBUG", "INFO", "WARN", "ERROR", "FATAL"];
     const weights = [0.1, 0.5, 0.2, 0.15, 0.05];
 
     let level: LogEntry["level"] = "INFO";
-    const rand = Math.random();
+    const rand = secureRandom();
     let cumulative = 0;
     for (let j = 0; j < weights.length; j++) {
       cumulative += weights[j];
@@ -190,34 +196,34 @@ function generateMockLogs(count: number = 100): LogEntry[] {
     }
 
     const messages = LOG_MESSAGES[level];
-    let message = messages[Math.floor(Math.random() * messages.length)];
+    let message = messages[Math.floor(secureRandom() * messages.length)];
 
     // Replace placeholders
     message = message
-      .replace("{id}", `usr_${Math.random().toString(36).substr(2, 9)}`)
-      .replace("{userId}", `user_${Math.floor(Math.random() * 10000)}`)
-      .replace("{amount}", `₹${(Math.random() * 10000).toFixed(2)}`)
-      .replace("{orderId}", `ord_${Math.random().toString(36).substr(2, 9)}`)
-      .replace("{provider}", ["shopify", "woocommerce", "razorpay", "twilio"][Math.floor(Math.random() * 4)])
-      .replace("{ms}", String(Math.floor(Math.random() * 5000)))
-      .replace("{sessionId}", `sess_${Math.random().toString(36).substr(2, 12)}`)
-      .replace("{count}", String(Math.floor(Math.random() * 100)))
-      .replace("{percent}", String(Math.floor(Math.random() * 100)))
-      .replace("{current}", String(Math.floor(Math.random() * 80)))
+      .replace("{id}", `usr_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`)
+      .replace("{userId}", `user_${Math.floor(secureRandom() * 10000)}`)
+      .replace("{amount}", `₹${(secureRandom() * 10000).toFixed(2)}`)
+      .replace("{orderId}", `ord_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`)
+      .replace("{provider}", ["shopify", "woocommerce", "razorpay", "twilio"][Math.floor(secureRandom() * 4)])
+      .replace("{ms}", String(Math.floor(secureRandom() * 5000)))
+      .replace("{sessionId}", `sess_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`)
+      .replace("{count}", String(Math.floor(secureRandom() * 100)))
+      .replace("{percent}", String(Math.floor(secureRandom() * 100)))
+      .replace("{current}", String(Math.floor(secureRandom() * 80)))
       .replace("{max}", "100")
-      .replace("{ip}", `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`)
-      .replace("{attempt}", String(Math.floor(Math.random() * 3) + 1))
-      .replace("{endpoint}", ["/api/v1/legacy", "/api/v1/deprecated", "/api/v1/old"][Math.floor(Math.random() * 3)])
-      .replace("{service}", SERVICES[Math.floor(Math.random() * SERVICES.length)])
-      .replace("{handler}", ["paymentHandler", "authMiddleware", "webhookProcessor"][Math.floor(Math.random() * 3)])
-      .replace("{status}", ["400", "401", "403", "500", "502", "503"][Math.floor(Math.random() * 6)]);
+      .replace("{ip}", `${Math.floor(secureRandom() * 255)}.${Math.floor(secureRandom() * 255)}.${Math.floor(secureRandom() * 255)}.${Math.floor(secureRandom() * 255)}`)
+      .replace("{attempt}", String(Math.floor(secureRandom() * 3) + 1))
+      .replace("{endpoint}", ["/api/v1/legacy", "/api/v1/deprecated", "/api/v1/old"][Math.floor(secureRandom() * 3)])
+      .replace("{service}", SERVICES[Math.floor(secureRandom() * SERVICES.length)])
+      .replace("{handler}", ["paymentHandler", "authMiddleware", "webhookProcessor"][Math.floor(secureRandom() * 3)])
+      .replace("{status}", ["400", "401", "403", "500", "502", "503"][Math.floor(secureRandom() * 6)]);
 
-    const timestamp = new Date(now - Math.floor(Math.random() * 86400000)).toISOString();
-    const traceId = `trace_${Math.random().toString(36).substr(2, 12)}`;
-    const requestId = `req_${Math.random().toString(36).substr(2, 9)}`;
+    const timestamp = new Date(now - Math.floor(secureRandom() * 86400000)).toISOString();
+    const traceId = `trace_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
+    const requestId = `req_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
 
     const log: LogEntry = {
-      id: `log_${Math.random().toString(36).substr(2, 12)}`,
+      id: `log_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`,
       timestamp,
       service,
       level,
@@ -232,21 +238,21 @@ function generateMockLogs(count: number = 100): LogEntry[] {
       log.stack = `Error: ${message}\n    at ${service}.handler (${service}/src/handler.ts:42)\n    at processRequest (${service}/src/server.ts:128)`;
     }
 
-    if (["INFO", "WARN", "ERROR"].includes(level) && Math.random() > 0.3) {
-      log.userId = `user_${Math.floor(Math.random() * 10000)}`;
+    if (["INFO", "WARN", "ERROR"].includes(level) && secureRandom() > 0.3) {
+      log.userId = `user_${Math.floor(secureRandom() * 10000)}`;
     }
 
-    if (Math.random() > 0.7) {
-      log.duration = Math.floor(Math.random() * 5000);
+    if (secureRandom() > 0.7) {
+      log.duration = Math.floor(secureRandom() * 5000);
     }
 
-    if (Math.random() > 0.8) {
-      log.statusCode = [200, 201, 400, 401, 403, 404, 500, 502, 503][Math.floor(Math.random() * 9)];
+    if (secureRandom() > 0.8) {
+      log.statusCode = [200, 201, 400, 401, 403, 404, 500, 502, 503][Math.floor(secureRandom() * 9)];
     }
 
-    if (["INFO", "WARN"].includes(level) && Math.random() > 0.5) {
-      log.method = ["GET", "POST", "PUT", "DELETE", "PATCH"][Math.floor(Math.random() * 5)];
-      log.path = ["/api/v1/users", "/api/v1/orders", "/api/v1/payments", "/api/v1/products", "/api/v1/auth"][Math.floor(Math.random() * 5)];
+    if (["INFO", "WARN"].includes(level) && secureRandom() > 0.5) {
+      log.method = ["GET", "POST", "PUT", "DELETE", "PATCH"][Math.floor(secureRandom() * 5)];
+      log.path = ["/api/v1/users", "/api/v1/orders", "/api/v1/payments", "/api/v1/products", "/api/v1/auth"][Math.floor(secureRandom() * 5)];
     }
 
     logs.push(log);

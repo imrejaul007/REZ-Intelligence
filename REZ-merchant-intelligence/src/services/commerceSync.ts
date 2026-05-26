@@ -1,4 +1,4 @@
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 
 /**
  * REZ-merchant-intelligence → Commerce Graph Sync
@@ -92,7 +92,8 @@ class MerchantCommerceSync {
       );
       logger.info(`[MerchantSync] Merchant synced: ${merchant.merchantId}`);
     } catch (error) {
-      logger.error(`[MerchantSync] Failed to sync merchant: ${error.message}`);
+      const err = error as Error;
+      logger.error(`[MerchantSync] Failed to sync merchant: ${err.message}`);
     }
   }
 
@@ -113,11 +114,12 @@ class MerchantCommerceSync {
       );
       logger.info(`[MerchantSync] Merchant created: ${merchant.merchantId}`);
     } catch (error) {
-      if (error.message?.includes('409')) {
+      const err = error as Error;
+      if (err.message?.includes('409')) {
         // Already exists, update instead
         await this.syncMerchant(merchant);
       } else {
-        logger.error(`[MerchantSync] Failed to create merchant: ${error.message}`);
+        logger.error(`[MerchantSync] Failed to create merchant: ${err.message}`);
       }
     }
   }
@@ -144,7 +146,8 @@ class MerchantCommerceSync {
         }
       );
     } catch (error) {
-      logger.error(`[MerchantSync] Failed to sync customer metrics: ${error.message}`);
+      const err = error as Error;
+      logger.error(`[MerchantSync] Failed to sync customer metrics: ${err.message}`);
     }
   }
 
@@ -180,7 +183,8 @@ class MerchantCommerceSync {
       );
       logger.info(`[MerchantSync] Cross-sell relationship synced`);
     } catch (error) {
-      logger.error(`[MerchantSync] Failed to sync cross-sell: ${error.message}`);
+      const err = error as Error;
+      logger.error(`[MerchantSync] Failed to sync cross-sell: ${err.message}`);
     }
   }
 
@@ -199,7 +203,8 @@ class MerchantCommerceSync {
       );
       return response.data.data;
     } catch (error) {
-      logger.error(`[MerchantSync] Failed to get merchant: ${error.message}`);
+      const err = error as Error;
+      logger.error(`[MerchantSync] Failed to get merchant: ${err.message}`);
       return null;
     }
   }
@@ -219,7 +224,8 @@ class MerchantCommerceSync {
       );
       return response.data.data || [];
     } catch (error) {
-      logger.error(`[MerchantSync] Failed to get competitors: ${error.message}`);
+      const err = error as Error;
+      logger.error(`[MerchantSync] Failed to get competitors: ${err.message}`);
       return [];
     }
   }
@@ -239,7 +245,8 @@ class MerchantCommerceSync {
       );
       return response.data.data || [];
     } catch (error) {
-      logger.error(`[MerchantSync] Failed to get cross-sell partners: ${error.message}`);
+      const err = error as Error;
+      logger.error(`[MerchantSync] Failed to get cross-sell partners: ${err.message}`);
       return [];
     }
   }
@@ -273,7 +280,8 @@ class MerchantCommerceSync {
       );
       logger.info(`[MerchantSync] Metrics updated for ${merchantId}`);
     } catch (error) {
-      logger.error(`[MerchantSync] Failed to update metrics: ${error.message}`);
+      const err = error as Error;
+      logger.error(`[MerchantSync] Failed to update metrics: ${err.message}`);
     }
   }
 }

@@ -1,12 +1,7 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.healthExpert = exports.SpecialtyType = exports.AppointmentType = exports.UrgencyLevel = exports.SeverityLevel = exports.SymptomCategory = exports.logger = void 0;
-const winston_1 = __importDefault(require("winston"));
-const uuid_1 = require("uuid");
-const { combine, timestamp, printf, colorize, errors } = winston_1.default.format;
+import winston from 'winston';
+import { v4 as uuidv4 } from 'uuid';
+import { SYMPTOM_DATABASE, WELLNESS_TIPS, HEALTH_GLOSSARY } from '../config/knowledge.js';
+const { combine, timestamp, printf, colorize, errors } = winston.format;
 const logFormat = printf(({ level, message, timestamp, ...metadata }) => {
     let msg = `${timestamp} [${level}]: ${message}`;
     if (Object.keys(metadata).length > 0 && metadata.stack === undefined) {
@@ -17,27 +12,27 @@ const logFormat = printf(({ level, message, timestamp, ...metadata }) => {
     }
     return msg;
 });
-exports.logger = winston_1.default.createLogger({
+export const logger = winston.createLogger({
     level: process.env.LOG_LEVEL || 'info',
     format: combine(errors({ stack: true }), timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), logFormat),
     transports: [
-        new winston_1.default.transports.Console({
+        new winston.transports.Console({
             format: combine(colorize(), timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), logFormat)
         }),
-        new winston_1.default.transports.File({
+        new winston.transports.File({
             filename: 'logs/health-expert-error.log',
             level: 'error',
             maxsize: 5242880,
             maxFiles: 5
         }),
-        new winston_1.default.transports.File({
+        new winston.transports.File({
             filename: 'logs/health-expert.log',
             maxsize: 5242880,
             maxFiles: 5
         })
     ]
 });
-var SymptomCategory;
+export var SymptomCategory;
 (function (SymptomCategory) {
     SymptomCategory["RESPIRATORY"] = "respiratory";
     SymptomCategory["DIGESTIVE"] = "digestive";
@@ -49,23 +44,23 @@ var SymptomCategory;
     SymptomCategory["PAIN"] = "pain";
     SymptomCategory["FATIGUE"] = "fatigue";
     SymptomCategory["GENERAL"] = "general";
-})(SymptomCategory || (exports.SymptomCategory = SymptomCategory = {}));
-var SeverityLevel;
+})(SymptomCategory || (SymptomCategory = {}));
+export var SeverityLevel;
 (function (SeverityLevel) {
     SeverityLevel["MINOR"] = "minor";
     SeverityLevel["MODERATE"] = "moderate";
     SeverityLevel["SEVERE"] = "severe";
     SeverityLevel["URGENT"] = "urgent";
-})(SeverityLevel || (exports.SeverityLevel = SeverityLevel = {}));
-var UrgencyLevel;
+})(SeverityLevel || (SeverityLevel = {}));
+export var UrgencyLevel;
 (function (UrgencyLevel) {
     UrgencyLevel["SELF_CARE"] = "self_care";
     UrgencyLevel["SCHEDULE_VISIT"] = "schedule_visit";
     UrgencyLevel["SAME_DAY_APPOINTMENT"] = "same_day_appointment";
     UrgencyLevel["URGENT_CARE"] = "urgent_care";
     UrgencyLevel["EMERGENCY"] = "emergency";
-})(UrgencyLevel || (exports.UrgencyLevel = UrgencyLevel = {}));
-var AppointmentType;
+})(UrgencyLevel || (UrgencyLevel = {}));
+export var AppointmentType;
 (function (AppointmentType) {
     AppointmentType["PRIMARY_CARE"] = "primary_care";
     AppointmentType["SPECIALIST"] = "specialist";
@@ -74,8 +69,8 @@ var AppointmentType;
     AppointmentType["TELEMEDICINE"] = "telemedicine";
     AppointmentType["WELLNESS_CHECK"] = "wellness_check";
     AppointmentType["FOLLOW_UP"] = "follow_up";
-})(AppointmentType || (exports.AppointmentType = AppointmentType = {}));
-var SpecialtyType;
+})(AppointmentType || (AppointmentType = {}));
+export var SpecialtyType;
 (function (SpecialtyType) {
     SpecialtyType["GENERAL_MEDICINE"] = "general_medicine";
     SpecialtyType["INTERNAL_MEDICINE"] = "internal_medicine";
@@ -93,22 +88,22 @@ var SpecialtyType;
     SpecialtyType["ENDOCRINOLOGY"] = "endocrinology";
     SpecialtyType["RHEUMATOLOGY"] = "rheumatology";
     SpecialtyType["ALLERGY_IMMUNOLOGY"] = "allergy_immunology";
-})(SpecialtyType || (exports.SpecialtyType = SpecialtyType = {}));
+})(SpecialtyType || (SpecialtyType = {}));
 class HealthExpertAgent {
     agentId;
     agentName;
     sessionHistory;
     appointments;
     constructor(agentId, agentName) {
-        this.agentId = agentId || (0, uuid_1.v4)();
+        this.agentId = agentId || uuidv4();
         this.agentName = agentName || 'Health Expert';
         this.sessionHistory = new Map();
         this.appointments = new Map();
-        exports.logger.info('Health Expert Agent initialized', { agentId: this.agentId, agentName: this.agentName });
+        logger.info('Health Expert Agent initialized', { agentId: this.agentId, agentName: this.agentName });
     }
     async processQuery(query, sessionId, context) {
         const startTime = Date.now();
-        exports.logger.info('Processing health query', { sessionId, queryLength: query.length });
+        logger.info('Processing health query', { sessionId, queryLength: query.length });
         try {
             const intent = this.identifyIntent(query);
             let response;
@@ -136,7 +131,7 @@ class HealthExpertAgent {
             return response;
         }
         catch (error) {
-            exports.logger.error('Error processing health query', { error, sessionId });
+            logger.error('Error processing health query', { error, sessionId });
             throw error;
         }
     }
@@ -186,7 +181,6 @@ class HealthExpertAgent {
     }
     findMatchingSymptom(query) {
         const lowerQuery = query.toLowerCase();
-        const { SYMPTOM_DATABASE } = require('../config/knowledge');
         for (const symptom of SYMPTOM_DATABASE) {
             if (lowerQuery.includes(symptom.name.toLowerCase())) {
                 return symptom;
@@ -290,7 +284,7 @@ class HealthExpertAgent {
         recommendations.push({
             type: 'information',
             title: 'Track Your Symptoms',
-            description: 'Keep a log of your symptoms, including when they started, their severity, and any patterns you notice.',
+            description: 'Keep a log of your symptoms, including when they started, their severity, and unknown patterns you notice.',
             priority: 'low'
         });
         return recommendations;
@@ -301,9 +295,9 @@ class HealthExpertAgent {
             `• What specific symptoms are you experiencing?\n` +
             `• How long have you had these symptoms?\n` +
             `• How severe are they (mild, moderate, severe)?\n` +
-            `• Are there any other symptoms accompanying them?\n\n` +
+            `• Are there unknown other symptoms accompanying them?\n\n` +
             `Based on your description, I can provide more specific guidance and help determine if you need to see a healthcare provider.\n\n` +
-            `**Remember**: If you're experiencing any emergency symptoms like chest pain, difficulty breathing, or sudden severe symptoms, please seek immediate medical attention by calling 911 or going to the nearest emergency room.`;
+            `**Remember**: If you're experiencing unknown emergency symptoms like chest pain, difficulty breathing, or sudden severe symptoms, please seek immediate medical attention by calling 911 or going to the nearest emergency room.`;
     }
     async handleAppointmentBooking(request) {
         if (!request) {
@@ -320,7 +314,7 @@ class HealthExpertAgent {
             };
         }
         const appointment = {
-            id: (0, uuid_1.v4)(),
+            id: uuidv4(),
             patientId: request.patient.id,
             appointmentType: request.appointmentType,
             specialty: request.specialty,
@@ -341,8 +335,8 @@ class HealthExpertAgent {
                 `• Type: ${this.formatEnumValue(request.appointmentType)}\n` +
                 `• Reason: ${appointment.reasonForVisit}\n\n` +
                 `${urgencyMessage}\n\n` +
-                `You'll receive a confirmation shortly. If you need to reschedule or have any questions, please let me know!\n\n` +
-                `**Reminder**: Please bring your insurance card and a list of any medications you're currently taking.`,
+                `You'll receive a confirmation shortly. If you need to reschedule or have unknown questions, please let me know!\n\n` +
+                `**Reminder**: Please bring your insurance card and a list of unknown medications you're currently taking.`,
             appointment,
             disclaimer: 'This appointment confirmation is for planning purposes. For medical emergencies, always call 911.'
         };
@@ -354,13 +348,12 @@ class HealthExpertAgent {
             case AppointmentType.URGENT_CARE:
                 return 'Please try to arrive 15-30 minutes before your appointment time.';
             case AppointmentType.PRIMARY_CARE:
-                return 'Please arrive 10-15 minutes early to complete any necessary paperwork.';
+                return 'Please arrive 10-15 minutes early to complete unknown necessary paperwork.';
             default:
                 return 'Please arrive on time for your appointment.';
         }
     }
     async handleWellnessRequest(query) {
-        const { WELLNESS_TIPS } = require('../config/knowledge');
         const lowerQuery = query.toLowerCase();
         let matchingTips = [...WELLNESS_TIPS];
         if (lowerQuery.includes('sleep')) {
@@ -396,7 +389,6 @@ class HealthExpertAgent {
         };
     }
     async handleHealthInformation(query) {
-        const { HEALTH_GLOSSARY } = require('../config/knowledge');
         const lowerQuery = query.toLowerCase();
         const matchingTerms = HEALTH_GLOSSARY.filter((term) => {
             return lowerQuery.includes(term.term.toLowerCase());
@@ -486,5 +478,5 @@ class HealthExpertAgent {
         return false;
     }
 }
-exports.healthExpert = new HealthExpertAgent();
+export const healthExpert = new HealthExpertAgent();
 //# sourceMappingURL=healthExpert.js.map

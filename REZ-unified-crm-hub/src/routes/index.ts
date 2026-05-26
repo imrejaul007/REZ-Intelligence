@@ -17,7 +17,7 @@ import { customerAggregator } from '../services/customerAggregator.js';
 import { dashboardService } from '../services/dashboardService.js';
 import { inboxService } from '../services/inboxService.js';
 import { validateInternalToken } from '../middleware/auth.js';
-import { logger } from '../utils/logger.js';
+import { logger } from './utils/logger.js';
 import type {
   InternalCustomer,
   InternalSmartTag,

@@ -1,6 +1,3 @@
-/**
- * CrossPlatformSync.ts - Synchronization Across Platform Services
- */
 import { Merchant360 } from '../MerchantProfile';
 export interface SyncConfig {
     enabled: boolean;

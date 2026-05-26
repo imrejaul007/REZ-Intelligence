@@ -1,8 +1,8 @@
 import { Router, Response, NextFunction } from 'express';
 import { validateInternalToken, AuthenticatedRequest } from '../middleware/auth';
 import { TemplateManager } from '../services/templateManager';
-import { CreateTemplateSchema, ApiResponse, TemplateStatus } from '../types/whatsapp';
-import { logger } from '../utils/logger';
+import { CreateTemplateSchema, ApiResponse, TemplateStatus, TemplateCategory, TemplateComponent } from '../types/whatsapp';
+import { logger } from '../utils/logger.js';
 
 export function createTemplateRoutes(
   templateManager: TemplateManager
@@ -28,7 +28,7 @@ export function createTemplateRoutes(
         const result = await templateManager.listTemplates({
           merchantId,
           status,
-          category: category as unknown,
+          category: category as TemplateCategory | undefined,
           language,
           page,
           limit,
@@ -116,7 +116,7 @@ export function createTemplateRoutes(
             error: {
               code: 'VALIDATION_ERROR',
               message: 'Invalid request body',
-              details: validation.error.errors,
+              details: validation.error.issues,
             },
           };
           res.status(400).json(response);
@@ -129,7 +129,7 @@ export function createTemplateRoutes(
           name,
           category,
           language,
-          components: components as unknown,
+          components: (components || []) as TemplateComponent[],
           merchantId,
           metadata,
         });

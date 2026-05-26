@@ -1,5 +1,6 @@
 // Jest setup file for test configuration
-import { jest } from '@jest/globals';
+// Jest globals are available globally
+// @ts-ignore - jest is available globally via @types/jest
 
 // Set test environment variables
 process.env.NODE_ENV = 'test';

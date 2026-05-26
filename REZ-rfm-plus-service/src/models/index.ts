@@ -3,7 +3,56 @@
  * Beyond RFM: Behavior, Engagement, Lifetime Value
  */
 
-import mongoose, { Schema } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
+
+// ============================================
+// INTERFACES
+// ============================================
+
+export interface IEngagement {
+  sessions?: number;
+  pageViews?: number;
+  avgSessionDuration?: number;
+  lastActive?: Date;
+}
+
+export interface ICustomerProfile extends Document {
+  customerId: string;
+  phone?: string;
+  email?: string;
+  rfm?: { recency: number; frequency: number; monetary: number };
+  rfmScore?: { r: number; f: number; m: number; total: number };
+  engagement?: IEngagement;
+  cohort?: {
+    acquisitionDate: Date;
+    acquisitionSource: string;
+    acquisitionCampaign: string;
+    acquisitionChannel: string;
+  };
+  lifecycle?: {
+    stage: 'new' | 'active' | 'engaged' | 'at_risk' | 'churned' | 'reactivated';
+    daysSinceFirstPurchase: number;
+    daysSinceLastActivity: number;
+  };
+  ltv?: { actual: number; predicted: number; confidence: number; clv: number };
+  preferences?: {
+    categories: string[];
+    brands: string[];
+    priceRange: { min: number; max: number };
+    preferredChannels: string[];
+  };
+  riskFlags?: { type: string; severity: number; detectedAt: Date }[];
+  segments?: { segment: string; score: number; addedAt: Date }[];
+  stats?: {
+    totalOrders: number;
+    totalSpend: number;
+    avgOrderValue: number;
+    returns: number;
+    refunds: number;
+    supportTickets: number;
+  };
+  updatedAt: Date;
+}
 
 // ============================================
 // CUSTOMER PROFILE
@@ -103,7 +152,7 @@ CustomerProfileSchema.index({ 'rfmScore.total': -1 });
 CustomerProfileSchema.index({ 'lifecycle.stage': 1 });
 CustomerProfileSchema.index({ 'cohort.acquisitionDate': 1 });
 
-export const CustomerProfile = mongoose.models.CustomerProfile || mongoose.model('CustomerProfile', CustomerProfileSchema);
+export const CustomerProfile = mongoose.model<ICustomerProfile>('CustomerProfile', CustomerProfileSchema);
 
 // ============================================
 // COHORT ANALYSIS

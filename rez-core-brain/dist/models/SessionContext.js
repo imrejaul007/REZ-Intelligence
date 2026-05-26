@@ -32,8 +32,12 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Session = exports.SessionState = void 0;
+const crypto_1 = __importDefault(require("crypto"));
 const mongoose_1 = __importStar(require("mongoose"));
 // Session state enum
 var SessionState;
@@ -162,7 +166,7 @@ sessionSchema.statics.findByUser = function (userId, options = {}) {
 sessionSchema.statics.findOrCreate = async function (userId, agentId) {
     let session = await this.findActiveByUser(userId);
     if (!session) {
-        const sessionId = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const sessionId = `sess_${crypto_1.default.randomUUID()}`;
         session = await this.create({
             id: sessionId,
             userId,
@@ -208,11 +212,10 @@ sessionSchema.statics.getActiveCount = async function (userId) {
 // Pre-save hook
 sessionSchema.pre('save', function (next) {
     if (!this.id) {
-        this.id = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        this.id = `sess_${crypto_1.default.randomUUID()}`;
     }
     next();
 });
-// Create and export model
 exports.Session = mongoose_1.default.model('Session', sessionSchema);
 exports.default = exports.Session;
 //# sourceMappingURL=SessionContext.js.map

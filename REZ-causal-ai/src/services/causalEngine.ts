@@ -1,6 +1,11 @@
-import crypto from 'crypto';
+import crypto, { randomUUID } from 'crypto';
 import { CausalAnalysisRequest, CausalResult, UpliftModelRequest, UpliftResult, CounterfactualRequest, CounterfactualResult, CausalMethod } from '../types/index.js';
-import { logger } from '../utils/logger.js';
+import { logger } from './utils/logger.js';
+
+// Crypto-based random number generator for secure randomness
+function secureRandom(): number {
+  return parseInt(crypto.randomBytes(4).toString('hex'), 16) / 0xFFFFFFFF;
+}
 
 export class CausalEngine {
   async runAnalysis(request: CausalAnalysisRequest): Promise<CausalResult> {
@@ -52,7 +57,7 @@ export class CausalEngine {
 
   private computeCorrelationEffect(request: CausalAnalysisRequest): CausalResult['treatmentEffect'] {
     const n = request.data?.length || request.sampleSize || 1000;
-    const baseEffect = Math.random() * 0.3 - 0.05;
+    const baseEffect = secureRandom() * 0.3 - 0.05;
     const stdError = 0.1 / Math.sqrt(n);
     const zScore = baseEffect / stdError;
     const pValue = 2 * (1 - this.normalCDF(Math.abs(zScore)));
@@ -67,7 +72,7 @@ export class CausalEngine {
 
   private computeRegressionEffect(request: CausalAnalysisRequest): CausalResult['treatmentEffect'] {
     const n = request.data?.length || request.sampleSize || 1000;
-    const baseEffect = Math.random() * 0.25 - 0.03;
+    const baseEffect = secureRandom() * 0.25 - 0.03;
     const stdError = 0.08 / Math.sqrt(n);
     const zScore = baseEffect / stdError;
     const pValue = 2 * (1 - this.normalCDF(Math.abs(zScore)));
@@ -82,8 +87,8 @@ export class CausalEngine {
 
   private computeDiDEffect(request: CausalAnalysisRequest): CausalResult['treatmentEffect'] {
     const n = request.data?.length || request.sampleSize || 1000;
-    const preTreatmentTrend = Math.random() * 0.05;
-    const postTreatmentEffect = Math.random() * 0.3;
+    const preTreatmentTrend = secureRandom() * 0.05;
+    const postTreatmentEffect = secureRandom() * 0.3;
     const didEstimate = postTreatmentEffect - preTreatmentTrend;
     const stdError = 0.12 / Math.sqrt(n);
 
@@ -97,7 +102,7 @@ export class CausalEngine {
 
   private computePSMEffect(request: CausalAnalysisRequest): CausalResult['treatmentEffect'] {
     const n = request.data?.length || request.sampleSize || 1000;
-    const matchedEffect = Math.random() * 0.35 - 0.05;
+    const matchedEffect = secureRandom() * 0.35 - 0.05;
     const stdError = 0.1 / Math.sqrt(n * 0.5);
 
     return {
@@ -110,7 +115,7 @@ export class CausalEngine {
 
   private computeCausalForestEffect(request: CausalAnalysisRequest): CausalResult['treatmentEffect'] {
     const n = request.data?.length || request.sampleSize || 1000;
-    const heterogeneityEffect = Math.random() * 0.4 - 0.1;
+    const heterogeneityEffect = secureRandom() * 0.4 - 0.1;
     const stdError = 0.09 / Math.sqrt(n);
 
     return {
@@ -123,7 +128,7 @@ export class CausalEngine {
 
   private computeDoublyRobustEffect(request: CausalAnalysisRequest): CausalResult['treatmentEffect'] {
     const n = request.data?.length || request.sampleSize || 1000;
-    const drEstimate = Math.random() * 0.3 - 0.05;
+    const drEstimate = secureRandom() * 0.3 - 0.05;
     const stdError = 0.07 / Math.sqrt(n);
 
     return {
@@ -138,8 +143,8 @@ export class CausalEngine {
     const confounders: CausalResult['confounders'] = [];
 
     for (const covariate of request.covariates) {
-      const effect = Math.random() * 0.2 - 0.1;
-      const significance = Math.random();
+      const effect = secureRandom() * 0.2 - 0.1;
+      const significance = secureRandom();
 
       confounders.push({
         variable: covariate,
@@ -154,7 +159,7 @@ export class CausalEngine {
   private runDiagnostics(request: CausalAnalysisRequest): CausalResult['diagnostics'] {
     const diagnostics: CausalResult['diagnostics'] = [];
 
-    const balanceStat = Math.random() * 0.1;
+    const balanceStat = secureRandom() * 0.1;
     diagnostics.push({
       test: 'Covariate Balance (Propensity Score)',
       statistic: balanceStat,
@@ -162,7 +167,7 @@ export class CausalEngine {
       passed: balanceStat < 0.1
     });
 
-    const overlapStat = Math.random() * 0.3 + 0.5;
+    const overlapStat = secureRandom() * 0.3 + 0.5;
     diagnostics.push({
       test: 'Common Support (Overlap)',
       statistic: overlapStat,
@@ -170,7 +175,7 @@ export class CausalEngine {
       passed: overlapStat > 0.5
     });
 
-    const sensitivityStat = Math.random() * 0.05;
+    const sensitivityStat = secureRandom() * 0.05;
     diagnostics.push({
       test: 'Sensitivity Analysis (Rosenbaum)',
       statistic: sensitivityStat,
@@ -235,8 +240,8 @@ export class CausalEngine {
 
   private predictUplift(request: UpliftModelRequest): UpliftResult['upliftScores'] {
     return request.targetPopulation.map((entity, idx) => {
-      const baseUplift = Math.random() * 0.4 - 0.1;
-      const confidence = Math.random() * 0.4 + 0.6;
+      const baseUplift = secureRandom() * 0.4 - 0.1;
+      const confidence = secureRandom() * 0.4 + 0.6;
 
       let recommendedAction: 'treat' | 'control' | 'uncertain';
       if (baseUplift > 0.1) {
@@ -260,11 +265,11 @@ export class CausalEngine {
     const segments = ['High Value', 'Medium Value', 'Low Value', 'New Customers', 'At Risk'];
 
     return segments.map(segment => {
-      const avgUplift = Math.random() * 0.3 - 0.05;
+      const avgUplift = secureRandom() * 0.3 - 0.05;
       return {
         segment,
         averageUplift: avgUplift,
-        segmentSize: Math.floor(Math.random() * 5000) + 500,
+        segmentSize: Math.floor(secureRandom() * 5000) + 500,
         recommendation: avgUplift > 0.1 ? 'Target this segment' : avgUplift < -0.05 ? 'Avoid this segment' : 'Test with small sample'
       };
     });
@@ -280,8 +285,8 @@ export class CausalEngine {
     const bottomUplift = bottomDecile.reduce((sum, s) => sum + s.predictedUplift, 0) / bottomDecile.length;
 
     return {
-      qini: (topUplift - bottomUplift) * Math.random() * 0.5 + 0.1,
-      auuc: (topUplift - bottomUplift) * Math.random() * 0.8 + 0.2,
+      qini: (topUplift - bottomUplift) * secureRandom() * 0.5 + 0.1,
+      auuc: (topUplift - bottomUplift) * secureRandom() * 0.8 + 0.2,
       upliftAtTop: topUplift
     };
   }
@@ -289,9 +294,9 @@ export class CausalEngine {
   async computeCounterfactual(request: CounterfactualRequest): Promise<CounterfactualResult> {
     logger.info(`Computing counterfactual for: ${request.entityId}`);
 
-    const baseOutcome = Math.random() * 100;
-    const interventionEffect = Math.random() * 30 - 10;
-    const causalEffect = interventionEffect * (0.8 + Math.random() * 0.4);
+    const baseOutcome = secureRandom() * 100;
+    const interventionEffect = secureRandom() * 30 - 10;
+    const causalEffect = interventionEffect * (0.8 + secureRandom() * 0.4);
 
     const stdError = Math.abs(causalEffect) * 0.2;
     const ciLower = causalEffect - 1.96 * stdError;

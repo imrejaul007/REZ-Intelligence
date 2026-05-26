@@ -595,7 +595,7 @@ export class BootstrapIntelligenceService {
     return offers;
   }
 
-  private generateCategoryInsights(category?: CategoryBaseline | null, categoryName: string): MerchantBootstrap['categoryInsights'] {
+  private generateCategoryInsights(categoryName: string, category?: CategoryBaseline | null): MerchantBootstrap['categoryInsights'] {
     return {
       avgRating: category?.avgRating || 4.0,
       avgPrice: category?.avgPrice || 300,

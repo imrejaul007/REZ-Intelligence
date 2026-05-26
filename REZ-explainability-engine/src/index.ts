@@ -209,7 +209,7 @@ app.post('/api/explain', async (req: Request, res: Response) => {
       return res.status(400).json({
         success: false,
         error: 'Invalid request',
-        details: validation.error.errors,
+        details: validation.error.issues,
       });
     }
 
@@ -397,7 +397,7 @@ app.get('/api/audit', async (req: Request, res: Response) => {
       return res.status(400).json({
         success: false,
         error: 'Invalid query parameters',
-        details: validation.error.errors,
+        details: validation.error.issues,
       });
     }
 

@@ -1,5 +1,5 @@
 import { trainingExporter } from '../services/trainingExporter.js';
-import logger from '../utils/logger.js';
+import logger from './utils/logger';
 import { ExportRequest } from '../utils/validators.js';
 
 export interface ExportPipelineResult {

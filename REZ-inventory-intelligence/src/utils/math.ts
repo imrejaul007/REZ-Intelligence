@@ -1,21 +1,14 @@
-import Decimal from 'decimal.js';
-import { addDays, subDays, startOfDay, differenceInDays, format } from 'date-fns';
-
 /**
  * Statistical and mathematical utility functions for inventory intelligence
  */
-
-// Configure Decimal.js for financial precision
-Decimal.set({ precision: 20, rounding: Decimal.ROUND_HALF_UP });
 
 /**
  * Calculate the arithmetic mean of an array
  */
 export function mean(values: number[]): number {
   if (values.length === 0) return 0;
-  return new Decimal(values.reduce((a, b) => new Decimal(a).plus(b), 0))
-    .dividedBy(values.length)
-    .toNumber();
+  const sum = values.reduce((a: number, b: number) => a + b, 0);
+  return sum / values.length;
 }
 
 /**
@@ -183,7 +176,6 @@ export function linearRegression(values: number[]): {
   const sumY = values.reduce((a, b) => a + b, 0);
   const sumXY = x.reduce((acc, xi, i) => acc + xi * values[i], 0);
   const sumX2 = x.reduce((acc, xi) => acc + xi * xi, 0);
-  const sumY2 = values.reduce((acc, yi) => acc + yi * yi, 0);
 
   const denominator = n * sumX2 - sumX * sumX;
   if (denominator === 0) {
@@ -322,7 +314,7 @@ export function detectSeasonality(
   if (values.length < maxPeriod * 2) return null;
 
   const n = values.length;
-  const mean = mean(values);
+  const meanValue = mean(values);
   let maxCorrelation = 0;
   let bestPeriod = 0;
 
@@ -331,14 +323,14 @@ export function detectSeasonality(
     let count = 0;
 
     for (let i = lag; i < n; i++) {
-      correlation += (values[i] - mean) * (values[i - lag] - mean);
+      correlation += (values[i] - meanValue) * (values[i - lag] - meanValue);
       count++;
     }
 
     if (count > 0) {
       correlation /= count;
       const autocorrelation = correlation / Math.pow(
-        values.reduce((acc, v) => acc + Math.pow(v - mean, 2), 0) / n,
+        values.reduce((acc, v) => acc + Math.pow(v - meanValue, 2), 0) / n,
         0.5
       );
 
@@ -438,7 +430,9 @@ export function generateDateArray(
 ): Date[] {
   const dates: Date[] = [];
   for (let i = 0; i < horizon; i++) {
-    dates.push(addDays(startDate, i + 1));
+    const nextDate = new Date(startDate);
+    nextDate.setDate(nextDate.getDate() + i + 1);
+    dates.push(nextDate);
   }
   return dates;
 }
@@ -452,10 +446,11 @@ export function growthRate(current: number, previous: number): number {
 }
 
 /**
- * Round to specific decimal places with financial precision
+ * Round to specific decimal places
  */
 export function roundTo(value: number, decimals: number = 2): number {
-  return new Decimal(value).toDecimalPlaces(decimals).toNumber();
+  const multiplier = Math.pow(10, decimals);
+  return Math.round(value * multiplier) / multiplier;
 }
 
 /**
@@ -466,15 +461,15 @@ export function clamp(value: number, min: number, max: number): number {
 }
 
 /**
- * Sum of array with Decimal precision
+ * Sum of array
  */
 export function sum(values: number[]): number {
-  return values.reduce((acc, v) => new Decimal(acc).plus(v).toNumber(), 0);
+  return values.reduce((acc: number, v: number) => acc + v, 0);
 }
 
 /**
- * Product of array with Decimal precision
+ * Product of array
  */
 export function product(values: number[]): number {
-  return values.reduce((acc, v) => new Decimal(acc).times(v).toNumber(), 1);
+  return values.reduce((acc: number, v: number) => acc * v, 1);
 }

@@ -10,19 +10,34 @@ const NOTIFICATION_URL = process.env.NOTIFICATION_SERVICE_URL || 'https://rez-no
 const EVENT_BUS_URL = process.env.EVENT_BUS_URL || 'https://rez-event-bus.onrender.com';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
+interface MerchantUser {
+  id: string;
+  merchantId?: string;
+  email?: string;
+  name?: string;
+  [key: string]: unknown;
+}
+
+interface WalletData {
+  balance?: number;
+  currency?: string;
+  [key: string]: unknown;
+}
+
 /**
  * Verify merchant token
  */
-export async function verifyMerchantToken(token: string): Promise<{ valid: boolean; merchant?; error?: string }> {
+export async function verifyMerchantToken(token: string): Promise<{ valid: boolean; merchant?: MerchantUser; error?: string }> {
   try {
     const res = await axios.get(`${AUTH_URL}/api/auth/verify`, {
       headers: { 'Authorization': `Bearer ${token}`, 'X-Internal-Token': INTERNAL_TOKEN },
     });
     if (res.data.success && res.data.user) {
-      return { valid: true, merchant: res.data.user };
+      return { valid: true, merchant: res.data.user as MerchantUser };
     }
     return { valid: false, error: 'Invalid token' };
-  } catch (error) {
+  } catch (err) {
+    const error = err as Error;
     return { valid: false, error: error.message };
   }
 }
@@ -30,13 +45,14 @@ export async function verifyMerchantToken(token: string): Promise<{ valid: boole
 /**
  * Get merchant wallet
  */
-export async function getMerchantWallet(merchantId: string): Promise<{ wallet; error?: string }> {
+export async function getMerchantWallet(merchantId: string): Promise<{ wallet?: WalletData | null; error?: string }> {
   try {
     const res = await axios.get(`${WALLET_URL}/api/wallet/${merchantId}/balance`, {
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
-    return { wallet: res.data };
-  } catch (error) {
+    return { wallet: res.data as WalletData };
+  } catch (err) {
+    const error = err as Error;
     return { wallet: null, error: error.message };
   }
 }
@@ -50,7 +66,8 @@ export async function addEarnings(merchantId: string, amount: number, reason: st
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error) {
+  } catch (err) {
+    const error = err as Error;
     return { success: false, error: error.message };
   }
 }
@@ -64,7 +81,8 @@ export async function notifyMerchant(merchantId: string, title: string, body: st
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error) {
+  } catch (err) {
+    const error = err as Error;
     return { success: false, error: error.message };
   }
 }
@@ -82,7 +100,8 @@ export async function publishMerchantEvent(eventType: string, data: Record<strin
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error) {
+  } catch (err) {
+    const error = err as Error;
     return { success: false, error: error.message };
   }
 }

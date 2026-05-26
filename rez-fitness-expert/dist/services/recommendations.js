@@ -1,10 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getRecommendations = getRecommendations;
-exports.generateMotivationMessage = generateMotivationMessage;
-exports.getRecoveryTips = getRecoveryTips;
-const fitnessExpert_1 = require("./fitnessExpert");
-function getRecommendations(profile) {
+import { FitnessLevel } from './fitnessExpert.js';
+import { randomInt } from 'crypto';
+export function getRecommendations(profile) {
     const recommendations = [];
     recommendations.push(...getLevelBasedRecommendations(profile.fitnessLevel));
     recommendations.push(...getGoalBasedRecommendations(profile.goals));
@@ -17,7 +13,7 @@ function getRecommendations(profile) {
 }
 function getLevelBasedRecommendations(level) {
     switch (level) {
-        case fitnessExpert_1.FitnessLevel.BEGINNER:
+        case FitnessLevel.BEGINNER:
             return [
                 {
                     type: 'workout',
@@ -38,7 +34,7 @@ function getLevelBasedRecommendations(level) {
                     priority: 'medium'
                 }
             ];
-        case fitnessExpert_1.FitnessLevel.INTERMEDIATE:
+        case FitnessLevel.INTERMEDIATE:
             return [
                 {
                     type: 'workout',
@@ -59,7 +55,7 @@ function getLevelBasedRecommendations(level) {
                     priority: 'medium'
                 }
             ];
-        case fitnessExpert_1.FitnessLevel.ADVANCED:
+        case FitnessLevel.ADVANCED:
             return [
                 {
                     type: 'workout',
@@ -208,7 +204,7 @@ function getFrequencyBasedRecommendations(daysPerWeek) {
     }
     return [];
 }
-function generateMotivationMessage(profile) {
+export function generateMotivationMessage(profile) {
     const messages = [
         "Every workout counts! You're one rep closer to your goal!",
         "Your only limit is you! Let's push those boundaries!",
@@ -219,10 +215,10 @@ function generateMotivationMessage(profile) {
         "The only bad workout is the one that didn't happen!",
         "You're stronger than you think. Trust the process!"
     ];
-    const randomIndex = Math.floor(Math.random() * messages.length);
+    const randomIndex = randomInt(0, messages.length);
     return messages[randomIndex];
 }
-function getRecoveryTips() {
+export function getRecoveryTips() {
     return [
         {
             type: 'tip',

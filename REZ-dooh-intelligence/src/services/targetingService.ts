@@ -4,6 +4,7 @@
  */
 
 import axios from 'axios';
+import crypto from 'crypto';
 import {
   DOOHTargetingRequest,
   DOOHTargetedUser,
@@ -11,6 +12,11 @@ import {
   getCaptivityIndex,
   SCREEN_CAPTIVITY_MAP,
 } from '../types';
+
+// Crypto-based random number generator for secure randomness
+function secureRandom(): number {
+  return parseInt(crypto.randomBytes(4).toString('hex'), 16) / 0xFFFFFFFF;
+}
 
 // ============================================================================
 // SERVICE URLs
@@ -263,12 +269,13 @@ export async function findTargetedUsers(
     // Call RFM service to get users by segment
     let users: Array<{ userId: string; rfmSegment?: string; interests?: string[] }> = [];
 
-    if (criteria.rfmSegments?.length) {
+    const rfmSegs = criteria.rfmSegments as string[] | undefined;
+    if (rfmSegs && rfmSegs.length > 0) {
       const rfmResponse = await axios.get(`${RFM_SERVICE_URL}/api/rfm/segments`, {
-        params: { segments: criteria.rfmSegments.join(',') },
+        params: { segments: rfmSegs.join(',') },
         timeout: 5000,
       });
-      users = rfmResponse.data.users || [];
+      users = (rfmResponse.data as { users?: Array<{ userId: string; rfmSegment?: string; interests?: string[] }> }).users || [];
     }
 
     // Get user intelligence for intent
@@ -282,11 +289,11 @@ export async function findTargetedUsers(
           { timeout: 3000 }
         );
 
-        const intents = intentResponse.data.intents || [];
+        const intents = (intentResponse.data as { intents?: Array<{ intentKey: string; category: string }> }).intents || [];
         const { score, reasons } = scoreUserForScreen(
           {
             ...user,
-            recentIntents: intents.map((i) => ({
+            recentIntents: intents.map((i: { intentKey: string; category: string }) => ({
               intent: i.intentKey,
               category: i.category,
             })),
@@ -305,7 +312,7 @@ export async function findTargetedUsers(
           userContext: {
             rfmSegment: user.rfmSegment || 'unknown',
             topInterests: user.interests?.slice(0, 5) || [],
-            recentIntents: intents.slice(0, 3).map((i) => i.intentKey),
+            recentIntents: intents.slice(0, 3).map((i: { intentKey: string }) => i.intentKey),
           },
         });
       } catch {
@@ -350,8 +357,8 @@ function generateMockTargetedUsers(
   const mockRfmSegments = ['champions', 'loyal', 'potential', 'at_risk'];
 
   for (let i = 0; i < Math.min(limit, 20); i++) {
-    const score = Math.floor(Math.random() * 40) + 60; // 60-100
-    const rfmSegment = mockRfmSegments[Math.floor(Math.random() * mockRfmSegments.length)];
+    const score = Math.floor(secureRandom() * 40) + 60; // 60-100
+    const rfmSegment = mockRfmSegments[Math.floor(secureRandom() * mockRfmSegments.length)];
 
     users.push({
       userId: `user_${screenType}_${i}`,

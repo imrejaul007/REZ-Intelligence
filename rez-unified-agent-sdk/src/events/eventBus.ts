@@ -1,4 +1,5 @@
 import EventEmitter from 'eventemitter3';
+import { randomUUID } from 'crypto';
 import type { Logger, EventPayload } from '../types';
 import { DEFAULT_TIMEOUT, DEFAULT_RETRY, DEFAULT_CIRCUIT_BREAKER } from '../config';
 import type { SDKConfig } from '../types';
@@ -49,7 +50,7 @@ export class EventBus {
    * Subscribe to an event type
    */
   on(eventType: string, handler: EventHandler): () => void {
-    const id = `${eventType}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    const id = `${eventType}:${Date.now()}:${randomUUID().replace(/-/g, '').slice(0, 12)}`;
 
     const subscription: Subscription = {
       id,
@@ -70,7 +71,7 @@ export class EventBus {
    * Subscribe to an event type only once
    */
   once(eventType: string, handler: EventHandler): () => void {
-    const id = `${eventType}:once:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    const id = `${eventType}:once:${Date.now()}:${randomUUID().replace(/-/g, '').slice(0, 12)}`;
 
     const subscription: Subscription = {
       id,
@@ -90,7 +91,7 @@ export class EventBus {
    * Subscribe to event pattern (e.g., 'agent.*')
    */
   onPattern(pattern: string, handler: EventHandler): () => void {
-    const id = `pattern:${pattern}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    const id = `pattern:${pattern}:${Date.now()}:${randomUUID().replace(/-/g, '').slice(0, 12)}`;
 
     const subscription: Subscription = {
       id,

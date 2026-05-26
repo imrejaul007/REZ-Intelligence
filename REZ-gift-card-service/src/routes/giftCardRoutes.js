@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import { randomInt, randomUUID } from 'crypto';
 import { GiftCard, Wallet, Transaction } from '../index.js';
 
 const router = Router();
@@ -628,12 +629,12 @@ router.get('/:cardId/history', async (req, res, next) => {
 function generateCardNumber() {
   const prefix = process.env.GIFT_CARD_PREFIX || 'GC';
   const timestamp = Date.now().toString(36).toUpperCase();
-  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+  const random = randomUUID().replace(/-/g, '').substring(0, 6).toUpperCase();
   return `${prefix}${timestamp}${random}`.substring(0, 16);
 }
 
 function generatePIN() {
-  return Math.floor(1000 + Math.random() * 9000).toString();
+  return randomInt(1000, 9999).toString();
 }
 
 export default router;

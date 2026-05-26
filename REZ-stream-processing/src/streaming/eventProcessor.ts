@@ -5,7 +5,7 @@
 
 import mongoose, { Schema, Document } from 'mongoose';
 import { kafkaService } from '../kafka/kafkaService.js';
-import { logger } from '../utils/logger.js';
+import { logger } from './utils/logger.js';
 import {
   StreamEvent,
   StreamEventType,

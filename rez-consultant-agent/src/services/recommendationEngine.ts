@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { randomBytes } from 'crypto';
 import {
   CustomerProfile,
   TravelStyle,
@@ -8,6 +9,13 @@ import {
   ItineraryActivity,
   MealRecommendation
 } from './consultantAgent';
+
+/**
+ * Generate a random number between 0 and 1 using crypto
+ */
+function cryptoRandom(): number {
+  return Number(randomBytes(4).readUInt32BE(0)) / 0xFFFFFFFF;
+}
 
 interface DestinationRecommendationParams {
   budget?: number;
@@ -258,7 +266,7 @@ export async function generateItinerary(params: ItineraryParams): Promise<Itiner
         name: act.name,
         duration: act.duration,
         location: `${destination} - Location TBD`,
-        cost: Math.round((Math.random() * (act.priceRange.max - act.priceRange.min) + act.priceRange.min) * 100) / 100,
+        cost: Math.round((cryptoRandom() * (act.priceRange.max - act.priceRange.min) + act.priceRange.min) * 100) / 100,
         bookingRequired: act.priceRange.max > 100,
         notes: `Suggested: Book in advance for best availability`
       });

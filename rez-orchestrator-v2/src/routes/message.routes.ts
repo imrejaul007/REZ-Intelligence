@@ -29,7 +29,7 @@ export function createMessageRoutes(config: MessageRoutesConfig): Router {
         const errorResponse = {
           error: 'VALIDATION_ERROR',
           message: 'Invalid request body',
-          details: validationResult.error.errors.map(e => ({
+          details: validationResult.error.issues.map(e => ({
             field: e.path.join('.'),
             message: e.message,
           })),
@@ -38,7 +38,7 @@ export function createMessageRoutes(config: MessageRoutesConfig): Router {
 
         logger.warn('Request validation failed', {
           requestId,
-          errors: validationResult.error.errors,
+          errors: validationResult.error.issues,
         });
 
         return res.status(400).json(errorResponse);
@@ -91,7 +91,7 @@ export function createMessageRoutes(config: MessageRoutesConfig): Router {
         return res.status(400).json({
           error: 'VALIDATION_ERROR',
           message: 'Invalid request body',
-          details: validationResult.error.errors,
+          details: validationResult.error.issues,
           requestId,
         });
       }
@@ -174,7 +174,7 @@ export function createMessageRoutes(config: MessageRoutesConfig): Router {
               return {
                 index,
                 success: false,
-                error: validationResult.error.errors,
+                error: validationResult.error.issues,
               };
             }
 
@@ -204,7 +204,7 @@ export function createMessageRoutes(config: MessageRoutesConfig): Router {
               results.push({
                 index: i,
                 success: false,
-                error: validationResult.error.errors,
+                error: validationResult.error.issues,
               });
               continue;
             }

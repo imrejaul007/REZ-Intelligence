@@ -14,7 +14,7 @@ import sessionRoutes from './routes/session.routes';
 import personalizationRoutes from './routes/personalization.routes';
 
 // Import middleware
-import { requestId, authenticate, internalAuth, authenticateAny } from './middleware/auth';
+import { requestId, internalAuth } from './middleware/auth';
 
 // Import services
 import { memoryService } from './services/memoryService';
@@ -68,7 +68,7 @@ app.get('/health', async (req: Request, res: Response) => {
     },
     meta: {
       timestamp: new Date(),
-      requestId: req.requestId,
+      requestId: (req as Request & { requestId?: string }).requestId,
     },
   });
 });
@@ -87,7 +87,7 @@ app.get('/ready', async (req: Request, res: Response) => {
       },
       meta: {
         timestamp: new Date(),
-        requestId: req.requestId,
+        requestId: (req as Request & { requestId?: string }).requestId,
       },
     });
   } catch (error) {
@@ -127,7 +127,7 @@ app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
   logger.error('Unhandled error', {
     error: err.message,
     stack: err.stack,
-    requestId: req.requestId,
+    requestId: (req as Request & { requestId?: string }).requestId,
     path: req.path,
   });
 
@@ -139,7 +139,7 @@ app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
     },
     meta: {
       timestamp: new Date(),
-      requestId: req.requestId,
+      requestId: (req as Request & { requestId?: string }).requestId,
     },
   });
 });

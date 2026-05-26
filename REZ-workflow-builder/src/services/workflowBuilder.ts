@@ -1,11 +1,9 @@
 import crypto from 'crypto';
 import { Workflow, WorkflowExecution, WorkflowExecutionResult, GeneratedWorkflow } from '../types/index.js';
 import { logger } from '../utils/logger.js';
+import { Workflow as WorkflowModel, WorkflowExecution as ExecutionModel } from '../models/index.js';
 
 export class WorkflowBuilder {
-  private workflows: Map<string, Workflow> = new Map();
-  private executions: Map<string, WorkflowExecutionResult> = new Map();
-
   async generateFromNaturalLanguage(description: string, context?: Record<string, any>): Promise<GeneratedWorkflow> {
     logger.info(`Generating workflow from: ${description}`);
 
@@ -70,7 +68,8 @@ export class WorkflowBuilder {
       isActive: true
     };
 
-    this.workflows.set(workflowId, workflow);
+    // Persist to MongoDB
+    await WorkflowModel.create(workflow);
 
     return {
       workflow,
@@ -117,11 +116,12 @@ export class WorkflowBuilder {
   }
 
   async execute(workflowId: string, execution: WorkflowExecution): Promise<WorkflowExecutionResult> {
-    const workflow = this.workflows.get(workflowId);
-    if (!workflow) {
+    const workflowDoc = await WorkflowModel.findOne({ id: workflowId });
+    if (!workflowDoc) {
       throw new Error(`Workflow ${workflowId} not found`);
     }
 
+    const workflow: Workflow = workflowDoc.toObject() as Workflow;
     const executionId = crypto.randomUUID();
     const startTime = Date.now();
 
@@ -137,11 +137,16 @@ export class WorkflowBuilder {
       errors: []
     };
 
+    // Persist initial execution
+    await ExecutionModel.create(result);
+
     // Execute nodes in order
     const sortedNodes = this.topologicalSort(workflow);
     for (const node of sortedNodes) {
       try {
         result.nodeResults[node.id] = await this.executeNode(node, execution.triggerData, result.nodeResults);
+        // Update execution after each node
+        await ExecutionModel.updateOne({ executionId }, { nodeResults: result.nodeResults });
       } catch (error: any) {
         result.errors.push(`Node ${node.id}: ${error.message}`);
         result.status = 'failed';
@@ -154,7 +159,9 @@ export class WorkflowBuilder {
     result.durationMs = Date.now() - startTime;
     result.output = result.nodeResults[sortedNodes[sortedNodes.length - 1]?.id];
 
-    this.executions.set(executionId, result);
+    // Update final execution
+    await ExecutionModel.updateOne({ executionId }, result);
+
     return result;
   }
 
@@ -196,16 +203,39 @@ export class WorkflowBuilder {
     return sorted;
   }
 
-  getWorkflow(id: string): Workflow | undefined {
-    return this.workflows.get(id);
+  async getWorkflow(id: string): Promise<Workflow | null> {
+    const doc = await WorkflowModel.findOne({ id });
+    return doc ? (doc.toObject() as Workflow) : null;
   }
 
-  getAllWorkflows(): Workflow[] {
-    return Array.from(this.workflows.values());
+  async getAllWorkflows(): Promise<Workflow[]> {
+    const docs = await WorkflowModel.find({}).sort({ createdAt: -1 });
+    return docs.map(d => d.toObject() as Workflow);
   }
 
-  getExecution(id: string): WorkflowExecutionResult | undefined {
-    return this.executions.get(id);
+  async getExecution(id: string): Promise<WorkflowExecutionResult | null> {
+    const doc = await ExecutionModel.findOne({ executionId: id });
+    if (!doc) return null;
+    return {
+      executionId: doc.executionId,
+      workflowId: doc.workflowId,
+      status: doc.status as 'running' | 'completed' | 'failed' | 'paused',
+      startedAt: doc.startedAt,
+      completedAt: doc.completedAt,
+      durationMs: doc.durationMs,
+      nodeResults: doc.nodeResults,
+      output: doc.output,
+      errors: doc.executionErrors || []
+    };
+  }
+
+  async saveWorkflow(workflow: Workflow): Promise<void> {
+    await WorkflowModel.findOneAndUpdate({ id: workflow.id }, workflow, { upsert: true });
+  }
+
+  async deleteWorkflow(id: string): Promise<boolean> {
+    const result = await WorkflowModel.deleteOne({ id });
+    return result.deletedCount > 0;
   }
 }
 

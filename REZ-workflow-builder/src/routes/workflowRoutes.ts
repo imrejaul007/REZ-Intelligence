@@ -6,6 +6,7 @@ import { logger } from '../utils/logger.js';
 
 const router = Router();
 
+// Generate workflow from natural language
 router.post('/generate', async (req: Request, res: Response) => {
   try {
     const { description, context } = req.body;
@@ -20,49 +21,93 @@ router.post('/generate', async (req: Request, res: Response) => {
   }
 });
 
+// Create workflow
 router.post('/workflows', async (req: Request, res: Response) => {
   try {
     const validated = WorkflowSchema.parse(req.body);
-    workflowBuilder['workflows'].set(validated.id || crypto.randomUUID(), validated);
-    res.status(201).json({ success: true, data: validated });
+    const workflow = {
+      ...validated,
+      id: validated.id || crypto.randomUUID(),
+    };
+    await workflowBuilder.saveWorkflow(workflow);
+    res.status(201).json({ success: true, data: workflow });
   } catch (error) {
     if (error instanceof z.ZodError) {
       res.status(400).json({ success: false, errors: error.errors });
     } else {
+      logger.error('Create workflow error:', error);
       res.status(500).json({ success: false, error: 'Failed to create workflow' });
     }
   }
 });
 
-router.get('/workflows', (req, res) => {
-  res.json({ success: true, data: workflowBuilder.getAllWorkflows() });
-});
-
-router.get('/workflows/:id', (req, res) => {
-  const workflow = workflowBuilder.getWorkflow(req.params.id);
-  if (!workflow) {
-    return res.status(404).json({ success: false, error: 'Not found' });
+// List all workflows
+router.get('/workflows', async (_req: Request, res: Response) => {
+  try {
+    const workflows = await workflowBuilder.getAllWorkflows();
+    res.json({ success: true, data: workflows });
+  } catch (error) {
+    logger.error('List workflows error:', error);
+    res.status(500).json({ success: false, error: 'Failed to list workflows' });
   }
-  res.json({ success: true, data: workflow });
 });
 
+// Get single workflow
+router.get('/workflows/:id', async (req: Request, res: Response) => {
+  try {
+    const workflow = await workflowBuilder.getWorkflow(req.params.id);
+    if (!workflow) {
+      return res.status(404).json({ success: false, error: 'Workflow not found' });
+    }
+    res.json({ success: true, data: workflow });
+  } catch (error) {
+    logger.error('Get workflow error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get workflow' });
+  }
+});
+
+// Execute workflow
 router.post('/workflows/:id/execute', async (req: Request, res: Response) => {
   try {
     const execution = WorkflowExecutionSchema.parse(req.body);
     const result = await workflowBuilder.execute(req.params.id, execution);
     res.json({ success: true, data: result });
   } catch (error) {
-    logger.error('Execute error:', error);
-    res.status(500).json({ success: false, error: 'Execution failed' });
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ success: false, errors: error.errors });
+    } else {
+      logger.error('Execute workflow error:', error);
+      res.status(500).json({ success: false, error: 'Execution failed' });
+    }
   }
 });
 
-router.get('/executions/:id', (req, res) => {
-  const execution = workflowBuilder.getExecution(req.params.id);
-  if (!execution) {
-    return res.status(404).json({ success: false, error: 'Not found' });
+// Get execution status
+router.get('/executions/:id', async (req: Request, res: Response) => {
+  try {
+    const execution = await workflowBuilder.getExecution(req.params.id);
+    if (!execution) {
+      return res.status(404).json({ success: false, error: 'Execution not found' });
+    }
+    res.json({ success: true, data: execution });
+  } catch (error) {
+    logger.error('Get execution error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get execution' });
   }
-  res.json({ success: true, data: execution });
+});
+
+// Delete workflow
+router.delete('/workflows/:id', async (req: Request, res: Response) => {
+  try {
+    const deleted = await workflowBuilder.deleteWorkflow(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, error: 'Workflow not found' });
+    }
+    res.json({ success: true, message: 'Workflow deleted' });
+  } catch (error) {
+    logger.error('Delete workflow error:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete workflow' });
+  }
 });
 
 export default router;

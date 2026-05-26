@@ -3,6 +3,7 @@
  * Represents a single session within a conversation, scoped to a specific channel
  */
 
+import crypto from 'crypto';
 import mongoose, { Document, Schema, Model, Types } from 'mongoose';
 import { ChannelType } from '../types';
 
@@ -345,7 +346,7 @@ SessionSchema.statics = {
     const ttl = params.ttlMs || config.session.getTTLForChannel(params.channel);
 
     return this.create({
-      sessionId: `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      sessionId: `sess_${crypto.randomUUID()}`,
       conversationId: params.conversationId,
       userId: params.userId,
       anonymousId: params.anonymousId,

@@ -72,10 +72,16 @@ export class TimelineAggregator {
     return segments;
   }
 
-  async computePreferences(userId: string): Promise<unknown> {
+  async computePreferences(userId: string): Promise<{
+    categories: Array<{ category: string; score: number; eventCount: number; lastInteraction: Date }>;
+    brands: unknown[];
+    priceRanges: unknown[];
+    channels: Array<{ channel: string; score: number }>;
+    timePatterns: unknown[];
+  }> {
     const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
     const events = await TimelineEventModel.find({ userId, timestamp: { $gte: sixtyDaysAgo } });
-    const preferences: unknown = { categories: [], brands: [], priceRanges: [], channels: [], timePatterns: [] };
+    const preferences = { categories: [], brands: [], priceRanges: [], channels: [], timePatterns: [] };
     const categoryCount: Record<string, number> = {};
     for (const event of events) {
       categoryCount[event.category] = (categoryCount[event.category] || 0) + 1;

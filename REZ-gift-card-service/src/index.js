@@ -6,6 +6,7 @@ import compression from 'compression';
 import dotenv from 'dotenv';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
+import { randomInt, randomUUID } from 'crypto';
 import { createClient } from 'redis';
 import giftCardRoutes from './routes/giftCardRoutes.js';
 import transactionRoutes from './routes/transactionRoutes.js';
@@ -281,13 +282,13 @@ app.use((err, _req, res, _next) => {
 function generateCardNumber() {
   const prefix = process.env.GIFT_CARD_PREFIX || 'GC';
   const timestamp = Date.now().toString(36).toUpperCase();
-  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+  const random = randomUUID().replace(/-/g, '').substring(0, 6).toUpperCase();
   return `${prefix}${timestamp}${random}`.substring(0, 16);
 }
 
 // Generate PIN
 function generatePIN() {
-  return Math.floor(1000 + Math.random() * 9000).toString();
+  return randomInt(1000, 9999).toString();
 }
 
 // Graceful shutdown

@@ -159,7 +159,7 @@ router.post('/ab-test-analysis', async (req: Request, res: Response) => {
         upliftPercent: uplift,
         tStatistic: tStat,
         degreesOfFreedom,
-        pValue: Math.max(0.0001, 2 * (1 - this.tCDF(Math.abs(tStat), degreesOfFreedom))),
+        pValue: Math.max(0.0001, 2 * (1 - tCDF(Math.abs(tStat), degreesOfFreedom))),
         significant: Math.abs(tStat) > 1.96,
         recommendation: uplift > 5 ? 'Statistically significant positive effect - consider rolling out' :
                         uplift < -5 ? 'Negative effect detected - consider stopping' :
@@ -172,28 +172,32 @@ router.post('/ab-test-analysis', async (req: Request, res: Response) => {
   }
 });
 
-private tCDF(t: number, df: number): number {
+// ============================================
+// STATISTICAL HELPER FUNCTIONS
+// ============================================
+
+function tCDF(t: number, df: number): number {
   const x = df / (df + t * t);
-  return 1 - 0.5 * this.regularizedIncompleteBeta(df / 2, 0.5, x);
+  return 1 - 0.5 * regularizedIncompleteBeta(df / 2, 0.5, x);
 }
 
-private regularizedIncompleteBeta(a: number, b: number, x: number): number {
+function regularizedIncompleteBeta(a: number, b: number, x: number): number {
   if (x === 0) return 0;
   if (x === 1) return 1;
 
   const bt = Math.exp(
-    this.logGamma(a + b) - this.logGamma(a) - this.logGamma(b) +
+    logGamma(a + b) - logGamma(a) - logGamma(b) +
     a * Math.log(x) + b * Math.log(1 - x)
   );
 
   if (x < (a + 1) / (a + b + 2)) {
-    return bt * this.betaCF(a, b, x) / a;
+    return bt * betaCF(a, b, x) / a;
   } else {
-    return 1 - bt * this.betaCF(b, a, 1 - x) / b;
+    return 1 - bt * betaCF(b, a, 1 - x) / b;
   }
 }
 
-private betaCF(a: number, b: number, x: number): number {
+function betaCF(a: number, b: number, x: number): number {
   const MAXIT = 100;
   const EPS = 0.0000003;
 
@@ -228,7 +232,7 @@ private betaCF(a: number, b: number, x: number): number {
   return h;
 }
 
-private logGamma(x: number): number {
+function logGamma(x: number): number {
   const cof = [
     76.18009172947146, -86.50532032941677, 24.01409824083091,
     -1.231739572450155, 0.001208650973866179, -0.000005395239384953

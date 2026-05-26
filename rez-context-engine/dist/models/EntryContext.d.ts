@@ -55,13 +55,18 @@ export declare enum MerchantCategory {
 export declare const EntryContextInputSchema: z.ZodObject<{
     sessionId: z.ZodOptional<z.ZodString>;
     userId: z.ZodOptional<z.ZodString>;
-    entryType: z.ZodOptional<z.ZodNativeEnum<typeof EntryPointType>>;
+    entryType: z.ZodOptional<z.ZodEnum<typeof EntryPointType>>;
     qrCode: z.ZodOptional<z.ZodString>;
     merchantId: z.ZodOptional<z.ZodString>;
     merchantName: z.ZodOptional<z.ZodString>;
-    merchantCategory: z.ZodOptional<z.ZodNativeEnum<typeof MerchantCategory>>;
+    merchantCategory: z.ZodOptional<z.ZodEnum<typeof MerchantCategory>>;
     platform: z.ZodOptional<z.ZodString>;
-    deviceType: z.ZodOptional<z.ZodEnum<["mobile", "tablet", "desktop", "unknown"]>>;
+    deviceType: z.ZodOptional<z.ZodEnum<{
+        unknown: "unknown";
+        mobile: "mobile";
+        tablet: "tablet";
+        desktop: "desktop";
+    }>>;
     userAgent: z.ZodOptional<z.ZodString>;
     ipAddress: z.ZodOptional<z.ZodString>;
     location: z.ZodOptional<z.ZodObject<{
@@ -69,57 +74,9 @@ export declare const EntryContextInputSchema: z.ZodObject<{
         longitude: z.ZodOptional<z.ZodNumber>;
         country: z.ZodOptional<z.ZodString>;
         city: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        latitude?: number | undefined;
-        longitude?: number | undefined;
-        country?: string | undefined;
-        city?: string | undefined;
-    }, {
-        latitude?: number | undefined;
-        longitude?: number | undefined;
-        country?: string | undefined;
-        city?: string | undefined;
-    }>>;
-    metadata: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
-}, "strip", z.ZodTypeAny, {
-    sessionId?: string | undefined;
-    userId?: string | undefined;
-    entryType?: EntryPointType | undefined;
-    qrCode?: string | undefined;
-    merchantId?: string | undefined;
-    merchantName?: string | undefined;
-    merchantCategory?: MerchantCategory | undefined;
-    platform?: string | undefined;
-    deviceType?: "mobile" | "tablet" | "desktop" | "unknown" | undefined;
-    userAgent?: string | undefined;
-    ipAddress?: string | undefined;
-    location?: {
-        latitude?: number | undefined;
-        longitude?: number | undefined;
-        country?: string | undefined;
-        city?: string | undefined;
-    } | undefined;
-    metadata?: Record<string, unknown> | undefined;
-}, {
-    sessionId?: string | undefined;
-    userId?: string | undefined;
-    entryType?: EntryPointType | undefined;
-    qrCode?: string | undefined;
-    merchantId?: string | undefined;
-    merchantName?: string | undefined;
-    merchantCategory?: MerchantCategory | undefined;
-    platform?: string | undefined;
-    deviceType?: "mobile" | "tablet" | "desktop" | "unknown" | undefined;
-    userAgent?: string | undefined;
-    ipAddress?: string | undefined;
-    location?: {
-        latitude?: number | undefined;
-        longitude?: number | undefined;
-        country?: string | undefined;
-        city?: string | undefined;
-    } | undefined;
-    metadata?: Record<string, unknown> | undefined;
-}>;
+    }, z.core.$strip>>;
+    metadata: z.ZodOptional<z.ZodRecord<z.core.$ZodRecordKey, z.core.SomeType>>;
+}, z.core.$strip>;
 export type EntryContextInput = z.infer<typeof EntryContextInputSchema>;
 /**
  * Entry context structure that captures all information about how a user entered the system

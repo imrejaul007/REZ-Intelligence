@@ -1,6 +1,6 @@
 import 'dotenv/config';
-import express import logger from './utils/logger';
-import from 'express';
+import express from 'express';
+import { logger } from './utils/logger.js';
 import cors from 'cors';
 import helmet from 'helmet';
 import { UserGraph } from './userGraph.js';

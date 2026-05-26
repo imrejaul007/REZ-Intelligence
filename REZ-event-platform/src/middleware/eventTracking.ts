@@ -1,8 +1,9 @@
 import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 import { Request, Response, NextFunction } from 'express';
 import { Event } from '../events/schema-registry';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { config } from '../config';
+import { randomUUID } from 'crypto';
 
 // ============================================
 // Event Logger Model - Tracks ALL events sent
@@ -377,7 +378,7 @@ export function trackEventMiddleware() {
 
     // Store start time on request for later use
     (req as unknown)._eventTrackingStartTime = startTime;
-    (req as unknown)._eventTrackingId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    (req as unknown)._eventTrackingId = `${Date.now()}-${randomUUID().replace(/-/g, '').substring(0, 9)}`;
 
     // Hook into response to track completion
     res.on('finish', async () => {

@@ -5,6 +5,7 @@
  * Port: 4082
  */
 
+import crypto from 'crypto';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -93,7 +94,7 @@ function setupMiddleware(): void {
 
   // Add request ID
   app.use((req: Request, res: Response, next: NextFunction) => {
-    const reqId = req.headers['x-request-id'] as string || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const reqId = req.headers['x-request-id'] as string || `${crypto.randomUUID()}`;
     res.setHeader('X-Request-Id', reqId);
     (req as AuthenticatedRequest).requestId = reqId;
     next();

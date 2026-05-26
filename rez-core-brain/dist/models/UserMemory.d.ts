@@ -11,6 +11,14 @@ export interface IMemoryDocument extends IMemoryEntry, Document {
     access(): Promise<void>;
     incrementAccess(): Promise<void>;
 }
+export interface IMemoryModel extends Model<IMemoryDocument> {
+    deleteExpired(): Promise<number>;
+    findByUser(userId: string, options?: {
+        type?: MemoryType;
+        limit?: number;
+        skip?: number;
+    }): Promise<IMemoryDocument[]>;
+}
 export declare const Memory: Model<IMemoryDocument>;
 export default Memory;
 //# sourceMappingURL=UserMemory.d.ts.map

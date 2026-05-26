@@ -10,7 +10,7 @@
 
 import express, { Request, Response } from 'express';
 import { multiTenantEmail, ClientConfig } from '../services/multiTenantEmail';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -49,8 +49,9 @@ router.post('/', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[ClientRoutes] Failed to register client', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -74,8 +75,9 @@ router.get('/', async (req: Request, res: Response) => {
       })),
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[ClientRoutes] Failed to get clients', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -95,8 +97,9 @@ router.get('/:clientId', async (req: Request, res: Response) => {
 
     res.json({ success: true, client });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[ClientRoutes] Failed to get client', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -124,8 +127,9 @@ router.put('/:clientId', async (req: Request, res: Response) => {
       message: `Client ${clientId} updated`,
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[ClientRoutes] Failed to update client', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -145,8 +149,9 @@ router.delete('/:clientId', async (req: Request, res: Response) => {
       message: `Client ${clientId} deleted (stub)`,
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[ClientRoutes] Failed to delete client', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -185,8 +190,9 @@ router.post('/:clientId/email', async (req: Request, res: Response) => {
       email: supportEmail || client.email,
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[ClientRoutes] Failed to configure email', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -214,8 +220,9 @@ router.get('/:clientId/email', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[ClientRoutes] Failed to get email config', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -247,8 +254,9 @@ router.post('/:clientId/routing', async (req: Request, res: Response) => {
       rules,
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[ClientRoutes] Failed to set routing rules', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -271,8 +279,9 @@ router.get('/:clientId/routing', async (req: Request, res: Response) => {
       rules: client.routingRules || [],
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[ClientRoutes] Failed to get routing rules', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -311,8 +320,9 @@ router.post('/:clientId/branding', async (req: Request, res: Response) => {
       branding: { color: updated.color, logo: updated.logo, language: updated.language },
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[ClientRoutes] Failed to set branding', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -343,8 +353,9 @@ router.post('/:clientId/responses', async (req: Request, res: Response) => {
       message: 'Custom responses updated',
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[ClientRoutes] Failed to set responses', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -366,8 +377,9 @@ router.get('/:clientId/stats', async (req: Request, res: Response) => {
       stats,
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[ClientRoutes] Failed to get stats', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -405,8 +417,9 @@ router.post('/process-email', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[ClientRoutes] Failed to process email', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 

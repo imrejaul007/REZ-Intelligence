@@ -32,8 +32,12 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Memory = exports.MemoryType = void 0;
+const crypto_1 = __importDefault(require("crypto"));
 const mongoose_1 = __importStar(require("mongoose"));
 // Memory types enum
 var MemoryType;
@@ -180,7 +184,7 @@ memorySchema.statics.consolidateMemories = async function (userId) {
 memorySchema.pre('save', function (next) {
     // Auto-generate ID if not provided
     if (!this.id) {
-        this.id = `mem_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        this.id = `${crypto_1.default.randomUUID()}`;
     }
     // Set default expiration for short-term memories
     if (this.type === MemoryType.SHORT_TERM && !this.expiresAt) {

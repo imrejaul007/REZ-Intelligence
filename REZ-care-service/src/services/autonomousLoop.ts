@@ -9,7 +9,7 @@
  */
 
 import axios from 'axios';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 // ============================================
 // SERVICE URLs
@@ -108,7 +108,7 @@ class AutonomousLoop {
       actions.push(...this.vipRetentionActions(ticket, ltv));
     }
 
-    if (sentiment?.critical_negative) {
+    if ((sentiment as { critical_negative?: boolean })?.critical_negative) {
       actions.push(...this.criticalSentimentActions(ticket));
     }
 
@@ -294,7 +294,7 @@ class AutonomousLoop {
 
   private async deliveryActions(ticket: TicketContext): Promise<AutonomousAction[]> {
     const actions: AutonomousAction[] = [];
-    const tracking = await this.getDeliveryTracking(ticket.metadata?.orderId);
+    const tracking = await this.getDeliveryTracking(ticket.metadata?.orderId) as { status?: string; eta?: string; delay?: number } | null;
 
     if (tracking) {
       actions.push({
@@ -309,7 +309,7 @@ class AutonomousLoop {
         priority: 'medium',
       });
 
-      if (tracking.delay > 30) {
+      if ((tracking.delay || 0) > 30) {
         actions.push({
           action: 'credit_wallet',
           service: 'wallet',
@@ -333,9 +333,9 @@ class AutonomousLoop {
 
   private async inventoryActions(ticket: TicketContext): Promise<AutonomousAction[]> {
     const actions: AutonomousAction[] = [];
-    const inventory = await this.getInventory(ticket.metadata?.productId);
+    const inventory = await this.getInventory(ticket.metadata?.productId) as { stock?: number; demand?: number } | null;
 
-    if (inventory?.stock < 10 && inventory?.demand > 100) {
+    if ((inventory?.stock || 0) < 10 && (inventory?.demand || 0) > 100) {
       actions.push({
         action: 'trigger_reorder',
         service: 'order',

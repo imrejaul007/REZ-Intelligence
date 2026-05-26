@@ -5,8 +5,8 @@
  * Creates viral growth loops
  */
 
-import express import logger from './utils/logger';
-import from 'express';
+import express from 'express';
+import { logger } from './utils/logger';
 import axios from 'axios';
 
 const router = express.Router();

@@ -146,7 +146,7 @@ router.post('/collections', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/collections', async (req: res: Response, res: Response) => {
+router.get('/collections', async (req: Request, res: Response) => {
   try {
     const collections = collectionManager.getAllCollections();
     const stats = collectionManager.getStorageStats();
@@ -307,7 +307,7 @@ router.delete('/document/:collection/:id', async (req: Request, res: Response) =
   }
 });
 
-router.get('/stats', async (req: res: Response, res: Response) => {
+router.get('/stats', async (req: Request, res: Response) => {
   try {
     const stats = collectionManager.getStorageStats();
     res.json({ success: true, data: stats });

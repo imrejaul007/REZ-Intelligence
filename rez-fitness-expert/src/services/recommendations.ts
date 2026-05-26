@@ -1,4 +1,5 @@
 import { UserProfile, Recommendation, FitnessLevel, WorkoutType } from './fitnessExpert.js';
+import { randomInt } from 'crypto';
 
 export function getRecommendations(profile: UserProfile): Recommendation[] {
   const recommendations: Recommendation[] = [];
@@ -236,7 +237,7 @@ export function generateMotivationMessage(profile: UserProfile): string {
     "You're stronger than you think. Trust the process!"
   ];
 
-  const randomIndex = Math.floor(Math.random() * messages.length);
+  const randomIndex = randomInt(0, messages.length);
   return messages[randomIndex];
 }
 

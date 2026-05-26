@@ -1,4 +1,5 @@
-import logger from './utils/logger';
+import { logger } from '../utils/logger.js';
+import { randomUUID } from 'crypto';
 
 import Redis from 'ioredis';
 import config from '../config/index.js';
@@ -287,7 +288,8 @@ export async function acquireLock(
   }
 
   const lockKey = getCacheKey(CACHE_KEYS.LOCK, resource);
-  const lockValue = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+  // Use crypto UUID for secure lock values
+  const lockValue = `${Date.now()}-${randomUUID()}`;
 
   // Try to set the lock with NX (only if not exists) and EX (expiry)
   const result = await redisClient.set(lockKey, lockValue, 'EX', ttlSeconds, 'NX');

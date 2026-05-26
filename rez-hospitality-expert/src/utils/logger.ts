@@ -10,7 +10,7 @@ import { config } from '../config/index.js';
 const consoleFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.colorize({ all: true }),
-  winston.format.printf(({ level, message, timestamp, ...meta }) => {
+  winston.format.printf(({ level, message, timestamp, ...meta }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
     const metaStr = Object.keys(meta).length ? JSON.stringify(meta, null, 2) : '';
     return `${timestamp} [${level}]: ${message} ${metaStr}`;
   })

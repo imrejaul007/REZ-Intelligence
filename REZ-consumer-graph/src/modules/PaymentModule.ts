@@ -3,6 +3,7 @@
  * Manages consumer payment methods and transaction history
  */
 
+import crypto from 'crypto';
 import winston from 'winston';
 import { ConsumerGraph } from '../ConsumerGraph';
 import { PaymentMethod, PaymentTransaction } from '../types';
@@ -84,7 +85,7 @@ export class PaymentModule {
     }
 
     const method: PaymentMethod = {
-      method_id: `pm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      method_id: `${crypto.randomUUID()}`,
       type: input.type,
       provider: input.provider,
       last_four: input.last_four || '****',
@@ -177,7 +178,7 @@ export class PaymentModule {
   async recordTransaction(transaction: Omit<PaymentTransaction, 'transaction_id'>): Promise<PaymentTransaction> {
     const fullTransaction: PaymentTransaction = {
       ...transaction,
-      transaction_id: `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      transaction_id: `${crypto.randomUUID()}`,
     };
 
     if (!this.transactions.has(transaction.user_id)) {

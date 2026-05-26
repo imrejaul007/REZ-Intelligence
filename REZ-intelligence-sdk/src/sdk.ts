@@ -1,40 +1,61 @@
 /**
- * REZ Intelligence SDK - Core Client
+ * REZ Intelligence SDK - Enhanced Client
  *
  * Unified TypeScript client for all REZ Intelligence services
+ * Supports 3 client types: REZ_ECOSYSTEM, NON_REZ, RABTUL_SAAS
  */
 
-import type {
-  IntelligenceClientConfig,
-  ApiResponse,
-  UserProfile,
-  UserPrediction,
-  UserSegment,
-  IntentPrediction,
-  Recommendation,
-  Sequence,
-  Habit,
-  BehavioralTransition,
-  UserContext,
-  SignalAggregation,
-  LocationContext,
-  NearbyPlace,
-  PredictionExplanation,
-  DecisionResult,
-  HealthCheckResult,
+import crypto from 'crypto';
+import {
+  type IntelligenceClientConfig,
+  type ApiResponse,
+  type UserProfile,
+  type IntentPrediction,
+  type Recommendation,
+  type ChurnPrediction,
+  type LTVPrediction,
+  type Workflow,
+  type Execution,
+  type TimelineEvent,
+  type TenantContext,
+  type CreateWorkflowRequest,
+  type CreateExecutionRequest,
+  type IntentPredictRequest,
+  type RecommendationRequest,
+  type BatchIntentRequest,
+  type TrackEventRequest,
+  type ChurnPredictRequest,
+  type LTVPredictRequest,
+  type WorkflowList,
+  type HealthResponse,
+  type UserPreferences,
+  type CreateTenantRequest,
+  type TenantResponse,
+  type PrivacyCheckRequest,
+  type PrivacyCheckResponse,
+  type KnowledgeEntry,
+  type SearchRequest,
+  ClientType,
+  IntelligenceLevel,
+  IntentCategory,
+  ExecutionStatus,
+  WorkflowStatus,
 } from './types';
-import logger from './utils/logger';
 
-export class IntelligenceClient {
+export * from './types';
+
+export class REZIntelligenceClient {
   private config: Required<IntelligenceClientConfig>;
   private baseUrl: string;
+  private tenantContext: TenantContext | null = null;
 
   constructor(config: IntelligenceClientConfig = {}) {
     this.config = {
-      baseUrl: config.baseUrl || 'http://localhost',
+      baseUrl: config.baseUrl || 'http://localhost:4300',
       apiKey: config.apiKey || '',
       timeout: config.timeout || 30000,
       retryAttempts: config.retryAttempts || 3,
+      internalToken: config.internalToken || '',
       cacheEnabled: config.cacheEnabled ?? true,
       cacheTtl: config.cacheTtl || 60000,
     };
@@ -42,321 +63,436 @@ export class IntelligenceClient {
   }
 
   // ============================================
-  // USER PROFILE
+  // AUTH & TENANT
   // ============================================
 
-  async getUserProfile(userId: string): Promise<ApiResponse<UserProfile>> {
-    try {
-      const response = await this.request<UserProfile>(`/api/profiles/${userId}`);
-      return response;
-    } catch (error) {
-      logger.error('Failed to get user profile', { userId, error });
-      return { success: false, error: 'Failed to fetch user profile' };
-    }
+  /**
+   * Set tenant context for the client
+   */
+  setTenantContext(tenant: TenantContext): void {
+    this.tenantContext = tenant;
   }
 
-  async updateUserProfile(userId: string, updates: Partial<UserProfile>): Promise<ApiResponse<UserProfile>> {
-    try {
-      const response = await this.request<UserProfile>(`/api/profiles/${userId}`, {
-        method: 'PUT',
-        body: updates,
-      });
-      return response;
-    } catch (error) {
-      return { success: false, error: 'Failed to update user profile' };
-    }
+  /**
+   * Get current tenant context
+   */
+  getTenantContext(): TenantContext | null {
+    return this.tenantContext;
   }
 
   // ============================================
-  // PREDICTIONS
+  // INTENT PREDICTION
   // ============================================
 
-  async predictChurn(userId: string): Promise<ApiResponse<UserPrediction>> {
-    try {
-      const response = await this.request<UserPrediction>(`/api/predict/churn/${userId}`);
-      return response;
-    } catch (error) {
-      return { success: false, error: 'Failed to predict churn' };
-    }
+  /**
+   * Predict user intent from context signals
+   */
+  async predictIntent(request: IntentPredictRequest): Promise<ApiResponse<IntentPrediction>> {
+    return this.request<IntentPrediction>('/api/intent/predict', {
+      method: 'POST',
+      body: request,
+    });
   }
 
-  async predictLTV(userId: string): Promise<ApiResponse<UserPrediction>> {
-    try {
-      const response = await this.request<UserPrediction>(`/api/predict/ltv/${userId}`);
-      return response;
-    } catch (error) {
-      return { success: false, error: 'Failed to predict LTV' };
-    }
+  /**
+   * Batch predict intents for multiple users
+   */
+  async batchPredictIntent(request: BatchIntentRequest): Promise<ApiResponse<{ predictions: IntentPrediction[] }>> {
+    return this.request('/api/intent/batch-predict', {
+      method: 'POST',
+      body: request,
+    });
   }
 
-  async predictNextPurchase(userId: string): Promise<ApiResponse<UserPrediction>> {
-    try {
-      const response = await this.request<UserPrediction>(`/api/predict/next-purchase/${userId}`);
-      return response;
-    } catch (error) {
-      return { success: false, error: 'Failed to predict next purchase' };
-    }
-  }
-
-  // ============================================
-  // INTENT
-  // ============================================
-
-  async predictIntent(userId: string, context?: UserContext): Promise<ApiResponse<IntentPrediction>> {
-    try {
-      const response = await this.request<IntentPrediction>('/api/intent/predict', {
-        method: 'POST',
-        body: { userId, context },
-      });
-      return response;
-    } catch (error) {
-      return { success: false, error: 'Failed to predict intent' };
-    }
+  /**
+   * Submit intent prediction feedback
+   */
+  async submitIntentFeedback(
+    userId: string,
+    predictedIntent: string,
+    actualIntent: string
+  ): Promise<ApiResponse<void>> {
+    return this.request('/api/intent/feedback', {
+      method: 'POST',
+      body: { userId, predictedIntent, actualIntent },
+    });
   }
 
   // ============================================
   // RECOMMENDATIONS
   // ============================================
 
-  async getRecommendations(userId: string, options?: {
-    type?: string;
-    limit?: number;
-    context?: Record<string, unknown>;
-  }): Promise<ApiResponse<Recommendation[]>> {
-    try {
-      const params = new URLSearchParams({ userId });
-      if (options?.type) params.append('type', options.type);
-      if (options?.limit) params.append('limit', String(options.limit));
-
-      const response = await this.request<Recommendation[]>(`/api/recommendations?${params}`);
-      return response;
-    } catch (error) {
-      return { success: false, error: 'Failed to get recommendations' };
-    }
+  /**
+   * Get personalized recommendations for a user
+   */
+  async getRecommendations(request: RecommendationRequest): Promise<ApiResponse<{ recommendations: Recommendation[] }>> {
+    return this.request('/api/recommendations', {
+      method: 'POST',
+      body: request,
+    });
   }
 
-  async getPersonalizedFeed(userId: string, limit = 20): Promise<ApiResponse<Recommendation[]>> {
-    try {
-      const response = await this.request<Recommendation[]>('/api/recommendations/feed', {
-        method: 'POST',
-        body: { userId, limit },
-      });
-      return response;
-    } catch (error) {
-      return { success: false, error: 'Failed to get personalized feed' };
-    }
+  /**
+   * Get "For You Today" personalized feed
+   */
+  async getForYouFeed(
+    userId: string,
+    limit = 20
+  ): Promise<ApiResponse<{ items: Recommendation[]; lastUpdated: string }>> {
+    return this.request(`/api/recommendations/for-you?userId=${userId}&limit=${limit}`);
   }
 
   // ============================================
-  // SEGMENTS
+  // USER PROFILE
   // ============================================
 
-  async getUserSegments(userId: string): Promise<ApiResponse<UserSegment[]>> {
-    try {
-      const response = await this.request<UserSegment[]>(`/api/segments/user/${userId}`);
-      return response;
-    } catch (error) {
-      return { success: false, error: 'Failed to get user segments' };
-    }
+  /**
+   * Get user profile
+   */
+  async getUserProfile(userId: string): Promise<ApiResponse<UserProfile>> {
+    return this.request(`/api/profile/${userId}`);
   }
 
-  async getSegments(): Promise<ApiResponse<UserSegment[]>> {
-    try {
-      const response = await this.request<UserSegment[]>('/api/segments');
-      return response;
-    } catch (error) {
-      return { success: false, error: 'Failed to get segments' };
-    }
-  }
-
-  // ============================================
-  // TEMPORAL INTELLIGENCE
-  // ============================================
-
-  async analyzeSequence(entityId: string, events: { eventType: string; timestamp: Date }[]): Promise<ApiResponse<Sequence>> {
-    try {
-      const response = await this.request<Sequence>('/api/sequences', {
-        method: 'POST',
-        body: { entityId, events },
-      });
-      return response;
-    } catch (error) {
-      return { success: false, error: 'Failed to analyze sequence' };
-    }
-  }
-
-  async detectHabits(userId: string, events: { eventType: string; timestamp: Date }[]): Promise<ApiResponse<Habit[]>> {
-    try {
-      const response = await this.request<Habit[]>('/api/habits', {
-        method: 'POST',
-        body: { entityId: userId, entityType: 'user', events },
-      });
-      return response;
-    } catch (error) {
-      return { success: false, error: 'Failed to detect habits' };
-    }
-  }
-
-  async getLifecycle(userId: string): Promise<ApiResponse<{ currentStage: string; progression: number }>> {
-    try {
-      const response = await this.request<{ currentStage: string; progression: number }>(`/api/lifecycle/${userId}`);
-      return response;
-    } catch (error) {
-      return { success: false, error: 'Failed to get lifecycle' };
-    }
+  /**
+   * Update user profile
+   */
+  async updateUserProfile(
+    userId: string,
+    updates: Partial<Pick<UserProfile, 'displayName' | 'avatar' | 'preferences'>>
+  ): Promise<ApiResponse<UserProfile>> {
+    return this.request(`/api/profile/${userId}`, {
+      method: 'PUT',
+      body: updates,
+    });
   }
 
   // ============================================
-  // SIGNALS
+  // WORKFLOWS
   // ============================================
 
-  async getSignals(userId: string): Promise<ApiResponse<SignalAggregation>> {
-    try {
-      const response = await this.request<SignalAggregation>(`/api/signals/${userId}`);
-      return response;
-    } catch (error) {
-      return { success: false, error: 'Failed to get signals' };
-    }
+  /**
+   * Create a new workflow
+   */
+  async createWorkflow(request: CreateWorkflowRequest): Promise<ApiResponse<Workflow>> {
+    return this.request('/api/workflows', {
+      method: 'POST',
+      body: request,
+    });
   }
 
-  async trackEvent(userId: string, event: string, properties?: Record<string, unknown>): Promise<ApiResponse<void>> {
-    try {
-      const response = await this.request<void>('/api/events', {
-        method: 'POST',
-        body: { userId, event, properties, timestamp: new Date() },
-      });
-      return response;
-    } catch (error) {
-      return { success: false, error: 'Failed to track event' };
-    }
+  /**
+   * List workflows
+   */
+  async listWorkflows(page = 1, limit = 20): Promise<ApiResponse<WorkflowList>> {
+    return this.request(`/api/workflows?page=${page}&limit=${limit}`);
   }
 
-  // ============================================
-  // LOCATION
-  // ============================================
-
-  async getLocationContext(userId: string): Promise<ApiResponse<LocationContext>> {
-    try {
-      const response = await this.request<LocationContext>(`/api/location/context/${userId}`);
-      return response;
-    } catch (error) {
-      return { success: false, error: 'Failed to get location context' };
-    }
+  /**
+   * Get workflow by ID
+   */
+  async getWorkflow(workflowId: string): Promise<ApiResponse<Workflow>> {
+    return this.request(`/api/workflows/${workflowId}`);
   }
 
-  async searchNearby(lat: number, lng: number, radius = 5000): Promise<ApiResponse<NearbyPlace[]>> {
-    try {
-      const response = await this.request<NearbyPlace[]>('/api/search/nearby', {
-        method: 'POST',
-        body: { location: { lat, lng }, radius },
-      });
-      return response;
-    } catch (error) {
-      return { success: false, error: 'Failed to search nearby' };
-    }
+  /**
+   * Update workflow
+   */
+  async updateWorkflow(
+    workflowId: string,
+    updates: Partial<CreateWorkflowRequest>
+  ): Promise<ApiResponse<Workflow>> {
+    return this.request(`/api/workflows/${workflowId}`, {
+      method: 'PUT',
+      body: updates,
+    });
   }
 
-  async predictLocation(userId: string): Promise<ApiResponse<{ location: { lat: number; lng: number }; probability: number }>> {
-    try {
-      const response = await this.request<{ location: { lat: number; lng: number }; probability: number }>(
-        `/api/location/predict/${userId}`
-      );
-      return response;
-    } catch (error) {
-      return { success: false, error: 'Failed to predict location' };
-    }
+  /**
+   * Delete workflow
+   */
+  async deleteWorkflow(workflowId: string): Promise<ApiResponse<void>> {
+    return this.request(`/api/workflows/${workflowId}`, {
+      method: 'DELETE',
+    });
   }
 
   // ============================================
-  // EXPLAINABILITY
+  // EXECUTIONS
   // ============================================
 
-  async explainPrediction(predictionId: string): Promise<ApiResponse<PredictionExplanation>> {
-    try {
-      const response = await this.request<PredictionExplanation>(`/api/explain/${predictionId}`);
-      return response;
-    } catch (error) {
-      return { success: false, error: 'Failed to explain prediction' };
-    }
+  /**
+   * Trigger workflow execution
+   */
+  async triggerExecution(request: CreateExecutionRequest): Promise<ApiResponse<Execution>> {
+    return this.request('/api/executions', {
+      method: 'POST',
+      body: request,
+    });
   }
 
-  async explainUserChurn(userId: string): Promise<ApiResponse<PredictionExplanation>> {
-    try {
-      const response = await this.request<PredictionExplanation>('/api/explain', {
-        method: 'POST',
-        body: { entityType: 'user', entityId: userId, predictionType: 'churn' },
-      });
-      return response;
-    } catch (error) {
-      return { success: false, error: 'Failed to explain churn prediction' };
-    }
+  /**
+   * Get execution status
+   */
+  async getExecution(executionId: string): Promise<ApiResponse<Execution>> {
+    return this.request(`/api/executions/${executionId}`);
+  }
+
+  /**
+   * Cancel execution
+   */
+  async cancelExecution(executionId: string): Promise<ApiResponse<Execution>> {
+    return this.request(`/api/executions/${executionId}/cancel`, {
+      method: 'POST',
+    });
+  }
+
+  /**
+   * Retry failed execution
+   */
+  async retryExecution(executionId: string): Promise<ApiResponse<Execution>> {
+    return this.request(`/api/executions/${executionId}/retry`, {
+      method: 'POST',
+    });
   }
 
   // ============================================
-  // DECISIONS
+  // EVENTS
   // ============================================
 
-  async makeDecision(context: Record<string, unknown>, options: { id: string; name: string }[]): Promise<ApiResponse<DecisionResult>> {
-    try {
-      const response = await this.request<DecisionResult>('/api/decisions', {
-        method: 'POST',
-        body: { context, options },
-      });
-      return response;
-    } catch (error) {
-      return { success: false, error: 'Failed to make decision' };
-    }
+  /**
+   * Track a user event
+   */
+  async trackEvent(request: TrackEventRequest): Promise<ApiResponse<{ eventId: string }>> {
+    return this.request('/api/events', {
+      method: 'POST',
+      body: request,
+    });
+  }
+
+  /**
+   * Track batch of events
+   */
+  async trackBatchEvents(
+    events: TrackEventRequest[]
+  ): Promise<ApiResponse<{ processed: number; failed: number }>> {
+    return this.request('/api/events/batch', {
+      method: 'POST',
+      body: { events },
+    });
+  }
+
+  // ============================================
+  // ML PREDICTIONS
+  // ============================================
+
+  /**
+   * Predict churn probability
+   */
+  async predictChurn(request: ChurnPredictRequest): Promise<ApiResponse<ChurnPrediction>> {
+    return this.request('/api/predict/churn', {
+      method: 'POST',
+      body: request,
+    });
+  }
+
+  /**
+   * Predict lifetime value
+   */
+  async predictLTV(request: LTVPredictRequest): Promise<ApiResponse<LTVPrediction>> {
+    return this.request('/api/predict/ltv', {
+      method: 'POST',
+      body: request,
+    });
+  }
+
+  /**
+   * Predict revisit probability
+   */
+  async predictRevisit(userId: string): Promise<ApiResponse<{ probability: number; timeframe: string }>> {
+    return this.request('/api/predict/revisit', {
+      method: 'POST',
+      body: { userId },
+    });
+  }
+
+  // ============================================
+  // TIMELINE
+  // ============================================
+
+  /**
+   * Add timeline event
+   */
+  async addTimelineEvent(event: TimelineEvent): Promise<ApiResponse<{ eventId: string }>> {
+    return this.request('/api/timeline/event', {
+      method: 'POST',
+      body: event,
+    });
+  }
+
+  /**
+   * Get user timeline
+   */
+  async getTimeline(
+    userId: string,
+    options?: { limit?: number; type?: string }
+  ): Promise<ApiResponse<{ events: TimelineEvent[] }>> {
+    const params = new URLSearchParams({ userId });
+    if (options?.limit) params.append('limit', String(options.limit));
+    if (options?.type) params.append('type', options.type);
+
+    return this.request(`/api/timeline?${params}`);
+  }
+
+  /**
+   * Get user preferences
+   */
+  async getPreferences(userId: string): Promise<ApiResponse<UserPreferences>> {
+    return this.request(`/api/preferences/${userId}`);
+  }
+
+  // ============================================
+  // KNOWLEDGE GRAPH
+  // ============================================
+
+  /**
+   * Search knowledge base
+   */
+  async searchKnowledge(request: SearchRequest): Promise<ApiResponse<{ results: KnowledgeEntry[] }>> {
+    return this.request('/api/knowledge/search', {
+      method: 'POST',
+      body: request,
+    });
+  }
+
+  /**
+   * Add knowledge entry
+   */
+  async addKnowledgeEntry(entry: Omit<KnowledgeEntry, 'id'>): Promise<ApiResponse<KnowledgeEntry>> {
+    return this.request('/api/knowledge/entries', {
+      method: 'POST',
+      body: entry,
+    });
+  }
+
+  // ============================================
+  // PRIVACY
+  // ============================================
+
+  /**
+   * Check cross-tenant data access
+   */
+  async canAccessData(request: PrivacyCheckRequest): Promise<ApiResponse<PrivacyCheckResponse>> {
+    return this.request('/api/privacy/can-access', {
+      method: 'POST',
+      body: request,
+    });
+  }
+
+  /**
+   * Check if intent can be shared
+   */
+  async canShareIntent(
+    userId: string,
+    intent: string,
+    confidence: number
+  ): Promise<ApiResponse<PrivacyCheckResponse>> {
+    return this.request('/api/privacy/can-share-intent', {
+      method: 'POST',
+      body: { userId, intent, confidence },
+    });
+  }
+
+  /**
+   * Filter data based on privacy settings
+   */
+  async filterByPrivacy(data: Record<string, unknown>): Promise<ApiResponse<{ filtered: Record<string, unknown> }>> {
+    return this.request('/api/privacy/filter', {
+      method: 'POST',
+      body: data,
+    });
+  }
+
+  // ============================================
+  // TENANT MANAGEMENT (Admin only)
+  // ============================================
+
+  /**
+   * Create a new tenant
+   */
+  async createTenant(request: CreateTenantRequest): Promise<ApiResponse<TenantResponse>> {
+    return this.request('/api/tenants', {
+      method: 'POST',
+      body: request,
+    });
+  }
+
+  /**
+   * List tenants
+   */
+  async listTenants(clientType?: ClientType): Promise<ApiResponse<{ tenants: TenantResponse[] }>> {
+    const url = clientType ? `/api/tenants?clientType=${clientType}` : '/api/tenants';
+    return this.request(url);
+  }
+
+  /**
+   * Get tenant by ID
+   */
+  async getTenant(tenantId: string): Promise<ApiResponse<TenantResponse>> {
+    return this.request(`/api/tenants/${tenantId}`);
   }
 
   // ============================================
   // HEALTH
   // ============================================
 
-  async healthCheck(): Promise<HealthCheckResult> {
-    const services = [
-      { name: 'intent' as const, url: '/api/intent/health' },
-      { name: 'predictive' as const, url: '/api/predict/health' },
-      { name: 'signal' as const, url: '/api/signals/health' },
-      { name: 'temporal' as const, url: '/api/health' },
-      { name: 'recommendation' as const, url: '/api/recommendations/health' },
-    ];
+  /**
+   * Health check
+   */
+  async healthCheck(): Promise<ApiResponse<HealthResponse>> {
+    return this.request('/health');
+  }
 
-    const results = await Promise.all(
-      services.map(async (s) => {
-        const start = Date.now();
-        try {
-          await this.request(`${s.url}`);
-          return { name: s.name, status: 'healthy' as const, latency: Date.now() - start, uptime: 100, lastChecked: new Date() };
-        } catch {
-          return { name: s.name, status: 'degraded' as const, latency: Date.now() - start, uptime: 0, lastChecked: new Date() };
-        }
-      })
-    );
-
-    const healthyCount = results.filter(r => r.status === 'healthy').length;
-    return {
-      overall: healthyCount === results.length ? 'healthy' : healthyCount > 0 ? 'degraded' : 'unhealthy',
-      services: results,
-      timestamp: new Date(),
-    };
+  /**
+   * Get all service statuses
+   */
+  async getServiceStatuses(): Promise<ApiResponse<{ services: Record<string, 'healthy' | 'degraded' | 'unhealthy'> }>> {
+    return this.request('/api/services');
   }
 
   // ============================================
   // PRIVATE METHODS
   // ============================================
 
-  private async request<T>(path: string, options?: { method?: string; body?: unknown }): Promise<ApiResponse<T>> {
+  private async request<T>(
+    path: string,
+    options?: { method?: string; body?: unknown }
+  ): Promise<ApiResponse<T>> {
     const url = `${this.baseUrl}${path}`;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.config.timeout);
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'X-Request-ID': this.generateRequestId(),
+    };
+
+    if (this.config.apiKey) {
+      headers['X-API-Key'] = this.config.apiKey;
+    }
+
+    if (this.config.internalToken) {
+      headers['X-Internal-Token'] = this.config.internalToken;
+    }
+
+    if (this.tenantContext) {
+      headers['X-Tenant-ID'] = this.tenantContext.tenantId;
+      headers['X-Client-Type'] = this.tenantContext.clientType;
+    }
+
     try {
       const response = await fetch(url, {
         method: options?.method || 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(this.config.apiKey ? { 'Authorization': `Bearer ${this.config.apiKey}` } : {}),
-        },
+        headers,
         body: options?.body ? JSON.stringify(options.body) : undefined,
         signal: controller.signal,
       });
@@ -364,26 +500,72 @@ export class IntelligenceClient {
       clearTimeout(timeout);
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const errorBody = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          error: errorBody.error?.message || `HTTP ${response.status}: ${response.statusText}`,
+          code: errorBody.error?.code || `HTTP_${response.status}`,
+        } as ApiResponse<T>;
       }
 
-      const json = await response.json() as ApiResponse<T>;
-      return json;
+      const json = await response.json();
+      return json as ApiResponse<T>;
     } catch (error) {
       clearTimeout(timeout);
-      throw error;
+
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          return {
+            success: false,
+            error: 'Request timeout',
+            code: 'TIMEOUT',
+          } as ApiResponse<T>;
+        }
+        return {
+          success: false,
+          error: error.message,
+          code: 'NETWORK_ERROR',
+        } as ApiResponse<T>;
+      }
+
+      return {
+        success: false,
+        error: 'Unknown error',
+        code: 'UNKNOWN',
+      } as ApiResponse<T>;
     }
+  }
+
+  private generateRequestId(): string {
+    return `${Date.now()}-${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
   }
 }
 
-// Export singleton factory
-let clientInstance: IntelligenceClient | null = null;
+// ============================================
+// FACTORY FUNCTION
+// ============================================
 
-export function getIntelligenceClient(config?: IntelligenceClientConfig): IntelligenceClient {
+let clientInstance: REZIntelligenceClient | null = null;
+
+export function getIntelligenceClient(config?: IntelligenceClientConfig): REZIntelligenceClient {
   if (!clientInstance) {
-    clientInstance = new IntelligenceClient(config);
+    clientInstance = new REZIntelligenceClient(config);
   }
   return clientInstance;
 }
 
-export default IntelligenceClient;
+export function createIntelligenceClient(config: IntelligenceClientConfig): REZIntelligenceClient {
+  return new REZIntelligenceClient(config);
+}
+
+// ============================================
+// RE-EXPORTS FROM TYPES
+// ============================================
+
+export {
+  ClientType,
+  IntelligenceLevel,
+  IntentCategory,
+  ExecutionStatus,
+  WorkflowStatus,
+};

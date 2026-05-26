@@ -1,107 +1,55 @@
 import { Request, Response, NextFunction } from 'express';
-import { internalServiceTokens } from '../config';
 import logger from '../utils/logger';
 
-/**
- * Extend Express Request to include service info
- */
-declare global {
-  namespace Express {
-    interface Request {
-      serviceName?: string;
-      isInternalRequest?: boolean;
-    }
-  }
+export interface AuthConfig {
+  apiKeys?: string[];
+  internalTokens?: string[];
+  bypassPaths?: string[];
 }
 
 /**
- * Internal service authentication middleware
- *
- * Validates X-Internal-Token header against configured service tokens.
+ * Create authentication middleware
  */
-export function internalAuth(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
-  const token = req.headers['x-internal-token'] as string | undefined;
+export const internalAuth = createAuthMiddleware({
+  apiKeys: process.env.API_KEYS?.split(',') || [],
+  internalTokens: process.env.INTERNAL_SERVICE_TOKENS_JSON ? Object.values(
+    JSON.parse(process.env.INTERNAL_SERVICE_TOKENS_JSON)
+  ) : [],
+});
 
-  // If no token provided, allow request to continue (may be validated elsewhere)
-  if (!token) {
-    // Check if JWT is provided instead (for user requests)
-    const jwtToken = req.headers.authorization?.replace('Bearer ', '');
-    if (jwtToken) {
-      // JWT authentication would be handled by a separate middleware
-      next();
-      return;
+export function createAuthMiddleware(config: AuthConfig) {
+  const { apiKeys = [], internalTokens = [], bypassPaths = ['/health', '/ready'] } = config;
+
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const path = req.path;
+
+    // Bypass health checks
+    if (bypassPaths.some(p => path.startsWith(p))) {
+      return next();
     }
 
-    // No authentication provided
-    res.status(401).json({
-      error: {
-        code: 'UNAUTHORIZED',
-        message: 'Authentication required',
-        details: 'Provide X-Internal-Token header for service-to-service calls',
-      },
-      timestamp: new Date(),
-    });
-    return;
-  }
+    // Check API key
+    const apiKey = req.headers['x-api-key'] as string | undefined;
+    if (apiKey && apiKeys.includes(apiKey)) {
+      return next();
+    }
 
-  // Find service by token
-  const serviceName = Object.entries(internalServiceTokens).find(
-    ([, t]) => t === token
-  )?.[0];
+    // Check internal token
+    const internalToken = req.headers['x-internal-token'] as string | undefined;
+    if (internalToken && internalTokens.includes(internalToken)) {
+      return next();
+    }
 
-  if (!serviceName) {
-    logger.warn('Invalid internal token attempt', {
+    // No valid auth found
+    logger.warn('Unauthorized access attempt', {
+      path,
       ip: req.ip,
-      path: req.path,
-      method: req.method,
+      userAgent: req.headers['user-agent'],
     });
 
     res.status(401).json({
-      error: {
-        code: 'INVALID_TOKEN',
-        message: 'Invalid authentication token',
-      },
-      timestamp: new Date(),
+      error: 'Unauthorized',
+      message: 'Valid API key or internal token required',
     });
-    return;
-  }
-
-  // Attach service info to request
-  req.serviceName = serviceName;
-  req.isInternalRequest = true;
-
-  logger.debug('Internal service authenticated', {
-    service: serviceName,
-    path: req.path,
-  });
-
-  next();
-}
-
-/**
- * Optional internal auth - sets service info if token provided, but doesn't block
- */
-export function optionalInternalAuth(
-  req: Request,
-  _res: Response,
-  next: NextFunction
-): void {
-  const token = req.headers['x-internal-token'] as string | undefined;
-
-  if (token) {
-    const serviceName = Object.entries(internalServiceTokens).find(
-      ([, t]) => t === token
-    )?.[0];
-
-    if (serviceName) {
-      req.serviceName = serviceName;
-      req.isInternalRequest = true;
-    }
-  }
-
-  next();
+  };
 }

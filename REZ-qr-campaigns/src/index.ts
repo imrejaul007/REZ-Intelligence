@@ -1,5 +1,5 @@
-import express, { Express, Request, Response } import logger from './utils/logger';
-import from 'express';
+import express, { Express, Request, Response } from 'express';
+import { logger } from './utils/logger.js';
 import mongoose, { Schema, Document } from 'mongoose';
 import QRCode from 'qrcode';
 import { v4 as uuidv4 } from 'uuid';

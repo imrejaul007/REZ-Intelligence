@@ -2,8 +2,8 @@
  * REZ Fleet Management - Main Entry
  */
 
-import express import logger from './utils/logger';
-import from 'express';
+import express from 'express';
+import { logger } from './utils/logger';
 import { routingService } from './services/RoutingService';
 import { surgePricingService } from './services/SurgePricingService';
 import { incentiveService } from './services/IncentiveService';

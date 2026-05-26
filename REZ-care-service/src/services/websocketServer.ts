@@ -7,7 +7,7 @@
 
 import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 interface ClientRoom {
   socketId: string;
@@ -197,8 +197,8 @@ class WebSocketServer {
     this.io.to('tickets').emit('ticket:new', ticket);
 
     // Emit to assigned agent
-    if ((ticket as unknown).assignedTo) {
-      this.io.to(`agent:${(ticket as unknown).assignedTo}`).emit('ticket:assigned', ticket);
+    if ((ticket as unknown as { assignedTo?: string }).assignedTo) {
+      this.io.to(`agent:${(ticket as unknown as { assignedTo: string }).assignedTo}`).emit('ticket:assigned', ticket);
     }
 
     // P1 tickets to critical

@@ -1,5 +1,6 @@
 const UserIntentProfile = require('../models/UserIntentProfile');
 const SessionEvent = require('../models/SessionEvent');
+const { randomUUID } = require('crypto');
 
 class IntentScoringService {
   constructor() {
@@ -335,7 +336,7 @@ class IntentScoringService {
   }
 
   generateSessionId() {
-    return `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `sess_${Date.now()}_${randomUUID().replace(/-/g, '').substring(0, 9)}`;
   }
 }
 

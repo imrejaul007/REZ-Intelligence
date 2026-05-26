@@ -4,6 +4,35 @@
  */
 import { z } from 'zod';
 /**
+ * Channel Types for Event Attribution
+ */
+export declare const ChannelType: {
+    readonly WHATSAPP: "whatsapp";
+    readonly SMS: "sms";
+    readonly PUSH: "push";
+    readonly EMAIL: "email";
+    readonly IN_APP: "in_app";
+    readonly QR_SCAN: "qr_scan";
+    readonly DEEP_LINK: "deep_link";
+};
+export type ChannelTypeValue = typeof ChannelType[keyof typeof ChannelType];
+/**
+ * Attribution Sources for Event Tracking
+ */
+export declare const AttributionSource: {
+    readonly ORGANIC: "organic";
+    readonly PAID_AD: "paid_ad";
+    readonly INFLUENCER: "influencer";
+    readonly REFERRAL: "referral";
+    readonly QR_CODE: "qr_code";
+    readonly LOCATION: "location";
+    readonly NOTIFICATION: "notification";
+    readonly EMAIL_CAMPAIGN: "email_campaign";
+    readonly SOCIAL_MEDIA: "social_media";
+    readonly SEARCH: "search";
+};
+export type AttributionSourceValue = typeof AttributionSource[keyof typeof AttributionSource];
+/**
  * Standardized Event Types for REZ Agent OS v3
  * All services should use these event types for consistency
  */
@@ -19,8 +48,45 @@ export declare const EventType: {
     readonly PAYMENT_INITIATED: "PAYMENT_INITIATED";
     readonly PAYMENT_COMPLETED: "PAYMENT_COMPLETED";
     readonly SERVICE_HEALTH_CHANGED: "SERVICE_HEALTH_CHANGED";
+    readonly OFFER_SHARED: "offer.shared";
+    readonly OFFER_OPENED: "offer.opened";
+    readonly REFERRAL_CLICKED: "referral.clicked";
+    readonly REFERRAL_SIGNED_UP: "referral.signed_up";
+    readonly REFERRAL_PURCHASED: "referral.purchased";
+    readonly LOCATION_VISITED: "location.visited";
+    readonly LOCATION_DWELL: "location.dwell";
+    readonly SEARCH_PERFORMED: "search.performed";
+    readonly WISHLIST_ADDED: "wishlist.added";
+    readonly WISHLIST_REMOVED: "wishlist.removed";
+    readonly PRICE_ALERT_SET: "price.alert_set";
+    readonly PRICE_ALERT_TRIGGERED: "price.alert_triggered";
+    readonly REVIEW_SUBMITTED: "review.submitted";
+    readonly REVIEW_VIEWED: "review.viewed";
+    readonly PROFILE_UPDATED: "profile.updated";
+    readonly FEEDBACK_GIVEN: "feedback.given";
+    readonly SUBSCRIPTION_STARTED: "subscription.started";
+    readonly SUBSCRIPTION_RENEWED: "subscription.renewed";
+    readonly SUBSCRIPTION_CANCELLED: "subscription.cancelled";
+    readonly MEMBERSHIP_UPGRADED: "membership.upgraded";
+    readonly MEMBERSHIP_DOWNGRADED: "membership.downgraded";
+    readonly LOYALTY_REDEEMED: "loyalty.redeemed";
+    readonly LOYALTY_EARNED: "loyalty.earned";
+    readonly COMPETITOR_VISITED: "competitor.visited";
+    readonly COMPETITOR_SWITCHED: "competitor.switched";
+    readonly APP_INSTALLED: "app.installed";
+    readonly APP_OPENED: "app.opened";
+    readonly CONTENT_VIEWED: "content.viewed";
+    readonly CONTENT_SHARED: "content.shared";
+    readonly CAMPAIGN_STARTED: "campaign.started";
+    readonly CAMPAIGN_COMPLETED: "campaign.completed";
+    readonly SURVEY_STARTED: "survey.started";
+    readonly SURVEY_COMPLETED: "survey.completed";
 };
 export type EventTypeValue = typeof EventType[keyof typeof EventType];
+/**
+ * All valid event types as a string array (for validation)
+ */
+export declare const ALL_EVENT_TYPES: string[];
 /**
  * Event Type Categories
  */
@@ -32,6 +98,10 @@ export declare const EventCategory: {
     readonly BUSINESS_LOGIC: "BUSINESS_LOGIC";
     readonly PAYMENT: "PAYMENT";
     readonly HEALTH: "HEALTH";
+    readonly MARKETING: "MARKETING";
+    readonly LOYALTY: "LOYALTY";
+    readonly REFERRAL: "REFERRAL";
+    readonly ENGAGEMENT: "ENGAGEMENT";
 };
 export type EventCategoryValue = typeof EventCategory[keyof typeof EventCategory];
 /**
@@ -525,7 +595,7 @@ export declare const ServiceHealthChangedPayloadSchema: z.ZodObject<{
  */
 export declare const ReZEventSchema: z.ZodObject<{
     eventId: z.ZodString;
-    eventType: z.ZodEnum<["USER_MESSAGE_RECEIVED", "USER_MESSAGE_SENT", "INTENT_DETECTED", "AGENT_SELECTED", "AGENT_SWITCHED", "COLLABORATION_STARTED", "ORDER_CREATED", "ORDER_COMPLETED", "PAYMENT_INITIATED", "PAYMENT_COMPLETED", "SERVICE_HEALTH_CHANGED"]>;
+    eventType: z.ZodEnum<["USER_MESSAGE_RECEIVED", "USER_MESSAGE_SENT", "INTENT_DETECTED", "AGENT_SELECTED", "AGENT_SWITCHED", "COLLABORATION_STARTED", "ORDER_CREATED", "ORDER_COMPLETED", "PAYMENT_INITIATED", "PAYMENT_COMPLETED", "SERVICE_HEALTH_CHANGED", "offer.shared", "offer.opened", "referral.clicked", "referral.signed_up", "referral.purchased", "location.visited", "location.dwell", "search.performed", "wishlist.added", "wishlist.removed", "price.alert_set", "price.alert_triggered", "review.submitted", "review.viewed", "profile.updated", "feedback.given", "subscription.started", "subscription.renewed", "subscription.cancelled", "membership.upgraded", "membership.downgraded", "loyalty.redeemed", "loyalty.earned", "competitor.visited", "competitor.switched", "app.installed", "app.opened", "content.viewed", "content.shared", "campaign.started", "campaign.completed", "survey.started", "survey.completed"]>;
     payload: z.ZodUnknown;
     metadata: z.ZodObject<{
         source: z.ZodString;
@@ -564,7 +634,7 @@ export declare const ReZEventSchema: z.ZodObject<{
         tags?: string[] | undefined;
     };
     eventId: string;
-    eventType: "USER_MESSAGE_RECEIVED" | "USER_MESSAGE_SENT" | "INTENT_DETECTED" | "AGENT_SELECTED" | "AGENT_SWITCHED" | "COLLABORATION_STARTED" | "ORDER_CREATED" | "ORDER_COMPLETED" | "PAYMENT_INITIATED" | "PAYMENT_COMPLETED" | "SERVICE_HEALTH_CHANGED";
+    eventType: "USER_MESSAGE_RECEIVED" | "USER_MESSAGE_SENT" | "INTENT_DETECTED" | "AGENT_SELECTED" | "AGENT_SWITCHED" | "COLLABORATION_STARTED" | "ORDER_CREATED" | "ORDER_COMPLETED" | "PAYMENT_INITIATED" | "PAYMENT_COMPLETED" | "SERVICE_HEALTH_CHANGED" | "offer.shared" | "offer.opened" | "referral.clicked" | "referral.signed_up" | "referral.purchased" | "location.visited" | "location.dwell" | "search.performed" | "wishlist.added" | "wishlist.removed" | "price.alert_set" | "price.alert_triggered" | "review.submitted" | "review.viewed" | "profile.updated" | "feedback.given" | "subscription.started" | "subscription.renewed" | "subscription.cancelled" | "membership.upgraded" | "membership.downgraded" | "loyalty.redeemed" | "loyalty.earned" | "competitor.visited" | "competitor.switched" | "app.installed" | "app.opened" | "content.viewed" | "content.shared" | "campaign.started" | "campaign.completed" | "survey.started" | "survey.completed";
     version: string;
     payload?: unknown;
 }, {
@@ -578,10 +648,192 @@ export declare const ReZEventSchema: z.ZodObject<{
         tags?: string[] | undefined;
     };
     eventId: string;
-    eventType: "USER_MESSAGE_RECEIVED" | "USER_MESSAGE_SENT" | "INTENT_DETECTED" | "AGENT_SELECTED" | "AGENT_SWITCHED" | "COLLABORATION_STARTED" | "ORDER_CREATED" | "ORDER_COMPLETED" | "PAYMENT_INITIATED" | "PAYMENT_COMPLETED" | "SERVICE_HEALTH_CHANGED";
+    eventType: "USER_MESSAGE_RECEIVED" | "USER_MESSAGE_SENT" | "INTENT_DETECTED" | "AGENT_SELECTED" | "AGENT_SWITCHED" | "COLLABORATION_STARTED" | "ORDER_CREATED" | "ORDER_COMPLETED" | "PAYMENT_INITIATED" | "PAYMENT_COMPLETED" | "SERVICE_HEALTH_CHANGED" | "offer.shared" | "offer.opened" | "referral.clicked" | "referral.signed_up" | "referral.purchased" | "location.visited" | "location.dwell" | "search.performed" | "wishlist.added" | "wishlist.removed" | "price.alert_set" | "price.alert_triggered" | "review.submitted" | "review.viewed" | "profile.updated" | "feedback.given" | "subscription.started" | "subscription.renewed" | "subscription.cancelled" | "membership.upgraded" | "membership.downgraded" | "loyalty.redeemed" | "loyalty.earned" | "competitor.visited" | "competitor.switched" | "app.installed" | "app.opened" | "content.viewed" | "content.shared" | "campaign.started" | "campaign.completed" | "survey.started" | "survey.completed";
     payload?: unknown;
     version?: string | undefined;
 }>;
+/**
+ * Generic Event Payload Schema for new event types
+ */
+export declare const GenericEventPayloadSchema: z.ZodObject<{
+    userId: z.ZodOptional<z.ZodString>;
+    merchantId: z.ZodOptional<z.ZodString>;
+    sessionId: z.ZodOptional<z.ZodString>;
+    deviceId: z.ZodOptional<z.ZodString>;
+    locationId: z.ZodOptional<z.ZodString>;
+    data: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
+    timestamp: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    timestamp?: string | undefined;
+    userId?: string | undefined;
+    sessionId?: string | undefined;
+    merchantId?: string | undefined;
+    deviceId?: string | undefined;
+    locationId?: string | undefined;
+    data?: Record<string, unknown> | undefined;
+}, {
+    timestamp?: string | undefined;
+    userId?: string | undefined;
+    sessionId?: string | undefined;
+    merchantId?: string | undefined;
+    deviceId?: string | undefined;
+    locationId?: string | undefined;
+    data?: Record<string, unknown> | undefined;
+}>;
+/**
+ * Enriched Event Interface
+ */
+export interface EnrichedEvent {
+    id: string;
+    type: string;
+    channel?: ChannelTypeValue;
+    attributionSource?: AttributionSourceValue;
+    userId?: string;
+    merchantId?: string;
+    sessionId?: string;
+    deviceId?: string;
+    locationId?: string;
+    data: Record<string, unknown>;
+    timestamp: string;
+    metadata: {
+        ip?: string;
+        userAgent?: string;
+        referrer?: string;
+        utm?: Record<string, string>;
+    };
+}
+/**
+ * Enriched Event Schema for validation
+ */
+export declare const EnrichedEventSchema: z.ZodObject<{
+    id: z.ZodString;
+    type: z.ZodString;
+    channel: z.ZodOptional<z.ZodEnum<[string, ...string[]]>>;
+    attributionSource: z.ZodOptional<z.ZodEnum<[string, ...string[]]>>;
+    userId: z.ZodOptional<z.ZodString>;
+    merchantId: z.ZodOptional<z.ZodString>;
+    sessionId: z.ZodOptional<z.ZodString>;
+    deviceId: z.ZodOptional<z.ZodString>;
+    locationId: z.ZodOptional<z.ZodString>;
+    data: z.ZodRecord<z.ZodString, z.ZodUnknown>;
+    timestamp: z.ZodString;
+    metadata: z.ZodObject<{
+        ip: z.ZodOptional<z.ZodString>;
+        userAgent: z.ZodOptional<z.ZodString>;
+        referrer: z.ZodOptional<z.ZodString>;
+        utm: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+    }, "strip", z.ZodTypeAny, {
+        ip?: string | undefined;
+        userAgent?: string | undefined;
+        referrer?: string | undefined;
+        utm?: Record<string, string> | undefined;
+    }, {
+        ip?: string | undefined;
+        userAgent?: string | undefined;
+        referrer?: string | undefined;
+        utm?: Record<string, string> | undefined;
+    }>;
+}, "strip", z.ZodTypeAny, {
+    timestamp: string;
+    type: string;
+    metadata: {
+        ip?: string | undefined;
+        userAgent?: string | undefined;
+        referrer?: string | undefined;
+        utm?: Record<string, string> | undefined;
+    };
+    data: Record<string, unknown>;
+    id: string;
+    userId?: string | undefined;
+    channel?: string | undefined;
+    sessionId?: string | undefined;
+    merchantId?: string | undefined;
+    deviceId?: string | undefined;
+    locationId?: string | undefined;
+    attributionSource?: string | undefined;
+}, {
+    timestamp: string;
+    type: string;
+    metadata: {
+        ip?: string | undefined;
+        userAgent?: string | undefined;
+        referrer?: string | undefined;
+        utm?: Record<string, string> | undefined;
+    };
+    data: Record<string, unknown>;
+    id: string;
+    userId?: string | undefined;
+    channel?: string | undefined;
+    sessionId?: string | undefined;
+    merchantId?: string | undefined;
+    deviceId?: string | undefined;
+    locationId?: string | undefined;
+    attributionSource?: string | undefined;
+}>;
+/**
+ * Event Validation Schema (for incoming events)
+ */
+export declare const eventValidationSchema: z.ZodObject<{
+    type: z.ZodString;
+    channel: z.ZodOptional<z.ZodEnum<[string, ...string[]]>>;
+    attributionSource: z.ZodOptional<z.ZodEnum<[string, ...string[]]>>;
+    userId: z.ZodOptional<z.ZodString>;
+    merchantId: z.ZodOptional<z.ZodString>;
+    data: z.ZodRecord<z.ZodString, z.ZodUnknown>;
+    timestamp: z.ZodOptional<z.ZodString>;
+    metadata: z.ZodOptional<z.ZodObject<{
+        ip: z.ZodOptional<z.ZodString>;
+        userAgent: z.ZodOptional<z.ZodString>;
+        referrer: z.ZodOptional<z.ZodString>;
+        utm: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+    }, "strip", z.ZodTypeAny, {
+        ip?: string | undefined;
+        userAgent?: string | undefined;
+        referrer?: string | undefined;
+        utm?: Record<string, string> | undefined;
+    }, {
+        ip?: string | undefined;
+        userAgent?: string | undefined;
+        referrer?: string | undefined;
+        utm?: Record<string, string> | undefined;
+    }>>;
+}, "strip", z.ZodTypeAny, {
+    type: string;
+    data: Record<string, unknown>;
+    timestamp?: string | undefined;
+    userId?: string | undefined;
+    channel?: string | undefined;
+    metadata?: {
+        ip?: string | undefined;
+        userAgent?: string | undefined;
+        referrer?: string | undefined;
+        utm?: Record<string, string> | undefined;
+    } | undefined;
+    merchantId?: string | undefined;
+    attributionSource?: string | undefined;
+}, {
+    type: string;
+    data: Record<string, unknown>;
+    timestamp?: string | undefined;
+    userId?: string | undefined;
+    channel?: string | undefined;
+    metadata?: {
+        ip?: string | undefined;
+        userAgent?: string | undefined;
+        referrer?: string | undefined;
+        utm?: Record<string, string> | undefined;
+    } | undefined;
+    merchantId?: string | undefined;
+    attributionSource?: string | undefined;
+}>;
+/**
+ * Validate an event against the event validation schema
+ */
+export declare function validateEvent(event: unknown): {
+    valid: boolean;
+    data?: z.infer<typeof eventValidationSchema>;
+    error?: string;
+};
 /**
  * Get payload schema for event type
  */

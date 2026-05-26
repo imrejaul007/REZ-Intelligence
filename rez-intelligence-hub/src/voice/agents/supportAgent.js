@@ -3,6 +3,7 @@
  */
 
 const axios = require('axios');
+const { randomInt } = require('crypto');
 
 class SupportAgent {
   constructor() {
@@ -49,8 +50,8 @@ class SupportAgent {
       transfer: true,
       message: "I'll connect you to our support team. Please hold for a moment.",
       data: {
-        queuePosition: Math.floor(Math.random() * 5) + 1,
-        estimatedWait: Math.floor(Math.random() * 3) + 1
+        queuePosition: randomInt(1, 6),
+        estimatedWait: randomInt(1, 4)
       }
     };
   }

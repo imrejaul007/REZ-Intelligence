@@ -3,6 +3,8 @@
  * In-memory store for real-time activities (use Redis in production)
  */
 
+import { randomInt } from 'crypto';
+
 interface Activity {
   id: string;
   type: 'order' | 'purchase' | 'review' | 'checkin' | 'deal' | 'signup';
@@ -138,7 +140,7 @@ export class LiveActivityStore {
   private updateTrendingFromActivity(activity: Activity) {
     // Randomly increase/decrease trending items
     this.trendingItems.forEach((item, id) => {
-      const change = Math.floor(Math.random() * 10) - 3;
+      const change = randomInt(-3, 8);
       item.orderCount = Math.max(1, item.orderCount + change);
       item.trend = change > 3 ? 'up' : change < -3 ? 'down' : 'stable';
       item.lastUpdated = new Date().toISOString();
@@ -186,7 +188,7 @@ export class LiveActivityStore {
 
   updateTrendingScores() {
     this.trendingItems.forEach(item => {
-      const change = Math.floor(Math.random() * 20) - 5;
+      const change = randomInt(-5, 16);
       item.orderCount = Math.max(1, item.orderCount + change);
       item.trend = change > 5 ? 'up' : change < -5 ? 'down' : 'stable';
       item.lastUpdated = new Date().toISOString();
@@ -198,8 +200,8 @@ export class LiveActivityStore {
 
     if (merchant) {
       // Simulate real-time updates
-      merchant.occupancy = Math.min(100, Math.max(0, merchant.occupancy + Math.floor(Math.random() * 10) - 5));
-      merchant.peopleBuyingNow = Math.max(0, merchant.peopleBuyingNow + Math.floor(Math.random() * 5) - 2);
+      merchant.occupancy = Math.min(100, Math.max(0, merchant.occupancy + randomInt(-5, 6)));
+      merchant.peopleBuyingNow = Math.max(0, merchant.peopleBuyingNow + randomInt(-2, 4));
       merchant.lastUpdated = new Date().toISOString();
 
       // Update flash deal countdown

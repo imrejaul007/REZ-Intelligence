@@ -1,6 +1,11 @@
+/**
+ * REZ Fitness Expert Agent
+ * Main entry point with TypeScript, Zod validation, and proper error handling
+ */
 import { Express } from 'express';
-import { fitnessExpert } from './services/fitnessExpert';
+import { ServiceConfig } from './types/index.js';
+declare const config: ServiceConfig;
 declare const app: Express;
-declare const startServer: () => Promise<void>;
-export { app, startServer, fitnessExpert };
+declare function startServer(): void;
+export { app, startServer, config };
 //# sourceMappingURL=index.d.ts.map

@@ -1,7 +1,15 @@
 import { expertiseService } from './expertise';
 import { courseService } from './courseService';
 import { progressService } from './progressService';
+import { randomBytes } from 'crypto';
 import { CourseRecommendation, LearningPath, SkillProfile } from '../types/tone';
+
+/**
+ * Generate a random number between 0 and 1 using crypto
+ */
+function cryptoRandom(): number {
+  return Number(randomBytes(4).readUInt32BE(0)) / 0xFFFFFFFF;
+}
 
 interface UserProfile {
   userId: string;
@@ -292,8 +300,8 @@ export class RecommendationsService {
 
     return {
       course: recommendedCourse,
-      tip: tips[Math.floor(Math.random() * tips.length)],
-      motivation: motivations[Math.floor(Math.random() * motivations.length)]
+      tip: tips[Math.floor(cryptoRandom() * tips.length)],
+      motivation: motivations[Math.floor(cryptoRandom() * motivations.length)]
     };
   }
 }

@@ -10,6 +10,12 @@ import logger from './utils/logger';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Seeded random for deterministic mock data generation
+function seededRandom(seed: number, offset: number): number {
+  const x = Math.sin(seed + offset) * 10000;
+  return x - Math.floor(x);
+}
+
 // Training data types
 interface TrainingSample {
   userId: string;
@@ -284,28 +290,29 @@ async function main() {
  * Generate mock training data
  */
 function generateMockData(count: number): TrainingSample[] {
+  const baseSeed = Date.now();
   const samples: TrainingSample[] = [];
 
   for (let i = 0; i < count; i++) {
-    const totalIntents = Math.floor(Math.random() * 50) + 5;
-    const fulfillmentRate = Math.random();
-    const checkoutRate = Math.random() * 0.5;
-    const recency = Math.floor(Math.random() * 60);
-    const frequency = Math.random() * 2;
+    const totalIntents = Math.floor(seededRandom(baseSeed, i * 20) * 50) + 5;
+    const fulfillmentRate = seededRandom(baseSeed, i * 20 + 1);
+    const checkoutRate = seededRandom(baseSeed, i * 20 + 2) * 0.5;
+    const recency = Math.floor(seededRandom(baseSeed, i * 20 + 3) * 60);
+    const frequency = seededRandom(baseSeed, i * 20 + 4) * 2;
 
     samples.push({
       userId: `user_${i}`,
       features: {
         totalIntents,
-        categories: ['DINING', 'RETAIL', 'TRAVEL'].slice(0, Math.floor(Math.random() * 3) + 1),
-        avgConfidence: Math.random(),
-        signalCount: Math.floor(Math.random() * 30) + 1,
-        daysActive: Math.floor(Math.random() * 90) + 1,
+        categories: ['DINING', 'RETAIL', 'TRAVEL'].slice(0, Math.floor(seededRandom(baseSeed, i * 20 + 5) * 3) + 1),
+        avgConfidence: seededRandom(baseSeed, i * 20 + 6),
+        signalCount: Math.floor(seededRandom(baseSeed, i * 20 + 7) * 30) + 1,
+        daysActive: Math.floor(seededRandom(baseSeed, i * 20 + 8) * 90) + 1,
         fulfillmentRate,
         checkoutRate,
-        cartAddRate: Math.random() * 0.5,
-        viewRate: Math.random(),
-        searchRate: Math.random(),
+        cartAddRate: seededRandom(baseSeed, i * 20 + 9) * 0.5,
+        viewRate: seededRandom(baseSeed, i * 20 + 10),
+        searchRate: seededRandom(baseSeed, i * 20 + 11),
         recency,
         frequency,
       },

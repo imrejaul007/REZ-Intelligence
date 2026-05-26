@@ -112,7 +112,8 @@ export class AttributionListener {
   /**
    * Verify webhook signature
    */
-  verifyWebhookSignature(payload: string, signature: string): boolean {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  verifyWebhookSignature(_payload: string, signature: string): boolean {
     if (!this.webhookSecret) {
       logger.warn('No webhook secret configured');
       return true; // Allow in development
@@ -175,7 +176,7 @@ export class AttributionListener {
 
     // Check if already bridged
     const existingRecords = await BridgeRecord.findByConversion(conversionId);
-    const completedRecord = existingRecords.find(r => r.status === 'completed');
+    const completedRecord = existingRecords.find((r: { status: string }) => r.status === 'completed');
     if (completedRecord) {
       logger.info('Conversion already bridged', { conversionId, bridgeId: completedRecord.bridgeId });
       await this.markEventProcessed(event.eventId);
@@ -192,7 +193,7 @@ export class AttributionListener {
         currency: event.value.currency,
         channels: event.channels,
         campaignId: event.campaignId,
-        attributionModel: event.attributionModel as unknown,
+        attributionModel: event.attributionModel as 'first_touch' | 'last_touch' | 'last_non_direct' | 'linear' | 'time_decay' | 'position_based' | 'data_driven',
         attributedRevenue: event.attributedRevenue
       });
 
@@ -257,7 +258,7 @@ export class AttributionListener {
     // Validate payload
     const validationResult = AttributionWebhook.safeParse(payload);
     if (!validationResult.success) {
-      logger.warn('Invalid webhook payload', { errors: validationResult.error.errors });
+      logger.warn('Invalid webhook payload', { errors: validationResult.error.issues });
       return { accepted: false, processed: false, error: 'Invalid payload' };
     }
 

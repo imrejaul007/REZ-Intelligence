@@ -18,11 +18,10 @@ class SessionService {
     async initRedis() {
         try {
             const redisConfig = (0, config_1.getRedisConfig)();
-            this.redis = new ioredis_1.default({
-                host: redisConfig.url.replace('redis://', '').split(':')[0],
-                port: parseInt(redisConfig.url.split(':')[2] || '6379', 10),
+            this.redis = new ioredis_1.default(redisConfig.url, {
                 password: redisConfig.password || undefined,
-                db: redisConfig.db,
+                db: redisConfig.db ?? 0,
+                retryStrategy: (times) => Math.min(times * 100, 3000),
                 maxRetriesPerRequest: 3,
             });
             this.redis.on('error', (err) => {

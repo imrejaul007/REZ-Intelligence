@@ -122,11 +122,12 @@ export class WalletIntegrator {
         transactionId,
         coinsAwarded
       };
-    } catch (error) {
-      console.error('Cashback award failed:', error);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Cashback award failed:', errorMessage);
       return {
         success: false,
-        error: error.message
+        error: errorMessage
       };
     }
   }
@@ -172,10 +173,11 @@ export class WalletIntegrator {
         transactionId,
         coinsAwarded: points
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return {
         success: false,
-        error: error.message
+        error: errorMessage
       };
     }
   }

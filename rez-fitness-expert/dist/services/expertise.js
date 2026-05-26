@@ -1,27 +1,20 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.validateEnv = validateEnv;
-exports.createWorkoutPlan = createWorkoutPlan;
-exports.getExercisesByType = getExercisesByType;
-exports.getExercisesByMuscle = getExercisesByMuscle;
-exports.calculateProgress = calculateProgress;
-exports.getFitnessTerm = getFitnessTerm;
-const uuid_1 = require("uuid");
-const fitnessExpert_1 = require("./fitnessExpert");
-const knowledge_1 = require("../config/knowledge");
-function validateEnv() {
+import logger from './utils/logger';
+import { v4 as uuidv4 } from 'uuid';
+import { FitnessLevel, WorkoutType } from './fitnessExpert.js';
+import { WARM_UP_EXERCISES, COOL_DOWN_EXERCISES, EXERCISE_DATABASE } from '../config/knowledge.js';
+export function validateEnv() {
     const required = ['NODE_ENV'];
     const missing = required.filter(key => !process.env[key]);
     if (missing.length > 0) {
-        console.warn(`Warning: Missing environment variables: ${missing.join(', ')}`);
+        logger.warn(`Warning: Missing environment variables: ${missing.join(', ')}`);
     }
 }
-function createWorkoutPlan(userProfile) {
-    const planId = (0, uuid_1.v4)();
+export function createWorkoutPlan(userProfile) {
+    const planId = uuidv4();
     const planName = generatePlanName(userProfile);
     const exercises = generateExercisesForProfile(userProfile);
-    const warmUp = knowledge_1.WARM_UP_EXERCISES.map(w => `${w.name} - ${w.duration}`);
-    const coolDown = knowledge_1.COOL_DOWN_EXERCISES.map(c => `${c.name} - ${c.duration}`);
+    const warmUp = WARM_UP_EXERCISES.map(w => `${w.name} - ${w.duration}`);
+    const coolDown = COOL_DOWN_EXERCISES.map(c => `${c.name} - ${c.duration}`);
     const tips = generateWorkoutTips(userProfile);
     return {
         id: planId,
@@ -38,9 +31,9 @@ function createWorkoutPlan(userProfile) {
 }
 function generatePlanName(profile) {
     const prefixes = {
-        [fitnessExpert_1.FitnessLevel.BEGINNER]: 'Starter',
-        [fitnessExpert_1.FitnessLevel.INTERMEDIATE]: 'Progressive',
-        [fitnessExpert_1.FitnessLevel.ADVANCED]: 'Elite'
+        [FitnessLevel.BEGINNER]: 'Starter',
+        [FitnessLevel.INTERMEDIATE]: 'Progressive',
+        [FitnessLevel.ADVANCED]: 'Elite'
     };
     const mainGoal = profile.goals[0] || 'General Fitness';
     const goalSuffix = mainGoal.split(' ')[0];
@@ -55,7 +48,7 @@ function generatePlanDescription(profile) {
 }
 function generateExercisesForProfile(profile) {
     const exercises = [];
-    if (profile.preferredWorkouts.includes(fitnessExpert_1.WorkoutType.STRENGTH)) {
+    if (profile.preferredWorkouts.includes(WorkoutType.STRENGTH)) {
         exercises.push({
             exerciseId: 'push-up',
             name: 'Push-Ups',
@@ -79,7 +72,7 @@ function generateExercisesForProfile(profile) {
             notes: 'Maintain straight line from head to heels'
         });
     }
-    if (profile.preferredWorkouts.includes(fitnessExpert_1.WorkoutType.CARDIO) || profile.preferredWorkouts.includes(fitnessExpert_1.WorkoutType.HIIT)) {
+    if (profile.preferredWorkouts.includes(WorkoutType.CARDIO) || profile.preferredWorkouts.includes(WorkoutType.HIIT)) {
         exercises.push({
             exerciseId: 'jumping-jacks',
             name: 'Jumping Jacks',
@@ -103,7 +96,7 @@ function generateExercisesForProfile(profile) {
             notes: 'Modify by stepping back if needed'
         });
     }
-    if (profile.preferredWorkouts.includes(fitnessExpert_1.WorkoutType.FUNCTIONAL)) {
+    if (profile.preferredWorkouts.includes(WorkoutType.FUNCTIONAL)) {
         exercises.push({
             exerciseId: 'lunges',
             name: 'Walking Lunges',
@@ -138,11 +131,11 @@ function generateExercisesForProfile(profile) {
 }
 function getSetsForLevel(level) {
     switch (level) {
-        case fitnessExpert_1.FitnessLevel.BEGINNER:
+        case FitnessLevel.BEGINNER:
             return 2;
-        case fitnessExpert_1.FitnessLevel.INTERMEDIATE:
+        case FitnessLevel.INTERMEDIATE:
             return 3;
-        case fitnessExpert_1.FitnessLevel.ADVANCED:
+        case FitnessLevel.ADVANCED:
             return 4;
         default:
             return 3;
@@ -150,11 +143,11 @@ function getSetsForLevel(level) {
 }
 function getRepsForLevel(level, type) {
     switch (level) {
-        case fitnessExpert_1.FitnessLevel.BEGINNER:
+        case FitnessLevel.BEGINNER:
             return type === 'strength' ? '8-10' : '8-10';
-        case fitnessExpert_1.FitnessLevel.INTERMEDIATE:
+        case FitnessLevel.INTERMEDIATE:
             return type === 'strength' ? '10-12' : '10-12';
-        case fitnessExpert_1.FitnessLevel.ADVANCED:
+        case FitnessLevel.ADVANCED:
             return type === 'strength' ? '12-15' : '12-15';
         default:
             return '10-12';
@@ -162,11 +155,11 @@ function getRepsForLevel(level, type) {
 }
 function getPlankTimeForLevel(level) {
     switch (level) {
-        case fitnessExpert_1.FitnessLevel.BEGINNER:
+        case FitnessLevel.BEGINNER:
             return '20-30 seconds';
-        case fitnessExpert_1.FitnessLevel.INTERMEDIATE:
+        case FitnessLevel.INTERMEDIATE:
             return '30-45 seconds';
-        case fitnessExpert_1.FitnessLevel.ADVANCED:
+        case FitnessLevel.ADVANCED:
             return '45-60 seconds';
         default:
             return '30 seconds';
@@ -179,7 +172,7 @@ function generateWorkoutTips(profile) {
         'Stay hydrated throughout your workout',
         'Listen to your body and rest when needed'
     ];
-    if (profile.fitnessLevel === fitnessExpert_1.FitnessLevel.BEGINNER) {
+    if (profile.fitnessLevel === FitnessLevel.BEGINNER) {
         tips.push('Start slow and gradually increase intensity over weeks');
         tips.push('Consider working with a trainer to learn proper form');
     }
@@ -195,10 +188,10 @@ function generateWorkoutTips(profile) {
     tips.push('Get enough sleep for optimal recovery');
     return tips.slice(0, 6);
 }
-function getExercisesByType(type) {
-    return knowledge_1.EXERCISE_DATABASE.filter(ex => ex.workoutType === type);
+export function getExercisesByType(type) {
+    return EXERCISE_DATABASE.filter(ex => ex.workoutType === type);
 }
-function getExercisesByMuscle(muscleGroup) {
+export function getExercisesByMuscle(muscleGroup) {
     const muscleMap = {
         'chest': ['chest'],
         'back': ['back'],
@@ -213,14 +206,14 @@ function getExercisesByMuscle(muscleGroup) {
         'calves': ['calves']
     };
     const targetMuscles = muscleMap[muscleGroup.toLowerCase()] || [];
-    return knowledge_1.EXERCISE_DATABASE.filter(ex => ex.muscleGroups.some(mg => targetMuscles.includes(mg)));
+    return EXERCISE_DATABASE.filter(ex => ex.muscleGroups.some(mg => targetMuscles.includes(mg)));
 }
-function calculateProgress(profile) {
+export function calculateProgress(profile) {
     const baseWorkouts = profile.daysPerWeek * 4;
     const baseMinutes = baseWorkouts * profile.timePerWorkout;
     const baseCalories = baseMinutes * 5;
     const achievements = [];
-    if (profile.fitnessLevel === fitnessExpert_1.FitnessLevel.BEGINNER) {
+    if (profile.fitnessLevel === FitnessLevel.BEGINNER) {
         achievements.push('First Steps Award - Started your fitness journey!');
     }
     if (profile.goals.length >= 2) {
@@ -237,7 +230,7 @@ function calculateProgress(profile) {
         achievements
     };
 }
-function getFitnessTerm(term) {
+export function getFitnessTerm(term) {
     const terms = {
         'rep': 'One complete movement of an exercise (repetition)',
         'repetition': 'One complete movement of an exercise',

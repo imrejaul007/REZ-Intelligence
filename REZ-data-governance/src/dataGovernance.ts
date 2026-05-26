@@ -105,7 +105,7 @@ router.post('/governance/detect-pii', (req, res) => {
   for (const pii of PII_PATTERNS) {
     const matches = jsonStr.match(new RegExp(pii.pattern, 'g'));
     if (matches) {
-      detections.push(...matches.map(m => ({ type: pii.type, value: m, field: 'detected' }));
+      detections.push(...matches.map(m => ({ type: pii.type, value: m, field: 'detected' })));
     }
   }
 

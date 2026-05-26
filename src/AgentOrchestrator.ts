@@ -44,13 +44,13 @@ export interface SubTask {
   agent_type: AgentType;
   depends_on: string[];
   status: 'pending' | 'running' | 'completed' | 'failed';
-  result?;
+  result?: unknown;
 }
 
 export interface AgentResult {
   agent_id: string;
   agent_type: AgentType;
-  output;
+  output: unknown;
   confidence: number;
   reasoning: string;
   tools_used: string[];

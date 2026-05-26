@@ -1,16 +1,54 @@
 import express, { Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
 import mongoose from 'mongoose';
 import { createClient } from 'redis';
 import { config } from './config';
 import { logger } from './utils/logger';
+import { createAuthMiddleware, createRateLimiter, errorHandler, notFoundHandler } from './middleware/index.js';
 import rcsRoutes from './routes/rcs.routes';
 
 // Initialize Express app
 const app = express();
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
+}));
+
+// CORS configuration
+app.use(cors({
+  origin: (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,https://rez.money').split(','),
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-internal-token'],
+}));
+
+// Rate limiting
+app.use('/api', createRateLimiter({ windowMs: 60 * 1000, max: 100 }));
+
+// Body parsing with size limits
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// Auth middleware
+app.use(createAuthMiddleware({
+  apiKeys: [],
+  internalTokens: Object.values(config.auth.serviceTokens),
+  bypassPaths: ['/health', '/ready', '/webhook'],
+}));
 
 // Request logging middleware
 app.use((req: Request, _res: Response, next: NextFunction) => {
@@ -66,34 +104,9 @@ app.get('/ready', async (_req: Request, res: Response) => {
 app.use('/api/rcs', rcsRoutes);
 app.use('/webhook', rcsRoutes);
 
-// 404 handler
-app.use((_req: Request, res: Response) => {
-  res.status(404).json({
-    success: false,
-    error: {
-      code: 'NOT_FOUND',
-      message: 'Endpoint not found',
-    },
-  });
-});
-
-// Global error handler
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  logger.error('Unhandled error', {
-    error: err.message,
-    stack: err.stack,
-  });
-
-  res.status(500).json({
-    success: false,
-    error: {
-      code: 'INTERNAL_ERROR',
-      message: config.server.nodeEnv === 'production'
-        ? 'Internal server error'
-        : err.message,
-    },
-  });
-});
+// Error handling
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 // Redis client singleton
 let redisClient: ReturnType<typeof createClient> | null = null;
@@ -128,16 +141,11 @@ async function connectToMongoDB(): Promise<void> {
 async function gracefulShutdown(signal: string): Promise<void> {
   logger.info(`Received ${signal}, starting graceful shutdown`);
 
-  // Close HTTP server
-  // server.close(() => { ... });
-
-  // Close Redis connection
   if (redisClient) {
     await redisClient.quit();
     logger.info('Redis connection closed');
   }
 
-  // Close MongoDB connection
   await mongoose.connection.close();
   logger.info('MongoDB connection closed');
 
@@ -147,14 +155,10 @@ async function gracefulShutdown(signal: string): Promise<void> {
 // Start server
 async function startServer(): Promise<void> {
   try {
-    // Connect to MongoDB
     await connectToMongoDB();
-
-    // Initialize Redis
     await getRedisClient();
     logger.info('Connected to Redis', { url: config.redis.url });
 
-    // Start HTTP server
     app.listen(config.server.port, () => {
       logger.info('REZ RCS Bridge started', {
         port: config.server.port,
@@ -166,11 +170,9 @@ async function startServer(): Promise<void> {
       });
     });
 
-    // Handle graceful shutdown
     process.on('SIGTERM', gracefulShutdown);
     process.on('SIGINT', gracefulShutdown);
 
-    // Handle uncaught errors
     process.on('uncaughtException', (error) => {
       logger.error('Uncaught exception', { error: error.message, stack: error.stack });
       gracefulShutdown('uncaughtException');

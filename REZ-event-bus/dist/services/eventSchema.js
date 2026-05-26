@@ -4,12 +4,40 @@
  * Standardized event types for the REZ Agent OS v3
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ReZEventSchema = exports.ServiceHealthChangedPayloadSchema = exports.PaymentCompletedPayloadSchema = exports.PaymentInitiatedPayloadSchema = exports.OrderCompletedPayloadSchema = exports.OrderCreatedPayloadSchema = exports.CollaborationStartedPayloadSchema = exports.AgentSwitchedPayloadSchema = exports.AgentSelectedPayloadSchema = exports.IntentDetectedPayloadSchema = exports.UserMessagePayloadSchema = exports.EventTypeToCategory = exports.EventCategory = exports.EventType = void 0;
+exports.eventValidationSchema = exports.EnrichedEventSchema = exports.GenericEventPayloadSchema = exports.ReZEventSchema = exports.ServiceHealthChangedPayloadSchema = exports.PaymentCompletedPayloadSchema = exports.PaymentInitiatedPayloadSchema = exports.OrderCompletedPayloadSchema = exports.OrderCreatedPayloadSchema = exports.CollaborationStartedPayloadSchema = exports.AgentSwitchedPayloadSchema = exports.AgentSelectedPayloadSchema = exports.IntentDetectedPayloadSchema = exports.UserMessagePayloadSchema = exports.EventTypeToCategory = exports.EventCategory = exports.ALL_EVENT_TYPES = exports.EventType = exports.AttributionSource = exports.ChannelType = void 0;
+exports.validateEvent = validateEvent;
 exports.getPayloadSchema = getPayloadSchema;
 exports.validateEventPayload = validateEventPayload;
 exports.getValidEventTypes = getValidEventTypes;
 exports.getEventTypeInfo = getEventTypeInfo;
 const zod_1 = require("zod");
+/**
+ * Channel Types for Event Attribution
+ */
+exports.ChannelType = {
+    WHATSAPP: 'whatsapp',
+    SMS: 'sms',
+    PUSH: 'push',
+    EMAIL: 'email',
+    IN_APP: 'in_app',
+    QR_SCAN: 'qr_scan',
+    DEEP_LINK: 'deep_link',
+};
+/**
+ * Attribution Sources for Event Tracking
+ */
+exports.AttributionSource = {
+    ORGANIC: 'organic',
+    PAID_AD: 'paid_ad',
+    INFLUENCER: 'influencer',
+    REFERRAL: 'referral',
+    QR_CODE: 'qr_code',
+    LOCATION: 'location',
+    NOTIFICATION: 'notification',
+    EMAIL_CAMPAIGN: 'email_campaign',
+    SOCIAL_MEDIA: 'social_media',
+    SEARCH: 'search',
+};
 /**
  * Standardized Event Types for REZ Agent OS v3
  * All services should use these event types for consistency
@@ -32,7 +60,61 @@ exports.EventType = {
     PAYMENT_COMPLETED: 'PAYMENT_COMPLETED',
     // Health Events
     SERVICE_HEALTH_CHANGED: 'SERVICE_HEALTH_CHANGED',
+    // Offer Events
+    OFFER_SHARED: 'offer.shared',
+    OFFER_OPENED: 'offer.opened',
+    // Referral Events
+    REFERRAL_CLICKED: 'referral.clicked',
+    REFERRAL_SIGNED_UP: 'referral.signed_up',
+    REFERRAL_PURCHASED: 'referral.purchased',
+    // Location Events
+    LOCATION_VISITED: 'location.visited',
+    LOCATION_DWELL: 'location.dwell',
+    // Search Events
+    SEARCH_PERFORMED: 'search.performed',
+    // Wishlist Events
+    WISHLIST_ADDED: 'wishlist.added',
+    WISHLIST_REMOVED: 'wishlist.removed',
+    // Price Alert Events
+    PRICE_ALERT_SET: 'price.alert_set',
+    PRICE_ALERT_TRIGGERED: 'price.alert_triggered',
+    // Review Events
+    REVIEW_SUBMITTED: 'review.submitted',
+    REVIEW_VIEWED: 'review.viewed',
+    // Profile Events
+    PROFILE_UPDATED: 'profile.updated',
+    // Feedback Events
+    FEEDBACK_GIVEN: 'feedback.given',
+    // Subscription Events
+    SUBSCRIPTION_STARTED: 'subscription.started',
+    SUBSCRIPTION_RENEWED: 'subscription.renewed',
+    SUBSCRIPTION_CANCELLED: 'subscription.cancelled',
+    // Membership Events
+    MEMBERSHIP_UPGRADED: 'membership.upgraded',
+    MEMBERSHIP_DOWNGRADED: 'membership.downgraded',
+    // Loyalty Events
+    LOYALTY_REDEEMED: 'loyalty.redeemed',
+    LOYALTY_EARNED: 'loyalty.earned',
+    // Competitor Events
+    COMPETITOR_VISITED: 'competitor.visited',
+    COMPETITOR_SWITCHED: 'competitor.switched',
+    // App Events
+    APP_INSTALLED: 'app.installed',
+    APP_OPENED: 'app.opened',
+    // Content Events
+    CONTENT_VIEWED: 'content.viewed',
+    CONTENT_SHARED: 'content.shared',
+    // Campaign Events
+    CAMPAIGN_STARTED: 'campaign.started',
+    CAMPAIGN_COMPLETED: 'campaign.completed',
+    // Survey Events
+    SURVEY_STARTED: 'survey.started',
+    SURVEY_COMPLETED: 'survey.completed',
 };
+/**
+ * All valid event types as a string array (for validation)
+ */
+exports.ALL_EVENT_TYPES = Object.values(exports.EventType);
 /**
  * Event Type Categories
  */
@@ -44,11 +126,16 @@ exports.EventCategory = {
     BUSINESS_LOGIC: 'BUSINESS_LOGIC',
     PAYMENT: 'PAYMENT',
     HEALTH: 'HEALTH',
+    MARKETING: 'MARKETING',
+    LOYALTY: 'LOYALTY',
+    REFERRAL: 'REFERRAL',
+    ENGAGEMENT: 'ENGAGEMENT',
 };
 /**
  * Map event types to categories
  */
 exports.EventTypeToCategory = {
+    // Existing mappings
     [exports.EventType.USER_MESSAGE_RECEIVED]: exports.EventCategory.USER_INTERACTION,
     [exports.EventType.USER_MESSAGE_SENT]: exports.EventCategory.USER_INTERACTION,
     [exports.EventType.INTENT_DETECTED]: exports.EventCategory.INTENT_PROCESSING,
@@ -60,6 +147,56 @@ exports.EventTypeToCategory = {
     [exports.EventType.PAYMENT_INITIATED]: exports.EventCategory.PAYMENT,
     [exports.EventType.PAYMENT_COMPLETED]: exports.EventCategory.PAYMENT,
     [exports.EventType.SERVICE_HEALTH_CHANGED]: exports.EventCategory.HEALTH,
+    // Offer Events
+    [exports.EventType.OFFER_SHARED]: exports.EventCategory.MARKETING,
+    [exports.EventType.OFFER_OPENED]: exports.EventCategory.MARKETING,
+    // Referral Events
+    [exports.EventType.REFERRAL_CLICKED]: exports.EventCategory.REFERRAL,
+    [exports.EventType.REFERRAL_SIGNED_UP]: exports.EventCategory.REFERRAL,
+    [exports.EventType.REFERRAL_PURCHASED]: exports.EventCategory.REFERRAL,
+    // Location Events
+    [exports.EventType.LOCATION_VISITED]: exports.EventCategory.ENGAGEMENT,
+    [exports.EventType.LOCATION_DWELL]: exports.EventCategory.ENGAGEMENT,
+    // Search Events
+    [exports.EventType.SEARCH_PERFORMED]: exports.EventCategory.ENGAGEMENT,
+    // Wishlist Events
+    [exports.EventType.WISHLIST_ADDED]: exports.EventCategory.ENGAGEMENT,
+    [exports.EventType.WISHLIST_REMOVED]: exports.EventCategory.ENGAGEMENT,
+    // Price Alert Events
+    [exports.EventType.PRICE_ALERT_SET]: exports.EventCategory.ENGAGEMENT,
+    [exports.EventType.PRICE_ALERT_TRIGGERED]: exports.EventCategory.ENGAGEMENT,
+    // Review Events
+    [exports.EventType.REVIEW_SUBMITTED]: exports.EventCategory.ENGAGEMENT,
+    [exports.EventType.REVIEW_VIEWED]: exports.EventCategory.ENGAGEMENT,
+    // Profile Events
+    [exports.EventType.PROFILE_UPDATED]: exports.EventCategory.USER_INTERACTION,
+    // Feedback Events
+    [exports.EventType.FEEDBACK_GIVEN]: exports.EventCategory.ENGAGEMENT,
+    // Subscription Events
+    [exports.EventType.SUBSCRIPTION_STARTED]: exports.EventCategory.BUSINESS_LOGIC,
+    [exports.EventType.SUBSCRIPTION_RENEWED]: exports.EventCategory.BUSINESS_LOGIC,
+    [exports.EventType.SUBSCRIPTION_CANCELLED]: exports.EventCategory.BUSINESS_LOGIC,
+    // Membership Events
+    [exports.EventType.MEMBERSHIP_UPGRADED]: exports.EventCategory.LOYALTY,
+    [exports.EventType.MEMBERSHIP_DOWNGRADED]: exports.EventCategory.LOYALTY,
+    // Loyalty Events
+    [exports.EventType.LOYALTY_REDEEMED]: exports.EventCategory.LOYALTY,
+    [exports.EventType.LOYALTY_EARNED]: exports.EventCategory.LOYALTY,
+    // Competitor Events
+    [exports.EventType.COMPETITOR_VISITED]: exports.EventCategory.ENGAGEMENT,
+    [exports.EventType.COMPETITOR_SWITCHED]: exports.EventCategory.ENGAGEMENT,
+    // App Events
+    [exports.EventType.APP_INSTALLED]: exports.EventCategory.USER_INTERACTION,
+    [exports.EventType.APP_OPENED]: exports.EventCategory.USER_INTERACTION,
+    // Content Events
+    [exports.EventType.CONTENT_VIEWED]: exports.EventCategory.ENGAGEMENT,
+    [exports.EventType.CONTENT_SHARED]: exports.EventCategory.MARKETING,
+    // Campaign Events
+    [exports.EventType.CAMPAIGN_STARTED]: exports.EventCategory.MARKETING,
+    [exports.EventType.CAMPAIGN_COMPLETED]: exports.EventCategory.MARKETING,
+    // Survey Events
+    [exports.EventType.SURVEY_STARTED]: exports.EventCategory.ENGAGEMENT,
+    [exports.EventType.SURVEY_COMPLETED]: exports.EventCategory.ENGAGEMENT,
 };
 /**
  * Event Payload Schemas
@@ -228,6 +365,40 @@ exports.ReZEventSchema = zod_1.z.object({
         exports.EventType.PAYMENT_INITIATED,
         exports.EventType.PAYMENT_COMPLETED,
         exports.EventType.SERVICE_HEALTH_CHANGED,
+        // New event types
+        exports.EventType.OFFER_SHARED,
+        exports.EventType.OFFER_OPENED,
+        exports.EventType.REFERRAL_CLICKED,
+        exports.EventType.REFERRAL_SIGNED_UP,
+        exports.EventType.REFERRAL_PURCHASED,
+        exports.EventType.LOCATION_VISITED,
+        exports.EventType.LOCATION_DWELL,
+        exports.EventType.SEARCH_PERFORMED,
+        exports.EventType.WISHLIST_ADDED,
+        exports.EventType.WISHLIST_REMOVED,
+        exports.EventType.PRICE_ALERT_SET,
+        exports.EventType.PRICE_ALERT_TRIGGERED,
+        exports.EventType.REVIEW_SUBMITTED,
+        exports.EventType.REVIEW_VIEWED,
+        exports.EventType.PROFILE_UPDATED,
+        exports.EventType.FEEDBACK_GIVEN,
+        exports.EventType.SUBSCRIPTION_STARTED,
+        exports.EventType.SUBSCRIPTION_RENEWED,
+        exports.EventType.SUBSCRIPTION_CANCELLED,
+        exports.EventType.MEMBERSHIP_UPGRADED,
+        exports.EventType.MEMBERSHIP_DOWNGRADED,
+        exports.EventType.LOYALTY_REDEEMED,
+        exports.EventType.LOYALTY_EARNED,
+        exports.EventType.COMPETITOR_VISITED,
+        exports.EventType.COMPETITOR_SWITCHED,
+        exports.EventType.APP_INSTALLED,
+        exports.EventType.APP_OPENED,
+        exports.EventType.CONTENT_VIEWED,
+        exports.EventType.CONTENT_SHARED,
+        exports.EventType.CAMPAIGN_STARTED,
+        exports.EventType.CAMPAIGN_COMPLETED,
+        exports.EventType.SURVEY_STARTED,
+        exports.EventType.SURVEY_COMPLETED,
     ]),
     payload: zod_1.z.unknown(), // Will be validated based on event type
     metadata: zod_1.z.object({
@@ -241,6 +412,73 @@ exports.ReZEventSchema = zod_1.z.object({
     }),
     version: zod_1.z.string().default('1.0'),
 });
+/**
+ * Generic Event Payload Schema for new event types
+ */
+exports.GenericEventPayloadSchema = zod_1.z.object({
+    userId: zod_1.z.string().optional(),
+    merchantId: zod_1.z.string().optional(),
+    sessionId: zod_1.z.string().optional(),
+    deviceId: zod_1.z.string().optional(),
+    locationId: zod_1.z.string().optional(),
+    data: zod_1.z.record(zod_1.z.unknown()).optional(),
+    timestamp: zod_1.z.string().datetime().optional(),
+});
+/**
+ * Enriched Event Schema for validation
+ */
+exports.EnrichedEventSchema = zod_1.z.object({
+    id: zod_1.z.string(),
+    type: zod_1.z.string().min(1),
+    channel: zod_1.z.enum(Object.values(exports.ChannelType)).optional(),
+    attributionSource: zod_1.z.enum(Object.values(exports.AttributionSource)).optional(),
+    userId: zod_1.z.string().optional(),
+    merchantId: zod_1.z.string().optional(),
+    sessionId: zod_1.z.string().optional(),
+    deviceId: zod_1.z.string().optional(),
+    locationId: zod_1.z.string().optional(),
+    data: zod_1.z.record(zod_1.z.unknown()),
+    timestamp: zod_1.z.string().datetime(),
+    metadata: zod_1.z.object({
+        ip: zod_1.z.string().optional(),
+        userAgent: zod_1.z.string().optional(),
+        referrer: zod_1.z.string().optional(),
+        utm: zod_1.z.record(zod_1.z.string()).optional(),
+    }),
+});
+/**
+ * Event Validation Schema (for incoming events)
+ */
+exports.eventValidationSchema = zod_1.z.object({
+    type: zod_1.z.string().min(1),
+    channel: zod_1.z.enum(Object.values(exports.ChannelType)).optional(),
+    attributionSource: zod_1.z.enum(Object.values(exports.AttributionSource)).optional(),
+    userId: zod_1.z.string().optional(),
+    merchantId: zod_1.z.string().optional(),
+    data: zod_1.z.record(zod_1.z.unknown()),
+    timestamp: zod_1.z.string().datetime().optional(),
+    metadata: zod_1.z.object({
+        ip: zod_1.z.string().optional(),
+        userAgent: zod_1.z.string().optional(),
+        referrer: zod_1.z.string().optional(),
+        utm: zod_1.z.record(zod_1.z.string()).optional(),
+    }).optional(),
+});
+/**
+ * Validate an event against the event validation schema
+ */
+function validateEvent(event) {
+    const result = exports.eventValidationSchema.safeParse(event);
+    if (result.success) {
+        return { valid: true, data: result.data };
+    }
+    return {
+        valid: false,
+        error: result.error.issues
+            .map((i) => `${i.path.join('.')}: ${i.message}`)
+            .join('; '),
+    };
+}
 /**
  * Get payload schema for event type
  */
@@ -257,6 +495,40 @@ function getPayloadSchema(eventType) {
         [exports.EventType.PAYMENT_INITIATED]: exports.PaymentInitiatedPayloadSchema,
         [exports.EventType.PAYMENT_COMPLETED]: exports.PaymentCompletedPayloadSchema,
         [exports.EventType.SERVICE_HEALTH_CHANGED]: exports.ServiceHealthChangedPayloadSchema,
+        // New event types use generic schema
+        [exports.EventType.OFFER_SHARED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.OFFER_OPENED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.REFERRAL_CLICKED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.REFERRAL_SIGNED_UP]: exports.GenericEventPayloadSchema,
+        [exports.EventType.REFERRAL_PURCHASED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.LOCATION_VISITED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.LOCATION_DWELL]: exports.GenericEventPayloadSchema,
+        [exports.EventType.SEARCH_PERFORMED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.WISHLIST_ADDED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.WISHLIST_REMOVED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.PRICE_ALERT_SET]: exports.GenericEventPayloadSchema,
+        [exports.EventType.PRICE_ALERT_TRIGGERED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.REVIEW_SUBMITTED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.REVIEW_VIEWED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.PROFILE_UPDATED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.FEEDBACK_GIVEN]: exports.GenericEventPayloadSchema,
+        [exports.EventType.SUBSCRIPTION_STARTED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.SUBSCRIPTION_RENEWED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.SUBSCRIPTION_CANCELLED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.MEMBERSHIP_UPGRADED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.MEMBERSHIP_DOWNGRADED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.LOYALTY_REDEEMED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.LOYALTY_EARNED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.COMPETITOR_VISITED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.COMPETITOR_SWITCHED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.APP_INSTALLED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.APP_OPENED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.CONTENT_VIEWED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.CONTENT_SHARED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.CAMPAIGN_STARTED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.CAMPAIGN_COMPLETED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.SURVEY_STARTED]: exports.GenericEventPayloadSchema,
+        [exports.EventType.SURVEY_COMPLETED]: exports.GenericEventPayloadSchema,
     };
     return schemas[eventType];
 }
@@ -341,6 +613,172 @@ function getEventTypeInfo(eventType) {
             category: exports.EventCategory.HEALTH,
             description: 'Service health status changed',
             priority: 'high',
+        },
+        // New event types
+        [exports.EventType.OFFER_SHARED]: {
+            category: exports.EventCategory.MARKETING,
+            description: 'User shared an offer with others',
+            priority: 'normal',
+        },
+        [exports.EventType.OFFER_OPENED]: {
+            category: exports.EventCategory.MARKETING,
+            description: 'User opened a shared offer',
+            priority: 'normal',
+        },
+        [exports.EventType.REFERRAL_CLICKED]: {
+            category: exports.EventCategory.REFERRAL,
+            description: 'User clicked on a referral link',
+            priority: 'normal',
+        },
+        [exports.EventType.REFERRAL_SIGNED_UP]: {
+            category: exports.EventCategory.REFERRAL,
+            description: 'Referred user completed signup',
+            priority: 'high',
+        },
+        [exports.EventType.REFERRAL_PURCHASED]: {
+            category: exports.EventCategory.REFERRAL,
+            description: 'Referred user made a purchase',
+            priority: 'high',
+        },
+        [exports.EventType.LOCATION_VISITED]: {
+            category: exports.EventCategory.ENGAGEMENT,
+            description: 'User visited a physical location',
+            priority: 'normal',
+        },
+        [exports.EventType.LOCATION_DWELL]: {
+            category: exports.EventCategory.ENGAGEMENT,
+            description: 'User dwelled at a location for extended time',
+            priority: 'normal',
+        },
+        [exports.EventType.SEARCH_PERFORMED]: {
+            category: exports.EventCategory.ENGAGEMENT,
+            description: 'User performed a search query',
+            priority: 'normal',
+        },
+        [exports.EventType.WISHLIST_ADDED]: {
+            category: exports.EventCategory.ENGAGEMENT,
+            description: 'User added item to wishlist',
+            priority: 'normal',
+        },
+        [exports.EventType.WISHLIST_REMOVED]: {
+            category: exports.EventCategory.ENGAGEMENT,
+            description: 'User removed item from wishlist',
+            priority: 'normal',
+        },
+        [exports.EventType.PRICE_ALERT_SET]: {
+            category: exports.EventCategory.ENGAGEMENT,
+            description: 'User set a price alert for an item',
+            priority: 'normal',
+        },
+        [exports.EventType.PRICE_ALERT_TRIGGERED]: {
+            category: exports.EventCategory.ENGAGEMENT,
+            description: 'Price alert was triggered',
+            priority: 'high',
+        },
+        [exports.EventType.REVIEW_SUBMITTED]: {
+            category: exports.EventCategory.ENGAGEMENT,
+            description: 'User submitted a review',
+            priority: 'normal',
+        },
+        [exports.EventType.REVIEW_VIEWED]: {
+            category: exports.EventCategory.ENGAGEMENT,
+            description: 'User viewed a review',
+            priority: 'low',
+        },
+        [exports.EventType.PROFILE_UPDATED]: {
+            category: exports.EventCategory.USER_INTERACTION,
+            description: 'User updated their profile',
+            priority: 'normal',
+        },
+        [exports.EventType.FEEDBACK_GIVEN]: {
+            category: exports.EventCategory.ENGAGEMENT,
+            description: 'User submitted feedback',
+            priority: 'normal',
+        },
+        [exports.EventType.SUBSCRIPTION_STARTED]: {
+            category: exports.EventCategory.BUSINESS_LOGIC,
+            description: 'User started a subscription',
+            priority: 'high',
+        },
+        [exports.EventType.SUBSCRIPTION_RENEWED]: {
+            category: exports.EventCategory.BUSINESS_LOGIC,
+            description: 'Subscription was renewed',
+            priority: 'high',
+        },
+        [exports.EventType.SUBSCRIPTION_CANCELLED]: {
+            category: exports.EventCategory.BUSINESS_LOGIC,
+            description: 'Subscription was cancelled',
+            priority: 'high',
+        },
+        [exports.EventType.MEMBERSHIP_UPGRADED]: {
+            category: exports.EventCategory.LOYALTY,
+            description: 'User upgraded their membership tier',
+            priority: 'high',
+        },
+        [exports.EventType.MEMBERSHIP_DOWNGRADED]: {
+            category: exports.EventCategory.LOYALTY,
+            description: 'User downgraded their membership tier',
+            priority: 'normal',
+        },
+        [exports.EventType.LOYALTY_REDEEMED]: {
+            category: exports.EventCategory.LOYALTY,
+            description: 'User redeemed loyalty points',
+            priority: 'normal',
+        },
+        [exports.EventType.LOYALTY_EARNED]: {
+            category: exports.EventCategory.LOYALTY,
+            description: 'User earned loyalty points',
+            priority: 'normal',
+        },
+        [exports.EventType.COMPETITOR_VISITED]: {
+            category: exports.EventCategory.ENGAGEMENT,
+            description: 'User visited a competitor location',
+            priority: 'normal',
+        },
+        [exports.EventType.COMPETITOR_SWITCHED]: {
+            category: exports.EventCategory.ENGAGEMENT,
+            description: 'User switched to a competitor',
+            priority: 'high',
+        },
+        [exports.EventType.APP_INSTALLED]: {
+            category: exports.EventCategory.USER_INTERACTION,
+            description: 'User installed the app',
+            priority: 'high',
+        },
+        [exports.EventType.APP_OPENED]: {
+            category: exports.EventCategory.USER_INTERACTION,
+            description: 'User opened the app',
+            priority: 'low',
+        },
+        [exports.EventType.CONTENT_VIEWED]: {
+            category: exports.EventCategory.ENGAGEMENT,
+            description: 'User viewed content',
+            priority: 'low',
+        },
+        [exports.EventType.CONTENT_SHARED]: {
+            category: exports.EventCategory.MARKETING,
+            description: 'User shared content',
+            priority: 'normal',
+        },
+        [exports.EventType.CAMPAIGN_STARTED]: {
+            category: exports.EventCategory.MARKETING,
+            description: 'User joined a campaign',
+            priority: 'normal',
+        },
+        [exports.EventType.CAMPAIGN_COMPLETED]: {
+            category: exports.EventCategory.MARKETING,
+            description: 'User completed a campaign',
+            priority: 'normal',
+        },
+        [exports.EventType.SURVEY_STARTED]: {
+            category: exports.EventCategory.ENGAGEMENT,
+            description: 'User started a survey',
+            priority: 'normal',
+        },
+        [exports.EventType.SURVEY_COMPLETED]: {
+            category: exports.EventCategory.ENGAGEMENT,
+            description: 'User completed a survey',
+            priority: 'normal',
         },
     };
     return info[eventType];

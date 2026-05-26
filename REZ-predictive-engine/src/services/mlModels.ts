@@ -5,7 +5,7 @@
 import crypto from 'crypto';
 import { IUserProfile } from '../models/userProfile';
 import { ChurnRisk, CustomerTier } from '../types';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 
 /**
  * Cryptographically secure random number generator

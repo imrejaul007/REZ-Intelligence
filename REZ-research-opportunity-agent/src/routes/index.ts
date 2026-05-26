@@ -16,7 +16,7 @@ import { OpportunityStatus, OpportunityType } from '../types/index.js';
 import { API_LIMITS } from '../constants/thresholds.js';
 import { rateLimitMiddleware } from '../middleware/rateLimit.js';
 import { authenticateInternalService } from '../middleware/auth.js';
-import logger from '../utils/logger.js';
+import logger from './utils/logger.js';
 
 const log = logger.child({ context: 'Routes' });
 

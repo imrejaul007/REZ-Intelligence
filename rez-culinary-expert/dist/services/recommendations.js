@@ -6,7 +6,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RecommendationsService = void 0;
 exports.getRecommendationsService = getRecommendationsService;
-const logger_js_1 = require("../utils/logger.js");
+const logger_1 = require("./utils/logger");
 const menuService_js_1 = require("./menuService.js");
 const dietaryService_js_1 = require("./dietaryService.js");
 class RecommendationsService {
@@ -26,7 +26,7 @@ class RecommendationsService {
         await this.recommendationsCollection?.createIndex({ userId: 1, itemId: 1 });
         await this.recommendationsCollection?.createIndex({ userId: 1, score: -1 });
         this.initialized = true;
-        logger_js_1.logger.info('RecommendationsService initialized');
+        logger_1.logger.info('RecommendationsService initialized');
     }
     /**
      * Get personalized recommendations for a user

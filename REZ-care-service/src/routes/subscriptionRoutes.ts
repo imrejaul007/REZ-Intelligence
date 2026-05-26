@@ -8,7 +8,7 @@
 import express, { Request, Response } from 'express';
 import { subscriptionService, SubscriptionTier, BillingCycle, PRICING_PLANS } from '../services/subscriptionService';
 import { rabtulPayment } from '../rabtulPayment';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 const router = express.Router();
 

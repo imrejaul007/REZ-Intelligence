@@ -1,6 +1,5 @@
-import winston from 'winston';
-import { Symptom } from '../config/knowledge';
-export declare const logger: winston.Logger;
+import { Symptom } from '../config/knowledge.js';
+export declare const logger: any;
 export declare enum SymptomCategory {
     RESPIRATORY = "respiratory",
     DIGESTIVE = "digestive",

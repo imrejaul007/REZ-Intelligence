@@ -28,7 +28,7 @@ router.post(
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: validationResult.error.errors[0]?.message || 'Invalid input',
+            message: validationResult.error.issues[0]?.message || 'Invalid input',
           },
         };
         res.status(400).json(response);
@@ -216,7 +216,7 @@ router.patch(
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: validationResult.error.errors[0]?.message || 'Invalid input',
+            message: validationResult.error.issues[0]?.message || 'Invalid input',
           },
         };
         res.status(400).json(response);

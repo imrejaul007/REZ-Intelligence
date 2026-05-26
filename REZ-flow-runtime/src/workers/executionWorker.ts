@@ -143,9 +143,8 @@ worker.on('failed', async (job, error) => {
   }
 });
 
-worker.on('stalled', (job) => {
-  const jobData = job?.data;
-  logger.warn('Job stalled', { jobId: job?.id, executionId: jobData?.executionId });
+worker.on('stalled', (jobId: string) => {
+  logger.warn('Job stalled', { jobId });
 });
 
 worker.on('error', (error) => {
@@ -153,10 +152,10 @@ worker.on('error', (error) => {
 });
 
 // Progress tracking
-worker.on('progress', (job, progress) => {
-  const jobData = job?.data;
+worker.on('progress', (job: Job<ExecutionJob>, progress: number) => {
+  const jobData = job.data as ExecutionJob | undefined;
   logger.debug('Job progress', {
-    jobId: job?.id,
+    jobId: job.id,
     executionId: jobData?.executionId,
     progress
   });

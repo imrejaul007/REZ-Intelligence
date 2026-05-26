@@ -3,6 +3,7 @@
  * Handles orchestration of complex expert operations
  */
 
+import { randomUUID } from 'crypto';
 import { IIntent } from '../interfaces/IIntent';
 import { IResponse, ResponseContext } from '../interfaces/IResponse';
 import { WorkflowConfig, WorkflowStep } from '../types/expert.types';
@@ -317,6 +318,6 @@ export class WorkflowService {
   }
 
   private generateWorkflowId(): string {
-    return `wf_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    return `wf_${Date.now()}_${randomUUID().replace(/-/g, '').substring(0, 9)}`;
   }
 }

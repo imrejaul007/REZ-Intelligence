@@ -1,8 +1,14 @@
 import cron from 'node-cron';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { ModelVersion, ConversationSample, TrainingBatch } from '../models/index.js';
-import logger from '../utils/logger.js';
+import logger from './utils/logger';
 import { config } from '../config/index.js';
+
+// Seeded random for deterministic mock metrics
+function seededRandom(seed: number, offset: number): number {
+  const x = Math.sin(seed + offset) * 10000;
+  return x - Math.floor(x);
+}
 
 export interface ModelUpdateJobResult {
   jobId: string;
@@ -198,7 +204,7 @@ export class ModelUpdateScheduler {
     previousVersionId?: string
   ): Promise<typeof ModelVersion.prototype> {
     const versionNumber = await ModelVersion.incrementVersion();
-    const versionId = uuidv4();
+    const versionId = randomUUID();
 
     const modelVersion = new ModelVersion({
       versionId,
@@ -231,12 +237,13 @@ export class ModelUpdateScheduler {
     // Simulated training - in production this would call actual ML training
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Simulated metrics
+    // Use seed for deterministic mock metrics
+    const seed = Date.now();
     return {
-      accuracy: 0.85 + Math.random() * 0.1,
-      precision: 0.82 + Math.random() * 0.1,
-      recall: 0.80 + Math.random() * 0.1,
-      f1Score: 0.81 + Math.random() * 0.1,
+      accuracy: 0.85 + seededRandom(seed, 1) * 0.1,
+      precision: 0.82 + seededRandom(seed, 2) * 0.1,
+      recall: 0.80 + seededRandom(seed, 3) * 0.1,
+      f1Score: 0.81 + seededRandom(seed, 4) * 0.1,
     };
   }
 
@@ -248,9 +255,10 @@ export class ModelUpdateScheduler {
     // Simulated validation
     await new Promise((resolve) => setTimeout(resolve, 500));
 
+    const seed = Date.now() + 1000;
     const metrics = {
-      testAccuracy: 0.83 + Math.random() * 0.1,
-      crossValidationScore: 0.80 + Math.random() * 0.1,
+      testAccuracy: 0.83 + seededRandom(seed, 1) * 0.1,
+      crossValidationScore: 0.80 + seededRandom(seed, 2) * 0.1,
     };
 
     // Validation passes if metrics are above threshold

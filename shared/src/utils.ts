@@ -4,6 +4,7 @@
  */
 
 import Redis from 'ioredis';
+import { randomUUID } from 'crypto';
 
 // ==================== DISTRIBUTED LOCK ====================
 
@@ -34,7 +35,7 @@ export async function acquireLock(
   options: LockOptions = {}
 ): Promise<Lock | null> {
   const opts = { ...DEFAULT_LOCK_OPTIONS, ...options };
-  const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const token = `${Date.now()}-${randomUUID().replace(/-/g, '')}`;
 
   for (let i = 0; i < opts.retryCount; i++) {
     const result = await redis.set(
@@ -150,7 +151,7 @@ export async function slidingWindowRateLimit(
   const multi = redis.multi();
   multi.zremrangebyscore(key, 0, windowStart);
   multi.zcard(key);
-  multi.zadd(key, now.toString(), `${now}-${Math.random()}`);
+  multi.zadd(key, now.toString(), `${now}-${randomUUID()}`);
   multi.expire(key, windowSeconds);
   multi.zcard(key);
 
@@ -338,7 +339,7 @@ export async function withRetry<T>(
         throw lastError;
       }
 
-      const jitter = Math.random() * 0.3 * delay;
+      const jitter = (randomInt(0, 300) / 1000) * delay;
       const actualDelay = Math.min(delay + jitter, maxDelayMs);
 
       await sleep(actualDelay);

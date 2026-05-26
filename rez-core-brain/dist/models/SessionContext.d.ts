@@ -14,6 +14,18 @@ export interface ISessionDocument extends ISession, Document {
     addContext(key: string, value: unknown): Promise<void>;
     removeContext(key: string): Promise<void>;
 }
-export declare const Session: Model<ISessionDocument>;
+interface ISessionModel extends Model<ISessionDocument> {
+    findActiveByUser(userId: string): Promise<ISessionDocument | null>;
+    findByUser(userId: string, options?: {
+        state?: SessionState;
+        limit?: number;
+        skip?: number;
+    }): Promise<ISessionDocument[]>;
+    findOrCreate(userId: string, agentId?: string): Promise<ISessionDocument>;
+    endAllActive(userId: string): Promise<number>;
+    cleanupStaleSessions(ttlSeconds: number): Promise<number>;
+    getActiveCount(userId: string): Promise<number>;
+}
+export declare const Session: ISessionModel;
 export default Session;
 //# sourceMappingURL=SessionContext.d.ts.map

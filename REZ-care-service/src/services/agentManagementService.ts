@@ -6,7 +6,7 @@
  */
 
 import mongoose, { Schema } from 'mongoose';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { generateAgentId } from '../utils/idGenerator';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-care';
@@ -22,10 +22,10 @@ interface IAgent {
   status: string;
   currentTicketCount: number;
   maxConcurrentTickets: number;
-  skills: Array<{ category: string; proficiency: string }>;
+  skills: Array<{ category?: string; proficiency: string }>;
   platforms: string[];
   languages: string[];
-  performance: {
+  performance?: {
     avgResolutionTime?: number;
     csatScore?: number;
     ticketsResolved: number;
@@ -178,7 +178,7 @@ export class AgentManagementService {
   }): Promise<IAgent[]> {
     await this.connect();
 
-    const query: unknown = {};
+    const query: Record<string, unknown> = {};
 
     if (filters?.status) query.status = filters.status;
     if (filters?.role) query.role = filters.role;
@@ -190,7 +190,7 @@ export class AgentManagementService {
       ];
     }
 
-    return AgentModel.find(query).sort({ level: -1, 'performance.csatScore': -1 }) as unknown;
+    return AgentModel.find(query as Record<string, unknown>).sort({ level: -1, 'performance.csatScore': -1 }) as unknown as Promise<IAgent[]>;
   }
 
   async updateAgent(agentId: string, updates: Partial<unknown>): Promise<IAgent | null> {
@@ -204,7 +204,7 @@ export class AgentManagementService {
       agent.lastActiveAt = new Date();
       await agent.save();
     }
-    return agent as unknown;
+    return agent as unknown as IAgent | null;
   }
 
   async deleteAgent(agentId: string): Promise<boolean> {
@@ -223,7 +223,7 @@ export class AgentManagementService {
       { agentId },
       { $set: { status, lastActiveAt: new Date() } },
       { new: true }
-    ) as unknown;
+    ) as unknown as Promise<IAgent | null>;
   }
 
   async goOnline(agentId: string): Promise<IAgent | null> {
@@ -267,7 +267,7 @@ export class AgentManagementService {
     priority?: string;
     language?: string;
     customerId?: string;
-  }): Promise<unknown | null> {
+  }): Promise<IAgent | null> {
     await this.connect();
 
     // Find online agents
@@ -281,7 +281,8 @@ export class AgentManagementService {
     // Filter by skills and platform
     let candidates = onlineAgents.filter(agent => {
       // Check platform
-      if (ticket.platform && !agent.platforms.includes('all') && !agent.platforms.includes(ticket.platform as unknown)) {
+      const validPlatforms = ticket.platform as 'delivery' | 'all' | 'hotel' | 'restaurant' | 'retail' | 'ecommerce' | undefined;
+      if (validPlatforms && !agent.platforms.includes('all') && !agent.platforms.includes(validPlatforms)) {
         return false;
       }
       return true;
@@ -426,14 +427,14 @@ export class AgentManagementService {
       escalationAgent = await AgentModel.findOne({
         agentId: currentAgent.escalationTarget,
         status: 'online'
-      }) as unknown;
+      }) as unknown as IAgent | null;
     } else {
       // Find higher level agent
       escalationAgent = await AgentModel.findOne({
         level: { $gt: currentAgent.level },
         status: 'online',
         role: { $in: ['senior_agent', 'team_lead', 'supervisor'] }
-      }).sort({ level: 1 }) as unknown;
+      }).sort({ level: 1 }) as unknown as IAgent | null;
     }
 
     if (escalationAgent) {
@@ -590,6 +591,6 @@ export class AgentManagementService {
       }
 
       return true;
-    }) as unknown;
+    }) as unknown as IAgent[];
   }
 }

@@ -4,7 +4,13 @@
  */
 
 import Redis from 'ioredis';
-import { logger } from '../utils/logger.js';
+import crypto from 'crypto';
+import { logger } from './utils/logger';
+
+// Crypto-based random number generator for secure randomness
+function secureRandom(): number {
+  return parseInt(crypto.randomBytes(4).toString('hex'), 16) / 0xFFFFFFFF;
+}
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const WEATHER_API_KEY = process.env.WEATHER_API_KEY || '';
@@ -223,10 +229,10 @@ export class WeatherService {
   /**
    * Get simulated weather for development
    */
-  private getSimulatedWeather(city: string): WeatherData {
-    const hour = new Date().getHours();
+  private getSimulatedWeather(_city: string): WeatherData {
+    const _hour = new Date().getHours();
     const conditions: WeatherCondition[] = ['clear', 'cloudy', 'rain', 'hot', 'cold'];
-    const condition = conditions[Math.floor(Math.random() * conditions.length)];
+    const condition = conditions[Math.floor(secureRandom() * conditions.length)];
 
     let temperature = 25;
     if (condition === 'hot') temperature = 38;

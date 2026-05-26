@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import crypto from 'crypto';
 
 export enum BlacklistType {
   IP_ADDRESS = 'IP_ADDRESS',
@@ -330,6 +331,6 @@ export const BlacklistEntry = mongoose.model<IBlacklistEntry, IBlacklistEntryMod
 
 export function generateBlacklistEntryId(): string {
   const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substring(2, 8);
+  const random = crypto.randomUUID().replace(/-/g, '').substring(0, 6);
   return `BL-${timestamp}-${random}`.toUpperCase();
 }

@@ -64,7 +64,7 @@ router.post('/', authenticateInternal, async (req: Request, res: Response) => {
         error: {
           code: 'VALIDATION_ERROR',
           message: 'Invalid request body',
-          details: validationResult.error.errors
+          details: validationResult.error.issues
         }
       });
       return;
@@ -437,7 +437,7 @@ router.get('/', authenticateInternal, async (req: Request, res: Response) => {
         error: {
           code: 'VALIDATION_ERROR',
           message: 'Invalid query parameters',
-          details: validationResult.error.errors
+          details: validationResult.error.issues
         }
       });
       return;

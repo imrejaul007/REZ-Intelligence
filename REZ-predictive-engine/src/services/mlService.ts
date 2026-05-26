@@ -1,4 +1,5 @@
-import logger from './utils/logger';
+import logger from '../utils/logger.js';
+import { randomUUID } from 'crypto';
 
 /**
  * ML Service Integration
@@ -316,7 +317,10 @@ function predictNextPurchaseHeuristic(features: UserFeatures): MLNextPurchaseRes
   predictedDays -= features.engagementScore / 200;
 
   const predictedCategories = features.preferredCategories.slice(0, 3);
-  const estimatedValue = features.avgOrderValue * (1 + (Math.random() * 0.2 - 0.1));
+  // Use randomUUID to derive a stable noise factor for the estimated value
+  const uuid = randomUUID();
+  const noiseFactor = (parseInt(uuid.replace(/-/g, '').slice(0, 8), 16) / 0xFFFFFFFF) * 0.2 - 0.1;
+  const estimatedValue = features.avgOrderValue * (1 + noiseFactor);
 
   let optimalChannel = 'whatsapp';
   if ((features.signals?.behavioral?.urgencyResponsiveness ?? 0) > 70) {

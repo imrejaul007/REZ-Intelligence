@@ -3,7 +3,15 @@
  * Adjusts response content and style based on configured tone
  */
 
+import { randomBytes } from 'crypto';
 import { ExpertTone, ExpertiseLevel } from '../types/expert.types';
+
+/**
+ * Generate a random number between 0 and 1 using crypto
+ */
+function cryptoRandom(): number {
+  return Number(randomBytes(4).readUInt32BE(0)) / 0xFFFFFFFF;
+}
 
 export interface ToneConfig {
   tone: ExpertTone;
@@ -291,7 +299,7 @@ export class ToneEngine {
   }
 
   private pickRandom<T>(items: T[]): T {
-    return items[Math.floor(Math.random() * items.length)];
+    return items[Math.floor(cryptoRandom() * items.length)];
   }
 }
 

@@ -1,6 +1,12 @@
 import axios, { AxiosInstance } from 'axios';
+import crypto from 'crypto';
 import config from '../config/index.js';
-import logger from '../utils/logger.js';
+import logger from './utils/logger.js';
+
+// Crypto-based random number generator for secure randomness
+function secureRandom(): number {
+  return parseInt(crypto.randomBytes(4).toString('hex'), 16) / 0xFFFFFFFF;
+}
 import type {
   DeliveryInsight,
   RouteOptimization,
@@ -148,9 +154,9 @@ class DeliveryService {
       }
 
       // Calculate risk factors (mock for now)
-      const weatherRisk = 0.2 + Math.random() * 0.3;
+      const weatherRisk = 0.2 + secureRandom() * 0.3;
       const trafficRisk = this.isPeakHours() ? 0.6 : 0.2;
-      const carrierReliability = 0.85 + Math.random() * 0.1;
+      const carrierReliability = 0.85 + secureRandom() * 0.1;
 
       // Calculate metrics
       const deliveryScore = this.calculateDeliveryScore(
@@ -384,7 +390,7 @@ class DeliveryService {
     }
 
     // Return mock analytics
-    const totalDeliveries = Math.floor(Math.random() * 500) + 100;
+    const totalDeliveries = Math.floor(secureRandom() * 500) + 100;
     const successfulDeliveries = Math.floor(totalDeliveries * 0.95);
     const failedDeliveries = totalDeliveries - successfulDeliveries;
 
@@ -399,14 +405,14 @@ class DeliveryService {
         successfulDeliveries,
         failedDeliveries,
         returnRate: failedDeliveries / totalDeliveries,
-        averageDeliveryTime: 24 + Math.random() * 12,
-        onTimeDeliveryRate: 0.85 + Math.random() * 0.1,
+        averageDeliveryTime: 24 + secureRandom() * 12,
+        onTimeDeliveryRate: 0.85 + secureRandom() * 0.1,
       },
       trends: this.generateTrendData(startDate, endDate),
       delayAnalysis: {
         totalDelays: Math.floor(totalDeliveries * 0.1),
         delayRate: 0.1,
-        averageDelayHours: 4 + Math.random() * 4,
+        averageDelayHours: 4 + secureRandom() * 4,
         topDelayReasons: [
           { reason: 'Traffic congestion', count: 15, percentage: 30 },
           { reason: 'Weather conditions', count: 12, percentage: 24 },
@@ -416,7 +422,7 @@ class DeliveryService {
         ],
       },
       customerSatisfaction: {
-        averageRating: 4.2 + Math.random() * 0.6,
+        averageRating: 4.2 + secureRandom() * 0.6,
         totalRatings: Math.floor(totalDeliveries * 0.6),
         ratingsDistribution: {
           1: Math.floor(totalDeliveries * 0.02),
@@ -439,12 +445,12 @@ class DeliveryService {
     const end = new Date(endDate);
 
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const deliveries = Math.floor(Math.random() * 50) + 20;
+      const deliveries = Math.floor(secureRandom() * 50) + 20;
       trends.push({
         date: d.toISOString().split('T')[0],
         deliveries,
-        onTimeRate: 0.8 + Math.random() * 0.15,
-        avgDeliveryTime: 20 + Math.random() * 10,
+        onTimeRate: 0.8 + secureRandom() * 0.15,
+        avgDeliveryTime: 20 + secureRandom() * 10,
       });
     }
 
@@ -466,7 +472,7 @@ class DeliveryService {
     if (insight.delayRisk === 'HIGH' || insight.delayRisk === 'CRITICAL') {
       riskFactors.push({
         factor: 'Weather conditions',
-        probability: 0.3 + Math.random() * 0.3,
+        probability: 0.3 + secureRandom() * 0.3,
         impact: 'May cause delay of 2-6 hours',
         mitigation: 'Consider alternative delivery partner',
       });
@@ -505,7 +511,7 @@ class DeliveryService {
     return {
       orderId,
       predictedEta: insight.etaDate,
-      confidence: 0.75 + Math.random() * 0.2,
+      confidence: 0.75 + secureRandom() * 0.2,
       riskFactors,
       alternativeRoutes: alternativeRoutes.length > 0 ? alternativeRoutes : undefined,
       recommendedActions: this.generateRecommendations(riskFactors),

@@ -1,12 +1,5 @@
 import mongoose, { Schema, Model } from 'mongoose';
 import {
-  GiftCardStatus,
-  GiftCardType,
-  TransactionType,
-  TransactionStatus,
-  PaymentMethodType,
-  WalletStatus,
-  TransactionHistoryType,
   IGiftCard,
   IWallet,
   ITransaction,

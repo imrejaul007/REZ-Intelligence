@@ -4,7 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 
-import { logger, logInfo, logError } from './services/logger.js';
+import { logInfo, logError } from './services/logger.js';
 import { connectDatabase, disconnectDatabase } from './services/database.js';
 import { connectRedis, disconnectRedis } from './services/redis.js';
 import { rateLimitMiddleware, requestLoggingMiddleware, errorHandler, notFoundHandler } from './middleware/index.js';

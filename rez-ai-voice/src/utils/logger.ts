@@ -9,7 +9,7 @@ import path from 'path';
 const { combine, timestamp, printf, colorize, errors, json } = winston.format;
 
 // Custom log format for development
-const devFormat = printf(({ level, message, timestamp, ...metadata }) => {
+const devFormat = printf(({ level, message, timestamp, ...metadata }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
   let msg = `${timestamp} [${level}]: ${message}`;
   if (Object.keys(metadata).length > 0) {
     msg += ` ${JSON.stringify(metadata)}`;

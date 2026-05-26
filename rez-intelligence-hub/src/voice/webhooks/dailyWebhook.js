@@ -5,6 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
+const { randomInt } = require('crypto');
 
 const sttService = require('../services/stt');
 const ttsService = require('../services/tts');
@@ -161,7 +162,7 @@ async function generateGreeting() {
     "Welcome! What would you like help with today?"
   ];
 
-  return greetings[Math.floor(Math.random() * greetings.length)];
+  return greetings[randomInt(0, greetings.length)];
 }
 
 /**

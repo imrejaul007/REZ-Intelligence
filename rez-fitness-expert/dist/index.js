@@ -1,115 +1,226 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.fitnessExpert = exports.startServer = exports.app = void 0;
-const express_1 = __importDefault(require("express"));
-const cors_1 = __importDefault(require("cors"));
-const helmet_1 = __importDefault(require("helmet"));
-const fitness_routes_1 = require("./routes/fitness.routes");
-const fitnessExpert_1 = require("./services/fitnessExpert");
-Object.defineProperty(exports, "fitnessExpert", { enumerable: true, get: function () { return fitnessExpert_1.fitnessExpert; } });
-const expertise_1 = require("./services/expertise");
-const app = (0, express_1.default)();
-exports.app = app;
-const PORT = process.env.PORT || 3010;
-app.use((0, helmet_1.default)());
-app.use((0, cors_1.default)({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
-    credentials: true
-}));
-app.use(express_1.default.json());
-app.use(express_1.default.urlencoded({ extended: true }));
-app.use((req, res, next) => {
-    fitnessExpert_1.logger.info(`${req.method} ${req.path}`, {
-        ip: req.ip,
-        userAgent: req.get('user-agent')
+/**
+ * REZ Fitness Expert Agent
+ * Main entry point with TypeScript, Zod validation, and proper error handling
+ */
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import { configSchema } from './config/index.js';
+import { logger } from './services/fitnessExpert.js';
+import { fitnessRouter } from './routes/fitness.routes.js';
+import { errorHandler, notFoundHandler, requestLogger, asyncHandler } from './middleware/validation.js';
+import { ServiceError } from './types/index.js';
+// ============================================
+// CONFIGURATION VALIDATION
+// ============================================
+function loadConfig() {
+    const result = configSchema.safeParse({
+        port: process.env.PORT,
+        nodeEnv: process.env.NODE_ENV,
+        corsOrigins: process.env.ALLOWED_ORIGINS,
+        rateLimitWindowMs: process.env.RATE_LIMIT_WINDOW_MS,
+        rateLimitMaxRequests: process.env.RATE_LIMIT_MAX_REQUESTS,
+        logLevel: process.env.LOG_LEVEL
     });
-    next();
+    if (!result.success) {
+        console.error('Configuration validation failed:', result.error.format());
+        throw new ServiceError('Invalid configuration', 'CONFIG_ERROR', 1);
+    }
+    const data = result.data;
+    return {
+        port: data.port ?? 3010,
+        nodeEnv: data.nodeEnv ?? 'development',
+        corsOrigins: data.corsOrigins ?? ['http://localhost:3000'],
+        rateLimitWindowMs: data.rateLimitWindowMs ?? 60000,
+        rateLimitMaxRequests: data.rateLimitMaxRequests ?? 100,
+        logLevel: data.logLevel ?? 'info',
+        serviceName: 'rez-fitness-expert',
+        version: '1.0.0'
+    };
+}
+const config = loadConfig();
+// ============================================
+// APP INITIALIZATION
+// ============================================
+const app = express();
+// ============================================
+// SECURITY MIDDLEWARE
+// ============================================
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrc: ["'self'"],
+            imgSrc: ["'self'", 'data:', 'https:'],
+        },
+    },
+    crossOriginEmbedderPolicy: false,
+}));
+// CORS
+app.use(cors({
+    origin: config.corsOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Internal-Token']
+}));
+// Body parsing
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+// Compression
+import compression from 'compression';
+app.use(compression());
+// Request logging
+app.use(requestLogger);
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: config.rateLimitWindowMs,
+    max: config.rateLimitMaxRequests,
+    message: {
+        success: false,
+        error: {
+            code: 'RATE_LIMIT_EXCEEDED',
+            message: 'Too many requests, please try again later'
+        }
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => {
+        return req.body?.sessionId || req.ip || 'unknown';
+    },
 });
+app.use('/api/', limiter);
+// ============================================
+// HEALTH CHECKS
+// ============================================
 app.get('/health', (req, res) => {
     res.json({
         status: 'healthy',
-        service: 'rez-fitness-expert',
+        service: config.serviceName,
+        version: config.version,
         timestamp: new Date().toISOString(),
-        version: process.env.npm_package_version || '1.0.0',
-        uptime: process.uptime(),
+        uptime: process.uptime()
     });
 });
-// Detailed health check with dependencies
-app.get('/health/detailed', async (req, res) => {
+app.get('/health/detailed', asyncHandler(async (req, res) => {
+    const memoryUsage = process.memoryUsage();
     const healthData = {
         status: 'healthy',
-        service: 'rez-fitness-expert',
+        service: config.serviceName,
+        version: config.version,
         timestamp: new Date().toISOString(),
-        version: process.env.npm_package_version || '1.0.0',
         uptime: process.uptime(),
-        environment: process.env.NODE_ENV || 'development',
-        dependencies: {},
+        environment: config.nodeEnv,
         memory: {
-            heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
-            heapTotal: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
-            rss: Math.round(process.memoryUsage().rss / 1024 / 1024),
+            heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024),
+            heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024),
+            rss: Math.round(memoryUsage.rss / 1024 / 1024),
+            external: Math.round(memoryUsage.external / 1024 / 1024)
         },
+        process: {
+            pid: process.pid,
+            platform: process.platform,
+            nodeVersion: process.version
+        }
     };
     res.json(healthData);
-});
-// Kubernetes readiness probe
+}));
 app.get('/health/ready', (req, res) => {
     const checks = {
         initialized: true,
+        memory: process.memoryUsage().heapUsed < 500 * 1024 * 1024 // 500MB threshold
     };
-    const isReady = checks.initialized;
+    const isReady = Object.values(checks).every(Boolean);
     res.status(isReady ? 200 : 503).json({
         ready: isReady,
         checks,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString()
     });
 });
-app.use('/api/v1/fitness', fitness_routes_1.fitnessRouter);
-app.use((err, req, res, next) => {
-    fitnessExpert_1.logger.error('Unhandled error', {
-        error: err.message,
-        stack: err.stack,
-        path: req.path,
-        method: req.method
-    });
-    res.status(500).json({
-        success: false,
-        error: {
-            code: 'INTERNAL_ERROR',
-            message: 'An unexpected error occurred'
+// ============================================
+// API ROUTES
+// ============================================
+app.use('/api/v1/fitness', fitnessRouter);
+// Root endpoint
+app.get('/', (req, res) => {
+    res.json({
+        service: config.serviceName,
+        version: config.version,
+        description: 'AI-powered fitness expert for workout planning and recommendations',
+        endpoints: {
+            health: 'GET /health',
+            healthDetailed: 'GET /health/detailed',
+            healthReady: 'GET /health/ready',
+            chat: 'POST /api/v1/fitness/chat',
+            workoutPlan: 'POST /api/v1/fitness/workout-plan',
+            exercises: 'GET /api/v1/fitness/exercises',
+            progress: 'POST /api/v1/fitness/progress'
         }
     });
 });
-app.use((req, res) => {
-    res.status(404).json({
-        success: false,
-        error: {
-            code: 'NOT_FOUND',
-            message: `Route ${req.method} ${req.path} not found`
-        }
-    });
-});
-const startServer = async () => {
+// ============================================
+// ERROR HANDLING
+// ============================================
+app.use(notFoundHandler);
+app.use(errorHandler);
+// ============================================
+// GRACEFUL SHUTDOWN
+// ============================================
+let server = null;
+async function shutdown(signal) {
+    logger.info(`Received ${signal}. Starting graceful shutdown...`);
+    if (server) {
+        server.close(() => {
+            logger.info('HTTP server closed');
+        });
+    }
+    process.exit(0);
+}
+// ============================================
+// SERVER STARTUP
+// ============================================
+function startServer() {
     try {
-        (0, expertise_1.validateEnv)();
-        fitnessExpert_1.logger.info('REZ Fitness Expert starting...');
-        app.listen(PORT, () => {
-            fitnessExpert_1.logger.info(`REZ Fitness Expert started on port ${PORT}`, {
-                port: PORT,
-                env: process.env.NODE_ENV || 'development'
-            });
+        server = app.listen(config.port, () => {
+            logger.info(`
+╔═══════════════════════════════════════════════════════════════╗
+║                  REZ Fitness Expert Agent                      ║
+╠═══════════════════════════════════════════════════════════════╣
+║  Status:     Running                                         ║
+║  Port:       ${String(config.port).padEnd(53)}║
+║  Environment: ${config.nodeEnv.padEnd(45)}║
+║  Log Level:  ${config.logLevel.padEnd(47)}║
+╚═══════════════════════════════════════════════════════════════╝
+      `);
+            logger.info('API Endpoints:');
+            logger.info('  POST /api/v1/fitness/chat         - Chat with fitness expert');
+            logger.info('  POST /api/v1/fitness/workout-plan  - Generate workout plan');
+            logger.info('  GET  /api/v1/fitness/exercises    - Get exercises');
+            logger.info('  POST /api/v1/fitness/progress     - Track progress');
+            logger.info('  GET  /health                      - Health check');
+        });
+        // Graceful shutdown
+        process.on('SIGTERM', () => shutdown('SIGTERM'));
+        process.on('SIGINT', () => shutdown('SIGINT'));
+        // Unhandled rejection
+        process.on('unhandledRejection', (reason) => {
+            logger.error('Unhandled Rejection:', { reason });
+        });
+        // Uncaught exception
+        process.on('uncaughtException', (error) => {
+            logger.error('Uncaught Exception:', error);
+            process.exit(1);
         });
     }
     catch (error) {
-        fitnessExpert_1.logger.error('Failed to start server', { error });
+        logger.error('Failed to start server:', error);
         process.exit(1);
     }
-};
-exports.startServer = startServer;
-if (require.main === module) {
+}
+// Start server if this is the main module
+if (require.main === module || process.argv[1]?.endsWith('index.ts')) {
     startServer();
 }
+export { app, startServer, config };
 //# sourceMappingURL=index.js.map

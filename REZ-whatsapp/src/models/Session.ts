@@ -19,11 +19,11 @@ export interface ISession extends Document {
   expiresAt: Date;
   metadata: Record<string, unknown>;
   addToCart(item: CartItem): void;
-  updateCartItem(productId: string, updates: Partial<CartItem>): void;
+  updateCartItem(productId: string, quantity: number): void;
   removeFromCart(productId: string): void;
   clearCart(): void;
-  addMessage(message: MessageRecord): void;
-  getCartTotal(): { subtotal: number; tax: number; total: number };
+  addMessage(role: 'user' | 'assistant' | 'system', content: string, messageId: string): void;
+  getCartTotal(): number;
 }
 
 const CartItemSchema = new Schema<CartItem>(

@@ -19,10 +19,6 @@ import {
   BrowseRequest,
   OrderRequest,
   Order,
-  TasteProfile,
-  SearchRecord,
-  OrderItem,
-  Nudge,
 } from './types.js';
 import { generateMockRecommendations, determineFlywheelStage, calculateReorderWindow } from './helpers.js';
 
@@ -220,8 +216,7 @@ app.post('/api/order', asyncHandler(async (req: Request, res: Response) => {
     });
 
     // Step 2: Create Reorder Profile (initialize for future reorder)
-    const score = reorderEngine.calculateScore(order);
-    reorderEngine;
+    reorderEngine.calculateScore(order);
 
     // Step 3: Update Identity Graph
     await identityGraph.link(userId, 'order', orderId, {

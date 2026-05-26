@@ -3,21 +3,19 @@
  * Production-ready health monitoring with circuit breaker support
  */
 
-import express, { Express, Request, Response, NextFunction } import logger from './utils/logger';
-import from 'express';
+import express, { Express, Request, Response, NextFunction } from 'express';
+import { logger } from './utils/logger.js';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 
 import { getHealthMonitorConfig, DEFAULT_SERVICES, ServiceConfig } from './config/index.js';
-import { getCircuitBreakerRegistry, CircuitState, CircuitBreakerStats } from './services/circuitBreaker.js';
-import { getServiceChecker, HealthCheckResult } from './services/serviceChecker.js';
+import { getCircuitBreakerRegistry, CircuitState } from './services/circuitBreaker.js';
+import { getServiceChecker } from './services/serviceChecker.js';
 import {
   getRecentAlerts,
   getAlertSummary,
-  formatAlertsForDashboard,
-  sendRecoveryAlert,
-  Alert
+  sendRecoveryAlert
 } from './services/alertService.js';
 
 dotenv.config();
@@ -88,7 +86,7 @@ function stopHealthCheckLoop(): void {
 /**
  * Basic health check
  */
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
     service: 'rez-health-monitor',
@@ -101,7 +99,7 @@ app.get('/health', (req: Request, res: Response) => {
 /**
  * Get all services health
  */
-app.get('/health/all', async (req: Request, res: Response) => {
+app.get('/health/all', async (_req: Request, res: Response) => {
   try {
     const results = await serviceChecker.checkAllServices(servicesToMonitor);
     const summary = serviceChecker.getSummary(servicesToMonitor);
@@ -186,7 +184,7 @@ app.get('/health/:serviceName/detailed', async (req: Request, res: Response) => 
 /**
  * Get all circuit breaker states
  */
-app.get('/circuits', (req: Request, res: Response) => {
+app.get('/circuits', (_req: Request, res: Response) => {
   const stats = circuitRegistry.getAllStats();
 
   res.json({
@@ -290,7 +288,7 @@ app.get('/alerts/:serviceName', (req: Request, res: Response) => {
 /**
  * Get monitored services list
  */
-app.get('/services', (req: Request, res: Response) => {
+app.get('/services', (_req: Request, res: Response) => {
   res.json({
     success: true,
     count: servicesToMonitor.length,
@@ -360,7 +358,7 @@ app.delete('/services/:serviceName', (req: Request, res: Response) => {
 /**
  * Dashboard HTML page
  */
-app.get('/dashboard', (req: Request, res: Response) => {
+app.get('/dashboard', (_req: Request, res: Response) => {
   res.send(getDashboardHTML());
 });
 
@@ -368,7 +366,7 @@ app.get('/dashboard', (req: Request, res: Response) => {
 // ERROR HANDLING
 // ============================================
 
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error('Unhandled error:', err);
   res.status(500).json({
     success: false,

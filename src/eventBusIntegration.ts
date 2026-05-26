@@ -71,7 +71,7 @@ export class EventEmitter {
       logger.info(`[${this.serviceName}] Event emitted: ${event.type}`);
       return response.data;
     } catch (error) {
-      console.error(`[${this.serviceName}] Failed to emit event ${event.type}:`, error.message);
+      console.error(`[${this.serviceName}] Failed to emit event ${event.type}:`, (error as Error).message);
       return null;
     }
   }

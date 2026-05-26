@@ -3,6 +3,7 @@
  * Represents a conversation entity spanning multiple sessions across channels
  */
 
+import crypto from 'crypto';
 import mongoose, { Document, Schema, Model, Types } from 'mongoose';
 import { ChannelType, MessageRole, IntentConfidence } from '../types';
 
@@ -324,7 +325,7 @@ ConversationSchema.statics = {
 
     if (!conversation) {
       conversation = await this.create({
-        conversationId: `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        conversationId: `conv_${crypto.randomUUID()}`,
         userId,
         primaryChannel: channel,
         activeChannels: [channel],

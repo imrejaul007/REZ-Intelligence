@@ -6,6 +6,7 @@ import compression from 'compression';
 import config, { validateConfig } from './config/index.js';
 import logger from './utils/logger.js';
 import inventoryRoutes from './routes/index.js';
+import { createAuthMiddleware, createRateLimiter, errorHandler } from './middleware/index.js';
 
 /**
  * Initialize Express application
@@ -55,8 +56,30 @@ function createApp(): Express {
     next();
   });
 
+  // Rate limiting
+  app.use('/api', createRateLimiter({ windowMs: 60000, max: 100 }));
+
+  // Auth middleware
+  const apiKeys = (process.env.API_KEYS || '').split(',').filter(Boolean);
+  const internalTokens = (process.env.INTERNAL_TOKENS || '').split(',').filter(Boolean);
+  app.use('/api', createAuthMiddleware({
+    apiKeys,
+    internalTokens,
+    bypassPaths: ['/api/health'],
+  }));
+
+  // Health check endpoints
+  app.get('/health', (_req: Request, res: Response) => {
+    res.json({ status: 'healthy', service: 'rez-inventory-intelligence', timestamp: new Date().toISOString() });
+  });
+
+  app.get('/api/health', (_req: Request, res: Response) => {
+    const mongoStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+    res.json({ status: 'ready', mongodb: mongoStatus, timestamp: new Date().toISOString() });
+  });
+
   // API routes
-  app.use('/', inventoryRoutes);
+  app.use('/api', inventoryRoutes);
 
   // Root endpoint
   app.get('/', (_req: Request, res: Response) => {
@@ -67,9 +90,12 @@ function createApp(): Express {
       port: config.port,
       description: 'Inventory Intelligence Service with Demand Forecasting, Stock Optimization, and Reorder Management for REZ Ecosystem',
       documentation: `/api/v1`,
-      health: `/api/health`,
+      health: `/health`,
     });
   });
+
+  // Error handler
+  app.use(errorHandler);
 
   return app;
 }
@@ -196,8 +222,8 @@ async function main(): Promise<void> {
     process.on('SIGINT', () => shutdown('SIGINT'));
 
     // Unhandled rejection handler
-    process.on('unhandledRejection', (reason, promise) => {
-      logger.error('Unhandled Rejection', { reason, promise });
+    process.on('unhandledRejection', (reason, _promise) => {
+      logger.error('Unhandled Rejection', { reason });
     });
 
     // Uncaught exception handler
@@ -205,8 +231,6 @@ async function main(): Promise<void> {
       logger.error('Uncaught Exception', { error: error.message, stack: error.stack });
       process.exit(1);
     });
-
-    return server;
   } catch (error) {
     logger.error('Failed to start server', { error });
     process.exit(1);

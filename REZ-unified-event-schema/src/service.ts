@@ -6,6 +6,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import axios from 'axios';
+import crypto from 'crypto';
 
 const app = express();
 app.use(express.json());
@@ -140,7 +141,7 @@ app.post('/api/event', async (req, res) => {
     source, platform, metadata, tags
   } = req.body;
 
-  const event_id = `EVT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const event_id = `EVT-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
 
   const event = new CanonicalEvent({
     event_id,
@@ -186,7 +187,7 @@ app.post('/api/events/batch', async (req, res) => {
   const results = [];
   for (const eventData of events) {
     const event = new CanonicalEvent({
-      event_id: `EVT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      event_id: `EVT-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`,
       ...eventData,
       timestamp: new Date()
     });

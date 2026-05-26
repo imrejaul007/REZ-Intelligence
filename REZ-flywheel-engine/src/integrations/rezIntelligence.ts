@@ -12,7 +12,7 @@ const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 /**
  * Make authenticated internal API request
  */
-async function internalRequest(url: string, options: RequestInit = {}): Promise<unknown> {
+async function internalRequest<T = unknown>(url: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'X-Internal-Token': INTERNAL_TOKEN,
@@ -31,7 +31,7 @@ async function internalRequest(url: string, options: RequestInit = {}): Promise<
     throw new Error(`Intelligence API error: ${response.status}`);
   }
 
-  return response.json();
+  return response.json() as T;
 }
 
 // ============================================
@@ -116,7 +116,7 @@ export const signalOperations = {
 
   async query(userId, filters = {}) {
     try {
-      const res = await internalRequest(`${SIGNAL_SERVICE_URL}/api/signals/${userId}`, {
+      const res = await internalRequest<{ signals?: unknown[] }>(`${SIGNAL_SERVICE_URL}/api/signals/${userId}`, {
         method: 'GET',
         body: JSON.stringify(filters),
       });
@@ -134,7 +134,7 @@ export const signalOperations = {
 export const recommendationOperations = {
   async get(userId, slot = 'general') {
     try {
-      const res = await internalRequest(`${RECOMMEND_SERVICE_URL}/api/recommendations/${userId}`, {
+      const res = await internalRequest<{ recommendations?: unknown[] }>(`${RECOMMEND_SERVICE_URL}/api/recommendations/${userId}`, {
         method: 'GET',
         body: JSON.stringify({ slot }),
       });

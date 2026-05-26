@@ -4,6 +4,7 @@
  * Supports order status, refunds, and technical issues
  */
 
+import { randomUUID } from 'crypto';
 import { getConversationService } from '../services/conversationService';
 import { getTTSService } from '../services/ttsService';
 import { logger } from '../utils/logger';
@@ -400,7 +401,7 @@ export class VoiceSupportAgent {
    * Create support ticket
    */
   createTicket(conversationId: string, ticket: SupportTicket): string {
-    const ticketId = `TKT-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    const ticketId = `TKT-${Date.now()}-${randomUUID().replace(/-/g, '').substring(0, 4).toUpperCase()}`;
 
     const conversation = this.conversationService.getConversation(conversationId);
     if (conversation) {

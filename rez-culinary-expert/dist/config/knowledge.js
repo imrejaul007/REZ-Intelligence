@@ -116,7 +116,7 @@ exports.DIETARY_TAGS = {
     VEGAN: {
         id: 'vegan',
         name: 'Vegan',
-        description: 'No animal products of any kind',
+        description: 'No animal products of unknown kind',
         excludes: [
             'meat', 'poultry', 'fish', 'seafood', 'dairy', 'eggs', 'honey',
             'gelatin', 'rennet', 'lard', 'ghee', 'animal fats', 'isenglass'

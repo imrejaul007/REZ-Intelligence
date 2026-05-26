@@ -10,6 +10,21 @@ const SIGNAL_URL = process.env.SIGNAL_AGGREGATOR_URL || 'http://localhost:4121';
 const IDENTITY_URL = process.env.IDENTITY_URL || 'http://localhost:4050';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
+interface Signal {
+  userId: string;
+  type: string;
+  data?: Record<string, unknown>;
+  timestamp?: string;
+}
+
+interface SignalFilters {
+  userId?: string;
+  type?: string;
+  from?: string;
+  to?: string;
+  limit?: number;
+}
+
 async function request(url: string, options: RequestInit = {}): Promise<unknown> {
   const res = await fetch(url, {
     ...options,
@@ -30,7 +45,7 @@ export const intent = {
       method: 'POST',
       body: JSON.stringify({ user_id: userId, context }),
     }),
-  captureSignal: async (signal) =>
+  captureSignal: async (signal: Signal) =>
     request(`${INTENT_URL}/api/intent/capture`, {
       method: 'POST',
       body: JSON.stringify(signal),
@@ -69,12 +84,12 @@ export const segments = {
 
 // Signal Aggregator
 export const signals = {
-  record: async (signal) =>
+  record: async (signal: Signal) =>
     request(`${SIGNAL_URL}/api/signals`, {
       method: 'POST',
       body: JSON.stringify(signal),
     }),
-  query: async (filters) =>
+  query: async (filters: SignalFilters) =>
     request(`${SIGNAL_URL}/api/signals/query`, {
       method: 'POST',
       body: JSON.stringify(filters),

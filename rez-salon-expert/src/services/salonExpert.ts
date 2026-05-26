@@ -1,5 +1,6 @@
 import winston from 'winston';
 import { v4 as uuidv4 } from 'uuid';
+import { randomInt } from 'crypto';
 import {
   ALL_SERVICES,
   HAIR_SERVICES,
@@ -14,7 +15,7 @@ import {
 
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
-const logFormat = printf(({ level, message, timestamp, ...metadata }) => {
+const logFormat = printf(({ level, message, timestamp, ...metadata }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
   let msg = `${timestamp} [${level}]: ${message}`;
   if (Object.keys(metadata).length > 0 && metadata.stack === undefined) {
     msg += ` ${JSON.stringify(metadata)}`;
@@ -537,7 +538,7 @@ export class SalonExpert {
       message: responseMessage,
       data: { slots: availableSlots, service },
       actions: [
-        { type: 'confirm_appointment', data: {} },
+        { type: 'confirm_booking', data: {} },
         { type: 'show_stylists', data: {} }
       ]
     };
@@ -609,8 +610,8 @@ export class SalonExpert {
       }
       responseMessage += `\n**Recommended treatments:**\n`;
 
-      const recommendedServices = SKINCARE_SERVICES.filter(s =>
-        s.suitableFor.some(s => s.suitableFor.includes('All skin types') || typeInfo.name.includes('All'))
+      const recommendedServices = SKINCARE_SERVICES.filter(service =>
+        service.suitableFor.some(sf => sf.includes('All skin types') || typeInfo.name.includes('All'))
       ).slice(0, 3);
 
       for (const service of recommendedServices) {
@@ -632,7 +633,7 @@ export class SalonExpert {
         data: { skinTypes: SKIN_TYPES },
         actions: [
           { type: 'identify_skin_type', data: {} },
-          { type: 'recommend_treatments', data: {} }
+          { type: 'recommend_treatment', data: {} }
         ]
       };
     }
@@ -820,8 +821,8 @@ export class SalonExpert {
         message: "Hello, welcome! I'm your REZ Salon Expert, here to help you discover perfect beauty services and book appointments.\n\nI can help you with:\n- Finding the right services for you\n- Booking appointments\n- Understanding treatments and what to expect\n- Skincare recommendations\n- Preparation tips\n\nWhat brings you in today?",
         actions: [
           { type: 'show_categories', data: {} },
-          { type: 'book_appointment', data: {} },
-          { type: 'get_recommendations', data: {} }
+          { type: 'book_service', data: {} },
+          { type: 'recommend_treatment', data: {} }
         ]
       };
     }
@@ -898,11 +899,11 @@ export class SalonExpert {
     if (category) {
       const matching = stylists.filter(s => s.specialties.includes(category as ServiceCategory));
       if (matching.length > 0) {
-        return matching[Math.floor(Math.random() * matching.length)];
+        return matching[randomInt(0, matching.length)];
       }
     }
 
-    return stylists[Math.floor(Math.random() * stylists.length)];
+    return stylists[randomInt(0, stylists.length)];
   }
 
   private isGreeting(message: string): boolean {

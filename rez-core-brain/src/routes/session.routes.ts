@@ -8,6 +8,12 @@ import { logger } from '../utils/logger';
 
 const router = Router();
 
+// Extend Request type to include custom properties
+interface AuthenticatedRequest extends Request {
+  userId?: string;
+  requestId?: string;
+}
+
 // Validation schemas
 const createSessionSchema = z.object({
   agentId: z.string().optional(),
@@ -35,10 +41,10 @@ const getSessionsSchema = z.object({
  * POST /api/session
  * Create a new session
  */
-router.post('/', requestId, authenticate, async (req: Request, res: Response) => {
+router.post('/', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
-    const requestId = req.requestId!;
+    const requestIdVal = req.requestId || 'unknown';
 
     const validation = createSessionSchema.safeParse(req.body);
     if (!validation.success) {
@@ -65,14 +71,14 @@ router.post('/', requestId, authenticate, async (req: Request, res: Response) =>
       await contextService.addActiveAgent(userId, validation.data.agentId);
     }
 
-    logger.info(`Session created: ${session.id}`, { requestId, userId });
+    logger.info(`Session created: ${session.id}`, { requestId: requestIdVal, userId });
 
     res.status(201).json({
       success: true,
       data: session,
       meta: {
         timestamp: new Date(),
-        requestId,
+        requestId: requestIdVal,
       },
     });
   } catch (error) {
@@ -91,7 +97,7 @@ router.post('/', requestId, authenticate, async (req: Request, res: Response) =>
  * GET /api/session
  * Get or create a session for the current user
  */
-router.get('/', requestId, authenticate, async (req: Request, res: Response) => {
+router.get('/', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
     const agentId = req.query.agentId as string | undefined;
@@ -122,7 +128,7 @@ router.get('/', requestId, authenticate, async (req: Request, res: Response) => 
  * GET /api/session/:id
  * Get a session by ID
  */
-router.get('/:id', requestId, authenticate, async (req: Request, res: Response) => {
+router.get('/:id', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
     const { id } = req.params;
@@ -164,7 +170,7 @@ router.get('/:id', requestId, authenticate, async (req: Request, res: Response) 
  * GET /api/session/list/user
  * Get all sessions for the current user
  */
-router.get('/list/user', requestId, authenticate, async (req: Request, res: Response) => {
+router.get('/list/user', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
@@ -219,7 +225,7 @@ router.get('/list/user', requestId, authenticate, async (req: Request, res: Resp
  * PATCH /api/session/:id
  * Update a session
  */
-router.patch('/:id', requestId, authenticate, async (req: Request, res: Response) => {
+router.patch('/:id', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
     const { id } = req.params;
@@ -276,7 +282,7 @@ router.patch('/:id', requestId, authenticate, async (req: Request, res: Response
  * POST /api/session/:id/context
  * Add context to a session
  */
-router.post('/:id/context', requestId, authenticate, async (req: Request, res: Response) => {
+router.post('/:id/context', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
     const { id } = req.params;
@@ -336,7 +342,7 @@ router.post('/:id/context', requestId, authenticate, async (req: Request, res: R
  * DELETE /api/session/:id/context/:key
  * Remove context from a session
  */
-router.delete('/:id/context/:key', requestId, authenticate, async (req: Request, res: Response) => {
+router.delete('/:id/context/:key', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
     const { id, key } = req.params;
@@ -378,7 +384,7 @@ router.delete('/:id/context/:key', requestId, authenticate, async (req: Request,
  * POST /api/session/:id/pause
  * Pause a session
  */
-router.post('/:id/pause', requestId, authenticate, async (req: Request, res: Response) => {
+router.post('/:id/pause', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
     const { id } = req.params;
@@ -422,7 +428,7 @@ router.post('/:id/pause', requestId, authenticate, async (req: Request, res: Res
  * POST /api/session/:id/resume
  * Resume a session
  */
-router.post('/:id/resume', requestId, authenticate, async (req: Request, res: Response) => {
+router.post('/:id/resume', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
     const { id } = req.params;
@@ -466,7 +472,7 @@ router.post('/:id/resume', requestId, authenticate, async (req: Request, res: Re
  * POST /api/session/:id/end
  * End a session
  */
-router.post('/:id/end', requestId, authenticate, async (req: Request, res: Response) => {
+router.post('/:id/end', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
     const { id } = req.params;
@@ -515,7 +521,7 @@ router.post('/:id/end', requestId, authenticate, async (req: Request, res: Respo
  * POST /api/session/end-all
  * End all active sessions for the current user
  */
-router.post('/end-all', requestId, authenticate, async (req: Request, res: Response) => {
+router.post('/end-all', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
@@ -547,7 +553,7 @@ router.post('/end-all', requestId, authenticate, async (req: Request, res: Respo
  * GET /api/session/stats
  * Get session statistics for the current user
  */
-router.get('/stats', requestId, authenticate, async (req: Request, res: Response) => {
+router.get('/stats', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
@@ -577,7 +583,7 @@ router.get('/stats', requestId, authenticate, async (req: Request, res: Response
  * GET /api/session/count
  * Get active session count for the current user
  */
-router.get('/count', requestId, authenticate, async (req: Request, res: Response) => {
+router.get('/count', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 

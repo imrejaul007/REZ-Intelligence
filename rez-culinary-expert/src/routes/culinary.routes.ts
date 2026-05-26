@@ -6,7 +6,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { Anthropic } from '@anthropic-ai/sdk';
-import { logger } from '../utils/logger.js';
+import { logger } from './utils/logger';
 import {
   CulinaryIntent,
   classifyIntent,
@@ -78,7 +78,7 @@ function validateRequest<T>(schema: z.ZodSchema<T>) {
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
-        details: result.error.errors,
+        details: result.error.issues,
       } as ApiResponse);
     }
     req.body = result.data;

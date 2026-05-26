@@ -1,4 +1,4 @@
-import logger from './utils/logger';
+import { logger } from './utils/logger';
 
 /**
  * REZ Offline Commerce Tracker - Entry Point
@@ -6,9 +6,9 @@ import logger from './utils/logger';
  * Tracks offline commerce events and attributes them to online touchpoints.
  */
 
-const PORT = process.env.PORT || 4112;
+const PORT = process.env.PORT || '4112';
 
-logger.info(`Offline Commerce Tracker starting on port ${PORT}`);
-console.log('[READY] Offline Commerce Tracker`);
+logger.info('Offline Commerce Tracker starting on port ' + PORT);
+console.log('[READY] Offline Commerce Tracker');
 
 export {};

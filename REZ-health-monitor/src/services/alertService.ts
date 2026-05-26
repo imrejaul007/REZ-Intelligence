@@ -1,4 +1,4 @@
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 
 /**
  * Alert Service
@@ -8,6 +8,7 @@ import logger from './utils/logger';
 import axios from 'axios';
 import { getHealthMonitorConfig } from '../config/index.js';
 import { CircuitState } from './circuitBreaker.js';
+import { randomUUID } from 'crypto';
 
 export interface AlertPayload {
   serviceName: string;
@@ -31,7 +32,7 @@ export interface Alert {
 const alertHistory: Alert[] = [];
 const MAX_ALERT_HISTORY = 100;
 
-const ALERT_SEVERITY_COLORS: Record<Alert['severity'], string> = {
+const _ALERT_SEVERITY_COLORS: Record<Alert['severity'], string> = {
   critical: '#f44336',
   warning: '#ff9800',
   info: '#2196f3',
@@ -44,7 +45,7 @@ export async function sendAlert(payload: AlertPayload): Promise<void> {
   const config = getHealthMonitorConfig();
 
   const alert: Alert = {
-    id: `alert_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+    id: `alert_${Date.now()}_${randomUUID().replace(/-/g, '').substring(0, 9)}`,
     type: payload.circuitState === CircuitState.OPEN ? 'circuit_opened' : 'service_down',
     serviceName: payload.serviceName,
     message: `${payload.serviceName} is ${payload.status}${payload.error ? `: ${payload.error}` : ''}`,
@@ -80,7 +81,7 @@ export async function sendRecoveryAlert(
   const config = getHealthMonitorConfig();
 
   const alert: Alert = {
-    id: `alert_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+    id: `alert_${Date.now()}_${randomUUID().replace(/-/g, '').substring(0, 9)}`,
     type: circuitState === CircuitState.HALF_OPEN ? 'circuit_recovered' : 'service_recovered',
     serviceName,
     message: `${serviceName} has recovered. Circuit state: ${circuitState}`,

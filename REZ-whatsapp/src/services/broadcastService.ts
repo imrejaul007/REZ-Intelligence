@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import twilio from 'twilio';
-import { Broadcast, IBroadcast } from '../models/Broadcast';
+import { Broadcast, IBroadcast, IBroadcastModel } from '../models/Broadcast';
 import { Template, ITemplate } from '../models/Template';
 import {
   BroadcastStatus,
@@ -10,7 +10,7 @@ import {
   MessageType,
   TemplateComponent,
 } from '../types/whatsapp';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 interface UserProfile {
   userId: string;
@@ -112,26 +112,27 @@ export class BroadcastService {
       return { success: false, error: 'Broadcast not found' };
     }
 
-    if (!(broadcast as unknown).canStart()) {
+    const broadcastDoc = broadcast as IBroadcast;
+    if (!broadcastDoc.canStart()) {
       return { success: false, error: 'Cannot start broadcast in current state' };
     }
 
     try {
       // Get recipients based on segment
-      const recipients = await this.getRecipients(broadcast.segment, broadcast.merchantId);
+      const recipients = await this.getRecipients(broadcastDoc.segment, broadcastDoc.merchantId);
 
       if (recipients.length === 0) {
         return { success: false, error: 'No recipients found for segment' };
       }
 
       // Initialize broadcast with recipients
-      (broadcast as unknown).start(recipients);
+      await broadcastDoc.start(recipients);
 
       // Get template for sending
-      const template = await Template.findOne({ templateId: broadcast.templateId });
+      const template = await Template.findOne({ templateId: broadcastDoc.templateId });
       if (!template) {
-        broadcast.status = BroadcastStatus.FAILED;
-        await broadcast.save();
+        broadcastDoc.status = BroadcastStatus.FAILED;
+        await broadcastDoc.save();
         return { success: false, error: 'Template not found' };
       }
 
@@ -315,9 +316,13 @@ export class BroadcastService {
     success: boolean;
     broadcast?: IBroadcast;
     progress?: {
-      percentage: number;
-      eta?: number;
-      status: string;
+      total: number;
+      sent: number;
+      delivered: number;
+      read: number;
+      failed: number;
+      startTime: Date;
+      endTime?: Date;
     };
     error?: string;
   }> {
@@ -326,10 +331,11 @@ export class BroadcastService {
       return { success: false, error: 'Broadcast not found' };
     }
 
+    const broadcastDoc = broadcast as IBroadcast;
     return {
       success: true,
-      broadcast,
-      progress: (broadcast as unknown).getProgress?.() || broadcast.progress,
+      broadcast: broadcastDoc,
+      progress: broadcastDoc.getProgress(),
     };
   }
 
@@ -360,6 +366,8 @@ export class BroadcastService {
   }
 
   private async getAllUsers(merchantId?: string): Promise<UserProfile[]> {
+    const USER_SERVICE_TIMEOUT_MS = 8000; // 8 second timeout
+
     // Call user service to get all users
     try {
       const response = await axios.get(`${this.userServiceUrl}/api/users`, {
@@ -367,7 +375,17 @@ export class BroadcastService {
         headers: {
           'X-Internal-Token': process.env.INTERNAL_SERVICE_TOKEN,
         },
+        timeout: USER_SERVICE_TIMEOUT_MS,
       });
+
+      // Validate response structure
+      if (!response.data || !Array.isArray(response.data.users)) {
+        logger.error('Invalid user service response structure', {
+          orderId: 'N/A',
+          response: typeof response.data,
+        });
+        return [];
+      }
 
       return response.data.users.map((user: Record<string, unknown>) => ({
         userId: user.id as string,
@@ -376,16 +394,36 @@ export class BroadcastService {
         merchantId: user.merchantId as string,
       }));
     } catch (error) {
-      logger.warn('User service unavailable, using mock data', { error });
-      // Return mock data for development
-      return [
-        { userId: 'user1', phone: '+919876543210', name: 'Test User 1' },
-        { userId: 'user2', phone: '+919876543211', name: 'Test User 2' },
-      ];
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      logger.error('Failed to get users from user service', {
+        error: errorMessage,
+        errorCode: (error as { code?: string }).code,
+        merchantId: merchantId || 'all',
+      });
+
+      // CRITICAL FIX: Return empty array instead of silently falling back to mock data
+      // This prevents broadcast from sending to unintended test users
+      // Only use mock data in development:
+      if (process.env.NODE_ENV === 'development') {
+        logger.warn('DEV MODE: Using mock users due to service failure', { error: errorMessage });
+        return [
+          { userId: 'user1', phone: '+919876543210', name: 'Test User 1' },
+          { userId: 'user2', phone: '+919876543211', name: 'Test User 2' },
+        ];
+      }
+
+      return [];
     }
   }
 
   private async getUsersByMerchant(merchantId?: string): Promise<UserProfile[]> {
+    const USER_SERVICE_TIMEOUT_MS = 8000; // 8 second timeout
+
+    if (!merchantId) {
+      return [];
+    }
+
     try {
       const response = await axios.get(
         `${this.userServiceUrl}/api/users/merchant/${merchantId}`,
@@ -393,8 +431,15 @@ export class BroadcastService {
           headers: {
             'X-Internal-Token': process.env.INTERNAL_SERVICE_TOKEN,
           },
+          timeout: USER_SERVICE_TIMEOUT_MS,
         }
       );
+
+      // Validate response structure
+      if (!response.data || !Array.isArray(response.data.users)) {
+        logger.error('Invalid merchant users response', { merchantId });
+        return [];
+      }
 
       return response.data.users.map((user: Record<string, unknown>) => ({
         userId: user.id as string,
@@ -403,12 +448,24 @@ export class BroadcastService {
         merchantId: merchantId,
       }));
     } catch (error) {
-      logger.error('Failed to get merchant users', { merchantId, error });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      logger.error('Failed to get merchant users', {
+        merchantId,
+        error: errorMessage,
+        errorCode: (error as { code?: string }).code,
+      });
       return [];
     }
   }
 
   private async getUsersByTags(tags: string[]): Promise<UserProfile[]> {
+    const USER_SERVICE_TIMEOUT_MS = 8000; // 8 second timeout
+
+    if (!tags || tags.length === 0) {
+      return [];
+    }
+
     try {
       const response = await axios.post(
         `${this.userServiceUrl}/api/users/by-tags`,
@@ -417,8 +474,15 @@ export class BroadcastService {
           headers: {
             'X-Internal-Token': process.env.INTERNAL_SERVICE_TOKEN,
           },
+          timeout: USER_SERVICE_TIMEOUT_MS,
         }
       );
+
+      // Validate response structure
+      if (!response.data || !Array.isArray(response.data.users)) {
+        logger.error('Invalid users by tags response', { tags });
+        return [];
+      }
 
       return response.data.users.map((user: Record<string, unknown>) => ({
         userId: user.id as string,
@@ -427,12 +491,24 @@ export class BroadcastService {
         tags: user.tags as string[],
       }));
     } catch (error) {
-      logger.error('Failed to get users by tags', { tags, error });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      logger.error('Failed to get users by tags', {
+        tags,
+        error: errorMessage,
+        errorCode: (error as { code?: string }).code,
+      });
       return [];
     }
   }
 
   private async getCustomRecipients(userIds: string[]): Promise<UserProfile[]> {
+    const USER_SERVICE_TIMEOUT_MS = 8000; // 8 second timeout
+
+    if (!userIds || userIds.length === 0) {
+      return [];
+    }
+
     try {
       const response = await axios.post(
         `${this.userServiceUrl}/api/users/batch`,
@@ -441,8 +517,15 @@ export class BroadcastService {
           headers: {
             'X-Internal-Token': process.env.INTERNAL_SERVICE_TOKEN,
           },
+          timeout: USER_SERVICE_TIMEOUT_MS,
         }
       );
+
+      // Validate response structure
+      if (!response.data || !Array.isArray(response.data.users)) {
+        logger.error('Invalid batch users response', { userIds: userIds.length });
+        return [];
+      }
 
       return response.data.users.map((user: Record<string, unknown>) => ({
         userId: user.id as string,
@@ -450,7 +533,13 @@ export class BroadcastService {
         name: user.name as string,
       }));
     } catch (error) {
-      logger.error('Failed to get custom recipients', { userIds, error });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      logger.error('Failed to get custom recipients', {
+        userIds: userIds.length,
+        error: errorMessage,
+        errorCode: (error as { code?: string }).code,
+      });
       return [];
     }
   }
@@ -541,14 +630,25 @@ export class BroadcastService {
     avgDeliveryRate: number;
     avgReadRate: number;
   }> {
-    return (Broadcast as unknown).getBroadcastStats?.(merchantId) || { total: 0, byStatus: {}, avgDeliveryRate: 0, avgReadRate: 0 };
+    const stats = await (Broadcast as IBroadcastModel).getBroadcastStats(merchantId);
+    if (!stats || typeof stats !== 'object') {
+      return { total: 0, byStatus: {}, avgDeliveryRate: 0, avgReadRate: 0 };
+    }
+    // Transform stats to expected format
+    const s = stats as Record<string, unknown>;
+    return {
+      total: (s.total as number) || 0,
+      byStatus: (s.byStatus as Record<string, number>) || {},
+      avgDeliveryRate: (s.avgDeliveryRate as number) || 0,
+      avgReadRate: (s.avgReadRate as number) || 0,
+    };
   }
 
   /**
    * Process scheduled broadcasts
    */
   async processScheduledBroadcasts(): Promise<number> {
-    const scheduled = await (Broadcast as unknown).findScheduled?.() || [];
+    const scheduled = await (Broadcast as IBroadcastModel).findScheduled();
     let processed = 0;
 
     for (const broadcast of scheduled) {

@@ -8,7 +8,7 @@
 import mongoose from 'mongoose';
 import axios from 'axios';
 import { CSATSurvey, CSATMetrics } from '../types';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-care';
 
@@ -85,7 +85,7 @@ export class CSATService {
     // Check if survey already exists
     const existing = await CSATSurveyModel.findOne({ ticketId, status: { $ne: 'expired' } });
     if (existing) {
-      return existing.toObject() as unknown;
+      return existing.toObject() as unknown as CSATSurvey;
     }
 
     // Get customer preference
@@ -128,7 +128,7 @@ export class CSATService {
 
     logger.info('CSAT survey sent', { ticketId, customerId, channel: customerChannel });
 
-    return survey.toObject() as unknown;
+    return survey.toObject() as unknown as CSATSurvey;
   }
 
   /**
@@ -356,7 +356,7 @@ export class CSATService {
   // ============================================
 
   private async sendSurveyNotification(
-    survey,
+    survey: InstanceType<typeof CSATSurveyModel>,
     customer: { phone?: string; email?: string }
   ): Promise<void> {
     const messages: Record<string, { title: string; body: string }> = {
@@ -394,11 +394,19 @@ export class CSATService {
         { headers: { 'X-Internal-Token': INTERNAL_TOKEN }, timeout: 5000 }
       );
     } catch (error) {
-      logger.error('Failed to send survey notification', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to send survey notification', {
+        error: errorMsg,
+        surveyId: survey._id.toString(),
+        customerId: survey.customerId,
+        channel: survey.channel
+      });
+      // Return error to caller so they know notification failed
+      throw new Error(`Survey notification failed: ${errorMsg}`);
     }
   }
 
-  private async sendThankYouNotification(customerId: string, channel: string): Promise<void> {
+  private async sendThankYouNotification(customerId: string, channel: string): Promise<{ success: boolean; error?: string }> {
     try {
       await axios.post(
         `${NOTIFICATIONS_URL}/api/notifications/send`,
@@ -406,7 +414,7 @@ export class CSATService {
           userId: customerId,
           type: 'csat_thankyou',
           channel,
-          title: 'Thank You! 🎉',
+          title: 'Thank You!',
           body: 'Thank you for your positive feedback! As a token of appreciation, we\'ve credited 5 NC to your wallet.'
         },
         { headers: { 'X-Internal-Token': INTERNAL_TOKEN }, timeout: 5000 }
@@ -423,8 +431,17 @@ export class CSATService {
         },
         { headers: { 'X-Internal-Token': INTERNAL_TOKEN }, timeout: 5000 }
       );
+
+      logger.info('Thank you notification sent', { customerId, channel });
+      return { success: true };
     } catch (error) {
-      logger.error('Failed to send thank you', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to send thank you notification', {
+        error: errorMsg,
+        customerId,
+        channel
+      });
+      return { success: false, error: errorMsg };
     }
   }
 
@@ -433,10 +450,10 @@ export class CSATService {
     customerId: string,
     rating: number,
     feedback?: string
-  ): Promise<void> {
+  ): Promise<{ success: boolean; alertTicketId?: string; error?: string }> {
     // Create high-priority ticket for follow-up
     try {
-      await axios.post(
+      const response = await axios.post(
         `${process.env.SUPPORT_SERVICE_URL || 'https://rez-support-dashboard.onrender.com'}/api/tickets`,
         {
           type: 'csat_followup',
@@ -448,20 +465,45 @@ export class CSATService {
         },
         { headers: { 'X-Internal-Token': INTERNAL_TOKEN }, timeout: 5000 }
       );
+
+      logger.warn('Low rating alert created', {
+        ticketId,
+        customerId,
+        rating,
+        followupTicketId: response.data?.ticketId
+      });
+
+      return { success: true, alertTicketId: response.data?.ticketId };
     } catch (error) {
-      logger.error('Failed to create low rating alert', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to create low rating alert', {
+        error: errorMsg,
+        ticketId,
+        customerId,
+        rating
+      });
+      return { success: false, error: errorMsg };
     }
   }
 
-  private async updateCustomerSentiment(customerId: string, sentiment: string): Promise<void> {
+  private async updateCustomerSentiment(customerId: string, sentiment: string): Promise<{ success: boolean; error?: string }> {
     try {
       await axios.post(
         `${process.env.PROFILE_SERVICE_URL || 'https://rez-profile-service.onrender.com'}/api/profile/update-sentiment`,
         { customerId, sentiment },
         { headers: { 'X-Internal-Token': INTERNAL_TOKEN }, timeout: 5000 }
       );
+
+      logger.info('Customer sentiment updated', { customerId, sentiment });
+      return { success: true };
     } catch (error) {
-      logger.error('Failed to update customer sentiment', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to update customer sentiment', {
+        error: errorMsg,
+        customerId,
+        sentiment
+      });
+      return { success: false, error: errorMsg };
     }
   }
 }

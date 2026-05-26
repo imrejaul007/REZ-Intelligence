@@ -1,11 +1,13 @@
 import { v4 as uuidv4 } from 'uuid';
+import { randomInt } from 'crypto';
 import {
   Ticket,
   TicketStatus,
   TicketPriority,
   TicketCategory,
   TicketMessage,
-  TicketResolution
+  TicketResolution,
+  TicketSource
 } from './supportAgent';
 
 interface TicketFilter {
@@ -57,7 +59,7 @@ class TicketService {
       status: ticketData.status || TicketStatus.OPEN,
       priority: ticketData.priority || TicketPriority.MEDIUM,
       category: ticketData.category || TicketCategory.GENERAL,
-      source: ticketData.source || 'chat' as unknown,
+      source: (ticketData.source || 'chat') as TicketSource,
       customerId: ticketData.customerId || 'anonymous',
       customerName: ticketData.customerName || 'Anonymous',
       customerEmail: ticketData.customerEmail || 'unknown@example.com',
@@ -516,7 +518,7 @@ class TicketService {
   }
 
   private generateDisplayId(): string {
-    const num = Math.floor(Math.random() * 90000) + 10000;
+    const num = randomInt(10000, 100000);
     return `TKT-${num}`;
   }
 

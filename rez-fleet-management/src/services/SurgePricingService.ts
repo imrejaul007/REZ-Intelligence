@@ -2,6 +2,7 @@
  * REZ Fleet Management - Surge Pricing Service
  */
 
+import crypto from 'crypto';
 import { SurgeZone, GeoLocation } from '../types';
 
 export class SurgePricingService {
@@ -20,9 +21,9 @@ export class SurgePricingService {
     const ratio = pendingOrders / activeRiders;
 
     // Surge zones
-    if (ratio >= 3) return 2.0 + Math.random() * 0.5;
-    if (ratio >= 2) return 1.5 + Math.random() * 0.5;
-    if (ratio >= 1.5) return 1.2 + Math.random() * 0.3;
+    if (ratio >= 3) return 2.0 + crypto.randomInt(50) / 100;
+    if (ratio >= 2) return 1.5 + crypto.randomInt(50) / 100;
+    if (ratio >= 1.5) return 1.2 + crypto.randomInt(30) / 100;
     if (ratio >= 1) return 1.1;
 
     return this.baseMultiplier;

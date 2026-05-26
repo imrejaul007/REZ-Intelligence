@@ -4,7 +4,7 @@
  */
 
 import { Kafka, logLevel } from 'kafkajs';
-import { logger } from '../utils/logger.js';
+import { logger } from './utils/logger.js';
 
 const KAFKA_BROKERS = (process.env.KAFKA_BROKERS || 'localhost:9092').split(',');
 const KAFKA_CLIENT_ID = process.env.KAFKA_CLIENT_ID || 'rez-feedback-collector';

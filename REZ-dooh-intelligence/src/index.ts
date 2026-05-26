@@ -3,13 +3,13 @@
  * Connects DOOH screens to user intelligence for targeted advertising
  */
 
-import express import logger from './utils/logger';
-import from 'express';
+import express, { json, urlencoded, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import mongoose from 'mongoose';
-import { rateLimit } from 'express-rate-limit';
-import { v4 as uuidv4 } from 'uuid';
+import rateLimit from 'express-rate-limit';
+import { logger } from './utils/logger.js';
+import { createAuthMiddleware, errorHandler, notFoundHandler } from './middleware/index.js';
 
 import {
   DOOHPricingRequest,
@@ -28,18 +28,52 @@ const app = express();
 const PORT = parseInt(process.env.PORT || '4080', 10);
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/dooh-intelligence';
 
-// Middleware
-app.use(helmet());
-app.use(cors());
-app.use(express.json());
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
+}));
+
+// CORS configuration
+app.use(cors({
+  origin: (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,https://rez.money').split(','),
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-internal-token'],
+}));
 
 // Rate limiting
-const limiter = rateLimit({
+app.use('/api', rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 1000,
   message: { error: 'Too many requests' },
-});
-app.use('/api/', limiter);
+  standardHeaders: true,
+  legacyHeaders: false,
+}));
+
+// Body parsing with size limits
+app.use(json({ limit: '1mb' }));
+app.use(urlencoded({ extended: true, limit: '1mb' }));
+
+// Auth middleware
+const apiKeys = (process.env.API_KEYS || '').split(',').filter(Boolean);
+const internalTokens = (process.env.INTERNAL_TOKENS || '').split(',').filter(Boolean);
+app.use(createAuthMiddleware({
+  apiKeys,
+  internalTokens,
+  bypassPaths: ['/health', '/ready'],
+}));
 
 // Health check
 app.get('/health', (_req, res) => {
@@ -48,6 +82,11 @@ app.get('/health', (_req, res) => {
     service: 'rez-dooh-intelligence',
     timestamp: new Date().toISOString(),
   });
+});
+
+app.get('/ready', (_req, res) => {
+  const mongoStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  res.json({ status: 'ready', mongodb: mongoStatus, timestamp: new Date().toISOString() });
 });
 
 // ============================================================================
@@ -74,7 +113,6 @@ app.get('/api/screens/types', (_req, res) => {
     };
   });
 
-  // Group by captivity level
   const grouped = screens.reduce((acc, screen) => {
     if (!acc[screen.captivityLevel]) {
       acc[screen.captivityLevel] = [];
@@ -85,10 +123,7 @@ app.get('/api/screens/types', (_req, res) => {
 
   res.json({
     success: true,
-    data: {
-      screens,
-      grouped,
-    },
+    data: { screens, grouped },
   });
 });
 
@@ -96,11 +131,10 @@ app.get('/api/screens/types', (_req, res) => {
  * POST /api/pricing/calculate
  * Calculate dynamic pricing for a DOOH ad
  */
-app.post('/api/pricing/calculate', (req, res) => {
+app.post('/api/pricing/calculate', (req: Request, res: Response) => {
   try {
     const request: DOOHPricingRequest = req.body;
 
-    // Validate required fields
     if (!request.screenType || !request.location || !request.scheduledTime) {
       res.status(400).json({
         success: false,
@@ -128,7 +162,7 @@ app.post('/api/pricing/calculate', (req, res) => {
  * POST /api/pricing/duration
  * Calculate pricing for a specific duration
  */
-app.post('/api/pricing/duration', (req, res) => {
+app.post('/api/pricing/duration', (req: Request, res: Response) => {
   try {
     const { request, durationMinutes } = req.body;
 
@@ -201,7 +235,7 @@ app.get('/api/pricing/multipliers', (_req, res) => {
  * POST /api/targeting/users
  * Find targeted users for a DOOH screen
  */
-app.post('/api/targeting/users', async (req, res) => {
+app.post('/api/targeting/users', async (req: Request, res: Response) => {
   try {
     const request: DOOHTargetingRequest = req.body;
 
@@ -217,10 +251,7 @@ app.post('/api/targeting/users', async (req, res) => {
 
     res.json({
       success: true,
-      data: {
-        count: users.length,
-        users,
-      },
+      data: { count: users.length, users },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -235,7 +266,7 @@ app.post('/api/targeting/users', async (req, res) => {
  * GET /api/targeting/screen-profile/:screenType
  * Get typical audience profile for a screen type
  */
-app.get('/api/targeting/screen-profile/:screenType', (req, res) => {
+app.get('/api/targeting/screen-profile/:screenType', (req: Request, res: Response) => {
   const { screenType } = req.params;
 
   const profile = {
@@ -253,10 +284,7 @@ app.get('/api/targeting/screen-profile/:screenType', (req, res) => {
     },
   };
 
-  res.json({
-    success: true,
-    data: profile,
-  });
+  res.json({ success: true, data: profile });
 });
 
 // ============================================================================
@@ -377,17 +405,12 @@ app.get('/api/demo/pricing', (_req, res) => {
     };
   });
 
-  res.json({
-    success: true,
-    data: demos,
-  });
+  res.json({ success: true, data: demos });
 });
 
-// Error handler
-app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error('Error:', err);
-  res.status(500).json({ success: false, error: 'Internal server error' });
-});
+// Error handling
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 // Start server
 async function start(): Promise<void> {
@@ -399,11 +422,8 @@ async function start(): Promise<void> {
       logger.info(`[${new Date().toISOString()}] DOOH Intelligence running on port ${PORT}`);
     });
   } catch (error) {
-    console.error('Startup error:', error);
-    // Start without MongoDB for now
-    app.listen(PORT, () => {
-      logger.info(`[${new Date().toISOString()}] DOOH Intelligence running on port ${PORT} (without MongoDB)`);
-    });
+    logger.error('Failed to start server', { error: error instanceof Error ? error.message : 'Unknown' });
+    process.exit(1);
   }
 }
 

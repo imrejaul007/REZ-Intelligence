@@ -7,7 +7,7 @@ import { ModelVersion } from '../models/index.js';
 import { ExportRequestSchema } from '../utils/validators.js';
 import { ValidationError, NotFoundError } from '../utils/errors.js';
 import { z } from 'zod';
-import logger from '../utils/logger.js';
+import logger from './utils/logger';
 
 const router = Router();
 
@@ -18,7 +18,7 @@ const validateBody = (schema: z.ZodSchema) => {
       const result = schema.safeParse(req.body);
       if (!result.success) {
         throw new ValidationError('Invalid request body', {
-          errors: result.error.errors,
+          errors: result.error.issues,
         });
       }
       req.body = result.data;

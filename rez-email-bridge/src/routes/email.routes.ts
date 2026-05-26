@@ -33,7 +33,7 @@ router.post('/email/send', async (req: Request, res: Response) => {
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
-        details: validation.error.errors
+        details: validation.error.issues
       });
     }
 
@@ -67,7 +67,7 @@ router.post('/email/send-template', async (req: Request, res: Response) => {
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
-        details: validation.error.errors
+        details: validation.error.issues
       });
     }
 

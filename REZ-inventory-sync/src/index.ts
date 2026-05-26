@@ -3,7 +3,6 @@ import express, { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
-import { v4 as uuidv4 } from 'uuid';
 import { logger, requestIdMiddleware } from './logger';
 import { errorHandler, asyncHandler } from './errors';
 import { syncEngine } from './services/InventorySyncEngine';

@@ -11,9 +11,15 @@ import {
 } from '../types/index.js';
 import { cacheGet, cacheSet } from '../utils/redis.js';
 import { CACHE_TTL } from '../constants/thresholds.js';
-import logger from '../utils/logger.js';
+import logger from './utils/logger.js';
 
 const log = logger.child({ context: 'BusinessAnalysisService' });
+
+// Seeded random for deterministic mock data
+function seededRandom(seed: number, offset: number): number {
+  const x = Math.sin(seed + offset) * 10000;
+  return x - Math.floor(x);
+}
 
 // Mock data sources - In production, these would call actual services
 interface DataSource {
@@ -246,8 +252,9 @@ class BusinessAnalysisService {
 
   private analyzeCustomerBehavior(): CustomerBehavior[] {
     const segments = ['VIP', 'Regular', 'New', 'At-Risk', 'Dormant'];
+    const baseSeed = Date.now();
 
-    return segments.map((segmentName) => {
+    return segments.map((segmentName, idx) => {
       const segmentCustomers = this.dataSource.customers.filter(
         (c) => c.segment === segmentName
       );
@@ -273,22 +280,24 @@ class BusinessAnalysisService {
         ? activeCustomers.length / segmentCustomers.length
         : 0;
 
+      const segSeed = baseSeed + idx * 1000;
+
       return {
         segmentId: segmentName.toLowerCase().replace('-', '_'),
         segmentName,
-        totalCustomers: segmentCustomers.length || Math.floor(Math.random() * 500) + 100,
-        activeCustomers: activeCustomers.length || Math.floor(Math.random() * 300) + 50,
-        avgPurchaseFrequency: avgPurchaseFrequency || Math.random() * 5 + 1,
-        avgOrderValue: avgOrderValue || Math.random() * 1000 + 500,
-        retentionRate: retentionRate || Math.random() * 0.4 + 0.5,
-        churnRate: Math.random() * 0.3 + 0.05,
+        totalCustomers: segmentCustomers.length || Math.floor(seededRandom(segSeed, 1) * 500) + 100,
+        activeCustomers: activeCustomers.length || Math.floor(seededRandom(segSeed, 2) * 300) + 50,
+        avgPurchaseFrequency: avgPurchaseFrequency || seededRandom(segSeed, 3) * 5 + 1,
+        avgOrderValue: avgOrderValue || seededRandom(segSeed, 4) * 1000 + 500,
+        retentionRate: retentionRate || seededRandom(segSeed, 5) * 0.4 + 0.5,
+        churnRate: seededRandom(segSeed, 6) * 0.3 + 0.05,
         topCategories: [
-          { category: 'Packages', revenue: Math.random() * 100000, percentage: 40 },
-          { category: 'Enterprise', revenue: Math.random() * 80000, percentage: 30 },
-          { category: 'Add-ons', revenue: Math.random() * 50000, percentage: 20 },
+          { category: 'Packages', revenue: seededRandom(segSeed, 7) * 100000, percentage: 40 },
+          { category: 'Enterprise', revenue: seededRandom(segSeed, 8) * 80000, percentage: 30 },
+          { category: 'Add-ons', revenue: seededRandom(segSeed, 9) * 50000, percentage: 20 },
         ],
         trends: {
-          growth: Math.random() * 0.3 - 0.1,
+          growth: seededRandom(segSeed, 10) * 0.3 - 0.1,
           direction: 'up' as const,
         },
       };
@@ -297,18 +306,19 @@ class BusinessAnalysisService {
 
   private analyzePurchasePatterns(): PurchasePattern[] {
     const periods = ['Last 7 days', 'Last 30 days', 'Last 90 days'];
+    const baseSeed = Date.now();
 
-    return periods.map((period) => {
+    return periods.map((period, periodIdx) => {
       const days = period.includes('7') ? 7 : period.includes('30') ? 30 : 90;
-      const baseOrders = Math.floor(Math.random() * 500) + 100;
+      const baseOrders = Math.floor(seededRandom(baseSeed, periodIdx * 100) * 500) + 100;
 
       return {
         period,
         totalOrders: baseOrders,
-        totalRevenue: baseOrders * (Math.random() * 500 + 800),
-        avgOrderValue: Math.random() * 500 + 800,
-        repeatPurchaseRate: Math.random() * 0.4 + 0.2,
-        avgItemsPerOrder: Math.random() * 3 + 2,
+        totalRevenue: baseOrders * (seededRandom(baseSeed, periodIdx * 100 + 1) * 500 + 800),
+        avgOrderValue: seededRandom(baseSeed, periodIdx * 100 + 2) * 500 + 800,
+        repeatPurchaseRate: seededRandom(baseSeed, periodIdx * 100 + 3) * 0.4 + 0.2,
+        avgItemsPerOrder: seededRandom(baseSeed, periodIdx * 100 + 4) * 3 + 2,
         topProducts: [
           { productId: 'prod-1', name: 'Premium Package', quantity: Math.floor(baseOrders * 0.3), revenue: baseOrders * 0.3 * 500 },
           { productId: 'prod-2', name: 'Basic Package', quantity: Math.floor(baseOrders * 0.4), revenue: baseOrders * 0.4 * 500 },
@@ -316,25 +326,26 @@ class BusinessAnalysisService {
         ],
         peakHours: Array.from({ length: 12 }, (_, i) => ({
           hour: i + 9,
-          orders: Math.floor(Math.random() * 50) + 10,
+          orders: Math.floor(seededRandom(baseSeed, periodIdx * 100 + 5 + i) * 50) + 10,
         })),
         peakDays: [
-          { day: 'Monday', orders: Math.floor(Math.random() * 100) + 50 },
-          { day: 'Tuesday', orders: Math.floor(Math.random() * 100) + 50 },
-          { day: 'Wednesday', orders: Math.floor(Math.random() * 100) + 50 },
-          { day: 'Thursday', orders: Math.floor(Math.random() * 100) + 50 },
-          { day: 'Friday', orders: Math.floor(Math.random() * 150) + 80 },
-          { day: 'Saturday', orders: Math.floor(Math.random() * 80) + 40 },
-          { day: 'Sunday', orders: Math.floor(Math.random() * 60) + 30 },
+          { day: 'Monday', orders: Math.floor(seededRandom(baseSeed, periodIdx * 100 + 20) * 100) + 50 },
+          { day: 'Tuesday', orders: Math.floor(seededRandom(baseSeed, periodIdx * 100 + 21) * 100) + 50 },
+          { day: 'Wednesday', orders: Math.floor(seededRandom(baseSeed, periodIdx * 100 + 22) * 100) + 50 },
+          { day: 'Thursday', orders: Math.floor(seededRandom(baseSeed, periodIdx * 100 + 23) * 100) + 50 },
+          { day: 'Friday', orders: Math.floor(seededRandom(baseSeed, periodIdx * 100 + 24) * 150) + 80 },
+          { day: 'Saturday', orders: Math.floor(seededRandom(baseSeed, periodIdx * 100 + 25) * 80) + 40 },
+          { day: 'Sunday', orders: Math.floor(seededRandom(baseSeed, periodIdx * 100 + 26) * 60) + 30 },
         ],
       };
     });
   }
 
   private analyzeProductPerformance(): ProductPerformance[] {
-    return this.dataSource.products.map((product) => {
+    const baseSeed = Date.now();
+    return this.dataSource.products.map((product, idx) => {
       const revenue = product.totalSold * product.price;
-      const growthRate = (Math.random() * 0.4 - 0.1);
+      const growthRate = (seededRandom(baseSeed, idx * 100) * 0.4 - 0.1);
 
       return {
         productId: product.id,

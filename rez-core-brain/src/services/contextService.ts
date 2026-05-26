@@ -36,12 +36,10 @@ export class ContextService {
   private async initRedis(): Promise<void> {
     try {
       const redisConfig = getRedisConfig();
-      this.redis = new Redis({
-        host: redisConfig.url.replace('redis://', '').split(':')[0],
-        port: parseInt(redisConfig.url.split(':')[2] || '6379', 10),
+      this.redis = new Redis(redisConfig.url, {
         password: redisConfig.password || undefined,
-        db: redisConfig.db,
-        retryDelayOnFailover: 100,
+        db: redisConfig.db ?? 0,
+        retryStrategy: (times: number) => Math.min(times * 100, 3000),
         maxRetriesPerRequest: 3,
       });
 

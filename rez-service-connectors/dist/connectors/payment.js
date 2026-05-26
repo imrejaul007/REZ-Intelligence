@@ -1,13 +1,17 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PaymentConnector = void 0;
+exports.getPaymentConnector = getPaymentConnector;
+const logger_1 = __importDefault(require("./utils/logger"));
 /**
  * Payment Service Connector
  *
  * Connects to rez-payment-service (Port 4001) for payment processing,
  * refunds, and transaction management.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.PaymentConnector = void 0;
-exports.getPaymentConnector = getPaymentConnector;
 const client_1 = require("../utils/client");
 const DEFAULT_CONFIG = {
     timeout: 30000,
@@ -201,7 +205,7 @@ function getInternalToken() {
         return tokens.orchestrator || tokens.payment || '';
     }
     catch {
-        console.warn('[PaymentConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+        logger_1.default.warn('[PaymentConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
         return '';
     }
 }

@@ -170,7 +170,7 @@ router.post('/visit',
         res.status(400).json({
           success: false,
           error: 'Validation failed',
-          details: validation.error.errors,
+          details: validation.error.issues,
           timestamp: new Date()
         });
         return;
@@ -222,7 +222,7 @@ router.post('/detect',
         res.status(400).json({
           success: false,
           error: 'Validation failed',
-          details: validation.error.errors,
+          details: validation.error.issues,
           timestamp: new Date()
         });
         return;
@@ -261,7 +261,7 @@ router.get('/list/switchers',
         res.status(400).json({
           success: false,
           error: 'Invalid query parameters',
-          details: queryValidation.error.errors,
+          details: queryValidation.error.issues,
           timestamp: new Date()
         });
         return;
@@ -305,7 +305,7 @@ router.get('/list/winback',
         res.status(400).json({
           success: false,
           error: 'Invalid query parameters',
-          details: queryValidation.error.errors,
+          details: queryValidation.error.issues,
           timestamp: new Date()
         });
         return;

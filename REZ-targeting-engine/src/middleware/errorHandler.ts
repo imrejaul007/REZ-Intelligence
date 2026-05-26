@@ -1,124 +1,45 @@
 import { Request, Response, NextFunction } from 'express';
-import winston from 'winston';
-
-const { combine, timestamp, printf, colorize, errors } = winston.format;
-
-const logFormat = printf(({ level, message, timestamp, stack }) => {
-  return `${timestamp} [${level}]: ${stack || message}`;
-});
-
-export const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
-  format: combine(
-    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    errors({ stack: true }),
-    logFormat
-  ),
-  transports: [
-    new winston.transports.Console({
-      format: combine(colorize(), logFormat)
-    })
-  ]
-});
+import { logger } from './utils/logger.js';
 
 export class AppError extends Error {
-  statusCode: number;
-  isOperational: boolean;
-
-  constructor(message: string, statusCode: number) {
+  constructor(
+    public statusCode: number,
+    public code: string,
+    message: string
+  ) {
     super(message);
-    this.statusCode = statusCode;
-    this.isOperational = true;
-    Error.captureStackTrace(this, this.constructor);
+    this.name = 'AppError';
   }
 }
 
-export class NotFoundError extends AppError {
-  constructor(resource: string) {
-    super(`${resource} not found`, 404);
-  }
-}
-
-export class ValidationError extends AppError {
-  errors: unknown[];
-
-  constructor(message: string, errors: unknown[] = []) {
-    super(message, 400);
-    this.errors = errors;
-  }
-}
-
-export class ConflictError extends AppError {
-  constructor(message: string) {
-    super(message, 409);
-  }
-}
-
-export const errorHandler = (
-  err: Error | AppError,
+export function errorHandler(
+  err: Error,
   req: Request,
   res: Response,
-  next: NextFunction
-) => {
+  _next: NextFunction
+): void {
+  logger.error(`[${req.method}] ${req.path}:`, err.message);
+
   if (err instanceof AppError) {
-    logger.error(`${err.statusCode} - ${err.message}`, {
-      statusCode: err.statusCode,
-      message: err.message,
-      path: req.path,
-      method: req.method
-    });
-
-    return res.status(err.statusCode).json({
+    res.status(err.statusCode).json({
       success: false,
-      error: {
-        message: err.message,
-        ...(err instanceof ValidationError && { details: err.errors })
-      }
+      error: err.code,
+      message: err.message,
     });
+    return;
   }
 
-  // Programming or unknown errors
-  logger.error('Internal Error:', {
-    message: err.message,
-    stack: err.stack,
-    path: req.path,
-    method: req.method
-  });
-
-  return res.status(500).json({
+  res.status(500).json({
     success: false,
-    error: {
-      message: 'Internal server error',
-      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-    }
+    error: 'INTERNAL_ERROR',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
   });
-};
+}
 
-export const asyncHandler = (
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>
-) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-};
-
-export const requestLogger = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const start = Date.now();
-
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    logger.info(`${req.method} ${req.path}`, {
-      method: req.method,
-      path: req.path,
-      statusCode: res.statusCode,
-      duration: `${duration}ms`,
-      ip: req.ip
-    });
+export function notFoundHandler(req: Request, res: Response): void {
+  res.status(404).json({
+    success: false,
+    error: 'NOT_FOUND',
+    message: `Route ${req.method} ${req.path} not found`,
   });
-
-  next();
-};
+}

@@ -1,14 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError, ZodSchema } from 'zod';
-import logger from '../utils/logger.js';
+import logger from './utils/logger.js';
 
 /**
  * Custom Application Error
  */
 export class AppError extends Error {
-  public readonly statusCode: number;
-  public readonly isOperational: boolean;
-  public readonly details?: Record<string, unknown>;
+  public statusCode: number;
+  public isOperational: boolean;
+  public details?: Record<string, unknown>;
 
   constructor(
     message: string,
@@ -201,7 +201,8 @@ export function validateRequest<T>(schema: ZodSchema<T>) {
 export function validateQuery<T>(schema: ZodSchema<T>) {
   return (req: Request, res: Response, next: NextFunction): void => {
     try {
-      req.query = schema.parse(req.query) as typeof req.query;
+      const parsed = schema.parse(req.query);
+      req.query = parsed as typeof req.query;
       next();
     } catch (error) {
       next(error);
@@ -213,7 +214,7 @@ export function validateQuery<T>(schema: ZodSchema<T>) {
  * URL Parameters Validation Middleware Factory
  */
 export function validateParams<T>(schema: ZodSchema<T>) {
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return (req: Request, _res: Response, next: NextFunction): void => {
     try {
       req.params = schema.parse(req.params) as typeof req.params;
       next();

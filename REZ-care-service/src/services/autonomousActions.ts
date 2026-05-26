@@ -8,7 +8,7 @@
  * - CorpPerks: HR routing
  */
 
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { serviceConnector } from './serviceConnector';
 
 export interface TicketContext {
@@ -218,24 +218,25 @@ class AutonomousActionsEngine {
   }
 
   private async executeRABTULAction(action: AutonomousAction): Promise<unknown> {
+    const params = action.params as Record<string, unknown>;
     switch (action.type) {
       case 'credit_wallet':
         return serviceConnector.creditWallet(
-          action.params.customerId,
-          action.params.amount,
-          action.params.reason
+          String(params.customerId),
+          Number(params.amount),
+          String(params.reason)
         );
       case 'send_notification':
         return serviceConnector.sendNotification(
-          action.params.customerId,
-          action.params.type,
-          action.params.message
+          String(params.customerId),
+          String(params.type),
+          String(params.message)
         );
       case 'process_refund':
         return serviceConnector.processRefund(
-          action.params.orderId,
-          action.params.amount || 0,
-          action.params.reason
+          String(params.orderId),
+          Number(params.amount) || 0,
+          String(params.reason)
         );
       default:
         return { success: true };
@@ -243,23 +244,24 @@ class AutonomousActionsEngine {
   }
 
   private async executeREZMediaAction(action: AutonomousAction): Promise<unknown> {
+    const params = action.params as Record<string, unknown>;
     switch (action.type) {
       case 'grant_loyalty':
         return serviceConnector.grantLoyaltyPoints(
-          action.params.customerId,
-          action.params.points,
-          action.params.reason
+          String(params.customerId),
+          Number(params.points),
+          String(params.reason)
         );
       case 'grant_karma':
         return serviceConnector.grantKarma(
-          action.params.customerId,
-          action.params.points,
-          action.params.action
+          String(params.customerId),
+          Number(params.points),
+          String(params.action)
         );
       case 'trigger_campaign':
         return serviceConnector.triggerRetentionCampaign(
-          action.params.customerId,
-          action.params.campaignType
+          String(params.customerId),
+          String(params.campaignType)
         );
       default:
         return { success: true };
@@ -267,22 +269,25 @@ class AutonomousActionsEngine {
   }
 
   private async executeIntelligenceAction(action: AutonomousAction): Promise<unknown> {
+    const params = action.params as Record<string, unknown>;
     switch (action.type) {
       case 'notify_merchant':
-        return serviceConnector.getMerchantInsights(action.params.merchantId);
+        return serviceConnector.getMerchantInsights(String(params.merchantId));
       default:
         return { success: true };
     }
   }
 
   private async executeExpertAction(action: AutonomousAction): Promise<unknown> {
-    return serviceConnector.routeToExpert(action.params.ticketId);
+    const params = action.params as Record<string, unknown>;
+    return serviceConnector.routeToExpert(String(params.ticketId));
   }
 
   private async executeCorpPerksAction(action: AutonomousAction): Promise<unknown> {
+    const params = action.params as Record<string, unknown>;
     return serviceConnector.routeToCorpPerks(
-      action.params.employeeId,
-      action.params.category
+      String(params.employeeId),
+      String(params.category)
     );
   }
 }

@@ -6,10 +6,16 @@
  */
 
 import axios, { AxiosInstance } from 'axios';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 const SUPPORT_COPILOT_URL = process.env.SUPPORT_COPILOT_URL || 'http://localhost:4033';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || 'rez-internal-token';
+
+// Helper to extract error message
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return 'Unknown error';
+}
 
 export interface AIAnalysis {
   sentiment: 'positive' | 'neutral' | 'negative' | 'critical_negative';
@@ -84,7 +90,8 @@ class AIIntegrationService {
       }
       return null;
     } catch (error) {
-      logger.error('[AI Integration] Sentiment analysis failed', error.message);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('[AI Integration] Sentiment analysis failed', errorMsg);
       return this.getFallbackSentiment(message);
     }
   }
@@ -103,7 +110,8 @@ class AIIntegrationService {
       }
       return [];
     } catch (error) {
-      logger.error('[AI Integration] Ticket suggestions failed', error.message);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('[AI Integration] Ticket suggestions failed', errorMsg);
       return [];
     }
   }
@@ -120,7 +128,8 @@ class AIIntegrationService {
       }
       return null;
     } catch (error) {
-      logger.error('[AI Integration] User history failed', error.message);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('[AI Integration] User history failed', errorMsg);
       return null;
     }
   }
@@ -144,7 +153,7 @@ class AIIntegrationService {
       }
       return null;
     } catch (error) {
-      logger.error('[AI Integration] Intent detection failed', error.message);
+      logger.error('[AI Integration] Intent detection failed', getErrorMessage(error));
       return null;
     }
   }
@@ -169,7 +178,7 @@ class AIIntegrationService {
       }
       return [];
     } catch (error) {
-      logger.error('[AI Integration] Knowledge search failed', error.message);
+      logger.error('[AI Integration] Knowledge search failed', getErrorMessage(error));
       return [];
     }
   }
@@ -188,7 +197,7 @@ class AIIntegrationService {
       }
       return null;
     } catch (error) {
-      logger.error('[AI Integration] Analytics failed', error.message);
+      logger.error('[AI Integration] Analytics failed', getErrorMessage(error));
       return null;
     }
   }
@@ -218,7 +227,7 @@ class AIIntegrationService {
       }
       return null;
     } catch (error) {
-      logger.error('[AI Integration] Chat response failed', error.message);
+      logger.error('[AI Integration] Chat response failed', getErrorMessage(error));
       return null;
     }
   }
@@ -240,7 +249,7 @@ class AIIntegrationService {
         timestamp: new Date()
       };
     } catch (error) {
-      logger.error('[AI Integration] Unified view failed', error.message);
+      logger.error('[AI Integration] Unified view failed', getErrorMessage(error));
       return {
         customerId,
         aiPowered: false,

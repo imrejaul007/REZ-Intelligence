@@ -21,7 +21,7 @@ import {
 } from '../services/mlService';
 import { UserProfile } from '../models/userProfile';
 import { NotFoundError } from '../middleware/errorHandler';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 
 const router = Router();
 
@@ -46,21 +46,38 @@ const batchPropensitySchema = z.object({
 const segmentSchema = z.enum(['at-risk', 'champion', 'loyal', 'new', 'standard']);
 
 // Helper function to convert user profile to features
-function convertToFeatures(user): UserFeatures {
+type UserProfileInput = {
+  lastOrderDate?: Date | string;
+  accountAge?: number;
+  totalOrders?: number;
+  avgOrderValue?: number;
+  totalSpend?: number;
+  engagementScore?: number;
+  loginFrequency?: number;
+  emailOpenRate?: number;
+  cartAbandonmentRate?: number;
+  isEmailVerified?: boolean;
+  isPhoneVerified?: boolean;
+  preferredCategories?: string[];
+  loyaltyPoints?: number;
+  signals?: Record<string, unknown>;
+};
+
+function convertToFeatures(user: UserProfileInput): UserFeatures {
   return {
     daysSinceOrder: user.lastOrderDate
       ? Math.floor((Date.now() - new Date(user.lastOrderDate).getTime()) / (1000 * 60 * 60 * 24))
-      : user.accountAge || 999,
-    orderFrequency: user.totalOrders,
-    avgOrderValue: user.avgOrderValue,
-    totalSpend: user.totalSpend,
-    engagementScore: user.engagementScore,
-    loginFrequency: user.loginFrequency,
+      : user.accountAge ?? 999,
+    orderFrequency: user.totalOrders ?? 0,
+    avgOrderValue: user.avgOrderValue ?? 0,
+    totalSpend: user.totalSpend ?? 0,
+    engagementScore: user.engagementScore ?? 0,
+    loginFrequency: user.loginFrequency ?? 0,
     emailOpenRate: user.emailOpenRate,
     cartAbandonmentRate: user.cartAbandonmentRate,
-    tenureDays: user.accountAge,
-    isEmailVerified: user.isEmailVerified,
-    isPhoneVerified: user.isPhoneVerified,
+    tenureDays: user.accountAge ?? 0,
+    isEmailVerified: user.isEmailVerified ?? false,
+    isPhoneVerified: user.isPhoneVerified ?? false,
     preferredCategories: user.preferredCategories || [],
     loyaltyScore: user.loyaltyPoints ? Math.min(100, user.loyaltyPoints / 100) : 50,
     competitorRisk: 30,
@@ -111,7 +128,7 @@ router.get('/:userId/churn', async (req: Request, res: Response, next: NextFunct
         timestamp: new Date().toISOString()
       },
       timestamp: new Date().toISOString(),
-      requestId: (req as unknown).requestId
+      requestId: (req as unknown as Record<string, unknown>).requestId
     });
   } catch (error) {
     next(error);
@@ -165,7 +182,7 @@ router.get('/:userId/ltv', async (req: Request, res: Response, next: NextFunctio
         timestamp: new Date().toISOString()
       },
       timestamp: new Date().toISOString(),
-      requestId: (req as unknown).requestId
+      requestId: (req as unknown as Record<string, unknown>).requestId
     });
   } catch (error) {
     next(error);
@@ -207,7 +224,7 @@ router.get('/:userId/next-purchase', async (req: Request, res: Response, next: N
         timestamp: new Date().toISOString()
       },
       timestamp: new Date().toISOString(),
-      requestId: (req as unknown).requestId
+      requestId: (req as unknown as Record<string, unknown>).requestId
     });
   } catch (error) {
     next(error);
@@ -242,7 +259,7 @@ router.get('/:userId/propensity/:action', async (req: Request, res: Response, ne
         timestamp: new Date().toISOString()
       },
       timestamp: new Date().toISOString(),
-      requestId: (req as unknown).requestId
+      requestId: (req as unknown as Record<string, unknown>).requestId
     });
   } catch (error) {
     next(error);
@@ -276,7 +293,7 @@ router.get('/:userId/propensity', async (req: Request, res: Response, next: Next
         timestamp: new Date().toISOString()
       },
       timestamp: new Date().toISOString(),
-      requestId: (req as unknown).requestId
+      requestId: (req as unknown as Record<string, unknown>).requestId
     });
   } catch (error) {
     next(error);
@@ -311,7 +328,7 @@ router.get('/:userId/segment', async (req: Request, res: Response, next: NextFun
         timestamp: new Date().toISOString()
       },
       timestamp: new Date().toISOString(),
-      requestId: (req as unknown).requestId
+      requestId: (req as unknown as Record<string, unknown>).requestId
     });
   } catch (error) {
     next(error);
@@ -386,7 +403,7 @@ router.post('/batch/churn', async (req: Request, res: Response, next: NextFuncti
         timestamp: new Date().toISOString()
       },
       timestamp: new Date().toISOString(),
-      requestId: (req as unknown).requestId
+      requestId: (req as unknown as Record<string, unknown>).requestId
     });
   } catch (error) {
     next(error);
@@ -463,7 +480,7 @@ router.post('/batch/ltv', async (req: Request, res: Response, next: NextFunction
         timestamp: new Date().toISOString()
       },
       timestamp: new Date().toISOString(),
-      requestId: (req as unknown).requestId
+      requestId: (req as unknown as Record<string, unknown>).requestId
     });
   } catch (error) {
     next(error);
@@ -528,7 +545,7 @@ router.post('/batch/propensity', async (req: Request, res: Response, next: NextF
         timestamp: new Date().toISOString()
       },
       timestamp: new Date().toISOString(),
-      requestId: (req as unknown).requestId
+      requestId: (req as unknown as Record<string, unknown>).requestId
     });
   } catch (error) {
     next(error);
@@ -579,7 +596,7 @@ router.get('/segments/:segment', async (req: Request, res: Response, next: NextF
         timestamp: new Date().toISOString()
       },
       timestamp: new Date().toISOString(),
-      requestId: (req as unknown).requestId
+      requestId: (req as unknown as Record<string, unknown>).requestId
     });
   } catch (error) {
     next(error);

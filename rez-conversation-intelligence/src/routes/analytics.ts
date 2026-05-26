@@ -4,7 +4,7 @@ import { intentExtractor } from '../services/intentExtractor.js';
 import { sentimentAnalyzer } from '../services/sentimentAnalyzer.js';
 import { outcomeTracker } from '../services/outcomeTracker.js';
 import { feedbackLoop } from '../services/feedbackLoop.js';
-import logger from '../utils/logger.js';
+import logger from './utils/logger';
 
 const router = Router();
 

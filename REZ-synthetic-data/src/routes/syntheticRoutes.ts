@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { dataGenerator } from '../services/dataGenerator.js';
 import { DatasetSchema, AnonymizeRequestSchema, SyntheticDataRequestSchema } from '../types/index.js';
-import { logger } from '../utils/logger.js';
+import { logger } from './utils/logger.js';
 
 const router = Router();
 
@@ -30,7 +30,7 @@ router.post('/generate/users', async (req: Request, res: Response) => {
     res.json({
       success: true,
       data: {
-        datasetId: data[0]?.id,
+        datasetId: data.length > 0 ? (data[0] as { id: string }).id : 'unknown',
         recordCount: data.length,
         generatedAt: new Date(),
         data

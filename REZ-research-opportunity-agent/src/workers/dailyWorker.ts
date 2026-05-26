@@ -2,7 +2,7 @@ import cron from 'node-cron';
 import { researchAgent, opportunityAgent, insightAgent } from '../agents/index.js';
 import { alertService } from '../services/index.js';
 import { SCHEDULES } from '../constants/thresholds.js';
-import logger from '../utils/logger.js';
+import logger from './utils/logger.js';
 import { v4 as uuidv4 } from 'uuid';
 import { AlertType, AlertSeverity } from '../types/index.js';
 

@@ -4,6 +4,23 @@ import logger from './utils/logger';
  * Recommendation Engine ML Model
  * Uses Collaborative Filtering + Content-Based hybrid approach
  */
+const { randomBytes } = require('crypto');
+
+// Seeded random for deterministic training
+function seededRandom(seed, offset) {
+  const x = Math.sin(seed + offset) * 10000;
+  return x - Math.floor(x);
+}
+
+// Shuffle using Fisher-Yates with seeded random
+function seededShuffle(array, seed) {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(seededRandom(seed, i) * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
 
 class RecommendationModel {
   constructor() {
@@ -60,10 +77,12 @@ class RecommendationModel {
     logger.info(`   Unique users: ${userIds.length}`);
     logger.info(`   Unique items: ${itemIds.length}`);
 
+    // Use seeded random for deterministic initialization
+    const initSeed = interactions.length * 1000;
     for (const userId of userIds) {
       this.userFactors[userId] = {};
       for (let f = 0; f < factors; f++) {
-        this.userFactors[userId][f] = Math.random() * 0.1 - 0.05;
+        this.userFactors[userId][f] = seededRandom(initSeed, userIds.indexOf(userId) * factors + f) * 0.1 - 0.05;
       }
       this.userBias[userId] = 0;
     }
@@ -71,16 +90,17 @@ class RecommendationModel {
     for (const itemId of itemIds) {
       this.itemFactors[itemId] = {};
       for (let f = 0; f < factors; f++) {
-        this.itemFactors[itemId][f] = Math.random() * 0.1 - 0.05;
+        this.itemFactors[itemId][f] = seededRandom(initSeed + 1, itemIds.indexOf(itemId) * factors + f) * 0.1 - 0.05;
       }
       this.itemBias[itemId] = 0;
     }
 
     this.globalBias = interactions.reduce((sum, i) => sum + i.rating, 0) / interactions.length;
 
-    // Training loop
+    // Training loop with seeded shuffle for determinism
     for (let epoch = 0; epoch < epochs; epoch++) {
-      const shuffled = [...interactions].sort(() => Math.random() - 0.5);
+      const shuffleSeed = initSeed + epoch;
+      const shuffled = seededShuffle([...interactions], shuffleSeed);
       let totalError = 0;
 
       for (const interaction of shuffled) {

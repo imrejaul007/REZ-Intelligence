@@ -3,6 +3,8 @@
  * Defines the communication style and voice for the culinary agent
  */
 
+import { randomInt } from 'crypto';
+
 export interface ToneConfig {
   enthusiasm: 'high' | 'medium' | 'low';
   formality: 'formal' | 'semi-formal' | 'casual';
@@ -157,7 +159,7 @@ export function generateOpener(
   const levelKey = getToneModifiers(preset).enthusiasm;
   const options = openers[context][levelKey];
 
-  return options[Math.floor(Math.random() * options.length)];
+  return options[randomInt(options.length)];
 }
 
 /**
@@ -173,10 +175,10 @@ export function getRotatingAdjective(usedAdjectives: string[]): string {
   const available = allAdjectives.filter(adj => !usedAdjectives.includes(adj));
 
   if (available.length === 0) {
-    return allAdjectives[Math.floor(Math.random() * allAdjectives.length)];
+    return allAdjectives[randomInt(allAdjectives.length)];
   }
 
-  return available[Math.floor(Math.random() * available.length)];
+  return available[randomInt(available.length)];
 }
 
 export type TonePreset = keyof typeof TONE_PRESETS;

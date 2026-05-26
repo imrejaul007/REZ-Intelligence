@@ -6,6 +6,7 @@ import {
   MetricsGrowth,
   ChartDataPoint,
 } from '../types.js';
+import { randomInt } from 'crypto';
 
 export class MerchantOSEngine {
   // Generate default dashboard based on subscription
@@ -94,21 +95,22 @@ export class MerchantOSEngine {
     const days = dateRange === 'today' ? 1 : dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 90;
 
     // Mock metrics - in production, these would come from other services
+    // Using crypto.randomInt for secure mock data generation
     const metrics: Metric = {
-      orders: Math.floor(Math.random() * 500) + 100,
-      revenue: Math.floor(Math.random() * 100000) + 10000,
-      customers: Math.floor(Math.random() * 50) + 10,
-      avgOrderValue: Math.floor(Math.random() * 500) + 150,
-      newCustomers: Math.floor(Math.random() * 20) + 5,
-      returningCustomers: Math.floor(Math.random() * 30) + 10,
-      completionRate: Math.floor(Math.random() * 20) + 80,
-      avgDeliveryTime: Math.floor(Math.random() * 20) + 25,
+      orders: randomInt(100, 600),
+      revenue: randomInt(10000, 110000),
+      customers: randomInt(10, 60),
+      avgOrderValue: randomInt(150, 650),
+      newCustomers: randomInt(5, 25),
+      returningCustomers: randomInt(10, 40),
+      completionRate: randomInt(80, 100),
+      avgDeliveryTime: randomInt(25, 45),
     };
 
     // Calculate growth
     const previousPeriod = {
-      orders: Math.floor(metrics.orders * (0.9 + Math.random() * 0.2)),
-      revenue: Math.floor(metrics.revenue * (0.9 + Math.random() * 0.2)),
+      orders: Math.floor(metrics.orders * (0.9 + randomInt(0, 20) / 100)),
+      revenue: Math.floor(metrics.revenue * (0.9 + randomInt(0, 20) / 100)),
     };
 
     return {
@@ -138,7 +140,7 @@ export class MerchantOSEngine {
 
       data.push({
         date: date.toISOString().split('T')[0],
-        value: Math.floor(Math.random() * 100) + 20,
+        value: randomInt(20, 120),
       });
     }
 

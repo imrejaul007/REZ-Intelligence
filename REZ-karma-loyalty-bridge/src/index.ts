@@ -8,8 +8,9 @@
  * Karma Action → Karma Score → REZ Coins → Tier Progress → More Benefits
  */
 
-import express, { Request, Response } import logger from './utils/logger';
-import from 'express';
+import crypto from 'crypto';
+import express, { Request, Response } from 'express';
+import { logger } from './utils/logger.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '4098', 10);
@@ -194,7 +195,7 @@ app.post('/api/v1/convert', async (req: Request, res: Response) => {
 
   // Create conversion record
   const record: ConversionRecord = {
-    id: `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: `conv_${crypto.randomUUID()}`,
     userId,
     karmaUserId,
     action: actionType,
@@ -282,7 +283,7 @@ app.post('/api/v1/convert/batch', async (req: Request, res: Response) => {
     const rezCoins = convertKarmaToRezCoins(c.karmaPoints, c.actionType as keyof typeof config.conversionRates, tier, c.karmaScore || 300);
 
     const record: ConversionRecord = {
-      id: `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `conv_${crypto.randomUUID()}`,
       userId: c.userId,
       karmaUserId: c.karmaUserId,
       action: c.actionType,

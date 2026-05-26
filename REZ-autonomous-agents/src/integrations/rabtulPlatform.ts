@@ -34,7 +34,7 @@ async function internalRequest(path: string, options: RequestInit = {}): Promise
     throw new Error(`Platform API error: ${response.status}`);
   }
 
-  return response.json();
+  return response.json() as T;
 }
 
 // ============================================

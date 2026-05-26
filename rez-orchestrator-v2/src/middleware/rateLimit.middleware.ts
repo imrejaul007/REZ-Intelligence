@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { randomUUID } from 'crypto';
 import Redis from 'ioredis';
 import { appConfig } from '../config';
 import { logger } from '../utils/logger';
@@ -46,7 +47,7 @@ export class RateLimiter {
     multi.zcard(key);
 
     // Add current request
-    multi.zadd(key, now, `${now}-${Math.random()}`);
+    multi.zadd(key, now, `${now}-${randomUUID()}`);
 
     // Set expiry
     multi.expire(key, Math.ceil(this.windowMs / 1000));

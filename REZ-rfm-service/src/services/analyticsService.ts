@@ -3,7 +3,7 @@ import { Segment } from '../models/Segment.js';
 import { scoringService } from './scoringService.js';
 import { segmentService } from './segmentService.js';
 import { RFMAnalyticsResponse, SegmentAnalytics, SEGMENTS } from '../types/index.js';
-import logger from '../utils/logger.js';
+import logger from './utils/logger.js';
 
 /**
  * Analytics Service

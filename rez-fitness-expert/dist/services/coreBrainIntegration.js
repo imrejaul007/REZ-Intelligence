@@ -1,17 +1,12 @@
-"use strict";
 /**
  * Core Brain Integration Service for Fitness Expert
  * Provides integration with the central Core Brain service for context, memory, and personalization
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.CoreBrainError = exports.CoreBrainClient = void 0;
-exports.getCoreBrainClient = getCoreBrainClient;
-exports.initializeCoreBrainClient = initializeCoreBrainClient;
-const fitnessExpert_js_1 = require("./fitnessExpert.js");
+import { logger } from './fitnessExpert.js';
 // ============================================
 // CORE BRAIN CLIENT
 // ============================================
-class CoreBrainClient {
+export class CoreBrainClient {
     config;
     healthCheckCache = {
         status: 'unknown',
@@ -36,7 +31,7 @@ class CoreBrainClient {
             internalTokens = JSON.parse(internalTokensJson);
         }
         catch {
-            fitnessExpert_js_1.logger.warn('Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+            logger.warn('Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
         }
         return new CoreBrainClient({
             baseUrl: process.env.CORE_BRAIN_URL || 'http://localhost:4072',
@@ -392,11 +387,10 @@ class CoreBrainClient {
         };
     }
 }
-exports.CoreBrainClient = CoreBrainClient;
 // ============================================
 // ERROR CLASS
 // ============================================
-class CoreBrainError extends Error {
+export class CoreBrainError extends Error {
     statusCode;
     error;
     constructor(message, statusCode, error) {
@@ -406,21 +400,20 @@ class CoreBrainError extends Error {
         this.name = 'CoreBrainError';
     }
 }
-exports.CoreBrainError = CoreBrainError;
 // ============================================
 // SINGLETON INSTANCE
 // ============================================
 let coreBrainClientInstance = null;
-function getCoreBrainClient() {
+export function getCoreBrainClient() {
     if (!coreBrainClientInstance) {
         coreBrainClientInstance = CoreBrainClient.fromEnv();
-        fitnessExpert_js_1.logger.info('Core Brain client initialized for fitness expert', {
+        logger.info('Core Brain client initialized for fitness expert', {
             baseUrl: process.env.CORE_BRAIN_URL || 'http://localhost:4072',
         });
     }
     return coreBrainClientInstance;
 }
-function initializeCoreBrainClient(config) {
+export function initializeCoreBrainClient(config) {
     coreBrainClientInstance = new CoreBrainClient({
         baseUrl: config?.baseUrl || process.env.CORE_BRAIN_URL || 'http://localhost:4072',
         internalToken: config?.internalToken || '',
@@ -430,5 +423,5 @@ function initializeCoreBrainClient(config) {
     });
     return coreBrainClientInstance;
 }
-exports.default = CoreBrainClient;
+export default CoreBrainClient;
 //# sourceMappingURL=coreBrainIntegration.js.map

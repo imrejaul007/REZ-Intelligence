@@ -15,7 +15,7 @@ import {
   roundTo,
   zScore,
 } from '../utils/math.js';
-import { reorderLogger as logger } from '../utils/logger.js';
+import { reorderLogger as logger } from './utils/logger.js';
 import config from '../config/index.js';
 import { addDays, startOfDay, differenceInDays } from 'date-fns';
 

@@ -56,7 +56,7 @@ router.post('/register', authenticateApiKey, async (req: Request, res: Response)
         error: {
           code: 'VALIDATION_ERROR',
           message: 'Invalid request body',
-          details: validationResult.error.errors
+          details: validationResult.error.issues
         }
       });
       return;
@@ -216,7 +216,7 @@ router.post('/:id/publish', authenticateInternal, async (req: Request, res: Resp
         error: {
           code: 'VALIDATION_ERROR',
           message: 'Invalid request body',
-          details: validationResult.error.errors
+          details: validationResult.error.issues
         }
       });
       return;

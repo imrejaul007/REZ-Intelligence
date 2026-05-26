@@ -9,6 +9,8 @@
  * - Model deployment
  */
 
+import React from 'react';
+
 export default function MLTraining() {
   return (
     <div className="space-y-6">

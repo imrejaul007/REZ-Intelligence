@@ -107,7 +107,8 @@ export function generatePrometheusMetrics(): string {
   lines.push('# TYPE rez_predictions_total counter');
   for (const [key, counter] of counters) {
     const name = key.replace(/\{.*/, '');
-    lines.push(`rez_predictions_total${key.substring(key.indexOf('{')),} ${counter.value}`);
+    const labelPart = key.includes('{') ? key.substring(key.indexOf('{')) : '';
+    lines.push(`rez_predictions_total${labelPart} ${counter.value}`);
   }
 
   // Add histograms

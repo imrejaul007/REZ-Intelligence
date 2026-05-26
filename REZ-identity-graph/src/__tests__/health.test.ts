@@ -2,7 +2,14 @@
  * REZ-identity-graph Health Check Tests
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+// Jest globals are available globally via @types/jest
+// These are unused imports but kept for clarity
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const { describe, it, expect } = globalThis as unknown as {
+  describe: (name: string, fn: () => void) => void;
+  it: (name: string, fn: () => void | Promise<void>) => void;
+  expect: (value: unknown) => { toBe: (expected: unknown) => void; toContain: (item: unknown) => void; toBeGreaterThanOrEqual: (num: number) => void; toBeLessThanOrEqual: (num: number) => void };
+};
 
 process.env.PORT = '4050';
 process.env.MONGODB_URI = 'mongodb://localhost:27017/test';

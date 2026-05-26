@@ -10,7 +10,7 @@ const ANALYTICS_URL = process.env.ANALYTICS_SERVICE_URL || 'http://localhost:401
 const EVENT_BUS_URL = process.env.EVENT_BUS_URL || 'http://localhost:4025';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
-async function request(url: string, options: RequestInit = {}): Promise<unknown> {
+async function request<T = unknown>(url: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(url, {
     ...options,
     headers: {
@@ -20,7 +20,7 @@ async function request(url: string, options: RequestInit = {}): Promise<unknown>
     },
   });
   if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
+  return res.json() as T;
 }
 
 // Auth Operations
@@ -71,7 +71,7 @@ export const analytics = {
 
 // Event Bus Operations
 export const events = {
-  publish: async (type: string, category: string, data, context: Record<string, unknown> = {}) =>
+  publish: async (type: string, category: string, data: Record<string, unknown>, context: Record<string, unknown> = {}) =>
     request(`${EVENT_BUS_URL}/api/events`, {
       method: 'POST',
       body: JSON.stringify({ type, category, version: '1.0.0', source: 'rez-rcs-bridge', data, ...context }),

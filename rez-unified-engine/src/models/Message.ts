@@ -3,6 +3,7 @@
  * Represents individual messages within a conversation
  */
 
+import crypto from 'crypto';
 import mongoose, { Document, Schema, Model, Types } from 'mongoose';
 import { ChannelType, MessageRole, MessageStatus, IntentData, AgentInfo } from '../types';
 
@@ -442,7 +443,7 @@ MessageSchema.statics = {
     threadId?: string;
   }): Promise<IMessage> {
     return this.create({
-      messageId: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      messageId: `msg_${crypto.randomUUID()}`,
       conversationId: params.conversationId,
       sessionId: params.sessionId,
       sender: params.sender,

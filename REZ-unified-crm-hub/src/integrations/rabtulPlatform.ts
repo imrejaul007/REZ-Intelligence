@@ -14,21 +14,26 @@ const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 /**
  * Make authenticated internal API request
  */
-async function internalRequest(url, options = {}) {
+async function internalRequest<T = unknown>(url: string, options: RequestInit = {}): Promise<T> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'X-Internal-Token': INTERNAL_TOKEN,
+  };
+
+  if (options.headers && typeof options.headers === 'object') {
+    Object.assign(headers, options.headers as Record<string, string>);
+  }
+
   const response = await fetch(url, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Internal-Token': INTERNAL_TOKEN,
-      ...options.headers,
-    },
+    headers,
   });
 
   if (!response.ok) {
     throw new Error(`Platform API error: ${response.status}`);
   }
 
-  return response.json();
+  return response.json() as T;
 }
 
 // ============================================
@@ -38,7 +43,7 @@ async function internalRequest(url, options = {}) {
 export const authOperations = {
   async verify(token) {
     try {
-      const res = await internalRequest(`${AUTH_URL}/api/auth/verify`, {
+      const res = await internalRequest<{ success: boolean; user?: unknown }>(`${AUTH_URL}/api/auth/verify`, {
         method: 'POST',
         body: JSON.stringify({ token }),
       });
@@ -50,7 +55,7 @@ export const authOperations = {
 
   async validateInternalToken() {
     try {
-      const res = await internalRequest(`${AUTH_URL}/api/auth/internal/validate`, {
+      const res = await internalRequest<{ valid: boolean }>(`${AUTH_URL}/api/auth/internal/validate`, {
         headers: { 'X-Internal-Token': INTERNAL_TOKEN },
       });
       return res.valid ?? false;
@@ -67,7 +72,7 @@ export const authOperations = {
 export const walletOperations = {
   async getBalance(userId) {
     try {
-      const res = await internalRequest(`${WALLET_URL}/api/wallet/${userId}/balance`);
+      const res = await internalRequest<{ balance: number }>(`${WALLET_URL}/api/wallet/${userId}/balance`);
       return res.balance || 0;
     } catch {
       return 0;
@@ -100,7 +105,7 @@ export const walletOperations = {
 
   async getTransactions(userId, limit = 20) {
     try {
-      const res = await internalRequest(`${WALLET_URL}/api/wallet/${userId}/transactions?limit=${limit}`);
+      const res = await internalRequest<{ transactions: unknown[] }>(`${WALLET_URL}/api/wallet/${userId}/transactions?limit=${limit}`);
       return res.transactions || [];
     } catch {
       return [];
@@ -194,7 +199,7 @@ export const eventBusOperations = {
 
   async queryEvents(filters, limit = 100) {
     try {
-      const res = await internalRequest(`${EVENT_BUS_URL}/api/events/query`, {
+      const res = await internalRequest<{ events: unknown[] }>(`${EVENT_BUS_URL}/api/events/query`, {
         method: 'POST',
         body: JSON.stringify({ filters, limit }),
       });

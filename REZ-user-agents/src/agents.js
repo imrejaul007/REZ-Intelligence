@@ -9,6 +9,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cron = require('node-cron');
 const { v4: uuidv4 } = require('uuid');
+const { random, randomInt } = require('crypto');
 const winston = require('winston');
 const { z } = require('zod');
 const cors = require('cors');
@@ -247,22 +248,22 @@ function generateMockUsers(count = 100) {
   const users = [];
   for (let i = 0; i < count; i++) {
     const userId = generateMockUserId();
-    const daysSinceLastActive = Math.floor(Math.random() * 90);
+    const daysSinceLastActive = randomInt(90);
     users.push({
       userId,
       preferences: {
-        cuisines: CUISINES.slice(0, Math.floor(Math.random() * 4) + 1),
-        priceRange: ['budget', 'mid-range', 'luxury'][Math.floor(Math.random() * 3)],
-        timePattern: ['morning', 'afternoon', 'evening', 'late-night'][Math.floor(Math.random() * 4)],
-        dietary: ['none', 'vegetarian', 'vegan', 'halal'][Math.floor(Math.random() * 4)].split(),
-        travelFrequency: ['rarely', 'monthly', 'weekly', 'daily'][Math.floor(Math.random() * 4)],
-        spendingHabit: ['conservative', 'moderate', 'lavish'][Math.floor(Math.random() * 3)]
+        cuisines: CUISINES.slice(0, randomInt(1, 5)),
+        priceRange: ['budget', 'mid-range', 'luxury'][randomInt(3)],
+        timePattern: ['morning', 'afternoon', 'evening', 'late-night'][randomInt(4)],
+        dietary: ['none', 'vegetarian', 'vegan', 'halal'][randomInt(4)].split(),
+        travelFrequency: ['rarely', 'monthly', 'weekly', 'daily'][randomInt(4)],
+        spendingHabit: ['conservative', 'moderate', 'lavish'][randomInt(3)]
       },
       segments: [],
-      engagementScore: Math.random() * 100,
-      lifetimeValue: Math.floor(Math.random() * 100000),
+      engagementScore: random() * 100,
+      lifetimeValue: randomInt(100000),
       lastActive: new Date(Date.now() - daysSinceLastActive * 24 * 60 * 60 * 1000),
-      createdAt: new Date(Date.now() - Math.floor(Math.random() * 365) * 24 * 60 * 60 * 1000)
+      createdAt: new Date(Date.now() - randomInt(365) * 24 * 60 * 60 * 1000)
     });
   }
   return users;
@@ -271,24 +272,24 @@ function generateMockUsers(count = 100) {
 function generateMockSessions(users, count = 500) {
   const sessions = [];
   for (let i = 0; i < count; i++) {
-    const user = users[Math.floor(Math.random() * users.length)];
-    const duration = Math.floor(Math.random() * 3600) + 60;
+    const user = users[randomInt(users.length)];
+    const duration = randomInt(60, 3660);
     sessions.push({
       sessionId: uuidv4(),
       userId: user.userId,
-      startTime: new Date(Date.now() - Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000),
+      startTime: new Date(Date.now() - randomInt(7) * 24 * 60 * 60 * 1000),
       duration,
-      endTime: new Date(Date.now() - Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000 + duration * 1000),
-      pages: Array.from({ length: Math.floor(Math.random() * 10) + 1 }, () =>
-        ['/home', '/search', '/product', '/cart', '/checkout', '/profile'][Math.floor(Math.random() * 6)]
+      endTime: new Date(Date.now() - randomInt(7) * 24 * 60 * 60 * 1000 + duration * 1000),
+      pages: Array.from({ length: randomInt(1, 11) }, () =>
+        ['/home', '/search', '/product', '/cart', '/checkout', '/profile'][randomInt(6)]
       ),
-      actions: Array.from({ length: Math.floor(Math.random() * 20) + 1 }, () => ({
-        type: ['click', 'view', 'search', 'add_to_cart', 'remove_from_cart'][Math.floor(Math.random() * 5)],
+      actions: Array.from({ length: randomInt(1, 21) }, () => ({
+        type: ['click', 'view', 'search', 'add_to_cart', 'remove_from_cart'][randomInt(5)],
         timestamp: new Date(),
         data: {}
       })),
-      device: DEVICES[Math.floor(Math.random() * DEVICES.length)],
-      location: LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)]
+      device: DEVICES[randomInt(DEVICES.length)],
+      location: LOCATIONS[randomInt(LOCATIONS.length)]
     });
   }
   return sessions;
@@ -302,14 +303,14 @@ function generateMockSearches(users, count = 1000) {
     'family friendly', 'pet friendly hotel', 'romantic dinner'
   ];
   for (let i = 0; i < count; i++) {
-    const user = users[Math.floor(Math.random() * users.length)];
+    const user = users[randomInt(users.length)];
     searches.push({
       userId: user.userId,
-      query: queries[Math.floor(Math.random() * queries.length)],
-      timestamp: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000),
-      resultsCount: Math.floor(Math.random() * 50) + 10,
-      clickedResult: Math.random() > 0.3 ? `product_${uuidv4().slice(0, 8)}` : null,
-      intent: ['informational', 'transactional', 'navigational'][Math.floor(Math.random() * 3)]
+      query: queries[randomInt(queries.length)],
+      timestamp: new Date(Date.now() - randomInt(30) * 24 * 60 * 60 * 1000),
+      resultsCount: randomInt(10, 60),
+      clickedResult: random() > 0.3 ? `product_${uuidv4().slice(0, 8)}` : null,
+      intent: ['informational', 'transactional', 'navigational'][randomInt(3)]
     });
   }
   return searches;
@@ -318,15 +319,15 @@ function generateMockSearches(users, count = 1000) {
 function generateMockBrowseEvents(users, count = 2000) {
   const events = [];
   for (let i = 0; i < count; i++) {
-    const user = users[Math.floor(Math.random() * users.length)];
+    const user = users[randomInt(users.length)];
     events.push({
       userId: user.userId,
       productId: `product_${uuidv4().slice(0, 8)}`,
-      category: CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)],
-      timestamp: new Date(Date.now() - Math.floor(Math.random() * 14) * 24 * 60 * 60 * 1000),
-      duration: Math.floor(Math.random() * 300) + 10,
-      scrollDepth: Math.random() * 100,
-      action: ['view', 'click', 'hover', 'add_to_wishlist'][Math.floor(Math.random() * 4)]
+      category: CATEGORIES[randomInt(CATEGORIES.length)],
+      timestamp: new Date(Date.now() - randomInt(14) * 24 * 60 * 60 * 1000),
+      duration: randomInt(10, 310),
+      scrollDepth: random() * 100,
+      action: ['view', 'click', 'hover', 'add_to_wishlist'][randomInt(4)]
     });
   }
   return events;
@@ -335,21 +336,21 @@ function generateMockBrowseEvents(users, count = 2000) {
 function generateMockCartEvents(users, count = 200) {
   const events = [];
   for (let i = 0; i < count; i++) {
-    const user = users[Math.floor(Math.random() * users.length)];
-    const isAbandoned = Math.random() > 0.5;
-    const itemCount = Math.floor(Math.random() * 5) + 1;
+    const user = users[randomInt(users.length)];
+    const isAbandoned = random() > 0.5;
+    const itemCount = randomInt(1, 6);
     events.push({
       userId: user.userId,
       cartId: uuidv4(),
       items: Array.from({ length: itemCount }, () => ({
         productId: `product_${uuidv4().slice(0, 8)}`,
-        quantity: Math.floor(Math.random() * 3) + 1,
-        price: Math.floor(Math.random() * 5000) + 500
+        quantity: randomInt(1, 4),
+        price: randomInt(500, 5500)
       })),
-      total: Math.floor(Math.random() * 15000) + 500,
+      total: randomInt(500, 15500),
       status: isAbandoned ? 'abandoned' : 'completed',
-      timestamp: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000),
-      abandonedAt: isAbandoned ? new Date(Date.now() - Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000) : null
+      timestamp: new Date(Date.now() - randomInt(30) * 24 * 60 * 60 * 1000),
+      abandonedAt: isAbandoned ? new Date(Date.now() - randomInt(7) * 24 * 60 * 60 * 1000) : null
     });
   }
   return events;
@@ -358,19 +359,19 @@ function generateMockCartEvents(users, count = 200) {
 function generateMockPurchases(users, count = 150) {
   const purchases = [];
   for (let i = 0; i < count; i++) {
-    const user = users[Math.floor(Math.random() * users.length)];
-    const itemCount = Math.floor(Math.random() * 4) + 1;
+    const user = users[randomInt(users.length)];
+    const itemCount = randomInt(1, 5);
     purchases.push({
       userId: user.userId,
       orderId: `order_${uuidv4().slice(0, 8)}`,
       items: Array.from({ length: itemCount }, () => ({
         productId: `product_${uuidv4().slice(0, 8)}`,
-        quantity: Math.floor(Math.random() * 3) + 1,
-        price: Math.floor(Math.random() * 3000) + 200
+        quantity: randomInt(1, 4),
+        price: randomInt(200, 3200)
       })),
-      total: Math.floor(Math.random() * 10000) + 200,
+      total: randomInt(200, 10200),
       status: 'completed',
-      timestamp: new Date(Date.now() - Math.floor(Math.random() * 60) * 24 * 60 * 60 * 1000)
+      timestamp: new Date(Date.now() - randomInt(60) * 24 * 60 * 60 * 1000)
     });
   }
   return purchases;
@@ -379,13 +380,13 @@ function generateMockPurchases(users, count = 150) {
 function generateMockFeedback(users, count = 100) {
   const feedback = [];
   for (let i = 0; i < count; i++) {
-    const user = users[Math.floor(Math.random() * users.length)];
+    const user = users[randomInt(users.length)];
     feedback.push({
       userId: user.userId,
-      type: ['nps', 'survey', 'review'][Math.floor(Math.random() * 3)],
-      score: Math.floor(Math.random() * 11),
-      comment: ['Great service!', 'Could be better', 'Amazing experience', 'Not satisfied', ''][Math.floor(Math.random() * 5)],
-      timestamp: new Date(Date.now() - Math.floor(Math.random() * 90) * 24 * 60 * 60 * 1000),
+      type: ['nps', 'survey', 'review'][randomInt(3)],
+      score: randomInt(11),
+      comment: ['Great service!', 'Could be better', 'Amazing experience', 'Not satisfied', ''][randomInt(5)],
+      timestamp: new Date(Date.now() - randomInt(90) * 24 * 60 * 60 * 1000),
       metadata: { source: 'app', version: '2.0' }
     });
   }
@@ -644,7 +645,7 @@ const RecommendationQualityAgent = {
         const clickRate = rec.clickCount / rec.viewCount;
 
         // Calculate quality score
-        const qualityScore = clickRate * 0.4 + Math.random() * 0.3 + 0.3;
+        const qualityScore = clickRate * 0.4 + random() * 0.3 + 0.3;
 
         // Check for purchases within 7 days
         const hasPurchase = await Purchase.findOne({

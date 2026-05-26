@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import path from 'path';
-import { ServiceConfig, ForecastConfig, OptimizationConfig } from '../types/inventory.types.js';
+import { ForecastConfig, OptimizationConfig, ForecastMethod } from '../types/inventory.types.js';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
@@ -55,8 +55,8 @@ const forecastConfig: ForecastConfig = {
   seasonalityWeeks: parseInt(process.env.FORECAST_SEASONALITY_WEEKS || '12', 10),
   confidenceLevel: parseFloat(process.env.FORECAST_CONFIDENCE_LEVEL || '0.95'),
   methods: {
-    default: 'exponential_smoothing',
-    fallback: ['simple_moving_average', 'weighted_moving_average'],
+    default: ForecastMethod.EXPONENTIAL_SMOOTHING,
+    fallback: [ForecastMethod.SIMPLE_MOVING_AVERAGE, ForecastMethod.WEIGHTED_MOVING_AVERAGE],
   },
 };
 

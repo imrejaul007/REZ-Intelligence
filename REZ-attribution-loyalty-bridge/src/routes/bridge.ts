@@ -13,7 +13,6 @@ import { attributionListener } from '../services/attributionListener.js';
 import { bridgeLogger as logger } from '../services/logger.js';
 import {
   CashbackRequestSchema,
-  LoyaltyTriggerRequestSchema,
   AttributionWebhookSchema
 } from '../types/schemas.js';
 
@@ -42,15 +41,17 @@ interface ApiResponse<T = unknown> {
 /**
  * Add request ID to all requests
  */
-function requestIdMiddleware(req: Request, res: Response, next: NextFunction): void {
-  (req as unknown).requestId = req.headers['x-request-id'] || uuidv4();
+function requestIdMiddleware(req: Request, _res: Response, next: NextFunction): void {
+  (req as unknown as { requestId: string }).requestId = (req.headers['x-request-id'] as string) || uuidv4();
   next();
 }
 
 /**
  * Validate internal service token
  */
-function validateInternalToken(req: Request, res: Response, next: NextFunction): void {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _validateInternalToken(req: Request, res: Response, next: NextFunction): void {
   const token = req.headers['x-internal-token'];
   const expectedToken = process.env.INTERNAL_SERVICE_TOKEN;
 
@@ -85,12 +86,12 @@ function createResponse<T>(
   res: Response,
   data?: T,
   statusCode: number = 200
-): Response<ApiResponse<T>> {
+): Response {
   return res.status(statusCode).json({
     success: true,
     data,
     meta: {
-      requestId: (res as unknown).requestId || uuidv4(),
+      requestId: (res as unknown as { requestId?: string }).requestId || uuidv4(),
       timestamp: new Date().toISOString()
     }
   } as ApiResponse<T>);
@@ -105,12 +106,12 @@ function createErrorResponse(
   code: string,
   message: string,
   details?: unknown
-): Response<ApiResponse> {
+): Response {
   return res.status(statusCode).json({
     success: false,
     error: { code, message, details },
     meta: {
-      requestId: (res as unknown).requestId || uuidv4(),
+      requestId: (res as unknown as { requestId?: string }).requestId || uuidv4(),
       timestamp: new Date().toISOString()
     }
   } as ApiResponse);
@@ -202,16 +203,16 @@ export function createBridgeRouter(): Router {
           400,
           'VALIDATION_ERROR',
           'Invalid request body',
-          validationResult.error.errors
+          validationResult.error.issues
         );
       }
 
       const calculation = await cashbackEngine.calculate(validationResult.data);
-      createResponse(res, calculation, 201);
+      return createResponse(res, calculation, 201);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Calculation failed';
       logger.error('Cashback calculation failed', { error: errorMessage });
-      createErrorResponse(res, 500, 'CALCULATION_ERROR', errorMessage);
+      return createErrorResponse(res, 500, 'CALCULATION_ERROR', errorMessage);
     }
   });
 
@@ -229,7 +230,7 @@ export function createBridgeRouter(): Router {
           400,
           'VALIDATION_ERROR',
           'Invalid request body',
-          validationResult.error.errors
+          validationResult.error.issues
         );
       }
 
@@ -240,7 +241,7 @@ export function createBridgeRouter(): Router {
       // Trigger reward
       const triggerResult = await loyaltyTriggerService.syncBridgeRecord(bridgeId);
 
-      createResponse(res, {
+      return createResponse(res, {
         bridgeId,
         calculation,
         triggerResult
@@ -248,7 +249,7 @@ export function createBridgeRouter(): Router {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Operation failed';
       logger.error('Calculate and trigger failed', { error: errorMessage });
-      createErrorResponse(res, 500, 'OPERATION_ERROR', errorMessage);
+      return createErrorResponse(res, 500, 'OPERATION_ERROR', errorMessage);
     }
   });
 
@@ -293,7 +294,7 @@ export function createBridgeRouter(): Router {
 
       const total = await BridgeRecord.countDocuments(query);
 
-      createResponse(res, {
+      return createResponse(res, {
         bridges,
         pagination: {
           total,
@@ -303,7 +304,7 @@ export function createBridgeRouter(): Router {
         }
       });
     } catch (error) {
-      createErrorResponse(res, 500, 'QUERY_ERROR', 'Failed to list bridges');
+      return createErrorResponse(res, 500, 'QUERY_ERROR', 'Failed to list bridges');
     }
   });
 
@@ -313,8 +314,9 @@ export function createBridgeRouter(): Router {
    */
   router.get('/bridges/:bridgeId', async (req: Request, res: Response) => {
     try {
+      const bridgeId = Array.isArray(req.params.bridgeId) ? req.params.bridgeId[0] : req.params.bridgeId;
       const bridge = await BridgeRecord.findOne({
-        bridgeId: req.params.bridgeId,
+        bridgeId,
         deletedAt: { $exists: false }
       });
 
@@ -322,9 +324,9 @@ export function createBridgeRouter(): Router {
         return createErrorResponse(res, 404, 'NOT_FOUND', 'Bridge record not found');
       }
 
-      createResponse(res, bridge);
+      return createResponse(res, bridge);
     } catch (error) {
-      createErrorResponse(res, 500, 'QUERY_ERROR', 'Failed to get bridge record');
+      return createErrorResponse(res, 500, 'QUERY_ERROR', 'Failed to get bridge record');
     }
   });
 
@@ -334,11 +336,12 @@ export function createBridgeRouter(): Router {
    */
   router.post('/bridges/:bridgeId/trigger', async (req: Request, res: Response) => {
     try {
-      const result = await loyaltyTriggerService.syncBridgeRecord(req.params.bridgeId);
-      createResponse(res, result);
+      const bridgeId = Array.isArray(req.params.bridgeId) ? req.params.bridgeId[0] : req.params.bridgeId;
+      const result = await loyaltyTriggerService.syncBridgeRecord(bridgeId);
+      return createResponse(res, result);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Trigger failed';
-      createErrorResponse(res, 500, 'TRIGGER_ERROR', errorMessage);
+      return createErrorResponse(res, 500, 'TRIGGER_ERROR', errorMessage);
     }
   });
 
@@ -348,8 +351,9 @@ export function createBridgeRouter(): Router {
    */
   router.post('/bridges/:bridgeId/retry', async (req: Request, res: Response) => {
     try {
+      const bridgeId = Array.isArray(req.params.bridgeId) ? req.params.bridgeId[0] : req.params.bridgeId;
       const bridge = await BridgeRecord.findOne({
-        bridgeId: req.params.bridgeId,
+        bridgeId,
         deletedAt: { $exists: false }
       });
 
@@ -365,11 +369,11 @@ export function createBridgeRouter(): Router {
         return createErrorResponse(res, 400, 'MAX_RETRIES', 'Maximum retry attempts exceeded');
       }
 
-      const result = await loyaltyTriggerService.syncBridgeRecord(req.params.bridgeId);
-      createResponse(res, result);
+      const result = await loyaltyTriggerService.syncBridgeRecord(bridgeId);
+      return createResponse(res, result);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Retry failed';
-      createErrorResponse(res, 500, 'RETRY_ERROR', errorMessage);
+      return createErrorResponse(res, 500, 'RETRY_ERROR', errorMessage);
     }
   });
 
@@ -379,12 +383,13 @@ export function createBridgeRouter(): Router {
    */
   router.delete('/bridges/:bridgeId', async (req: Request, res: Response) => {
     try {
+      const bridgeId = Array.isArray(req.params.bridgeId) ? req.params.bridgeId[0] : req.params.bridgeId;
       const { reason } = req.body;
-      await loyaltyTriggerService.cancelBridgeRecord(req.params.bridgeId, reason || 'Cancelled by user');
-      createResponse(res, { message: 'Bridge record cancelled' });
+      await loyaltyTriggerService.cancelBridgeRecord(bridgeId, reason || 'Cancelled by user');
+      return createResponse(res, { message: 'Bridge record cancelled' });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Cancellation failed';
-      createErrorResponse(res, 500, 'CANCEL_ERROR', errorMessage);
+      return createErrorResponse(res, 500, 'CANCEL_ERROR', errorMessage);
     }
   });
 
@@ -406,7 +411,7 @@ export function createBridgeRouter(): Router {
           400,
           'VALIDATION_ERROR',
           'Invalid conversion payload',
-          validationResult.error.errors
+          validationResult.error.issues
         );
       }
 
@@ -416,11 +421,11 @@ export function createBridgeRouter(): Router {
         return createErrorResponse(res, 400, 'REJECTED', result.error || 'Webhook rejected');
       }
 
-      createResponse(res, result, result.processed ? 200 : 202);
+      return createResponse(res, result, result.processed ? 200 : 202);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Processing failed';
       logger.error('Conversion processing failed', { error: errorMessage });
-      createErrorResponse(res, 500, 'PROCESSING_ERROR', errorMessage);
+      return createErrorResponse(res, 500, 'PROCESSING_ERROR', errorMessage);
     }
   });
 
@@ -430,11 +435,12 @@ export function createBridgeRouter(): Router {
    */
   router.post('/conversions/:conversionId/reprocess', async (req: Request, res: Response) => {
     try {
-      const result = await attributionListener.reprocessConversion(req.params.conversionId);
-      createResponse(res, result);
+      const conversionId = Array.isArray(req.params.conversionId) ? req.params.conversionId[0] : req.params.conversionId;
+      const result = await attributionListener.reprocessConversion(conversionId);
+      return createResponse(res, result);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Reprocessing failed';
-      createErrorResponse(res, 500, 'REPROCESS_ERROR', errorMessage);
+      return createErrorResponse(res, 500, 'REPROCESS_ERROR', errorMessage);
     }
   });
 
@@ -464,9 +470,9 @@ export function createBridgeRouter(): Router {
           .limit(50);
       }
 
-      createResponse(res, { campaigns });
+      return createResponse(res, { campaigns });
     } catch (error) {
-      createErrorResponse(res, 500, 'QUERY_ERROR', 'Failed to list campaigns');
+      return createErrorResponse(res, 500, 'QUERY_ERROR', 'Failed to list campaigns');
     }
   });
 
@@ -481,10 +487,10 @@ export function createBridgeRouter(): Router {
         campaignId: req.body.campaignId || uuidv4()
       });
       await campaign.save();
-      createResponse(res, campaign, 201);
+      return createResponse(res, campaign, 201);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Creation failed';
-      createErrorResponse(res, 500, 'CREATE_ERROR', errorMessage);
+      return createErrorResponse(res, 500, 'CREATE_ERROR', errorMessage);
     }
   });
 
@@ -494,15 +500,16 @@ export function createBridgeRouter(): Router {
    */
   router.get('/campaigns/:campaignId', async (req: Request, res: Response) => {
     try {
-      const campaign = await CampaignConfig.findByCampaignId(req.params.campaignId);
+      const campaignId = Array.isArray(req.params.campaignId) ? req.params.campaignId[0] : req.params.campaignId;
+      const campaign = await CampaignConfig.findByCampaignId(campaignId);
 
       if (!campaign) {
         return createErrorResponse(res, 404, 'NOT_FOUND', 'Campaign not found');
       }
 
-      createResponse(res, campaign);
+      return createResponse(res, campaign);
     } catch (error) {
-      createErrorResponse(res, 500, 'QUERY_ERROR', 'Failed to get campaign');
+      return createErrorResponse(res, 500, 'QUERY_ERROR', 'Failed to get campaign');
     }
   });
 
@@ -512,7 +519,8 @@ export function createBridgeRouter(): Router {
    */
   router.patch('/campaigns/:campaignId', async (req: Request, res: Response) => {
     try {
-      const campaign = await CampaignConfig.findByCampaignId(req.params.campaignId);
+      const campaignId = Array.isArray(req.params.campaignId) ? req.params.campaignId[0] : req.params.campaignId;
+      const campaign = await CampaignConfig.findByCampaignId(campaignId);
 
       if (!campaign) {
         return createErrorResponse(res, 404, 'NOT_FOUND', 'Campaign not found');
@@ -521,10 +529,10 @@ export function createBridgeRouter(): Router {
       Object.assign(campaign, req.body);
       await campaign.save();
 
-      createResponse(res, campaign);
+      return createResponse(res, campaign);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Update failed';
-      createErrorResponse(res, 500, 'UPDATE_ERROR', errorMessage);
+      return createErrorResponse(res, 500, 'UPDATE_ERROR', errorMessage);
     }
   });
 
@@ -575,7 +583,7 @@ export function createBridgeRouter(): Router {
         merchantId as string | undefined
       );
 
-      createResponse(res, {
+      return createResponse(res, {
         summary: summary[0] || {
           totalCoinsAwarded: 0,
           totalCashbackAwarded: 0,
@@ -584,7 +592,7 @@ export function createBridgeRouter(): Router {
           avgCoinsPerConversion: 0,
           avgCashbackPerConversion: 0
         },
-        channelBreakdown: channelBreakdown.map(c => ({
+        channelBreakdown: channelBreakdown.map((c: { channel: string; totalCoins: number; totalCashback: number; count: number }) => ({
           channel: c.channel,
           totalCoins: c.totalCoins,
           totalCashback: c.totalCashback,
@@ -592,7 +600,7 @@ export function createBridgeRouter(): Router {
         }))
       });
     } catch (error) {
-      createErrorResponse(res, 500, 'ANALYTICS_ERROR', 'Failed to get analytics');
+      return createErrorResponse(res, 500, 'ANALYTICS_ERROR', 'Failed to get analytics');
     }
   });
 
@@ -605,7 +613,7 @@ export function createBridgeRouter(): Router {
       const { startDate, endDate } = req.query;
 
       const match: Record<string, unknown> = {
-        merchantId: req.params.merchantId,
+        merchantId: req.params.merchantId as string,
         status: 'completed',
         deletedAt: { $exists: false }
       };
@@ -616,6 +624,7 @@ export function createBridgeRouter(): Router {
         if (endDate) (match.createdAt as Record<string, Date>).$lte = new Date(endDate as string);
       }
 
+      const merchantId = req.params.merchantId as string;
       const [summary, topChannels, recentBridges] = await Promise.all([
         BridgeRecord.aggregate([
           { $match: match },

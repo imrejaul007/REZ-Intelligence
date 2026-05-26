@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { agentRegistry } from '../services/agentRegistry.js';
 import { AgentSchema, AgentCapabilitySchema, TaskSchema, MessageSchema } from '../types/index.js';
-import { logger } from '../utils/logger.js';
+import { logger } from './utils/logger.js';
 
 const router = Router();
 

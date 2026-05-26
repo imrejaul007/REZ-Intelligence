@@ -103,7 +103,7 @@ export declare const DIETARY_TAGS: {
     readonly VEGAN: {
         readonly id: "vegan";
         readonly name: "Vegan";
-        readonly description: "No animal products of any kind";
+        readonly description: "No animal products of unknown kind";
         readonly excludes: readonly ["meat", "poultry", "fish", "seafood", "dairy", "eggs", "honey", "gelatin", "rennet", "lard", "ghee", "animal fats", "isenglass"];
         readonly aliases: readonly ["vegan", "plant-based"];
     };

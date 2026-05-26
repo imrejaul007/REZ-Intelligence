@@ -17,7 +17,7 @@ import { predictRevisit } from './revisitPredictor';
 import { predictConversion } from './conversionPredictor';
 import { PredictionCache, BatchPredictionJob } from '../models/predictionCache';
 import { UserProfile } from '../models/userProfile';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 
 // Cache TTL in hours
 const CACHE_TTL_HOURS = {
@@ -282,7 +282,7 @@ export async function getBatchJobStatus(
     completed: job.completed,
     failed: job.failed,
     results: job.results as AnyPrediction[],
-    errors: (job as unknown).jobErrors?.length > 0 ? (job as unknown).jobErrors : undefined
+    errors: (job as unknown as { jobErrors?: Array<{ userId: string; error: string }> }).jobErrors?.length ? (job as unknown as { jobErrors?: Array<{ userId: string; error: string }> }).jobErrors : undefined
   };
 }
 

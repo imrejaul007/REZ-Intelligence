@@ -32,10 +32,14 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RiskProfile = exports.AccountStanding = exports.RiskLevel = void 0;
 exports.generateProfileId = generateProfileId;
 const mongoose_1 = __importStar(require("mongoose"));
+const crypto_1 = __importDefault(require("crypto"));
 var RiskLevel;
 (function (RiskLevel) {
     RiskLevel["TRUSTED"] = "TRUSTED";
@@ -166,7 +170,7 @@ RiskProfileSchema.methods.updateRiskLevel = function () {
 exports.RiskProfile = mongoose_1.default.model('RiskProfile', RiskProfileSchema);
 function generateProfileId() {
     const timestamp = Date.now().toString(36);
-    const random = Math.random().toString(36).substring(2, 8);
+    const random = crypto_1.default.randomUUID().replace(/-/g, '').substring(0, 6);
     return `RP-${timestamp}-${random}`.toUpperCase();
 }
 //# sourceMappingURL=RiskProfile.js.map

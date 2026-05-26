@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import axios from 'axios';
 import { ProcessedOrchestrationRequest } from '../models/OrchestrationRequest';
 import { ErrorDetails } from '../models/OrchestrationResponse';
@@ -42,7 +43,7 @@ export class EscalationService {
       return null;
     }
 
-    const ticketId = `ESC-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const ticketId = `ESC-${Date.now()}-${randomUUID().replace(/-/g, '').substring(0, 9)}`;
 
     const ticket: EscalationTicket = {
       ticketId,

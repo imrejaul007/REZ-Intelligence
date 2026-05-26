@@ -3,8 +3,9 @@
  * Coordinates all AI services across REZ ecosystem
  */
 
-import express, { Request, Response } import logger from './utils/logger';
-import from 'express';
+import express, { Request, Response } from 'express';
+import { randomUUID } from 'crypto';
+import logger from './utils/logger';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '4101', 10);
@@ -14,6 +15,12 @@ app.use(express.json());
 // ============================================
 // TYPES
 // ============================================
+
+// Helper function for deterministic mock data
+function seededRandom(seed: number, offset: number): number {
+  const x = Math.sin(seed + offset) * 10000;
+  return x - Math.floor(x);
+}
 
 interface AIRequest {
   userId: string;
@@ -105,12 +112,15 @@ app.post('/api/ai/request', (req: Request, res: Response) => {
 app.post('/api/predict', (req: Request, res: Response) => {
   const { userId, type } = req.body;
 
+  // Use seed based on userId for deterministic mock data
+  const seed = userId ? userId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) : Date.now();
+
   // Mock prediction (would call REZ-predictive-engine)
   const predictions: Record<string, unknown> = {
-    churn: { probability: Math.random() * 0.3, risk: 'low' },
-    ltv: { predicted: 50000 + Math.random() * 100000, confidence: 0.85 },
-    conversion: { probability: Math.random(), segment: 'potential_buyer' },
-    revisit: { daysUntilReturn: Math.floor(Math.random() * 14) + 1 },
+    churn: { probability: seededRandom(seed, 1) * 0.3, risk: 'low' },
+    ltv: { predicted: 50000 + seededRandom(seed, 2) * 100000, confidence: 0.85 },
+    conversion: { probability: seededRandom(seed, 3), segment: 'potential_buyer' },
+    revisit: { daysUntilReturn: Math.floor(seededRandom(seed, 4) * 14) + 1 },
   };
 
   res.json({
@@ -233,10 +243,12 @@ function handlePrediction(
   context: string,
   data?: Record<string, unknown>
 ): Record<string, unknown> {
+  // Use seed based on userId for deterministic mock data
+  const seed = userId ? userId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) : Date.now();
   return {
-    churnRisk: Math.random() * 0.3,
-    predictedLTV: 50000 + Math.random() * 100000,
-    conversionLikelihood: Math.random(),
+    churnRisk: seededRandom(seed, 10) * 0.3,
+    predictedLTV: 50000 + seededRandom(seed, 11) * 100000,
+    conversionLikelihood: seededRandom(seed, 12),
   };
 }
 

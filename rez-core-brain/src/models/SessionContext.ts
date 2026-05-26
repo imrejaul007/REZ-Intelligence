@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import mongoose, { Document, Schema, Model } from 'mongoose';
 import { ISession } from '../types';
 
@@ -171,7 +172,7 @@ sessionSchema.statics.findOrCreate = async function (
   let session = await this.findActiveByUser(userId);
 
   if (!session) {
-    const sessionId = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const sessionId = `sess_${crypto.randomUUID()}`;
     session = await this.create({
       id: sessionId,
       userId,
@@ -228,13 +229,22 @@ sessionSchema.statics.getActiveCount = async function (userId: string) {
 // Pre-save hook
 sessionSchema.pre('save', function (next) {
   if (!this.id) {
-    this.id = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    this.id = `sess_${crypto.randomUUID()}`;
   }
   next();
 });
 
 // Create and export model
-export const Session: Model<ISessionDocument> = mongoose.model<ISessionDocument>(
+interface ISessionModel extends Model<ISessionDocument> {
+  findActiveByUser(userId: string): Promise<ISessionDocument | null>;
+  findByUser(userId: string, options?: { state?: SessionState; limit?: number; skip?: number }): Promise<ISessionDocument[]>;
+  findOrCreate(userId: string, agentId?: string): Promise<ISessionDocument>;
+  endAllActive(userId: string): Promise<number>;
+  cleanupStaleSessions(ttlSeconds: number): Promise<number>;
+  getActiveCount(userId: string): Promise<number>;
+}
+
+export const Session = mongoose.model<ISessionDocument, ISessionModel>(
   'Session',
   sessionSchema
 );

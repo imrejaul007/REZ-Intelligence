@@ -1,5 +1,5 @@
 /**
- * REZ Care Service - Upsell & Cross-Sell Engine
+ * REZ Care Service - Upsell & Cross-Sell Engine (MongoDB Version)
  *
  * Offers relevant products/services during support interactions:
  * - Context-aware recommendations
@@ -9,8 +9,10 @@
  * - Complementary products
  */
 
-import { logger } from '../utils/logger';
+import { randomUUID } from 'crypto';
+import { logger } from '../utils/logger.js';
 import { serviceConnector } from './serviceConnector';
+import { UpsellOffer as UpsellOfferModel, IUpsellOffer } from '../models/UpsellOffer';
 
 export interface UpsellOffer {
   id: string;
@@ -25,7 +27,7 @@ export interface UpsellOffer {
   serviceId?: string;
   cta: string;
   reason: string;
-  relevance: number; // 0-1
+  relevance: number;
 }
 
 export interface UpsellContext {
@@ -38,10 +40,22 @@ export interface UpsellContext {
   conversationHistory?: string[];
 }
 
+interface TrackedOffer {
+  id: string;
+  customerId: string;
+  type: string;
+  platform: string;
+  context: string;
+  relevance: number;
+}
+
 /**
- * Upsell Engine
+ * Upsell Engine with MongoDB persistence
  */
 class UpsellEngine {
+  private recentlyShown: Map<string, { offers: string[]; timestamp: number }> = new Map();
+  private readonly SHOWN_COOLDOWN = 5 * 60 * 1000; // 5 minutes
+
   /**
    * Generate upsell offers based on context
    */
@@ -52,7 +66,7 @@ class UpsellEngine {
     const categoryOffers = this.getCategoryOffers(context);
     offers.push(...categoryOffers);
 
-    // 2. CONTEXT-BASED OFFERS
+    // 2. CONTEXT-BASED OFFERS (from ML services)
     const contextOffers = await this.getContextOffers(context);
     offers.push(...contextOffers);
 
@@ -61,13 +75,67 @@ class UpsellEngine {
     offers.push(...loyaltyOffers);
 
     // Sort by relevance and return top 3
-    return offers
+    const topOffers = offers
       .sort((a, b) => b.relevance - a.relevance)
       .slice(0, 3);
+
+    // Track shown offers in MongoDB
+    await this.trackOffersInDB(topOffers, context);
+
+    return topOffers;
   }
 
   /**
-   * Category-based offers
+   * Track offers in MongoDB for analytics
+   */
+  private async trackOffersInDB(offers: UpsellOffer[], context: UpsellContext): Promise<void> {
+    try {
+      const offerIds = offers.map(o => o.id);
+
+      for (const offer of offers) {
+        const trackedOffer = new UpsellOfferModel({
+          offerId: offer.id,
+          customerId: context.customerId,
+          merchantId: context.merchantId,
+          type: offer.type,
+          title: offer.title,
+          description: offer.description,
+          offer: offer.offer,
+          originalPrice: offer.originalPrice,
+          discountedPrice: offer.discountedPrice,
+          discount: offer.discount,
+          productId: context.productId,
+          serviceId: offer.serviceId,
+          cta: offer.cta,
+          reason: offer.reason,
+          relevance: offer.relevance,
+          platform: context.platform,
+          context: context.category,
+          status: 'active',
+          conversions: [{
+            action: 'shown',
+            timestamp: new Date()
+          }],
+          revenue: 0,
+        });
+
+        await trackedOffer.save().catch(() => {
+          // MongoDB not available, skip persistence
+        });
+      }
+
+      // Track in memory for cooldown
+      this.recentlyShown.set(context.customerId, {
+        offers: offerIds,
+        timestamp: Date.now()
+      });
+    } catch {
+      // MongoDB not available, continue without persistence
+    }
+  }
+
+  /**
+   * Category-based offers (rule-based, always available)
    */
   private getCategoryOffers(context: UpsellContext): UpsellOffer[] {
     const offers: UpsellOffer[] = [];
@@ -133,7 +201,7 @@ class UpsellEngine {
       });
     }
 
-    // GENERAL → Loyalty upgrade
+    // GENERAL → Loyalty upgrade (always shown)
     offers.push({
       id: 'upsell_prime',
       type: 'subscription',
@@ -172,7 +240,7 @@ class UpsellEngine {
           offer: '₹1999/month - Personal shopping assistant, exclusive access',
           discountedPrice: 1999,
           cta: 'Get Concierge Service',
-          reason: 'VIP customer (LTV: ₹' + ltv + ') - offer premium service',
+          reason: `VIP customer (LTV: ₹${ltv}) - offer premium service`,
           relevance: 0.7,
         });
       }
@@ -190,7 +258,7 @@ class UpsellEngine {
           description: 'Double points, birthday bonuses, exclusive access',
           offer: 'FREE upgrade - Stay with us and earn more',
           cta: 'Join Loyalty+',
-          reason: 'High churn risk (' + Math.round(churnRisk * 100) + '%) - retention offer',
+          reason: `High churn risk (${Math.round(churnRisk * 100)}%) - retention offer`,
           relevance: 0.9,
         });
       }
@@ -214,7 +282,6 @@ class UpsellEngine {
     const offers: UpsellOffer[] = [];
     const lowerCategory = context.category.toLowerCase();
 
-    // Add-ons based on category
     const addonMap: Record<string, UpsellOffer> = {
       electronics: {
         id: 'cross_sell_warranty',
@@ -252,7 +319,6 @@ class UpsellEngine {
       },
     };
 
-    // Match category to offer
     for (const [category, offer] of Object.entries(addonMap)) {
       if (lowerCategory.includes(category)) {
         offers.push(offer);
@@ -292,34 +358,131 @@ class UpsellEngine {
     const topOffer = offers[0];
 
     let message = '\n\n━━━━━ SPECIAL OFFER ━━━━━\n';
-    message += `🎁 ${topOffer.title}\n`;
+    message += `${topOffer.title}\n`;
     message += `${topOffer.description}\n`;
-    message += `➡️ ${topOffer.offer}\n`;
-    message += `📞 ${topOffer.cta}\n`;
+    message += `${topOffer.offer}\n`;
+    message += `${topOffer.cta}\n`;
     message += '━━━━━━━━━━━━━━━━━━━━━━';
-
-    if (offers.length > 1) {
-      message += '\n\nOr choose:';
-      offers.slice(1).forEach((offer, i) => {
-        message += `\n${i + 2}. ${offer.title} - ${offer.cta}`;
-      });
-    }
 
     return message;
   }
 
   /**
-   * Track upsell conversion
+   * Track conversion (click, accept, reject)
    */
-  async trackConversion(offerId: string, customerId: string, action: 'shown' | 'clicked' | 'accepted' | 'declined'): Promise<void> {
-    logger.info('[Upsell] Conversion tracked', { offerId, customerId, action });
-
+  async trackConversion(
+    event: 'clicked' | 'accepted' | 'rejected',
+    customerId: string,
+    offerId: string
+  ): Promise<void> {
     try {
-      await serviceConnector.trackAttribution(customerId, `upsell_${action}`, offerId === 'accepted' ? 1 : 0);
+      // Update in MongoDB
+      const updateAction = event === 'clicked' ? 'clicked'
+        : event === 'accepted' ? 'accepted'
+        : 'rejected';
+
+      await UpsellOfferModel.updateOne(
+        { customerId, 'conversions.action': 'shown' },
+        {
+          $push: {
+            conversions: { action: updateAction, timestamp: new Date() }
+          },
+          $inc: {
+            revenue: event === 'accepted' ? 1 : 0
+          }
+        }
+      ).catch(() => {
+        // MongoDB not available
+      });
     } catch {
-      // Attribution tracking failed silently
+      // Error tracking conversion
+    }
+  }
+
+  /**
+   * Get offer analytics
+   */
+  async getOfferAnalytics(offerId?: string): Promise<{
+    totalShown: number;
+    totalClicked: number;
+    totalAccepted: number;
+    conversionRate: number;
+    revenue: number;
+  }> {
+    try {
+      const query = offerId ? { offerId } : {};
+
+      const offers = await UpsellOfferModel.find(query);
+      let totalShown = 0;
+      let totalClicked = 0;
+      let totalAccepted = 0;
+      let revenue = 0;
+
+      for (const offer of offers) {
+        for (const conv of offer.conversions) {
+          if (conv.action === 'shown') totalShown++;
+          else if (conv.action === 'clicked') totalClicked++;
+          else if (conv.action === 'accepted') {
+            totalAccepted++;
+            revenue += offer.discountedPrice || 0;
+          }
+        }
+      }
+
+      return {
+        totalShown,
+        totalClicked,
+        totalAccepted,
+        conversionRate: totalShown > 0 ? (totalAccepted / totalShown) * 100 : 0,
+        revenue
+      };
+    } catch {
+      return {
+        totalShown: 0,
+        totalClicked: 0,
+        totalAccepted: 0,
+        conversionRate: 0,
+        revenue: 0
+      };
+    }
+  }
+
+  /**
+   * Get top performing offers
+   */
+  async getTopOffers(limit: number = 10): Promise<Array<{
+    offerId: string;
+    title: string;
+    conversions: number;
+    revenue: number;
+  }>> {
+    try {
+      const offers = await UpsellOfferModel.aggregate([
+        { $unwind: '$conversions' },
+        { $match: { 'conversions.action': 'accepted' } },
+        {
+          $group: {
+            _id: '$offerId',
+            title: { $first: '$title' },
+            conversions: { $sum: 1 },
+            revenue: { $sum: '$discountedPrice' }
+          }
+        },
+        { $sort: { conversions: -1 } },
+        { $limit: limit }
+      ]);
+
+      return offers.map(o => ({
+        offerId: o._id,
+        title: o.title,
+        conversions: o.conversions,
+        revenue: o.revenue
+      }));
+    } catch {
+      return [];
     }
   }
 }
 
+// Export singleton
 export const upsellEngine = new UpsellEngine();

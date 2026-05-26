@@ -2,7 +2,7 @@
  * TypeScript type definitions for REZ Price Predictor
  */
 
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 
 /**
  * Pricing strategy

@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import { z } from 'zod';
 import {
   asyncHandler,
   validateParams,
@@ -16,12 +15,11 @@ import {
   ForecastQuerySchema,
   ReorderQuerySchema,
   OptimizeQuerySchema,
-  SyncOrdersSchema,
   ABCAnalysisQuerySchema,
   ForecastMethod,
 } from '../types/inventory.types.js';
-import { OrderData, DemandData, ProductMaster } from '../models/schemas.js';
-import { apiLogger as logger } from '../utils/logger.js';
+import { DemandData, ProductMaster } from '../models/schemas.js';
+import { apiLogger as logger } from './utils/logger.js';
 import { startOfDay, subDays, parseISO, format } from 'date-fns';
 
 const router = Router();
@@ -54,11 +52,12 @@ router.get(
   validateQuery(ForecastQuerySchema),
   asyncHandler(async (req: Request, res: Response) => {
     const { sku } = req.params;
-    const { horizon, method, confidenceLevel } = req.query as {
+    const query = req.query as unknown as {
       horizon: number;
       method: ForecastMethod;
       confidenceLevel: number;
     };
+    const { horizon, method, confidenceLevel } = query;
 
     logger.info(`Forecast request for SKU: ${sku}`, { horizon, method, confidenceLevel });
 
@@ -136,11 +135,12 @@ router.get(
   validateQuery(ReorderQuerySchema),
   asyncHandler(async (req: Request, res: Response) => {
     const { sku } = req.params;
-    const { daysUntilStockout, considerSeasonality, serviceLevel } = req.query as {
+    const query = req.query as unknown as {
       daysUntilStockout: number;
       considerSeasonality: boolean;
       serviceLevel: number;
     };
+    const { daysUntilStockout, considerSeasonality, serviceLevel } = query;
 
     logger.info(`Reorder suggestion request for SKU: ${sku}`);
 
@@ -256,10 +256,11 @@ router.get(
   validateQuery(OptimizeQuerySchema),
   asyncHandler(async (req: Request, res: Response) => {
     const { sku } = req.params;
-    const { targetTurnsPerYear, holdingCostPercent } = req.query as {
+    const query = req.query as unknown as {
       targetTurnsPerYear: number;
       holdingCostPercent: number;
     };
+    const { targetTurnsPerYear, holdingCostPercent } = query;
 
     logger.info(`Stock optimization request for SKU: ${sku}`);
 

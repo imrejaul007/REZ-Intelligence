@@ -2,7 +2,7 @@
  * TypeScript type definitions for REZ Demand Forecast
  */
 
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 
 /**
  * Forecast features

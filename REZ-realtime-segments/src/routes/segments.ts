@@ -810,7 +810,7 @@ router.post('/api/v1/webhooks', asyncHandler(async (req: Request, res: Response)
   const body = WebhookConfigBodySchema.parse(req.body);
 
   // Store webhook configuration (in production, would persist to database)
-  const webhookId = `webhook_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  const webhookId = `webhook_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
 
   const webhookConfig = {
     id: webhookId,

@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import logger from './utils/logger';
 
 import 'dotenv/config';
@@ -7,11 +8,16 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
+import mongoose from 'mongoose';
 
 // Environment configuration
 const IDENTITY_SERVICE_URL = process.env.IDENTITY_SERVICE_URL || 'http://localhost:4001';
 const INTERNAL_SERVICE_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 const USE_REAL_API = process.env.USE_REAL_IDENTITY === 'true';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-identity';
+
+// PRODUCTION: MongoDB connection flag
+let dbConnected = false;
 
 // Real API helper
 async function fetchFromIdentityService<T>(endpoint: string, options?: RequestInit): Promise<T | null> {
@@ -35,6 +41,60 @@ async function fetchFromIdentityService<T>(endpoint: string, options?: RequestIn
   } catch (error) {
     console.error(`Identity Service API error (${endpoint}):`, error);
     return null;
+  }
+}
+
+// ============================================================================
+// MongoDB Schema (PRODUCTION)
+// ============================================================================
+
+const IdentitySchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true },
+  type: { type: String, enum: ['email', 'phone', 'device', 'oauth'], required: true },
+  value: { type: String, required: true },
+  verified: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now },
+  userId: { type: String, required: true, index: true }
+}, { _id: false });
+
+const UnifiedProfileSchema = new mongoose.Schema({
+  userId: { type: String, required: true, unique: true, index: true },
+  identities: [IdentitySchema],
+  profiles: [{
+    appId: String,
+    appName: String,
+    userId: String,
+    attributes: mongoose.Schema.Types.Mixed,
+    firstSeen: Date,
+    lastSeen: Date
+  }],
+  relationships: [{
+    relatedUserId: String,
+    type: String,
+    createdAt: Date
+  }]
+}, { timestamps: true });
+
+// Index for fast lookups
+IdentitySchema.index({ type: 1, value: 1 }, { unique: true });
+
+const UnifiedProfile = mongoose.models.UnifiedProfile ||
+  mongoose.model('UnifiedProfile', UnifiedProfileSchema);
+
+// ============================================================================
+// Database Connection
+// ============================================================================
+
+async function connectToDatabase(): Promise<void> {
+  if (dbConnected) return;
+
+  try {
+    await mongoose.connect(MONGODB_URI);
+    dbConnected = true;
+    logger.info('[Identity MCP] Connected to MongoDB');
+  } catch (error) {
+    logger.error('[Identity MCP] Failed to connect to MongoDB:', error);
+    throw error;
   }
 }
 
@@ -461,35 +521,42 @@ async function resolveIdentity(params: {
     }
   }
 
-  // Fall back to local search
-  // Try to find by type-specific search
+  // PRODUCTION: Use MongoDB for persistence
+  try {
+    await connectToDatabase();
+
+    const query = type
+      ? { 'identities.type': type, 'identities.value': identifier }
+      : { 'identities.value': identifier };
+
+    const profile = await UnifiedProfile.findOne(query).lean();
+    if (profile) {
+      return {
+        success: true,
+        userId: profile.userId,
+        confidence: 1.0,
+        matchedOn: `${type || 'any'}:${identifier}`,
+        source: 'database'
+      };
+    }
+  } catch (error) {
+    logger.error('[Identity MCP] MongoDB lookup failed:', error);
+  }
+
+  // Fall back to in-memory search only if DB fails
   if (type) {
     const key = `${type}:${identifier}`;
     const userId = identityIndex.get(key);
     if (userId) {
-      return {
-        success: true,
-        userId,
-        confidence: 1.0,
-        matchedOn: key,
-        source: 'local'
-      };
+      return { success: true, userId, confidence: 1.0, matchedOn: key, source: 'memory' };
     }
   }
 
-  // Fuzzy search across all types
   const normalizedIdentifier = identifier.toLowerCase().trim();
-
   for (const [key, userId] of identityIndex.entries()) {
     const [, value] = key.split(':');
     if (value.toLowerCase().includes(normalizedIdentifier)) {
-      return {
-        success: true,
-        userId,
-        confidence: 0.9,
-        matchedOn: key,
-        source: 'local'
-      };
+      return { success: true, userId, confidence: 0.9, matchedOn: key, source: 'memory' };
     }
   }
 
@@ -551,7 +618,7 @@ function linkIdentities(params: {
 
     // Add new identity
     const newIdentity: Identity = {
-      id: `id_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `${crypto.randomUUID()}`,
       type: identity.type,
       value: identity.value,
       verified: false,

@@ -199,10 +199,6 @@ router.patch('/loyalty', auth_1.requestId, auth_1.authenticate, async (req, res)
             });
             return;
         }
-        // Process history dates
-        if (validation.data.history?.lastPurchaseDate) {
-            validation.data.history.lastPurchaseDate = new Date(validation.data.history.lastPurchaseDate);
-        }
         const profile = await personalizationService_1.personalizationService.updateLoyaltyProfile(userId, validation.data);
         res.json({
             success: true,

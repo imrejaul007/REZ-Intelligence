@@ -17,7 +17,7 @@ import {
   roundTo,
   clamp,
 } from '../utils/math.js';
-import { optimizationLogger as logger } from '../utils/logger.js';
+import { optimizationLogger as logger } from './utils/logger.js';
 import config from '../config/index.js';
 import { subDays, startOfDay } from 'date-fns';
 
@@ -248,7 +248,7 @@ export class StockOptimizerService {
 
     const slowMovers = classifications
       .filter((c) => c.velocity === 'slow')
-      .sort((a, b) => a.daysOnHand - b.daysOnHand)
+      .sort((a, b) => (a.daysOnHand ?? 0) - (b.daysOnHand ?? 0))
       .slice(0, 100);
 
     logger.info('ABC analysis completed', {

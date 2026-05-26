@@ -6,7 +6,7 @@ import {
   LTVPredictionResult,
   CustomerTier
 } from '../types';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 
 // Tier thresholds (annual LTV)
 const TIER_THRESHOLDS = {

@@ -5,7 +5,7 @@ const logsDir = path.join(process.cwd(), 'logs');
 
 const { combine, timestamp, printf, colorize, errors, json } = winston.format;
 
-const logFormat = printf(({ level, message, timestamp, ...rest }) => {
+const logFormat = printf(({ level, message, timestamp, ...rest }: { level: string; message: string; timestamp: string; [key: string]: unknown }) => {
   const meta = Object.keys(rest).length ? JSON.stringify(rest) : '';
   return `${timestamp} [${level}]: ${message} ${meta}`;
 });

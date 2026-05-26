@@ -1,4 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import { randomUUID } from 'crypto';
 import { CollaborationManager } from '../services/collaborationManager';
 import { OrchestrationRequestSchema } from '../models/OrchestrationRequest';
 import { CollaborationConfigSchema } from '../models/CollaborationDetails';
@@ -25,7 +26,7 @@ export function createCollaborationRoutes(config: CollaborationRoutesConfig): Ro
         return res.status(400).json({
           error: 'VALIDATION_ERROR',
           message: 'Invalid request body',
-          details: validationResult.error.errors,
+          details: validationResult.error.issues,
         });
       }
 
@@ -35,12 +36,12 @@ export function createCollaborationRoutes(config: CollaborationRoutesConfig): Ro
         return res.status(400).json({
           error: 'VALIDATION_ERROR',
           message: 'Invalid collaboration config',
-          details: configValidation.error.errors,
+          details: configValidation.error.issues,
         });
       }
 
       const request = validationResult.data;
-      const collaborationId = `COLLAB-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const collaborationId = `COLLAB-${Date.now()}-${randomUUID().replace(/-/g, '').substring(0, 9)}`;
 
       logger.info('Collaboration created via API', {
         collaborationId,
@@ -73,7 +74,7 @@ export function createCollaborationRoutes(config: CollaborationRoutesConfig): Ro
         return res.status(400).json({
           error: 'VALIDATION_ERROR',
           message: 'Invalid request body',
-          details: validationResult.error.errors,
+          details: validationResult.error.issues,
         });
       }
 
@@ -83,7 +84,7 @@ export function createCollaborationRoutes(config: CollaborationRoutesConfig): Ro
         return res.status(400).json({
           error: 'VALIDATION_ERROR',
           message: 'Invalid collaboration config',
-          details: configValidation.error.errors,
+          details: configValidation.error.issues,
         });
       }
 
@@ -191,7 +192,7 @@ export function createCollaborationRoutes(config: CollaborationRoutesConfig): Ro
     if (!validationResult.success) {
       return res.status(400).json({
         valid: false,
-        errors: validationResult.error.errors,
+        errors: validationResult.error.issues,
       });
     }
 

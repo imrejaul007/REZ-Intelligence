@@ -3,6 +3,7 @@
  * Analyzes and predicts consumer purchasing intent
  */
 
+import crypto from 'crypto';
 import axios, { AxiosInstance } from 'axios';
 import winston from 'winston';
 import { ConsumerGraph } from '../ConsumerGraph';
@@ -81,7 +82,7 @@ export class IntentModule {
   async recordSignal(signal: Omit<IntentSignal, 'signal_id'>): Promise<void> {
     const fullSignal: IntentSignal = {
       ...signal,
-      signal_id: `intent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      signal_id: `${crypto.randomUUID()}`,
     };
 
     if (!this.signals.has(signal.user_id)) {

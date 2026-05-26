@@ -1,7 +1,7 @@
 import { Segment, ISegmentDocument } from '../models/Segment.js';
 import { RFMScore, IRFMScoreDocument } from '../models/RFMScore.js';
 import { SEGMENTS, UNKNOWN_SEGMENT, ISegment } from '../types/index.js';
-import logger from '../utils/logger.js';
+import logger from './utils/logger.js';
 
 /**
  * Segment Service

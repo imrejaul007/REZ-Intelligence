@@ -43,18 +43,27 @@ export declare class IntelligenceService {
         actionType?: string;
     }): Promise<void>;
     /**
-     * Generate personalized recommendations based on user data
+     * Update session duration in metrics
      */
-    generateRecommendations(input: RecommendationInput): Promise<{
-        recommendations: Array<{
-            type: string;
-            content: string;
-            confidence: number;
-            reason: string;
-        }>;
+    recordSessionDuration(userId: string, duration: number): Promise<void>;
+    /**
+     * Generate personalized recommendations
+     */
+    generateRecommendations(input: RecommendationInput): Promise<Array<{
+        itemId: string;
+        score: number;
+        reason: string;
+    }>>;
+    /**
+     * Get engagement score for a user
+     */
+    getEngagementScore(userId: string): Promise<{
+        score: number;
+        level: 'low' | 'medium' | 'high';
+        factors: Record<string, number>;
     }>;
     /**
-     * Calculate user intent based on context
+     * Calculate user intent from activity
      */
     calculateIntent(userId: string, currentAction: string, context?: Record<string, unknown>): Promise<{
         primaryIntent: string;
@@ -73,31 +82,22 @@ export declare class IntelligenceService {
      */
     analyzeBehaviorPatterns(userId: string): Promise<{
         patterns: Array<{
-            pattern: string;
-            frequency: number;
-            lastOccurrence: Date;
+            type: string;
+            description: string;
             confidence: number;
         }>;
-        insights: string[];
-        predictedNextActions: string[];
+        preferredTime: string;
+        preferredAgents: string[];
     }>;
     /**
-     * Get user engagement score
+     * Predict next action based on history
      */
-    getEngagementScore(userId: string): Promise<{
-        score: number;
-        level: 'low' | 'medium' | 'high' | 'very_high';
-        factors: Record<string, number>;
-    }>;
-    /**
-     * Calculate similarity between users (for collaborative filtering)
-     */
-    calculateUserSimilarity(userId1: string, userId2: string): Promise<{
-        similarity: number;
-        commonBehaviors: string[];
-        commonPreferences: string[];
+    predictNextAction(userId: string): Promise<{
+        action: string;
+        confidence: number;
+        reason: string;
     }>;
 }
-export declare const intelligenceService: IntelligenceService;
-export default intelligenceService;
+declare const _default: IntelligenceService;
+export default _default;
 //# sourceMappingURL=intelligenceService.d.ts.map

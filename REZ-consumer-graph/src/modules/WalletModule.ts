@@ -3,6 +3,7 @@
  * Aggregates wallet balances across all REZ platforms
  */
 
+import crypto from 'crypto';
 import axios, { AxiosInstance } from 'axios';
 import winston from 'winston';
 import { ConsumerGraph } from '../ConsumerGraph';
@@ -181,7 +182,7 @@ export class WalletModule {
 
     // Create transaction record
     const transaction: WalletTransaction = {
-      id: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `${crypto.randomUUID()}`,
       wallet_type: type,
       amount,
       type: 'credit',
@@ -248,7 +249,7 @@ export class WalletModule {
 
     // Create transaction record
     const transaction: WalletTransaction = {
-      id: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `${crypto.randomUUID()}`,
       wallet_type: type,
       amount,
       type: 'debit',

@@ -1,10 +1,11 @@
 import { Router, Request, Response } from 'express';
+import { randomBytes } from 'crypto';
 import { z } from 'zod';
 import { ScenarioModel } from '../models/scenarioModel.js';
 import { simulationEngine } from '../services/simulationEngine.js';
 import { nlParser } from '../services/nlParser.js';
 import { ScenarioSchema, WhatIfQuerySchema, MonteCarloParamsSchema, SensitivityAnalysisSchema } from '../types/index.js';
-import { logger } from '../utils/logger.js';
+import { logger } from './utils/logger.js';
 
 const router = Router();
 
@@ -190,7 +191,7 @@ router.post('/sensitivity', async (req: Request, res: Response) => {
       for (let i = 0; i <= steps; i++) {
         const value = range.min + i * range.step;
         for (const metric of validated.outputMetrics) {
-          impacts[metric].push(value * (Math.random() * 0.5 + 0.5));
+          impacts[metric].push(value * (Number(randomBytes(4).toString('hex'), 16) / 0xFFFFFFFF * 0.5 + 0.5));
         }
       }
 

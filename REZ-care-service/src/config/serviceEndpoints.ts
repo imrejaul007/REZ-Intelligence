@@ -97,12 +97,17 @@ export function getServiceConfig(serviceName: ServiceName) {
 }
 
 // Helper to make authenticated requests
+interface ServiceEndpoint {
+  url: string;
+  token: string;
+}
+
 export async function serviceRequest<T>(
   serviceName: ServiceName,
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const config = SERVICE_ENDPOINTS[serviceName] as unknown;
+  const config = SERVICE_ENDPOINTS[serviceName] as ServiceEndpoint;
 
   const response = await fetch(`${config.url}${path}`, {
     ...options,

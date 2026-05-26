@@ -6,6 +6,7 @@
 import { Queue, Worker, Job } from 'bullmq';
 import Redis from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { DLQMessage, WorkflowDefinition, ExecutionContext, NodeData } from '../types/workflow';
 import logger from './logger';
 
@@ -50,7 +51,7 @@ async function acquireLock(
   key: string,
   ttlMs: number = LOCK_TTL_MS
 ): Promise<string | null> {
-  const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const token = `${Date.now()}-${randomUUID().replace(/-/g, '')}`;
   const result = await redis.set(`lock:${key}`, token, 'PX', ttlMs, 'NX');
   return result === 'OK' ? token : null;
 }
@@ -490,11 +491,11 @@ declare module './logger' {
   }
 }
 
-const originalLogger = logger;
-if (!originalLogger.dlq) {
-  (originalLogger as unknown).dlq = {
+const extendedLogger = logger as unknown as Record<string, unknown>;
+if (!extendedLogger.dlq) {
+  extendedLogger.dlq = {
     added: (executionId: string, nodeId: string, error: string, message: string) => {
-      originalLogger.info('DLQ entry added', {
+      logger.info('DLQ entry added', {
         executionId,
         nodeId,
         error,
@@ -503,7 +504,7 @@ if (!originalLogger.dlq) {
       });
     },
     retried: (executionId: string, nodeId: string, retryCount: number) => {
-      originalLogger.info('DLQ message retried', {
+      logger.info('DLQ message retried', {
         executionId,
         nodeId,
         retryCount,
@@ -511,7 +512,7 @@ if (!originalLogger.dlq) {
       });
     },
     discarded: (executionId: string, nodeId: string, reason: string) => {
-      originalLogger.info('DLQ message discarded', {
+      logger.info('DLQ message discarded', {
         executionId,
         nodeId,
         reason,

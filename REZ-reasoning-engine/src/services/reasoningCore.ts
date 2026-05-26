@@ -1,6 +1,11 @@
 import crypto from 'crypto';
 import { ReasoningRequest, ReasoningResult, ReasoningMethod, ReasoningStep, DeductionResult, ConstraintSatisfactionResult } from '../types/index.js';
-import { logger } from '../utils/logger.js';
+import { logger } from './utils/logger.js';
+
+// Crypto-based random number generator for secure randomness
+function secureRandom(): number {
+  return parseInt(crypto.randomBytes(4).toString('hex'), 16) / 0xFFFFFFFF;
+}
 
 export class ReasoningEngine {
   async reason(request: ReasoningRequest): Promise<ReasoningResult> {
@@ -325,7 +330,7 @@ export class ReasoningEngine {
       'Operational efficiency seems key',
       'Pricing strategy may be the root cause'
     ];
-    return hypotheses[Math.floor(Math.random() * hypotheses.length)];
+    return hypotheses[Math.floor(secureRandom() * hypotheses.length)];
   }
 
   private drawConclusion(problem: string, context?: Record<string, unknown>): string {

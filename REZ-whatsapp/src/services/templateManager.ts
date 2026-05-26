@@ -7,7 +7,7 @@ import {
   TemplateCreateInput,
   TemplateComponent,
 } from '../types/whatsapp';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export class TemplateManager {
   private twilioClient: twilio.Twilio;
@@ -337,11 +337,10 @@ export class TemplateManager {
 
     try {
       // Get approved templates from Twilio - use v1 as fallback
-      const twilioClient = this.twilioClient as unknown;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const twilioClient = this.twilioClient as any;
       const twilioTemplates =
-        await (twilioClient.whatsapp?.v1
-          ?.services?.(this.businessAccountId)
-          ?.templates?.list?.() || []);
+        (twilioClient?.whatsapp?.v1?.services?.(this.businessAccountId)?.templates?.list?.()) || [];
 
       for (const twilioTemplate of twilioTemplates) {
         try {

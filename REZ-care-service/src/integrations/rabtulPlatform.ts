@@ -42,7 +42,7 @@ interface EventFilters {
 // INTERNAL REQUEST
 // ============================================
 
-async function internalRequest(url: string, options: RequestInit = {}): Promise<unknown> {
+async function internalRequest<T = unknown>(url: string, options: RequestInit = {}): Promise<T> {
   const headers = options.headers as Record<string, string> || {};
   const response = await fetch(url, {
     ...options,
@@ -58,7 +58,7 @@ async function internalRequest(url: string, options: RequestInit = {}): Promise<
   }
 
   const data = await response.json();
-  return data as unknown;
+  return data as T;
 }
 
 // ============================================
@@ -68,7 +68,7 @@ async function internalRequest(url: string, options: RequestInit = {}): Promise<
 export const authOperations = {
   async verify(token: string): Promise<unknown> {
     try {
-      const res = await internalRequest(`${AUTH_URL}/api/auth/verify`, {
+      const res = await internalRequest<{ success: boolean; user?: unknown }>(`${AUTH_URL}/api/auth/verify`, {
         method: 'POST',
         body: JSON.stringify({ token }),
       }) as { success?: boolean; user?: unknown };
@@ -80,7 +80,7 @@ export const authOperations = {
 
   async validateInternalToken(): Promise<boolean> {
     try {
-      const res = await internalRequest(`${AUTH_URL}/api/auth/internal/validate`, {
+      const res = await internalRequest<{ valid: boolean }>(`${AUTH_URL}/api/auth/internal/validate`, {
         headers: { 'X-Internal-Token': INTERNAL_TOKEN },
       }) as { valid?: boolean };
       return res.valid ?? false;
@@ -224,7 +224,7 @@ export const eventBusOperations = {
 
   async queryEvents(filters: EventFilters, limit: number = 100): Promise<unknown[]> {
     try {
-      const res = await internalRequest(`${EVENT_BUS_URL}/api/events/query`, {
+      const res = await internalRequest<{ events: unknown[] }>(`${EVENT_BUS_URL}/api/events/query`, {
         method: 'POST',
         body: JSON.stringify({ filters, limit }),
       }) as { events?: unknown[] };

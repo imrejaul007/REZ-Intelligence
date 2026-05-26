@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import CircuitBreaker from 'opossum';
+import { randomInt } from 'crypto';
 import type {
   Logger,
   RetryOptions,
@@ -299,7 +300,7 @@ export abstract class BaseConnector {
    * Calculate jitter delay
    */
   private calculateJitterDelay(delay: number): number {
-    const jitterFactor = 0.5 + Math.random();
+    const jitterFactor = 0.5 + (randomInt(0, 1000) / 1000);
     return Math.floor(delay * jitterFactor);
   }
 

@@ -90,7 +90,8 @@ setInterval(() => {
 app.listen(PORT, () => {
   logger.info(`REZ Observability System running on port ${PORT}`, 'system');
 
-  logger.info(`
+  // eslint-disable-next-line no-console
+  console.log(`
 ╔═══════════════════════════════════════════════════════════════╗
 ║                                                               ║
 ║   REZ OBSERVABILITY SYSTEM                                    ║

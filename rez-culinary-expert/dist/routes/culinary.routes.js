@@ -6,7 +6,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const sdk_1 = require("@anthropic-ai/sdk");
-const logger_js_1 = require("../utils/logger.js");
+const logger_1 = require("./utils/logger");
 const culinaryIntents_js_1 = require("../intents/culinaryIntents.js");
 const menuService_js_1 = require("../services/menuService.js");
 const dietaryService_js_1 = require("../services/dietaryService.js");
@@ -27,7 +27,7 @@ function validateRequest(schema) {
             return res.status(400).json({
                 success: false,
                 error: 'Validation failed',
-                details: result.error.errors,
+                details: result.error.issues,
             });
         }
         req.body = result.data;
@@ -76,7 +76,7 @@ router.post('/chat', async (req, res) => {
                     memories: userContext.memories,
                     diningHistory: userContext.diningHistory || [],
                 };
-                logger_js_1.logger.info('Core Brain context loaded', {
+                logger_1.logger.info('Core Brain context loaded', {
                     userId,
                     hasPreferences: !!coreBrainContext.preferences,
                     hasLoyalty: !!coreBrainContext.loyalty,
@@ -85,7 +85,7 @@ router.post('/chat', async (req, res) => {
             }
         }
         catch (coreBrainError) {
-            logger_js_1.logger.warn('Failed to load Core Brain context', { error: coreBrainError, userId });
+            logger_1.logger.warn('Failed to load Core Brain context', { error: coreBrainError, userId });
         }
         // Enhance context with Core Brain data
         const enhancedContext = {
@@ -98,7 +98,7 @@ router.post('/chat', async (req, res) => {
         };
         // Classify intent
         const classified = (0, culinaryIntents_js_1.classifyIntent)(message, enhancedContext);
-        logger_js_1.logger.info(`Intent classified: ${classified.intent} (${classified.confidence})`);
+        logger_1.logger.info(`Intent classified: ${classified.intent} (${classified.confidence})`);
         const menuService = (0, menuService_js_1.getMenuService)();
         const dietaryService = (0, dietaryService_js_1.getDietaryService)();
         const recommendationsService = (0, recommendations_js_1.getRecommendationsService)();
@@ -146,7 +146,7 @@ router.post('/chat', async (req, res) => {
                         response += searchResults.items.slice(0, 5).map(item => (0, templates_js_1.formatMenuItemText)(item, tone)).join('\n\n');
                     }
                     else {
-                        response = `I couldn't find any items matching "${message}". Try searching for a specific dish or ingredient!`;
+                        response = `I couldn't find unknown items matching "${message}". Try searching for a specific dish or ingredient!`;
                     }
                 }
                 else {
@@ -194,7 +194,7 @@ router.post('/chat', async (req, res) => {
                     for (const restriction of restrictions) {
                         await dietaryService.addRestriction(userId, restriction);
                     }
-                    response = `I've noted your dietary requirements: ${restrictions.join(', ')}. I'll keep these in mind for all recommendations and will flag any dishes that may not be suitable.`;
+                    response = `I've noted your dietary requirements: ${restrictions.join(', ')}. I'll keep these in mind for all recommendations and will flag unknown dishes that may not be suitable.`;
                 }
                 else if (classified.entities.isAllergy && classified.entities.allergens) {
                     const allergens = classified.entities.allergens;
@@ -206,10 +206,10 @@ router.post('/chat', async (req, res) => {
                         name: a,
                         severity: 'severe',
                     })));
-                    response += "\n\nYour allergy information has been saved. I'll flag any dishes containing these allergens.";
+                    response += "\n\nYour allergy information has been saved. I'll flag unknown dishes containing these allergens.";
                 }
                 else {
-                    response = "I want to make sure I understand your dietary needs correctly. Could you tell me about any allergies or dietary restrictions?";
+                    response = "I want to make sure I understand your dietary needs correctly. Could you tell me about unknown allergies or dietary restrictions?";
                 }
                 break;
             case culinaryIntents_js_1.CulinaryIntent.GET_NUTRITION:
@@ -289,14 +289,14 @@ router.post('/chat', async (req, res) => {
                     response = aiResponse.content[0].type === 'text' ? aiResponse.content[0].text : 'I understand you need help. Could you be more specific about what you\'re looking for?';
                 }
                 catch (aiError) {
-                    logger_js_1.logger.error('AI response generation failed:', aiError);
+                    logger_1.logger.error('AI response generation failed:', aiError);
                     response = "I'm here to help you explore our menu, get recommendations, or place an order. What would you like to know?";
                 }
                 break;
         }
         // Record activity in Core Brain (non-blocking)
         coreBrain.recordActivity(userId, activityToRecord).catch((err) => {
-            logger_js_1.logger.warn('Failed to record activity in Core Brain', { error: err });
+            logger_1.logger.warn('Failed to record activity in Core Brain', { error: err });
         });
         res.json({
             success: true,
@@ -316,7 +316,7 @@ router.post('/chat', async (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Chat endpoint error:', error);
+        logger_1.logger.error('Chat endpoint error:', error);
         res.status(500).json({
             success: false,
             error: 'Internal server error',
@@ -376,7 +376,7 @@ router.get('/menu/:restaurantId', async (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Get menu error:', error);
+        logger_1.logger.error('Get menu error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to fetch menu',
@@ -404,7 +404,7 @@ router.get('/menu/:restaurantId/items/:itemId', async (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Get item error:', error);
+        logger_1.logger.error('Get item error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to fetch item',
@@ -427,7 +427,7 @@ router.post('/menu/:restaurantId/search', validateRequest(culinaryIntents_js_1.S
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Search error:', error);
+        logger_1.logger.error('Search error:', error);
         res.status(500).json({
             success: false,
             error: 'Search failed',
@@ -461,7 +461,7 @@ router.post('/recommendations', validateRequest(culinaryIntents_js_1.GetRecommen
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Recommendations error:', error);
+        logger_1.logger.error('Recommendations error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to generate recommendations',
@@ -496,7 +496,7 @@ router.get('/pairings/:restaurantId/:itemId', async (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Pairings error:', error);
+        logger_1.logger.error('Pairings error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to get pairings',
@@ -526,7 +526,7 @@ router.post('/dietary/restrictions', validateRequest(culinaryIntents_js_1.SetDie
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Dietary restriction error:', error);
+        logger_1.logger.error('Dietary restriction error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to update dietary restriction',
@@ -550,7 +550,7 @@ router.post('/dietary/allergies', validateRequest(culinaryIntents_js_1.UpdateAll
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Allergy update error:', error);
+        logger_1.logger.error('Allergy update error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to update allergy profile',
@@ -572,7 +572,7 @@ router.get('/dietary/profile/:userId', async (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Get dietary profile error:', error);
+        logger_1.logger.error('Get dietary profile error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to get dietary profile',
@@ -606,7 +606,7 @@ router.post('/dietary/check', validateRequest(culinaryIntents_js_1.CheckAllergen
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Dietary check error:', error);
+        logger_1.logger.error('Dietary check error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to check dietary compatibility',
@@ -638,7 +638,7 @@ router.post('/orders/start', async (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Start order error:', error);
+        logger_1.logger.error('Start order error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to start order',
@@ -669,7 +669,7 @@ router.post('/orders/add-item', async (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Add item error:', error);
+        logger_1.logger.error('Add item error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to add item',
@@ -691,7 +691,7 @@ router.post('/orders/place', validateRequest(culinaryIntents_js_1.PlaceOrderSche
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Place order error:', error);
+        logger_1.logger.error('Place order error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to place order',
@@ -714,7 +714,7 @@ router.post('/orders/cancel', async (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Cancel order error:', error);
+        logger_1.logger.error('Cancel order error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to cancel order',
@@ -746,7 +746,7 @@ router.get('/orders/:userId', async (req, res) => {
         }
     }
     catch (error) {
-        logger_js_1.logger.error('Get orders error:', error);
+        logger_1.logger.error('Get orders error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to get orders',
@@ -770,7 +770,7 @@ router.get('/expertise/cuisines', (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Get cuisines error:', error);
+        logger_1.logger.error('Get cuisines error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to get cuisines',
@@ -798,7 +798,7 @@ router.get('/expertise/cuisines/:name', (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Get cuisine error:', error);
+        logger_1.logger.error('Get cuisine error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to get cuisine',
@@ -819,7 +819,7 @@ router.get('/expertise/dietary', (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Get dietary tags error:', error);
+        logger_1.logger.error('Get dietary tags error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to get dietary tags',
@@ -840,7 +840,7 @@ router.get('/expertise/summary', (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Get expertise summary error:', error);
+        logger_1.logger.error('Get expertise summary error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to get expertise summary',

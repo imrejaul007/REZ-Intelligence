@@ -11,7 +11,7 @@
 
 import express, { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { getAIIntegration } from '../services/aiIntegrationService';
 import { getExpertRouter } from '../services/expertRouter';
 import { validate, schemas, fallbackSentiment } from '../middleware/errorHandler';
@@ -32,9 +32,9 @@ const expertRouter = getExpertRouter();
 router.post('/tickets', async (req: Request, res: Response) => {
   try {
     // Validate request
-    const validation = validate(schemas.createTicket, req.body);
-    if (!validation.valid) {
-      return res.status(400).json({ success: false, errors: validation.errors });
+    const validationResult = schemas.createTicket.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({ success: false, errors: validationResult.error.issues });
     }
 
     const {
@@ -46,7 +46,7 @@ router.post('/tickets', async (req: Request, res: Response) => {
       attachments,
       priority,
       platform
-    } = req.body;
+    } = validationResult.data;
 
     // Generate ticket number
     const ticketNumber = `TKT-${Date.now()}-${uuidv4().substring(0, 4).toUpperCase()}`;
@@ -202,10 +202,17 @@ router.post('/tickets/:ticketNumber/close', requireAuth, async (req: Request, re
     const { ticketNumber } = req.params;
     const { resolution } = req.body;
 
+    // TODO: Actually update ticket status in database
+    // await ticketModel.updateOne({ ticketNumber }, { status: 'closed', resolution, closedAt: new Date() });
+
+    logger.info('Ticket closed', { ticketNumber, resolution });
+
     res.json({
       success: true,
       message: 'Ticket closed',
-      resolution
+      ticketNumber,
+      resolution,
+      closedAt: new Date()
     });
   } catch (error) {
     logger.error('Failed to close ticket', error);
@@ -222,9 +229,19 @@ router.post('/tickets/:ticketNumber/rate', optionalAuth, async (req: Request, re
     const { ticketNumber } = req.params;
     const { score, comment } = req.body;
 
+    if (score === undefined || score < 1 || score > 5) {
+      return res.status(400).json({ success: false, error: 'Score must be between 1 and 5' });
+    }
+
+    // TODO: Actually save rating to database
+    // await ratingModel.create({ ticketNumber, score, comment, createdAt: new Date() });
+
+    logger.info('Ticket rated', { ticketNumber, score, hasComment: !!comment });
+
     res.json({
       success: true,
       message: 'Rating submitted',
+      ticketNumber,
       score
     });
   } catch (error) {
@@ -442,7 +459,7 @@ router.get('/ai/unified/:userId', requireAuth, async (req: Request, res: Respons
   try {
     const { userId } = req.params;
     const view = await aiIntegration.getUnifiedCustomerView(userId);
-    res.json({ success: true, ...view });
+    res.json({ success: true, ...(view as object) });
   } catch (error) {
     logger.error('Unified view failed', error);
     res.status(500).json({ success: false, error: 'Failed to get unified view' });

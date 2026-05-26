@@ -3,8 +3,8 @@
  * Experimentation and feature flag management
  */
 
-import express, { Request, Response } import logger from './utils/logger';
-import from 'express';
+import express, { Request, Response } from 'express';
+import { logger } from './utils/logger.js';
 import cors from 'cors';
 import helmet from 'helmet';
 import { config } from 'dotenv';

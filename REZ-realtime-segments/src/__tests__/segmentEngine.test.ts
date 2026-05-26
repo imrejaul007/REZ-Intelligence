@@ -19,6 +19,7 @@ describe('SegmentEngine', () => {
       const rule: SegmentRule = {
         field: 'signals.competitor.switchRisk',
         operator: 'eq',
+        logic: 'AND',
         value: 'LOW'
       };
       expect(evaluateRule(rule, userData)).toBe(true);

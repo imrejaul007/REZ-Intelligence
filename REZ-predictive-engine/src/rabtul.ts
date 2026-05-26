@@ -11,20 +11,23 @@ const NOTIFICATION_URL = process.env.NOTIFICATION_SERVICE_URL || 'https://rez-no
 const EVENT_BUS_URL = process.env.EVENT_BUS_URL || 'https://rez-event-bus.onrender.com';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
+// Helper to extract error message safely
+const getErrorMsg = (e: unknown): string => e instanceof Error ? e.message : String(e);
+
 /**
  * Verify token
  */
-export async function verifyToken(token: string): Promise<{ valid: boolean; user?; error?: string }> {
+export async function verifyToken(token: string): Promise<{ valid: boolean; user?: Record<string, unknown>; error?: string }> {
   try {
     const res = await axios.get(`${AUTH_URL}/api/auth/verify`, {
       headers: { 'Authorization': `Bearer ${token}`, 'X-Internal-Token': INTERNAL_TOKEN },
     });
     if (res.data.success && res.data.user) {
-      return { valid: true, user: res.data.user };
+      return { valid: true, user: res.data.user as Record<string, unknown> };
     }
     return { valid: false, error: 'Invalid token' };
   } catch (error) {
-    return { valid: false, error: error.message };
+    return { valid: false, error: getErrorMsg(error) };
   }
 }
 
@@ -42,7 +45,7 @@ export async function publishChurnPrediction(userId: string, probability: number
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: getErrorMsg(error) };
   }
 }
 
@@ -60,7 +63,7 @@ export async function publishLTVUpdate(userId: string, ltv: number, tier: string
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: getErrorMsg(error) };
   }
 }
 
@@ -76,7 +79,7 @@ export async function rewardToPreventChurn(userId: string, amount: number): Prom
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: getErrorMsg(error) };
   }
 }
 
@@ -95,7 +98,7 @@ export async function notifyAtRiskUser(userId: string, offer: string): Promise<{
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: getErrorMsg(error) };
   }
 }
 

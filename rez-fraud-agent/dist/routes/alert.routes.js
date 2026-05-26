@@ -7,6 +7,7 @@ exports.AlertChannel = exports.AlertSeverity = void 0;
 const express_1 = require("express");
 const zod_1 = require("zod");
 const axios_1 = __importDefault(require("axios"));
+const crypto_1 = __importDefault(require("crypto"));
 const FraudCase_1 = require("../models/FraudCase");
 const logger_1 = require("../utils/logger");
 const router = (0, express_1.Router)();
@@ -61,7 +62,7 @@ function mapCaseSeverityToAlertSeverity(severity) {
 // Generate alert ID
 function generateAlertId() {
     const timestamp = Date.now().toString(36);
-    const random = Math.random().toString(36).substring(2, 6);
+    const random = crypto_1.default.randomUUID().replace(/-/g, '').substring(0, 4);
     return `ALT-${timestamp}-${random}`.toUpperCase();
 }
 // Error handler wrapper

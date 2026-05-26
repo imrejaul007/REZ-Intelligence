@@ -1,0 +1,1038 @@
+openapi: 3.0.3
+info:
+  title: REZ Intelligence API
+  description: |
+    AI-powered platform for local commerce with 3 client types:
+    - REZ_ECOSYSTEM: Full intelligence sharing
+    - NON_REZ: Strict tenant isolation
+    - RABTUL_SAAS: Plugin-based SaaS
+  version: 1.0.0
+  contact:
+    name: REZ Engineering
+    email: engineering@rez.money
+    url: https://rez.money
+
+servers:
+  - url: http://localhost:4300
+    description: Local development
+  - url: https://rez-api-gateway.rez.money
+    description: Production
+
+tags:
+  - name: Health
+    description: Service health and status
+  - name: Intent
+    description: Intent prediction
+  - name: Recommendations
+    description: AI recommendations
+  - name: Profile
+    description: User profile management
+  - name: Workflows
+    description: Workflow management
+  - name: Events
+    description: Event tracking
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  # Intent Prediction
+  /api/intent/predict:
+    post:
+      tags: [Intent]
+      summary: Predict user intent
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntentPredictRequest'
+      responses:
+        '200':
+          description: Intent prediction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntentPredictResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/intent/batch-predict:
+    post:
+      tags: [Intent]
+      summary: Batch predict intents
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchIntentRequest'
+      responses:
+        '200':
+          description: Batch predictions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchIntentResponse'
+
+  # Recommendations
+  /api/recommendations:
+    post:
+      tags: [Recommendations]
+      summary: Get recommendations
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecommendationRequest'
+      responses:
+        '200':
+          description: Recommendations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationResponse'
+
+  /api/recommendations/for-you:
+    get:
+      tags: [Recommendations]
+      summary: Get "For You Today" personalized feed
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Personalized feed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForYouResponse'
+
+  # Profile
+  /api/profile/{userId}:
+    get:
+      tags: [Profile]
+      summary: Get user profile
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/profile/{userId}:
+    put:
+      tags: [Profile]
+      summary: Update user profile
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+
+  # Workflows (via Flow Runtime)
+  /api/workflows:
+    get:
+      tags: [Workflows]
+      summary: List workflows
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Workflow list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowList'
+
+    post:
+      tags: [Workflows]
+      summary: Create workflow
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkflowRequest'
+      responses:
+        '201':
+          description: Workflow created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+
+  /api/workflows/{workflowId}:
+    get:
+      tags: [Workflows]
+      summary: Get workflow
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Workflow details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+
+  /api/executions:
+    post:
+      tags: [Workflows]
+      summary: Trigger workflow execution
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExecutionRequest'
+      responses:
+        '201':
+          description: Execution started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Execution'
+
+  /api/executions/{executionId}:
+    get:
+      tags: [Workflows]
+      summary: Get execution status
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: executionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Execution details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Execution'
+
+  # Events
+  /api/events:
+    post:
+      tags: [Events]
+      summary: Track event
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrackEventRequest'
+      responses:
+        '201':
+          description: Event tracked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventResponse'
+
+  /api/events/batch:
+    post:
+      tags: [Events]
+      summary: Track batch events
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchTrackRequest'
+      responses:
+        '201':
+          description: Events tracked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchTrackResponse'
+
+  # ML Predictions
+  /api/predict/churn:
+    post:
+      tags: [Recommendations]
+      summary: Predict churn probability
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChurnPredictRequest'
+      responses:
+        '200':
+          description: Churn prediction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChurnPredictResponse'
+
+  /api/predict/ltv:
+    post:
+      tags: [Recommendations]
+      summary: Predict lifetime value
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LTVPredictRequest'
+      responses:
+        '200':
+          description: LTV prediction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LTVPredictResponse'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        API key for tenant authentication.
+        Format: {prefix}_{tenant}_{id}
+        - REZ_ECOSYSTEM: rez_*
+        - NON_REZ: ext_*
+        - RABTUL_SAAS: saas_*
+
+    InternalToken:
+      type: apiKey
+      in: header
+      name: X-Internal-Token
+      description: Internal service-to-service authentication
+
+  schemas:
+    # Common
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: healthy
+        service:
+          type: string
+          example: rez-api-gateway
+        version:
+          type: string
+          example: 1.0.0
+        timestamp:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Invalid request parameters
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
+
+    # Intent
+    IntentPredictRequest:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: string
+          description: User identifier
+        context:
+          type: object
+          properties:
+            location:
+              $ref: '#/components/schemas/Location'
+            time:
+              $ref: '#/components/schemas/TimeContext'
+            device:
+              type: string
+              enum: [mobile, desktop, tablet]
+            recentSearches:
+              type: array
+              items:
+                type: string
+            recentCategories:
+              type: array
+              items:
+                type: string
+
+    IntentPredictResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            userId:
+              type: string
+            primaryIntent:
+              $ref: '#/components/schemas/Intent'
+            secondaryIntents:
+              type: array
+              items:
+                $ref: '#/components/schemas/Intent'
+            contextFactors:
+              type: array
+              items:
+                $ref: '#/components/schemas/ContextFactor'
+            modelVersion:
+              type: string
+            processingTimeMs:
+              type: integer
+
+    Intent:
+      type: object
+      properties:
+        intent:
+          type: string
+          example: food_ordering
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        category:
+          type: string
+          example: commerce
+        urgency:
+          type: string
+          enum: [low, medium, high]
+        estimatedBudget:
+          type: object
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+
+    ContextFactor:
+      type: object
+      properties:
+        factor:
+          type: string
+        influence:
+          type: string
+          enum: [positive, negative, neutral]
+        value:
+          type: string
+
+    BatchIntentRequest:
+      type: object
+      required: [requests]
+      properties:
+        requests:
+          type: array
+          items:
+            $ref: '#/components/schemas/IntentPredictRequest'
+          maxItems: 100
+
+    BatchIntentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            predictions:
+              type: array
+              items:
+                $ref: '#/components/schemas/IntentPredictResponse'
+            processingTimeMs:
+              type: integer
+
+    # Recommendations
+    RecommendationRequest:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: string
+        limit:
+          type: integer
+          default: 10
+          maximum: 100
+        categories:
+          type: array
+          items:
+            type: string
+        exclude:
+          type: array
+          items:
+            type: string
+        context:
+          $ref: '#/components/schemas/Location'
+
+    RecommendationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            recommendations:
+              type: array
+              items:
+                $ref: '#/components/schemas/Recommendation'
+            modelVersion:
+              type: string
+
+    Recommendation:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [product, restaurant, service, content]
+        name:
+          type: string
+        score:
+          type: number
+        reason:
+          type: string
+        metadata:
+          type: object
+
+    ForYouResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            userId:
+              type: string
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/ForYouItem'
+            lastUpdated:
+              type: string
+              format: date-time
+
+    ForYouItem:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        title:
+          type: string
+        subtitle:
+          type: string
+        image:
+          type: string
+          format: uri
+        action:
+          type: string
+        relevanceScore:
+          type: number
+
+    # Profile
+    UserProfile:
+      type: object
+      properties:
+        userId:
+          type: string
+        displayName:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        avatar:
+          type: string
+          format: uri
+        preferences:
+          $ref: '#/components/schemas/UserPreferences'
+        segments:
+          type: array
+          items:
+            type: string
+        tier:
+          type: string
+          enum: [bronze, silver, gold, platinum]
+        lifetimeValue:
+          type: number
+        memberSince:
+          type: string
+          format: date-time
+
+    UserPreferences:
+      type: object
+      properties:
+        cuisine:
+          type: array
+          items:
+            type: string
+        priceRange:
+          type: array
+          items:
+            type: string
+            enum: [budget, medium, premium]
+        notificationPreferences:
+          type: object
+          properties:
+            email:
+              type: boolean
+            push:
+              type: boolean
+            sms:
+              type: boolean
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        displayName:
+          type: string
+        avatar:
+          type: string
+        preferences:
+          $ref: '#/components/schemas/UserPreferences'
+
+    # Workflows
+    Workflow:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, paused, archived]
+        entryNodeId:
+          type: string
+        nodeCount:
+          type: integer
+        executionCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    WorkflowList:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            workflows:
+              type: array
+              items:
+                $ref: '#/components/schemas/Workflow'
+            total:
+              type: integer
+            page:
+              type: integer
+            limit:
+              type: integer
+
+    CreateWorkflowRequest:
+      type: object
+      required: [name, entryNodeId, nodes]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        entryNodeId:
+          type: string
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowNode'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowEdge'
+
+    WorkflowNode:
+      type: object
+      required: [id, type, config]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum:
+            - action_send_email
+            - action_send_sms
+            - action_send_whatsapp
+            - action_send_push
+            - action_add_coins
+            - action_deduct_coins
+            - action_create_order
+            - condition_if_time
+            - condition_if_segment
+            - delay_wait_hours
+            - ai_analyze_sentiment
+            - ai_generate_response
+        config:
+          type: object
+          properties:
+            actionType:
+              type: string
+            params:
+              type: object
+
+    WorkflowEdge:
+      type: object
+      properties:
+        from:
+          type: string
+        to:
+          type: string
+        condition:
+          type: string
+
+    Execution:
+      type: object
+      properties:
+        id:
+          type: string
+        workflowId:
+          type: string
+        status:
+          type: string
+          enum: [pending, running, completed, failed, cancelled, paused]
+        progress:
+          type: number
+          format: float
+        currentNode:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        error:
+          type: string
+
+    CreateExecutionRequest:
+      type: object
+      required: [workflowId]
+      properties:
+        workflowId:
+          type: string
+        trigger:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [manual, event, webhook, scheduled]
+            source:
+              type: string
+        variables:
+          type: object
+          additionalProperties: true
+
+    # Events
+    TrackEventRequest:
+      type: object
+      required: [event, userId]
+      properties:
+        event:
+          type: string
+        userId:
+          type: string
+        properties:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+
+    EventResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            eventId:
+              type: string
+            processedAt:
+              type: string
+              format: date-time
+
+    BatchTrackRequest:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackEventRequest'
+          maxItems: 100
+
+    BatchTrackResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            processed:
+              type: integer
+            failed:
+              type: integer
+            errors:
+              type: array
+              items:
+                type: object
+                properties:
+                  index:
+                    type: integer
+                  error:
+                    type: string
+
+    # ML Predictions
+    ChurnPredictRequest:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: string
+        lookbackDays:
+          type: integer
+          default: 30
+          maximum: 365
+
+    ChurnPredictResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            userId:
+              type: string
+            churnRisk:
+              type: object
+              properties:
+                probability:
+                  type: number
+                level:
+                  type: string
+                  enum: [low, medium, high]
+            recommendedActions:
+              type: array
+              items:
+                type: object
+                properties:
+                  action:
+                    type: string
+                  priority:
+                    type: string
+                  expectedLift:
+                    type: number
+
+    LTVPredictRequest:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: string
+        predictionMonths:
+          type: integer
+          default: 12
+          maximum: 60
+
+    LTVPredictResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            userId:
+              type: string
+            ltv:
+              type: number
+            confidence:
+              type: number
+            breakdown:
+              type: object
+
+    # Context Types
+    Location:
+      type: object
+      properties:
+        lat:
+          type: number
+          format: float
+        lng:
+          type: number
+          format: float
+        city:
+          type: string
+        country:
+          type: string
+
+    TimeContext:
+      type: object
+      properties:
+        hour:
+          type: integer
+          minimum: 0
+          maximum: 23
+        dayOfWeek:
+          type: string
+          enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+        isWeekend:
+          type: boolean
+
+  responses:
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    RateLimited:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

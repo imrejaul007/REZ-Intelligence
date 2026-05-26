@@ -6,6 +6,7 @@
 
 import WebSocket from 'ws';
 import { v4 as uuidv4 } from 'uuid';
+import { randomInt } from 'crypto';
 import { normalizeEvent, toTimelineEvent } from '../utils/eventNormalizer';
 import { cacheService } from './cacheService';
 import { timelineAggregator } from './timelineAggregator';
@@ -219,7 +220,7 @@ export class EventConsumer {
     this.reconnectAttempts++;
     // Exponential backoff with jitter
     const delay = RECONNECT_DELAY_MS * Math.pow(2, this.reconnectAttempts - 1);
-    const jitter = Math.random() * 0.3 * delay;
+    const jitter = (randomInt(0, 300) / 1000) * delay;
     const actualDelay = Math.min(delay + jitter, 60000);
 
     logger.info(`Scheduling reconnect attempt ${this.reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}`, {

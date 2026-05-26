@@ -24,7 +24,7 @@ import {
   zScore,
   roundTo,
 } from '../utils/math.js';
-import { forecastLogger as logger } from '../utils/logger.js';
+import { forecastLogger as logger } from './utils/logger.js';
 import config from '../config/index.js';
 import { addDays, subDays, startOfDay } from 'date-fns';
 
@@ -377,7 +377,7 @@ export class DemandForecastingService {
         trend: decomposition.trend,
         seasonal: decomposition.seasonal,
         residual: decomposition.residual,
-        seasonalIndices: seasonalIndices.map((s, i) => ({ period: i, index: s })).flat(),
+        seasonalIndices: seasonalIndices,
         period,
       },
     };

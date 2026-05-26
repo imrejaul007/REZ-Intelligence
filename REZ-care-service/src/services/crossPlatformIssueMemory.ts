@@ -12,7 +12,7 @@
  */
 
 import mongoose, { Schema } from 'mongoose';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { generateIssueId } from '../utils/idGenerator';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-care';
@@ -353,8 +353,8 @@ export class CrossPlatformIssueMemory {
       occurredAt: params.occurredAt || now,
       patterns: {
         isRepeatIssue,
-        repeatIssueId: isRepeatIssue ? similarIssues[0]?.issueId : undefined,
-        similarIssues: similarIssues.map(i => i.issueId),
+        repeatIssueId: isRepeatIssue ? (similarIssues[0] as { issueId?: string })?.issueId : undefined,
+        similarIssues: similarIssues.map((i: unknown) => (i as { issueId?: string }).issueId),
         issueSignature: createIssueSignature({
           category: params.category,
           platform: params.platform,
@@ -405,7 +405,7 @@ export class CrossPlatformIssueMemory {
   }): Promise<unknown[]> {
     await this.connect();
 
-    const query: unknown = {};
+    const query: Record<string, unknown> = {};
 
     if (params.customerId) {
       query.customerId = params.customerId;
@@ -428,7 +428,7 @@ export class CrossPlatformIssueMemory {
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
     query.occurredAt = { $gte: ninetyDaysAgo };
 
-    const issues = await CrossPlatformIssue.find(query)
+    const issues = await CrossPlatformIssue.find(query as Record<string, unknown>)
       .sort({ occurredAt: -1 })
       .limit(params.limit || 10);
 
@@ -716,7 +716,7 @@ export class CrossPlatformIssueMemory {
     return words.filter(w => w.length > 4).slice(0, 5);
   }
 
-  private async updateCustomerProfile(customerId: string, issue): Promise<void> {
+  private async updateCustomerProfile(customerId: string, issue: Record<string, unknown>): Promise<void> {
     await CustomerIssueProfile.findOneAndUpdate(
       { customerId },
       {
@@ -736,13 +736,13 @@ export class CrossPlatformIssueMemory {
     );
   }
 
-  private async updatePartnerProfile(partnerId: string, issue): Promise<void> {
+  private async updatePartnerProfile(partnerId: string, issue: Record<string, unknown>): Promise<void> {
     await PartnerIssueProfile.findOneAndUpdate(
       { partnerId },
       {
         $inc: {
           'stats.totalIssues': 1,
-          'stats.openIssues': issue.resolution?.status === 'pending' ? 1 : 0,
+          'stats.openIssues': (issue.resolution as { status?: string })?.status === 'pending' ? 1 : 0,
           [`categories.${issue.category}.count`]: 1
         },
         $set: {
@@ -755,7 +755,7 @@ export class CrossPlatformIssueMemory {
     );
   }
 
-  private generateSuggestions(issue, similarIssues: unknown[], risk): string[] {
+  private generateSuggestions(issue: Record<string, unknown>, similarIssues: unknown[], risk: { level: string }): string[] {
     const suggestions: string[] = [];
 
     if (similarIssues.length > 0) {
@@ -780,7 +780,7 @@ export class CrossPlatformIssueMemory {
   private generateCustomerRecommendations(
     byPlatform: Record<string, number>,
     byCategory: Record<string, number>,
-    issues: unknown[]
+    issues: InstanceType<typeof CrossPlatformIssue>[]
   ): string[] {
     const recommendations: string[] = [];
 
@@ -805,15 +805,15 @@ export class CrossPlatformIssueMemory {
     return recommendations;
   }
 
-  private generatePartnerRecommendations(categories, issues: unknown[]): string[] {
+  private generatePartnerRecommendations(categories: Record<string, unknown>, issues: InstanceType<typeof CrossPlatformIssue>[]): string[] {
     const recommendations: string[] = [];
 
-    const openIssues = issues.filter(i => i.resolution.status !== 'resolved');
+    const openIssues = issues.filter(i => i.resolution?.status !== 'resolved');
     if (openIssues.length > 5) {
       recommendations.push(`${openIssues.length} open issues. Prioritize resolution.`);
     }
 
-    const highSeverity = issues.filter(i => i.issue.severity === 'critical' || i.issue.severity === 'high');
+    const highSeverity = issues.filter(i => i.issue?.severity === 'critical' || i.issue?.severity === 'high');
     if (highSeverity.length > 0) {
       recommendations.push(`${highSeverity.length} critical/high severity issues need immediate attention.`);
     }

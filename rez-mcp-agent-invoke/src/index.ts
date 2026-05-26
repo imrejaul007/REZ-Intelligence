@@ -1,9 +1,17 @@
 import logger from './utils/logger';
 
 import 'dotenv/config';
+import { randomUUID, randomBytes } from 'crypto';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+
+/**
+ * Generate a random number between 0 and 1 using crypto
+ */
+function cryptoRandom(): number {
+  return Number(randomBytes(4).readUInt32BE(0)) / 0xFFFFFFFF;
+}
 
 // Environment configuration
 const AGENT_ORCHESTRATOR_URL = process.env.AGENT_ORCHESTRATOR_URL || 'http://localhost:4062';
@@ -269,7 +277,7 @@ async function handleGetAgent(args: Record<string, unknown>): Promise<string> {
 async function handleInvokeAgent(args: Record<string, unknown>): Promise<string> {
   const agent = agentRegistry[args.agentId as string];
   const startTime = Date.now();
-  const invocationId = `inv_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+  const invocationId = `inv_${Date.now()}_${randomUUID().replace(/-/g, '').substring(0, 8)}`;
 
   if (!agent) {
     return JSON.stringify({
@@ -376,7 +384,7 @@ function simulateAgentInvocation(agent: Agent, args: Record<string, unknown>): {
     case 'reorder-predictor':
       return {
         output: {
-          score: Math.random() * 100,
+          score: cryptoRandom() * 100,
           predictedItems: [
             { name: 'Margherita Pizza', probability: 0.92 },
             { name: 'Garlic Bread', probability: 0.78 }
@@ -389,8 +397,8 @@ function simulateAgentInvocation(agent: Agent, args: Record<string, unknown>): {
     case 'churn-risk':
       return {
         output: {
-          score: Math.random(),
-          riskLevel: Math.random() > 0.5 ? 'high' : 'medium',
+          score: cryptoRandom(),
+          riskLevel: cryptoRandom() > 0.5 ? 'high' : 'medium',
           factors: [
             '30+ days since last order',
             'Decreasing order frequency',
@@ -409,7 +417,7 @@ function simulateAgentInvocation(agent: Agent, args: Record<string, unknown>): {
       return {
         output: {
           forecast: {
-            next7days: Math.floor(Math.random() * 1000) + 500,
+            next7days: Math.floor(cryptoRandom() * 1000) + 500,
             trend: 'increasing',
             seasonality: 'peak_hours'
           }
@@ -421,7 +429,7 @@ function simulateAgentInvocation(agent: Agent, args: Record<string, unknown>): {
       return {
         output: {
           currentPrice: 299,
-          suggestedPrice: Math.floor(299 * (0.9 + Math.random() * 0.2)),
+          suggestedPrice: Math.floor(299 * (0.9 + cryptoRandom() * 0.2)),
           elasticity: -1.2,
           competitors: { avg: 320, range: [280, 350] }
         },
@@ -431,9 +439,9 @@ function simulateAgentInvocation(agent: Agent, args: Record<string, unknown>): {
     case 'ltv-predictor':
       return {
         output: {
-          predictedLTV: Math.floor(Math.random() * 50000) + 10000,
+          predictedLTV: Math.floor(cryptoRandom() * 50000) + 10000,
           tier: 'high_value',
-          monthsActive: Math.floor(Math.random() * 24) + 6
+          monthsActive: Math.floor(cryptoRandom() * 24) + 6
         },
         confidence: 0.81,
         reasoning: 'Based on transaction history and user behavior'
@@ -471,7 +479,7 @@ function simulateAgentInvocation(agent: Agent, args: Record<string, unknown>): {
     case 'fraud-detection':
       return {
         output: {
-          fraudScore: Math.random() * 0.3,
+          fraudScore: cryptoRandom() * 0.3,
           riskLevel: 'low',
           signals: [
             'Normal transaction amount',

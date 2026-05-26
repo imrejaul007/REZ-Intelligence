@@ -11,7 +11,7 @@
  */
 
 import axios, { AxiosInstance } from 'axios';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 // ============================================
 // SERVICE URLs
@@ -23,6 +23,12 @@ const WORKFLOW_BUILDER_URL = process.env.REZ_WORKFLOW_URL || 'http://localhost:4
 const VECTOR_SEARCH_URL = process.env.VECTOR_SEARCH_URL || 'http://localhost:4127';
 
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || 'rez-internal-token';
+
+// Helper to extract error message
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return 'Unknown error';
+}
 
 // ============================================
 // TYPES
@@ -117,11 +123,12 @@ class MemoryLayerService {
 
       return { success: true, eventId: response.data.eventId };
     } catch (error) {
+      const errorMsg = getErrorMessage(error);
       logger.error('[Memory] Failed to add timeline event', {
         customerId: event.customerId,
-        error: error.message,
+        error: errorMsg,
       });
-      return { success: false, error: error.message };
+      return { success: false, error: errorMsg };
     }
   }
 
@@ -139,11 +146,12 @@ class MemoryLayerService {
 
       return { events: response.data.events || [] };
     } catch (error) {
+      const errorMsg = getErrorMessage(error);
       logger.error('[Memory] Failed to get timeline', {
         customerId,
-        error: error.message,
+        error: errorMsg,
       });
-      return { events: [], error: error.message };
+      return { events: [], error: errorMsg };
     }
   }
 
@@ -160,7 +168,7 @@ class MemoryLayerService {
       const response = await this.client.get(`/api/timeline/${customerId}/summary`);
       return response.data;
     } catch (error) {
-      return { total: 0, byType: {}, error: error.message };
+      return { total: 0, byType: {}, error: getErrorMessage(error) };
     }
   }
 
@@ -176,7 +184,7 @@ class MemoryLayerService {
       const response = await this.client.get(`/api/timeline/${customerId}/patterns`);
       return response.data;
     } catch (error) {
-      return { patterns: [], insights: [], error: error.message };
+      return { patterns: [], insights: [], error: getErrorMessage(error) };
     }
   }
 
@@ -234,11 +242,12 @@ class UnifiedProfileService {
 
       return { profile };
     } catch (error) {
+      const errorMsg = getErrorMessage(error);
       logger.error('[Profile] Failed to get unified profile', {
         customerId,
-        error: error.message,
+        error: errorMsg,
       });
-      return { profile: null, error: error.message };
+      return { profile: null, error: errorMsg };
     }
   }
 
@@ -253,11 +262,12 @@ class UnifiedProfileService {
       await this.client.patch(`/api/profiles/${customerId}`, updates);
       return { success: true };
     } catch (error) {
+      const errorMsg = getErrorMessage(error);
       logger.error('[Profile] Failed to update profile', {
         customerId,
-        error: error.message,
+        error: errorMsg,
       });
-      return { success: false, error: error.message };
+      return { success: false, error: errorMsg };
     }
   }
 
@@ -270,9 +280,9 @@ class UnifiedProfileService {
   }> {
     try {
       const response = await this.client.get(`/api/profiles/${customerId}/segments`);
-      return { segments: response.data.segments || [] };
+      return { segments: response.data.segments || [], error: undefined };
     } catch (error) {
-      return { segments: [], error: error.message };
+      return { segments: [], error: getErrorMessage(error) };
     }
   }
 
@@ -287,7 +297,7 @@ class UnifiedProfileService {
       const response = await this.client.get(`/api/profiles/${customerId}/signals`);
       return { scores: response.data || { engagement: 0, loyalty: 0, risk: 0 } };
     } catch (error) {
-      return { scores: { engagement: 0, loyalty: 0, risk: 0 }, error: error.message };
+      return { scores: { engagement: 0, loyalty: 0, risk: 0 }, error: getErrorMessage(error) };
     }
   }
 
@@ -347,9 +357,9 @@ class WorkflowBuilderService {
       logger.error('[Workflow] Failed to trigger', {
         workflowName,
         customerId,
-        error: error.message,
+        error: getErrorMessage(error),
       });
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -358,14 +368,14 @@ class WorkflowBuilderService {
    */
   async getWorkflowStatus(executionId: string): Promise<{
     status: string;
-    result?;
+    result?: Record<string, unknown>;
     error?: string;
   }> {
     try {
       const response = await this.client.get(`/api/workflows/executions/${executionId}`);
       return { status: response.data.status, result: response.data.result };
     } catch (error) {
-      return { status: 'unknown', error: error.message };
+      return { status: 'unknown', error: getErrorMessage(error) };
     }
   }
 
@@ -377,7 +387,7 @@ class WorkflowBuilderService {
       await this.client.post(`/api/workflows/executions/${executionId}/cancel`);
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -434,9 +444,9 @@ class VectorSearchService {
     } catch (error) {
       logger.error('[Vector] Semantic search failed', {
         query,
-        error: error.message,
+        error: getErrorMessage(error),
       });
-      return { results: [], error: error.message };
+      return { results: [], error: getErrorMessage(error) };
     }
   }
 
@@ -456,9 +466,9 @@ class VectorSearchService {
     } catch (error) {
       logger.error('[Vector] Index failed', {
         docId: document.id,
-        error: error.message,
+        error: getErrorMessage(error),
       });
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error) };
     }
   }
 
@@ -484,7 +494,7 @@ class VectorSearchService {
         sources: response.data.sources || [],
       };
     } catch (error) {
-      return { context: '', sources: [], error: error.message };
+      return { context: '', sources: [], error: getErrorMessage(error) };
     }
   }
 

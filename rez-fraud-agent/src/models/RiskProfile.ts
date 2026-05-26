@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import crypto from 'crypto';
 
 export enum RiskLevel {
   TRUSTED = 'TRUSTED',
@@ -232,6 +233,6 @@ export const RiskProfile = mongoose.model<IRiskProfile>('RiskProfile', RiskProfi
 
 export function generateProfileId(): string {
   const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substring(2, 8);
+  const random = crypto.randomUUID().replace(/-/g, '').substring(0, 6);
   return `RP-${timestamp}-${random}`.toUpperCase();
 }

@@ -3,12 +3,13 @@
  * WebSocket server for live activities, merchant data, and social proof
  */
 
-import express import logger from './utils/logger';
-import from 'express';
+import express from 'express';
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
+import logger from './utils/logger.js';
 import { setupSocketHandlers } from './socketHandlers.js';
 import { LiveActivityStore } from './stores/liveActivityStore.js';
 import { config } from './config.js';
@@ -135,9 +136,9 @@ function startLiveActivitySimulation(store: LiveActivityStore, io: Server) {
   const simulateActivity = () => {
     const activity = store.addActivity({
       id: uuidv4(),
-      type: types[Math.floor(Math.random() * types.length)],
-      city: cities[Math.floor(Math.random() * cities.length)],
-      count: Math.floor(Math.random() * 50) + 1,
+      type: types[randomInt(0, types.length)],
+      city: cities[randomInt(0, cities.length)],
+      count: randomInt(1, 51),
       timestamp: new Date().toISOString(),
       metadata: {},
     });
@@ -145,7 +146,7 @@ function startLiveActivitySimulation(store: LiveActivityStore, io: Server) {
     io.to('activity').emit('activity', { channel: 'activity', data: activity });
 
     // Schedule next simulation
-    const delay = 3000 + Math.random() * 5000;
+    const delay = 3000 + randomInt(0, 5001);
     setTimeout(simulateActivity, delay);
   };
 

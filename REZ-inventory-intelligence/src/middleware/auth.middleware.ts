@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import config from '../config/index.js';
-import logger from '../utils/logger.js';
+import { logger } from './utils/logger.js';
 
 /**
  * Internal Service Authentication Middleware
@@ -28,7 +28,7 @@ export function authMiddleware(
   }
 
   // Use timing-safe comparison to prevent timing attacks
-  if (!timingSafeEqual(token, config.internalServiceToken)) {
+  if (!timingSafeEqual(token, config.auth.internalServiceToken)) {
     logger.warn('Invalid authentication token', {
       path: req.path,
       method: req.method,

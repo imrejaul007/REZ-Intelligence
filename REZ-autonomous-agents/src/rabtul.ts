@@ -13,7 +13,7 @@ const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 /**
  * Verify token
  */
-export async function verifyToken(token: string): Promise<{ valid: boolean; user?; error?: string }> {
+export async function verifyToken(token: string): Promise<{ valid: boolean; user?: unknown; error?: string }> {
   try {
     const res = await axios.get(`${AUTH_URL}/api/auth/verify`, {
       headers: { 'Authorization': `Bearer ${token}`, 'X-Internal-Token': INTERNAL_TOKEN },
@@ -23,7 +23,7 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; user
     }
     return { valid: false, error: 'Invalid token' };
   } catch (error) {
-    return { valid: false, error: error.message };
+    return { valid: false, error: (error as Error).message };
   }
 }
 
@@ -37,7 +37,7 @@ export async function rewardUser(userId: string, amount: number, reason: string)
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: (error as Error).message };
   }
 }
 
@@ -51,7 +51,7 @@ export async function notifyUser(userId: string, title: string, body: string, da
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: (error as Error).message };
   }
 }
 
@@ -69,7 +69,7 @@ export async function publishAgentEvent(eventType: string, data: Record<string, 
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: (error as Error).message };
   }
 }
 

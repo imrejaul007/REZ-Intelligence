@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import { createClient } from 'redis';
 import mongoose from 'mongoose';
 import winston from 'winston';
+import { randomUUID } from 'crypto';
 import educationRoutes from './routes/education.routes';
 import { SYSTEM_PROMPT, AGENT_CONFIG } from './config/systemPrompt';
 
@@ -105,7 +106,7 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 // Request ID middleware
 app.use((req: Request, _res: Response, next: NextFunction) => {
   req.headers['x-request-id'] = req.headers['x-request-id'] ||
-    `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    `req-${Date.now()}-${randomUUID().replace(/-/g, '').substring(0, 9)}`;
   next();
 });
 

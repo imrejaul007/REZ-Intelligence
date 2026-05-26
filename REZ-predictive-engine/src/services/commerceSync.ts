@@ -1,4 +1,7 @@
-import logger from './utils/logger';
+import logger from '../utils/logger.js';
+
+// Helper to extract error message safely
+const getErrorMsg = (e: unknown): string => e instanceof Error ? e.message : String(e);
 
 /**
  * REZ-predictive-engine → Commerce Graph Sync
@@ -64,7 +67,7 @@ class PredictionCommerceSync {
       );
       logger.info(`[PredictionSync] Predictions synced for ${update.userId}`);
     } catch (error) {
-      logger.error(`[PredictionSync] Failed to sync predictions: ${error.message}`);
+      logger.error(`[PredictionSync] Failed to sync predictions: ${getErrorMsg(error)}`);
     }
   }
 
@@ -99,7 +102,7 @@ class PredictionCommerceSync {
       );
       logger.info(`[PredictionSync] LTV synced for ${userId}`);
     } catch (error) {
-      logger.error(`[PredictionSync] Failed to sync LTV: ${error.message}`);
+      logger.error(`[PredictionSync] Failed to sync LTV: ${getErrorMsg(error)}`);
     }
   }
 
@@ -131,7 +134,7 @@ class PredictionCommerceSync {
       );
       logger.info(`[PredictionSync] Churn risk synced for ${userId}`);
     } catch (error) {
-      logger.error(`[PredictionSync] Failed to sync churn risk: ${error.message}`);
+      logger.error(`[PredictionSync] Failed to sync churn risk: ${getErrorMsg(error)}`);
     }
   }
 
@@ -167,7 +170,7 @@ class PredictionCommerceSync {
       );
       logger.info(`[PredictionSync] Spend prediction synced for ${userId}`);
     } catch (error) {
-      logger.error(`[PredictionSync] Failed to sync spend prediction: ${error.message}`);
+      logger.error(`[PredictionSync] Failed to sync spend prediction: ${getErrorMsg(error)}`);
     }
   }
 
@@ -194,7 +197,7 @@ class PredictionCommerceSync {
       );
       logger.info(`[PredictionSync] Batch synced ${predictions.length} predictions`);
     } catch (error) {
-      logger.error(`[PredictionSync] Failed to sync batch: ${error.message}`);
+      logger.error(`[PredictionSync] Failed to sync batch: ${getErrorMsg(error)}`);
     }
   }
 
@@ -213,7 +216,7 @@ class PredictionCommerceSync {
       );
       return response.data.data?.moments || [];
     } catch (error) {
-      logger.error(`[PredictionSync] Failed to get churn moments: ${error.message}`);
+      logger.error(`[PredictionSync] Failed to get churn moments: ${getErrorMsg(error)}`);
       return [];
     }
   }
@@ -233,7 +236,7 @@ class PredictionCommerceSync {
       );
       return response.data.data?.customers || [];
     } catch (error) {
-      logger.error(`[PredictionSync] Failed to get high-value customers: ${error.message}`);
+      logger.error(`[PredictionSync] Failed to get high-value customers: ${getErrorMsg(error)}`);
       return [];
     }
   }

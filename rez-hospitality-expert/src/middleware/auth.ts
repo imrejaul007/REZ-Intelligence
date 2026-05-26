@@ -1,115 +1,45 @@
-/**
- * Authentication Middleware
- * Internal service authentication for API endpoints
- */
-
 import { Request, Response, NextFunction } from 'express';
-import { config } from '../config/index.js';
-import { logger } from '../utils/logger.js';
+import { logger } from './utils/logger';
 
-interface AuthenticatedRequest extends Request {
-  internalService?: {
-    name: string;
-    authenticated: boolean;
-  };
+export interface AuthConfig {
+  apiKeys?: string[];
+  internalTokens?: string[];
+  bypassPaths?: string[];
 }
 
-/**
- * Validate internal service token
- */
-export function internalServiceAuth(
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-): void {
-  const token = req.headers['x-internal-token'] as string | undefined;
+export function createAuthMiddleware(config: AuthConfig) {
+  const { apiKeys = [], internalTokens = [], bypassPaths = ['/health', '/ready'] } = config;
 
-  if (!token) {
-    logger.warn('Missing internal service token', {
-      path: req.path,
-      method: req.method,
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const path = req.path;
+
+    // Bypass health checks
+    if (bypassPaths.some(p => path.startsWith(p))) {
+      return next();
+    }
+
+    // Check API key
+    const apiKey = req.headers['x-api-key'] as string | undefined;
+    if (apiKey && apiKeys.includes(apiKey)) {
+      return next();
+    }
+
+    // Check internal token
+    const internalToken = req.headers['x-internal-token'] as string | undefined;
+    if (internalToken && internalTokens.includes(internalToken)) {
+      return next();
+    }
+
+    // No valid auth found
+    logger.warn('Unauthorized access attempt', {
+      path,
       ip: req.ip,
+      userAgent: req.headers['user-agent'],
     });
 
     res.status(401).json({
       error: 'Unauthorized',
-      message: 'Missing X-Internal-Token header',
+      message: 'Valid API key or internal token required',
     });
-    return;
-  }
-
-  try {
-    const tokens = JSON.parse(config.INTERNAL_SERVICE_TOKENS_JSON || '{}') as Record<string, string>;
-
-    // Find matching service
-    const serviceName = Object.entries(tokens).find(
-      ([, serviceToken]) => serviceToken === token
-    )?.[0];
-
-    if (!serviceName) {
-      logger.warn('Invalid internal service token', {
-        path: req.path,
-        method: req.method,
-        ip: req.ip,
-      });
-
-      res.status(401).json({
-        error: 'Unauthorized',
-        message: 'Invalid service token',
-      });
-      return;
-    }
-
-    // Attach service info to request
-    req.internalService = {
-      name: serviceName,
-      authenticated: true,
-    };
-
-    logger.debug('Internal service authenticated', {
-      service: serviceName,
-      path: req.path,
-    });
-
-    next();
-  } catch (error) {
-    logger.error('Error validating internal token', { error });
-
-    res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Authentication service unavailable',
-    });
-  }
-}
-
-/**
- * Optional authentication - continues even without token
- */
-export function optionalAuth(
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-): void {
-  const token = req.headers['x-internal-token'] as string | undefined;
-
-  if (!token) {
-    next();
-    return;
-  }
-
-  // Validate token if present
-  internalServiceAuth(req, res, next);
-}
-
-/**
- * Guest authentication for public endpoints
- */
-export function guestAuth(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
-  // For now, allow all requests through
-  // In production, this could validate guest tokens or session IDs
-  next();
+  };
 }

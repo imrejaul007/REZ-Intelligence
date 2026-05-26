@@ -4,7 +4,7 @@ import config from '../config/index.js';
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
 // Custom format for console
-const consoleFormat = printf(({ level, message, timestamp, ...meta }) => {
+const consoleFormat = printf(({ level, message, timestamp, ...meta }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
   const metaStr = Object.keys(meta).length ? JSON.stringify(meta) : '';
   return `${timestamp} [${level}]: ${message} ${metaStr}`;
 });

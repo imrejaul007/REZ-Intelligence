@@ -12,7 +12,7 @@
 import mongoose, { Schema } from 'mongoose';
 import cron from 'node-cron';
 import axios from 'axios';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { AgentManagementService } from './agentManagementService';
 import { generateRuleId, generateEscalationLogId } from '../utils/idGenerator';
 
@@ -121,7 +121,7 @@ export class EscalationEngine {
     description?: string;
     trigger: {
       type: 'time' | 'sentiment' | 'priority' | 'repeat' | 'sla' | 'tag';
-      conditions;
+      conditions: Record<string, unknown>;
     };
     action: {
       type: 'assign_higher' | 'notify_manager' | 'create_incident' | 'auto_resolve' | 'ping_agent';
@@ -286,13 +286,24 @@ export class EscalationEngine {
   /**
    * Evaluate if rule should trigger
    */
-  private async evaluateRule(rule, ticket): Promise<boolean> {
-    const { type, conditions } = rule.trigger;
+  private async evaluateRule(rule: InstanceType<typeof EscalationRule>, ticket: {
+    ticketId: string;
+    customerId: string;
+    customerPhone: string;
+    assignedAgent?: { agentId: string; agentName: string; level?: number };
+    priority?: string;
+    sentiment?: string;
+    tags?: string[];
+    createdAt: Date;
+    slaDeadline?: Date;
+    platform?: string;
+  }): Promise<boolean> {
+    const { type, conditions } = rule.trigger as { type: string; conditions: Record<string, unknown> };
 
     switch (type) {
       case 'time': {
         const minutesElapsed = (Date.now() - new Date(ticket.createdAt).getTime()) / 60000;
-        return minutesElapsed >= conditions.minutes;
+        return minutesElapsed >= (conditions.minutes as number);
       }
 
       case 'sentiment': {
@@ -304,7 +315,7 @@ export class EscalationEngine {
       }
 
       case 'tag': {
-        return ticket.tags?.includes(conditions.tag);
+        return ticket.tags?.includes(conditions.tag as string);
       }
 
       case 'repeat': {
@@ -313,7 +324,7 @@ export class EscalationEngine {
           customerId: ticket.customerId,
           createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
         });
-        return recentEscalations >= conditions.count;
+        return recentEscalations >= (conditions.count as number);
       }
 
       case 'sla': {
@@ -321,7 +332,7 @@ export class EscalationEngine {
         const totalTime = ticket.slaDeadline.getTime() - new Date(ticket.createdAt).getTime();
         const elapsed = Date.now() - new Date(ticket.createdAt).getTime();
         const percentElapsed = (elapsed / totalTime) * 100;
-        return percentElapsed >= conditions.threshold;
+        return percentElapsed >= (conditions.threshold as number);
       }
 
       default:
@@ -332,12 +343,24 @@ export class EscalationEngine {
   /**
    * Execute escalation action
    */
-  private async executeEscalation(rule, ticket): Promise<{
+  private async executeEscalation(rule: InstanceType<typeof EscalationRule>, ticket: {
+    ticketId: string;
+    customerId: string;
+    customerPhone: string;
+    assignedAgent?: { agentId: string; agentName: string; level?: number };
+    priority?: string;
+    sentiment?: string;
+    tags?: string[];
+    createdAt: Date;
+    slaDeadline?: Date;
+    platform?: string;
+  }): Promise<{
     escalated: boolean;
     reason?: string;
     action?: string;
   }> {
-    const { type, target } = rule.action;
+    const ruleAction = rule.action as { type: string; target?: string; priority?: string };
+    const { type, target } = ruleAction;
 
     switch (type) {
       case 'assign_higher': {

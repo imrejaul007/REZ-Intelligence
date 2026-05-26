@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import mongoose from 'mongoose';
 import os from 'os';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 import {
   generatePrometheusMetrics,
   getMetricsSnapshot

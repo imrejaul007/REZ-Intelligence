@@ -2,6 +2,7 @@ import winston from 'winston';
 import { z } from 'zod';
 import axios, { AxiosError } from 'axios';
 import CircuitBreaker from 'opossum';
+import { randomInt, randomUUID } from 'crypto';
 import EventEmitter from 'eventemitter3';
 
 // src/config/index.ts
@@ -461,7 +462,7 @@ function createDefaultLogger(label) {
 function validateConfig(config) {
   const result = SDKConfigSchema.safeParse(config);
   if (!result.success) {
-    const errors = result.error.errors.map(
+    const errors = result.error.issues.map(
       (e) => `Field '${e.path.join(".")}' ${e.message}`
     );
     throw new Error(`SDK Configuration validation failed:
@@ -773,7 +774,7 @@ var BaseConnector = class {
    * Calculate jitter delay
    */
   calculateJitterDelay(delay) {
-    const jitterFactor = 0.5 + Math.random();
+    const jitterFactor = 0.5 + randomInt(0, 1e3) / 1e3;
     return Math.floor(delay * jitterFactor);
   }
   /**
@@ -2116,7 +2117,7 @@ var EventBus = class {
    * Subscribe to an event type
    */
   on(eventType, handler) {
-    const id = `${eventType}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    const id = `${eventType}:${Date.now()}:${randomUUID().replace(/-/g, "").slice(0, 12)}`;
     const subscription = {
       id,
       eventType,
@@ -2131,7 +2132,7 @@ var EventBus = class {
    * Subscribe to an event type only once
    */
   once(eventType, handler) {
-    const id = `${eventType}:once:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    const id = `${eventType}:once:${Date.now()}:${randomUUID().replace(/-/g, "").slice(0, 12)}`;
     const subscription = {
       id,
       eventType,
@@ -2146,7 +2147,7 @@ var EventBus = class {
    * Subscribe to event pattern (e.g., 'agent.*')
    */
   onPattern(pattern, handler) {
-    const id = `pattern:${pattern}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    const id = `pattern:${pattern}:${Date.now()}:${randomUUID().replace(/-/g, "").slice(0, 12)}`;
     const subscription = {
       id,
       eventType: pattern,

@@ -1,13 +1,11 @@
-import mongoose, { Schema, Model, Document } from 'mongoose';
+import mongoose, { Schema, Model } from 'mongoose';
 import {
   IExperiment,
   IAssignment,
-  ExperimentStatus,
   Variant,
   Target,
   Audience,
   ExperimentStats,
-  ExperimentResults,
 } from '../types/index.js';
 
 // ============================================================================

@@ -1,4 +1,4 @@
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 
 import { AdTemplate, IAdTemplate } from '../models';
 import { AdTemplate as AdTemplateType, TemplateContent, TemplateDesign } from '../types';

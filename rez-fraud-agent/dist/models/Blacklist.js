@@ -32,10 +32,14 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BlacklistEntry = exports.BlacklistSeverity = exports.BlacklistReason = exports.BlacklistType = void 0;
 exports.generateBlacklistEntryId = generateBlacklistEntryId;
 const mongoose_1 = __importStar(require("mongoose"));
+const crypto_1 = __importDefault(require("crypto"));
 var BlacklistType;
 (function (BlacklistType) {
     BlacklistType["IP_ADDRESS"] = "IP_ADDRESS";
@@ -229,7 +233,7 @@ BlacklistEntrySchema.methods.recordMatch = async function () {
 exports.BlacklistEntry = mongoose_1.default.model('BlacklistEntry', BlacklistEntrySchema);
 function generateBlacklistEntryId() {
     const timestamp = Date.now().toString(36);
-    const random = Math.random().toString(36).substring(2, 8);
+    const random = crypto_1.default.randomUUID().replace(/-/g, '').substring(0, 6);
     return `BL-${timestamp}-${random}`.toUpperCase();
 }
 //# sourceMappingURL=Blacklist.js.map

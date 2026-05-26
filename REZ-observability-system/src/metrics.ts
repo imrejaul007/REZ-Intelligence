@@ -15,11 +15,18 @@ export interface TimeSeriesMetric {
   dataPoints: MetricDataPoint[];
 }
 
+interface MetricConfig {
+  help: string;
+  labels: string[];
+  type: 'counter' | 'gauge' | 'histogram';
+}
+
 class MetricsCollector {
   private registry: Registry;
   private counters: Map<string, Counter<string>> = new Map();
   private gauges: Map<string, Gauge<string>> = new Map();
   private histograms: Map<string, Histogram<string>> = new Map();
+  private metricConfigs: Map<string, MetricConfig> = new Map();
   private timeSeriesData: Map<string, MetricDataPoint[]> = new Map();
   private readonly maxDataPoints = 1000;
 
@@ -38,6 +45,7 @@ class MetricsCollector {
     }
     const counter = new Counter({ name, help, labelNames, registers: [this.registry] });
     this.counters.set(name, counter);
+    this.metricConfigs.set(name, { help, labels: labelNames, type: 'counter' });
     this.timeSeriesData.set(name, []);
     return counter;
   }
@@ -48,6 +56,7 @@ class MetricsCollector {
     }
     const gauge = new Gauge({ name, help, labelNames, registers: [this.registry] });
     this.gauges.set(name, gauge);
+    this.metricConfigs.set(name, { help, labels: labelNames, type: 'gauge' });
     this.timeSeriesData.set(name, []);
     return gauge;
   }
@@ -58,6 +67,7 @@ class MetricsCollector {
     }
     const histogram = new Histogram({ name, help, buckets, labelNames, registers: [this.registry] });
     this.histograms.set(name, histogram);
+    this.metricConfigs.set(name, { help, labels: labelNames, type: 'histogram' });
     this.timeSeriesData.set(name, []);
     return histogram;
   }
@@ -66,12 +76,10 @@ class MetricsCollector {
     const counter = this.counters.get(name);
     if (counter) {
       counter.inc(labels);
-      this.recordTimeSeries(name, counter.collect().reduce((acc: number, m) => {
-        if (m.values.length > 0) {
-          return acc + m.values[0].value;
-        }
-        return acc;
-      }, 0), labels);
+      // Get current value for time series recording by parsing metrics output
+      const currentValues = this.timeSeriesData.get(name) || [];
+      const lastValue = currentValues.length > 0 ? currentValues[currentValues.length - 1].value : 0;
+      this.recordTimeSeries(name, lastValue + 1, labels);
     }
   }
 
@@ -123,32 +131,35 @@ class MetricsCollector {
   getAllTimeSeries(): TimeSeriesMetric[] {
     const metrics: TimeSeriesMetric[] = [];
 
-    this.counters.forEach((counter, name) => {
+    this.counters.forEach((_counter, name) => {
+      const config = this.metricConfigs.get(name);
       metrics.push({
         name,
         type: 'counter',
-        description: counter.describe().toString(),
-        labels: counter.labelNames,
+        description: config?.help || name,
+        labels: config?.labels || [],
         dataPoints: this.timeSeriesData.get(name) || []
       });
     });
 
-    this.gauges.forEach((gauge, name) => {
+    this.gauges.forEach((_gauge, name) => {
+      const config = this.metricConfigs.get(name);
       metrics.push({
         name,
         type: 'gauge',
-        description: gauge.describe().toString(),
-        labels: gauge.labelNames,
+        description: config?.help || name,
+        labels: config?.labels || [],
         dataPoints: this.timeSeriesData.get(name) || []
       });
     });
 
-    this.histograms.forEach((histogram, name) => {
+    this.histograms.forEach((_histogram, name) => {
+      const config = this.metricConfigs.get(name);
       metrics.push({
         name,
         type: 'histogram',
-        description: histogram.describe().toString(),
-        labels: histogram.labelNames,
+        description: config?.help || name,
+        labels: config?.labels || [],
         dataPoints: this.timeSeriesData.get(name) || []
       });
     });

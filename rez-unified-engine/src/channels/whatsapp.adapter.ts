@@ -316,7 +316,7 @@ export class WhatsAppAdapter implements ChannelAdapter {
     return {
       messages: {
         create: async (params: Record<string, unknown>) => ({
-          sid: `SM${Date.now()}${Math.random().toString(36).substr(2, 9)}`,
+          sid: `SM${crypto.randomUUID().replace(/-/g, '')}`,
           status: 'queued',
           ...params,
         }),

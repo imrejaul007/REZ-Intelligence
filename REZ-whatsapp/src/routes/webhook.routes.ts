@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import { randomBytes } from 'crypto';
 import twilio from 'twilio';
 import Redis from 'ioredis';
 import {
@@ -14,7 +15,7 @@ import { CartService } from '../services/cartService';
 import { ConversationEngine } from '../services/conversationEngine';
 import { OrderService } from '../services/orderService';
 import { verifyTwilioWebhook, AuthenticatedRequest, maskPII, validateWebhookPayload } from '../middleware/auth';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 // ============================================
 // CONSTANTS
@@ -396,7 +397,8 @@ export function createWebhookRoutes(
         if (retryCount < MAX_MESSAGE_RETRIES) {
           // Exponential backoff with jitter
           const baseDelay = RETRY_DELAY_MS * Math.pow(2, retryCount);
-          const jitter = Math.random() * 0.3 * baseDelay;
+          const jitterBytes = randomBytes(4);
+          const jitter = (jitterBytes[0] | (jitterBytes[1] << 8) | (jitterBytes[2] << 16) | (jitterBytes[3] << 24)) / 0xFFFFFFFF * 0.3 * baseDelay;
           const delay = baseDelay + jitter;
 
           logger.warn('Twilio rate limited, retrying', {

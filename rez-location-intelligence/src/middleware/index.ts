@@ -1,3 +1,3 @@
-export { authMiddleware, optionalAuthMiddleware } from './auth.js';
-export { errorHandler, notFoundHandler, createApiError } from './errorHandler.js';
-export type { ApiError } from './errorHandler.js';
+export * from './auth.js';
+export * from './rateLimit.js';
+export * from './errorHandler.js';

@@ -286,27 +286,6 @@ services:
   # ============================================
   # Phase 3: Intelligence Moat
   # ============================================
-  rez-knowledge-graph:
-    build:
-      context: ./REZ-knowledge-graph
-      dockerfile: Dockerfile
-    container_name: rez-knowledge-graph
-    restart: unless-stopped
-    ports:
-      - "4060:4060"
-    environment:
-      - NODE_ENV=production
-      - PORT=4060
-      - MONGODB_URI=mongodb://mongodb:27017/rez_knowledge
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rez-network
 
   rez-merchant-brain:
     build:
@@ -475,6 +454,181 @@ services:
         condition: service_healthy
     networks:
       - rez-network
+
+  # ============================================
+  # NEW: REZ API Gateway (Port 4300)
+  # ============================================
+  rez-api-gateway:
+    build:
+      context: ./REZ-api-gateway
+      dockerfile: Dockerfile
+    container_name: rez-api-gateway
+    restart: unless-stopped
+    ports:
+      - "4300:4200"
+    environment:
+      - NODE_ENV=production
+      - PORT=4200
+      - LOG_LEVEL=info
+      - CORS_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,https://rez.money}
+      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
+      - REDIS_URL=redis://redis:6379
+      # REZ Intelligence Services
+      - REZ_MEMORY_URL=http://rez-memory-layer:4201
+      - REZ_FLOW_URL=http://rez-flow-runtime:4200
+      - REZ_INTENT_URL=http://rez-intent-predictor:4018
+      - REZ_CARE_URL=http://rez-care-service:4058
+      - REZ_PREDICTIVE_URL=http://rez-predictive-engine:4141
+      - REZ_WHATSAPP_URL=http://rez-whatsapp:4202
+      - REZ_KNOWLEDGE_URL=http://rez-knowledge-graph:4060
+      - REZ_TENANT_ADAPTER_URL=http://rez-tenant-adapter:4210
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - rez-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4200/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ============================================
+  # NEW: REZ Tenant Adapter (Port 4210)
+  # ============================================
+  rez-tenant-adapter:
+    build:
+      context: ./REZ-tenant-adapter
+      dockerfile: Dockerfile
+    container_name: rez-tenant-adapter
+    restart: unless-stopped
+    ports:
+      - "4210:4210"
+    environment:
+      - NODE_ENV=production
+      - PORT=4210
+      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,https://rez.money}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - rez-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4210/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ============================================
+  # NEW: REZ WhatsApp Service (Port 4202)
+  # ============================================
+  rez-whatsapp:
+    build:
+      context: ./REZ-whatsapp
+      dockerfile: Dockerfile
+    container_name: rez-whatsapp
+    restart: unless-stopped
+    ports:
+      - "4202:4202"
+    environment:
+      - NODE_ENV=production
+      - PORT=4202
+      - MONGODB_URI=mongodb://mongodb:27017/rez_whatsapp
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
+      - WHATSAPP_API_URL=${WHATSAPP_API_URL:-https://graph.facebook.com/v18.0}
+      - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN:-}
+      - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID:-}
+      - WHATSAPP_WEBHOOK_VERIFY_TOKEN=${WHATSAPP_WEBHOOK_VERIFY_TOKEN:-}
+      - ORCHESTRATOR_URL=http://rez-orchestrator-v2:4015
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rez-orchestrator-v2:
+        condition: service_started
+    networks:
+      - rez-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4202/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ============================================
+  # NEW: REZ Memory Layer (Port 4201)
+  # ============================================
+  rez-memory-layer:
+    build:
+      context: ./REZ-memory-layer
+      dockerfile: Dockerfile
+    container_name: rez-memory-layer
+    restart: unless-stopped
+    ports:
+      - "4201:4201"
+    environment:
+      - NODE_ENV=production
+      - PORT=4201
+      - MONGODB_URI=mongodb://mongodb:27017/rez_memory_layer
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
+      - LOG_LEVEL=info
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - rez-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4201/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ============================================
+  # NEW: REZ Care Service (Port 4058)
+  # ============================================
+  rez-care-service:
+    build:
+      context: ./REZ-care-service
+      dockerfile: Dockerfile
+    container_name: rez-care-service
+    restart: unless-stopped
+    ports:
+      - "4058:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongodb:27017/rez_care
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
+      - LOG_LEVEL=info
+      # Service URLs
+      - REZ_INTENT_URL=http://rez-intent-predictor:4018
+      - REZ_PREDICTIVE_URL=http://rez-predictive-engine:4141
+      - REZ_PROFILE_URL=http://rez-profile-service:4120
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - rez-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
   # ============================================
   # Expert Agents
@@ -752,12 +906,232 @@ services:
     networks:
       - rez-network
 
+  # ============================================
+  # NEW: REZ Flow Runtime (Port 4200)
+  # ============================================
+  rez-flow-runtime:
+    build:
+      context: ./REZ-flow-runtime
+      dockerfile: Dockerfile
+    container_name: rez-flow-runtime
+    restart: unless-stopped
+    ports:
+      - "4200:4200"
+    environment:
+      - NODE_ENV=production
+      - PORT=4200
+      - LOG_LEVEL=info
+      - MONGODB_URI=mongodb://mongodb:27017/rez_flow_runtime
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
+      - WORKER_CONCURRENCY=5
+      - MAX_CONCURRENT_NODES=5
+      - DEFAULT_NODE_TIMEOUT=30000
+      - DLQ_MAX_RETRIES=5
+      - DLQ_RETRY_DELAY=60000
+      # Service URLs
+      - NOTIFY_SERVICE_URL=${NOTIFY_SERVICE_URL:-http://localhost:4011}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://localhost:4002}
+      - WALLET_SERVICE_URL=${WALLET_SERVICE_URL:-http://localhost:4004}
+      - WHATSAPP_SERVICE_URL=http://rez-whatsapp:4202
+      - REZ_INTELLIGENCE_URL=${REZ_INTELLIGENCE_URL:-http://localhost:4018}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,https://rez.money}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - rez-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4200/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ============================================
+  # NEW: REZ Intent Predictor (Port 4018)
+  # ============================================
+  rez-intent-predictor:
+    build:
+      context: ./rez-intent-predictor
+      dockerfile: Dockerfile
+    container_name: rez-intent-predictor
+    restart: unless-stopped
+    ports:
+      - "4018:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - SERVICE_NAME=rez_intent_predictor
+      - MONGODB_URI=mongodb://mongodb:27017/rez_intent
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
+      - LOG_LEVEL=info
+      # RABTUL Services
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://localhost:4002}
+      - NOTIFICATION_SERVICE_URL=${NOTIFICATION_SERVICE_URL:-http://localhost:4011}
+      - PROFILE_SERVICE_URL=${PROFILE_SERVICE_URL:-http://localhost:4013}
+      # REZ Intelligence
+      - SIGNAL_AGGREGATOR_URL=http://rez-signal-aggregator:4121
+      - RECOMMENDATION_ENGINE_URL=${RECOMMENDATION_ENGINE_URL:-http://localhost:4125}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - rez-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ============================================
+  # NEW: REZ Predictive Engine (Port 4141)
+  # ============================================
+  rez-predictive-engine:
+    build:
+      context: ./REZ-predictive-engine
+      dockerfile: Dockerfile
+    container_name: rez-predictive-engine
+    restart: unless-stopped
+    ports:
+      - "4141:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - SERVICE_NAME=rez_predictive_engine
+      - MONGODB_URI=mongodb://mongodb:27017/rez_predictive
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
+      - LOG_LEVEL=info
+      # RABTUL Services
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://localhost:4002}
+      - NOTIFICATION_SERVICE_URL=${NOTIFICATION_SERVICE_URL:-http://localhost:4011}
+      - PROFILE_SERVICE_URL=${PROFILE_SERVICE_URL:-http://localhost:4013}
+      # REZ Intelligence
+      - INTENT_SERVICE_URL=http://rez-intent-predictor:3000
+      - SIGNAL_AGGREGATOR_URL=http://rez-signal-aggregator:4121
+      - EVENT_BUS_URL=${EVENT_BUS_URL:-http://localhost:4025}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - rez-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ============================================
+  # NEW: REZ Knowledge Graph (Port 4060)
+  # ============================================
+  rez-knowledge-graph-service:
+    build:
+      context: ./REZ-knowledge-graph
+      dockerfile: Dockerfile
+    container_name: rez-knowledge-graph-service
+    restart: unless-stopped
+    ports:
+      - "4060:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongodb:27017/rez_knowledge
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
+      - LOG_LEVEL=info
+      # RABTUL Services
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://localhost:4002}
+      - NOTIFICATION_SERVICE_URL=${NOTIFICATION_SERVICE_URL:-http://localhost:4011}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - rez-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
 # ============================================
 # Networks
 # ============================================
 networks:
   rez-network:
     driver: bridge
+
+  # ============================================
+  # NEW: REZ Monitoring (Port 4250)
+  # ============================================
+  rez-monitoring:
+    build:
+      context: ./REZ-monitoring
+      dockerfile: Dockerfile
+    container_name: rez-monitoring
+    restart: unless-stopped
+    ports:
+      - "4250:4250"
+    environment:
+      - NODE_ENV=production
+      - PORT=4250
+      - LOG_LEVEL=info
+    depends_on:
+      - rez-api-gateway
+      - rez-tenant-adapter
+    networks:
+      - rez-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4250/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ============================================
+  # NEW: REZ SaaS Runtime (Port 4220)
+  # ============================================
+  rez-saas-runtime:
+    build:
+      context: ./REZ-saas-runtime
+      dockerfile: Dockerfile
+    container_name: rez-saas-runtime
+    restart: unless-stopped
+    ports:
+      - "4220:4220"
+    environment:
+      - NODE_ENV=production
+      - PORT=4220
+      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,https://rez.money}
+      - PAYMENT_SERVICE_URL=${PAYMENT_SERVICE_URL:-http://localhost:4001}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://localhost:4002}
+      - TENANT_ADAPTER_URL=http://rez-tenant-adapter:4210
+      - API_GATEWAY_URL=http://rez-api-gateway:4200
+      - BILLING_ENABLED=true
+    depends_on:
+      - rez-tenant-adapter
+      - rez-api-gateway
+    networks:
+      - rez-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4220/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
 # ============================================
 # Volumes

@@ -3,6 +3,7 @@
  * Provides caching, semantic search, and knowledge management
  */
 
+import { randomUUID } from 'crypto';
 import { IResponse } from '../interfaces/IResponse';
 import { KnowledgeBaseConfig } from '../types/expert.types';
 import { Logger } from '../utils/logger';
@@ -275,7 +276,7 @@ export class KnowledgeBase {
   }
 
   private generateId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    return `${Date.now()}-${randomUUID().replace(/-/g, '').substring(0, 9)}`;
   }
 }
 

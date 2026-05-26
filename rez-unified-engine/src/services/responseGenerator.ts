@@ -3,6 +3,12 @@
  * Generates appropriate responses based on intent, context, and routing decisions
  */
 
+import crypto from 'crypto';
+
+// Crypto-based random number generator for secure randomness
+function secureRandom(): number {
+  return parseInt(crypto.randomBytes(4).toString('hex'), 16) / 0xFFFFFFFF;
+}
 import axios from 'axios';
 import {
   IncomingMessage,
@@ -403,7 +409,7 @@ export class ResponseGenerator {
                       this.fallbackResponses.get('general_inquiry') ||
                       ['Thank you for your message. Let me help you with that.'];
 
-    const text = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    const text = fallbacks[Math.floor(secureRandom() * fallbacks.length)];
 
     return {
       messageId,
@@ -432,7 +438,7 @@ export class ResponseGenerator {
    * Generate message ID
    */
   private generateMessageId(): string {
-    return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `msg_${crypto.randomUUID()}`;
   }
 
   /**

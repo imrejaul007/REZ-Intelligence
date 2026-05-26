@@ -1,5 +1,5 @@
-import express, { Express, Request, Response, NextFunction } import logger from './utils/logger';
-import from 'express';
+import express, { Express, Request, Response, NextFunction } from 'express';
+import { logger } from './utils/logger.js';
 import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 import crypto from 'crypto';
 import helmet from 'helmet';
@@ -328,7 +328,7 @@ app.post('/keys', async (req: Request, res: Response) => {
     if (!validation.success) {
       res.status(400).json({
         error: 'Validation failed',
-        details: validation.error.errors.map(e => ({
+        details: validation.error.issues.map(e => ({
           field: e.path.join('.'),
           message: e.message
         }))
@@ -499,7 +499,7 @@ app.post('/admin/keys', async (req: Request, res: Response) => {
     if (!validation.success) {
       res.status(400).json({
         error: 'Validation failed',
-        details: validation.error.errors
+        details: validation.error.issues
       });
       return;
     }

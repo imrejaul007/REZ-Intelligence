@@ -1,4 +1,5 @@
 import logger from './utils/logger';
+const crypto = require('crypto');
 
 /**
  * Mock Server for Integration Tests
@@ -64,7 +65,7 @@ const handlers = {
   '/api/identity/resolve': {
     POST: async (req, res, parsed) => {
       const body = await collectRequestBody(req);
-      const unifiedId = `uid_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const unifiedId = `uid_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
 
       mockData.identities[unifiedId] = {
         ...body.identifiers,

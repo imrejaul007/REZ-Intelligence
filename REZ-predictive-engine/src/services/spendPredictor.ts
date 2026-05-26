@@ -11,8 +11,11 @@
  * - Weather
  */
 
-import express, { Request, Response } import logger from './utils/logger';
-import from 'express';
+import express, { Request, Response } from 'express';
+import logger from '../utils/logger.js';
+
+// Helper to extract error message safely
+const getErrorMsg = (e: unknown): string => e instanceof Error ? e.message : String(e);
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
@@ -31,37 +34,55 @@ interface SpendPrediction {
   userId: string;
   predictedSpend: number;
   confidence: number;
-  categoryBreakdown: {
+  categoryBreakdown: Array<{
     category: string;
     predictedAmount: number;
+    avgAmount: number;
+    frequency: number;
     confidence: number;
-  }[];
-  factors: {
+  }>;
+  timePatterns: {
+    preferredDays: string[];
+    preferredTime: string;
+    peakSpendDay?: string;
+    peakSpendTime?: string;
+  };
+  factors: Array<{
     type: string;
     impact: number; // positive or negative
     description: string;
-  }[];
-  recommendations: {
+  }>;
+  recommendations: Array<{
     type: 'upsell' | 'cross_sell' | 'retention';
     targetCategory: string;
     suggestedAmount: number;
-  }[];
+  }>;
 }
 
-interface TransactionRecord {
-  userId: string;
-  merchantId: string;
-  category: string;
-  subcategory: string;
-  amount: number;
-  dayOfWeek: number;
-  hourOfDay: number;
-  isPayday: boolean;
-  daysSincePayday: number;
-  season: string;
-  weather?: string;
-  locationArea?: string;
-  timestamp: Date;
+interface TransactionDoc {
+  userId?: string | null;
+  merchantId?: string | null;
+  category?: string | null;
+  subcategory?: string | null;
+  amount?: number | null;
+  dayOfWeek?: number | null;
+  hourOfDay?: number | null;
+  isPayday?: boolean | null;
+  daysSincePayday?: number | null;
+  season?: string | null;
+  weather?: string | null;
+  locationArea?: string | null;
+  timestamp?: Date | null;
+}
+
+// Helper to safely get number with default
+function getNum(val: number | null | undefined, def = 0): number {
+  return val ?? def;
+}
+
+// Helper to safely get string with default
+function getStr(val: string | null | undefined, def = ''): string {
+  return val ?? def;
 }
 
 // ============================================
@@ -129,7 +150,7 @@ class SpendPredictor {
     }
 
     // Calculate base metrics
-    const { avgBill, maxBill, minBill } = this.calculateBillMetrics(transactions);
+    const { avgBill } = this.calculateBillMetrics(transactions);
     const categoryBreakdown = this.calculateCategoryBreakdown(transactions);
     const timePatterns = this.calculateTimePatterns(transactions);
     const factors = this.identifySpendFactors(transactions);
@@ -157,6 +178,7 @@ class SpendPredictor {
       predictedSpend: Math.round(prediction * 100) / 100,
       confidence: Math.min(confidence, 0.95),
       categoryBreakdown,
+      timePatterns,
       factors,
       recommendations
     };
@@ -177,7 +199,7 @@ class SpendPredictor {
       return { predictedAmount: 0, confidence: 0, avgAmount: 0, frequency: 0 };
     }
 
-    const amounts = transactions.map(t => t.amount);
+    const amounts = transactions.map((t) => getNum(t.amount));
     const avgAmount = amounts.reduce((a, b) => a + b, 0) / amounts.length;
     const frequency = transactions.length / this.weeksSinceFirst(transactions);
 
@@ -207,12 +229,12 @@ class SpendPredictor {
   // PRIVATE METHODS
   // ============================================
 
-  private calculateBillMetrics(transactions: unknown[]): {
+  private calculateBillMetrics(transactions: TransactionDoc[]): {
     avgBill: number;
     maxBill: number;
     minBill: number;
   } {
-    const amounts = transactions.map(t => t.amount);
+    const amounts = transactions.map((t) => getNum(t.amount));
     const avgBill = amounts.reduce((a, b) => a + b, 0) / amounts.length;
     const maxBill = Math.max(...amounts);
     const minBill = Math.min(...amounts);
@@ -220,13 +242,15 @@ class SpendPredictor {
     return { avgBill, maxBill, minBill };
   }
 
-  private calculateCategoryBreakdown(transactions: unknown[]): SpendPrediction['categoryBreakdown'] {
+  private calculateCategoryBreakdown(transactions: TransactionDoc[]): SpendPrediction['categoryBreakdown'] {
     const categoryMap = new Map<string, { total: number; count: number }>();
 
     for (const t of transactions) {
-      const existing = categoryMap.get(t.category) || { total: 0, count: 0 };
-      categoryMap.set(t.category, {
-        total: existing.total + t.amount,
+      const cat = getStr(t.category);
+      const amt = getNum(t.amount);
+      const existing = categoryMap.get(cat) || { total: 0, count: 0 };
+      categoryMap.set(cat, {
+        total: existing.total + amt,
         count: existing.count + 1
       });
     }
@@ -240,18 +264,21 @@ class SpendPredictor {
     })).sort((a, b) => b.frequency - a.frequency);
   }
 
-  private calculateTimePatterns(transactions: unknown[]): SpendPrediction['timePatterns'] {
+  private calculateTimePatterns(transactions: TransactionDoc[]): SpendPrediction['timePatterns'] {
     const dayTotals = new Map<string, { total: number; count: number }>();
     const hourTotals = new Map<number, { total: number; count: number }>();
 
     for (const t of transactions) {
-      const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][t.dayOfWeek];
+      const dayIdx = getNum(t.dayOfWeek);
+      const amt = getNum(t.amount);
+      const hour = getNum(t.hourOfDay);
+      const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayIdx] || 'Sunday';
 
       const dayStats = dayTotals.get(dayName) || { total: 0, count: 0 };
-      dayTotals.set(dayName, { total: dayStats.total + t.amount, count: dayStats.count + 1 });
+      dayTotals.set(dayName, { total: dayStats.total + amt, count: dayStats.count + 1 });
 
-      const hourStats = hourTotals.get(t.hourOfDay) || { total: 0, count: 0 };
-      hourTotals.set(t.hourOfDay, { total: hourStats.total + t.amount, count: hourStats.count + 1 });
+      const hourStats = hourTotals.get(hour) || { total: 0, count: 0 };
+      hourTotals.set(hour, { total: hourStats.total + amt, count: hourStats.count + 1 });
     }
 
     const preferredDays = Array.from(dayTotals.entries())
@@ -276,14 +303,14 @@ class SpendPredictor {
     };
   }
 
-  private identifySpendFactors(transactions: unknown[]): SpendPrediction['factors'] {
+  private identifySpendFactors(transactions: TransactionDoc[]): SpendPrediction['factors'] {
     const factors: SpendPrediction['factors'] = [];
 
     // Check for payday effect
-    const paydayTransactions = transactions.filter(t => t.isPayday);
+    const paydayTransactions = transactions.filter((t) => t.isPayday);
     if (paydayTransactions.length >= 2) {
-      const paydayAvg = paydayTransactions.reduce((a, b) => a + b.amount, 0) / paydayTransactions.length;
-      const normalAvg = transactions.reduce((a, b) => a + b.amount, 0) / transactions.length;
+      const paydayAvg = paydayTransactions.reduce((a, b) => a + getNum(b.amount), 0) / paydayTransactions.length;
+      const normalAvg = transactions.reduce((a, b) => a + getNum(b.amount), 0) / transactions.length;
       const impact = (paydayAvg - normalAvg) / normalAvg;
 
       if (Math.abs(impact) > 0.1) {
@@ -296,12 +323,18 @@ class SpendPredictor {
     }
 
     // Check for weekend effect
-    const weekendTransactions = transactions.filter(t => t.dayOfWeek === 0 || t.dayOfWeek === 6);
-    const weekdayTransactions = transactions.filter(t => t.dayOfWeek > 0 && t.dayOfWeek < 6);
+    const weekendTransactions = transactions.filter((t) => {
+      const dow = getNum(t.dayOfWeek);
+      return dow === 0 || dow === 6;
+    });
+    const weekdayTransactions = transactions.filter((t) => {
+      const dow = getNum(t.dayOfWeek);
+      return dow > 0 && dow < 6;
+    });
 
     if (weekendTransactions.length >= 3 && weekdayTransactions.length >= 3) {
-      const weekendAvg = weekendTransactions.reduce((a, b) => a + b.amount, 0) / weekendTransactions.length;
-      const weekdayAvg = weekdayTransactions.reduce((a, b) => a + b.amount, 0) / weekdayTransactions.length;
+      const weekendAvg = weekendTransactions.reduce((a, b) => a + getNum(b.amount), 0) / weekendTransactions.length;
+      const weekdayAvg = weekdayTransactions.reduce((a, b) => a + getNum(b.amount), 0) / weekdayTransactions.length;
       const impact = (weekendAvg - weekdayAvg) / weekdayAvg;
 
       if (Math.abs(impact) > 0.1) {
@@ -318,8 +351,8 @@ class SpendPredictor {
     const olderTransactions = transactions.slice(Math.ceil(transactions.length / 2));
 
     if (recentTransactions.length >= 5 && olderTransactions.length >= 5) {
-      const recentAvg = recentTransactions.reduce((a, b) => a + b.amount, 0) / recentTransactions.length;
-      const olderAvg = olderTransactions.reduce((a, b) => a + b.amount, 0) / olderTransactions.length;
+      const recentAvg = recentTransactions.reduce((a, b) => a + getNum(b.amount), 0) / recentTransactions.length;
+      const olderAvg = olderTransactions.reduce((a, b) => a + getNum(b.amount), 0) / olderTransactions.length;
       const trend = (recentAvg - olderAvg) / olderAvg;
 
       factors.push({
@@ -334,7 +367,7 @@ class SpendPredictor {
 
   private generateRecommendations(
     categoryBreakdown: SpendPrediction['categoryBreakdown'],
-    avgBill: number
+    _avgBill: number
   ): SpendPrediction['recommendations'] {
     const recommendations: SpendPrediction['recommendations'] = [];
 
@@ -361,9 +394,11 @@ class SpendPredictor {
     return recommendations;
   }
 
-  private weeksSinceFirst(transactions: unknown[]): number {
+  private weeksSinceFirst(transactions: TransactionDoc[]): number {
     if (transactions.length === 0) return 1;
-    const first = transactions[transactions.length - 1].timestamp;
+    const lastTx = transactions[transactions.length - 1];
+    const first = lastTx?.timestamp;
+    if (!first) return 1;
     const days = (Date.now() - new Date(first).getTime()) / (1000 * 60 * 60 * 24);
     return Math.max(1, days / 7);
   }
@@ -374,6 +409,10 @@ class SpendPredictor {
       predictedSpend: 0,
       confidence: 0,
       categoryBreakdown: [],
+      timePatterns: {
+        preferredDays: [],
+        preferredTime: 'evening'
+      },
       factors: [{
         type: 'new_user',
         impact: 0,

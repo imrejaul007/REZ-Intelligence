@@ -17,7 +17,7 @@ import {
   PROVIDER_ENDPOINTS,
   DEFAULT_TIMEOUT,
 } from '../constants';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { RequestLog } from '../models/RequestLog';
 import {
   createInputGuard,

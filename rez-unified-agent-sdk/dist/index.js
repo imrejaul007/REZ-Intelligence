@@ -4,6 +4,7 @@ var winston = require('winston');
 var zod = require('zod');
 var axios = require('axios');
 var CircuitBreaker = require('opossum');
+var crypto = require('crypto');
 var EventEmitter = require('eventemitter3');
 
 function _interopDefault (e) { return e && e.__esModule ? e : { default: e }; }
@@ -470,7 +471,7 @@ function createDefaultLogger(label) {
 function validateConfig(config) {
   const result = SDKConfigSchema.safeParse(config);
   if (!result.success) {
-    const errors = result.error.errors.map(
+    const errors = result.error.issues.map(
       (e) => `Field '${e.path.join(".")}' ${e.message}`
     );
     throw new Error(`SDK Configuration validation failed:
@@ -782,7 +783,7 @@ var BaseConnector = class {
    * Calculate jitter delay
    */
   calculateJitterDelay(delay) {
-    const jitterFactor = 0.5 + Math.random();
+    const jitterFactor = 0.5 + crypto.randomInt(0, 1e3) / 1e3;
     return Math.floor(delay * jitterFactor);
   }
   /**
@@ -2125,7 +2126,7 @@ var EventBus = class {
    * Subscribe to an event type
    */
   on(eventType, handler) {
-    const id = `${eventType}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    const id = `${eventType}:${Date.now()}:${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
     const subscription = {
       id,
       eventType,
@@ -2140,7 +2141,7 @@ var EventBus = class {
    * Subscribe to an event type only once
    */
   once(eventType, handler) {
-    const id = `${eventType}:once:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    const id = `${eventType}:once:${Date.now()}:${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
     const subscription = {
       id,
       eventType,
@@ -2155,7 +2156,7 @@ var EventBus = class {
    * Subscribe to event pattern (e.g., 'agent.*')
    */
   onPattern(pattern, handler) {
-    const id = `pattern:${pattern}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    const id = `pattern:${pattern}:${Date.now()}:${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
     const subscription = {
       id,
       eventType: pattern,

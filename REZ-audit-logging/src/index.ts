@@ -1,5 +1,5 @@
-import express, { Application, Request, Response } import logger from './utils/logger';
-import from 'express';
+import express, { Application, Request, Response } from 'express';
+import { logger } from './utils/logger.js';
 import cors from 'cors';
 import dotenv from 'dotenv';
 

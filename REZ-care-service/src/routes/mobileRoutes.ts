@@ -12,7 +12,7 @@
 import express, { Request, Response } from 'express';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { getExpertRouter } from '../services/expertRouter';
 
 const router = express.Router();
@@ -22,7 +22,12 @@ const expertRouter = getExpertRouter();
 // MIDDLEWARE
 // ============================================
 
-function extractCustomer(req: Request, res: Response, next: Function) {
+interface CustomerRequest extends Request {
+  customerId?: string;
+  userId?: string;
+}
+
+function extractCustomer(req: CustomerRequest, res: Response, next: Function) {
   const customerId = req.headers['x-customer-id'] as string ||
     req.query.userId as string ||
     req.body?.userId as string;
@@ -31,8 +36,8 @@ function extractCustomer(req: Request, res: Response, next: Function) {
     return res.status(401).json({ error: 'Customer ID required' });
   }
 
-  (req as unknown).customerId = customerId;
-  (req as unknown).userId = customerId;
+  req.customerId = customerId;
+  req.userId = customerId;
   next();
 }
 
@@ -48,9 +53,9 @@ const createTicketSchema = z.object({
   priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
 });
 
-router.post('/tickets', extractCustomer, async (req: Request, res: Response) => {
+router.post('/tickets', extractCustomer, async (req: CustomerRequest, res: Response) => {
   try {
-    const { userId } = req as unknown;
+    const userId = req.userId;
     const parseResult = createTicketSchema.safeParse(req.body);
 
     if (!parseResult.success) {
@@ -95,9 +100,9 @@ router.post('/tickets', extractCustomer, async (req: Request, res: Response) => 
   }
 });
 
-router.get('/tickets', extractCustomer, async (req: Request, res: Response) => {
+router.get('/tickets', extractCustomer, async (req: CustomerRequest, res: Response) => {
   try {
-    const { userId } = req as unknown;
+    const userId = req.userId;
     const { status, limit = 20 } = req.query;
 
     // Mock tickets for demo
@@ -219,9 +224,9 @@ router.post('/csat', extractCustomer, async (req: Request, res: Response) => {
   }
 });
 
-router.get('/csat/pending', extractCustomer, async (req: Request, res: Response) => {
+router.get('/csat/pending', extractCustomer, async (req: CustomerRequest, res: Response) => {
   try {
-    const { userId } = req as unknown;
+    const userId = req.userId;
 
     res.json({
       success: true,

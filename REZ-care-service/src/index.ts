@@ -950,7 +950,7 @@ app.get('/api/reports/csat-trends', async (req: Request, res: Response) => {
     const trends = await reportsService.getCSATTrends({
       start: start ? new Date(start as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
       end: end ? new Date(end as string) : new Date(),
-      granularity: (granularity as unknown) || 'day'
+      granularity: (['day', 'week', 'month'].includes(granularity as string) ? granularity : 'day') as 'day' | 'week' | 'month'
     });
     res.json({ success: true, data: trends });
   } catch (error) {
@@ -1013,7 +1013,7 @@ app.get('/api/reports/merchants', async (req: Request, res: Response) => {
     const report = await reportsService.getMerchantIssuesReport({
       start: start ? new Date(start as string) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
       end: end ? new Date(end as string) : new Date(),
-      sortBy: sortBy as unknown,
+      sortBy: (['count', 'csat', 'resolutionTime'].includes(sortBy as string) ? sortBy : undefined) as 'count' | 'csat' | 'resolutionTime' | undefined,
       limit: limit ? parseInt(limit as string) : 10
     });
     res.json({ success: true, data: report });

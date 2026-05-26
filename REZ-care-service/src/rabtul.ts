@@ -12,10 +12,20 @@ const PROFILE_URL = process.env.PROFILE_SERVICE_URL || 'https://rez-profile-serv
 const EVENT_BUS_URL = process.env.EVENT_BUS_URL || 'https://rez-event-bus.onrender.com';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
+interface AuthUser {
+  id: string;
+  email?: string;
+  phone?: string;
+  name?: string;
+  role?: string;
+  permissions?: string[];
+  clientId?: string;
+}
+
 /**
  * Verify token
  */
-export async function verifyToken(token: string): Promise<{ valid: boolean; user?; error?: string }> {
+export async function verifyToken(token: string): Promise<{ valid: boolean; user?: AuthUser; error?: string }> {
   try {
     const res = await axios.get(`${AUTH_URL}/api/auth/verify`, {
       headers: { 'Authorization': `Bearer ${token}`, 'X-Internal-Token': INTERNAL_TOKEN },
@@ -25,21 +35,23 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; user
     }
     return { valid: false, error: 'Invalid token' };
   } catch (error) {
-    return { valid: false, error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return { valid: false, error: errorMessage };
   }
 }
 
 /**
  * Get customer 360 profile
  */
-export async function getCustomer360(userId: string): Promise<{ profile; error?: string }> {
+export async function getCustomer360(userId: string): Promise<{ profile?: Record<string, unknown>; error?: string }> {
   try {
     const res = await axios.get(`${PROFILE_URL}/api/profiles/${userId}`, {
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { profile: res.data };
   } catch (error) {
-    return { profile: null, error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return { profile: undefined, error: errorMessage };
   }
 }
 
@@ -53,7 +65,8 @@ export async function updateCustomerProfile(userId: string, updates: Record<stri
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -67,7 +80,8 @@ export async function rewardCustomer(userId: string, amount: number, reason: str
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -81,7 +95,8 @@ export async function notifyCustomer(userId: string, title: string, body: string
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -95,7 +110,8 @@ export async function sendWhatsApp(phone: string, message: string): Promise<{ su
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -114,7 +130,8 @@ export async function publishSupportEvent(eventType: string, data: Record<string
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -141,7 +158,8 @@ export async function createAutoTicket(params: {
     });
     return { success: true, ticketId: res.data.ticketId };
   } catch (error) {
-    return { success: false, error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: errorMessage };
   }
 }
 

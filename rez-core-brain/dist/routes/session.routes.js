@@ -33,7 +33,7 @@ const getSessionsSchema = zod_1.z.object({
 router.post('/', auth_1.requestId, auth_1.authenticate, async (req, res) => {
     try {
         const userId = req.userId;
-        const requestId = req.requestId;
+        const requestIdVal = req.requestId || 'unknown';
         const validation = createSessionSchema.safeParse(req.body);
         if (!validation.success) {
             res.status(400).json({
@@ -56,13 +56,13 @@ router.post('/', auth_1.requestId, auth_1.authenticate, async (req, res) => {
         if (validation.data.agentId) {
             await contextService_1.contextService.addActiveAgent(userId, validation.data.agentId);
         }
-        logger_1.logger.info(`Session created: ${session.id}`, { requestId, userId });
+        logger_1.logger.info(`Session created: ${session.id}`, { requestId: requestIdVal, userId });
         res.status(201).json({
             success: true,
             data: session,
             meta: {
                 timestamp: new Date(),
-                requestId,
+                requestId: requestIdVal,
             },
         });
     }

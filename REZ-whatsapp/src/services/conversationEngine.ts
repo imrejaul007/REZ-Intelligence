@@ -9,7 +9,7 @@ import {
   MessageType,
   ConversationTurn,
 } from '../types/whatsapp';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 // ============================================
 // Twilio Retry Configuration
@@ -403,10 +403,10 @@ export class ConversationEngine {
         : new Date();
 
       // Find existing session or create minimal record
-      let session = await Session.findOne({ userId: fromNumber });
+      const session = await Session.findOne({ userId: fromNumber });
 
       if (session) {
-        (session as unknown).addMessage?.('user', body, messageSid);
+        session.addMessage('user', body, messageSid);
         await session.save();
       }
 
@@ -1118,8 +1118,8 @@ export class ConversationEngine {
     }
 
     // Add to conversation history
-    (session as unknown).addMessage?.('user', message, uuidv4());
-    (session as unknown).addMessage?.('assistant', response.message, uuidv4());
+    session.addMessage('user', message, uuidv4());
+    session.addMessage('assistant', response.message, uuidv4());
     await session.save();
 
     // Update or create conversation record

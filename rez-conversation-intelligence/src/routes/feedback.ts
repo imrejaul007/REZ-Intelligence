@@ -13,7 +13,7 @@ const validateBody = (schema: z.ZodSchema) => {
       const result = schema.safeParse(req.body);
       if (!result.success) {
         throw new ValidationError('Invalid request body', {
-          errors: result.error.errors,
+          errors: result.error.issues,
         });
       }
       req.body = result.data;

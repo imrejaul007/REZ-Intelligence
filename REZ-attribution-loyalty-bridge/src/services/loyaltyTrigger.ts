@@ -11,10 +11,9 @@
  */
 
 import axios, { AxiosInstance } from 'axios';
-import { BridgeRecord } from '../models/BridgeRecord.js';
+import { BridgeRecord, IBridgeRecord } from '../models/BridgeRecord.js';
 import { CampaignConfig } from '../models/CampaignConfig.js';
 import { loyaltyLogger as logger } from './logger.js';
-import { LoyaltyTriggerRequest } from '../types/schemas.js';
 
 // ============================================
 // TYPES
@@ -51,7 +50,6 @@ export interface RewardNotification {
 
 export class LoyaltyTriggerService {
   private walletServiceUrl: string;
-  private rewardsServiceUrl: string;
   private notificationServiceUrl: string;
   private internalToken: string;
   private httpClient: AxiosInstance;
@@ -60,7 +58,6 @@ export class LoyaltyTriggerService {
 
   constructor() {
     this.walletServiceUrl = process.env.WALLET_SERVICE_URL || 'http://localhost:4002';
-    this.rewardsServiceUrl = process.env.REWARDS_SERVICE_URL || 'http://localhost:4008';
     this.notificationServiceUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:4004';
     this.internalToken = process.env.INTERNAL_SERVICE_TOKEN || '';
     this.maxRetries = 3;
@@ -189,7 +186,7 @@ export class LoyaltyTriggerService {
    */
   private async awardCoins(
     userId: string,
-    bridgeRecord: BridgeRecord
+    bridgeRecord: IBridgeRecord
   ): Promise<{ transactionId: string; newBalance: number }> {
     const payload = {
       userId,
@@ -217,8 +214,8 @@ export class LoyaltyTriggerService {
     );
 
     return {
-      transactionId: response.data.transactionId,
-      newBalance: response.data.newBalance
+      transactionId: response.data.transactionId as string,
+      newBalance: response.data.newBalance as number
     };
   }
 
@@ -227,7 +224,7 @@ export class LoyaltyTriggerService {
    */
   private async awardCashback(
     userId: string,
-    bridgeRecord: BridgeRecord
+    bridgeRecord: IBridgeRecord
   ): Promise<{ transactionId: string; newBalance: number }> {
     const payload = {
       userId,
@@ -250,8 +247,8 @@ export class LoyaltyTriggerService {
     );
 
     return {
-      transactionId: response.data.transactionId,
-      newBalance: response.data.newBalance
+      transactionId: response.data.transactionId as string,
+      newBalance: response.data.newBalance as number
     };
   }
 
@@ -260,7 +257,7 @@ export class LoyaltyTriggerService {
    */
   private async sendRewardNotification(
     userId: string,
-    bridgeRecord: BridgeRecord,
+    bridgeRecord: IBridgeRecord,
     coinsResult: { newBalance: number }
   ): Promise<boolean> {
     try {
@@ -311,7 +308,7 @@ export class LoyaltyTriggerService {
    * Build notification message
    */
   private buildNotificationMessage(
-    bridgeRecord: BridgeRecord,
+    bridgeRecord: IBridgeRecord,
     campaignName?: string
   ): string {
     const channels = bridgeRecord.attributedChannels.join(', ');

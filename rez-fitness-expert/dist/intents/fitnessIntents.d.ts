@@ -1,4 +1,4 @@
-import { WorkoutType, FitnessLevel, Equipment } from '../services/fitnessExpert';
+import { WorkoutType, FitnessLevel, Equipment } from '../services/fitnessExpert.js';
 export declare enum FitnessIntent {
     WORKOUT_PLAN = "workout_plan",
     EXERCISE_INFO = "exercise_info",

@@ -1,4 +1,10 @@
 import logger from './utils/logger';
+import crypto from 'crypto';
+
+// Crypto-based random number generator for secure randomness
+function secureRandom(): number {
+  return parseInt(crypto.randomBytes(4).toString('hex'), 16) / 0xFFFFFFFF;
+}
 
 /**
  * REZ Lakehouse - Lakehouse Service
@@ -66,7 +72,7 @@ export class LakehouseService {
    */
   async runETLJob(jobId: string): Promise<{ success: boolean; rowsProcessed: number }> {
     // In production: execute extraction, transformation, loading
-    const rowsProcessed = Math.floor(Math.random() * 10000);
+    const rowsProcessed = Math.floor(secureRandom() * 10000);
 
     logger.info(`ETL Job ${jobId} completed: ${rowsProcessed} rows`);
 

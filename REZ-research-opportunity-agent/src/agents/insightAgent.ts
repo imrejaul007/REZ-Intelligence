@@ -13,7 +13,7 @@ import { cacheGet, cacheSet } from '../utils/redis.js';
 import { CACHE_TTL, API_LIMITS } from '../constants/thresholds.js';
 import { v4 as uuidv4 } from 'uuid';
 import { Opportunity } from '../types/index.js';
-import logger from '../utils/logger.js';
+import logger from './utils/logger.js';
 
 const log = logger.child({ context: 'InsightAgent' });
 

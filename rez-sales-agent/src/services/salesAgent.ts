@@ -1,9 +1,10 @@
 import winston from 'winston';
+import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
-const logFormat = printf(({ level, message, timestamp, ...metadata }) => {
+const logFormat = printf(({ level, message, timestamp, ...metadata }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
   let msg = `${timestamp} [${level}]: ${message}`;
   if (Object.keys(metadata).length > 0 && metadata.stack === undefined) {
     msg += ` ${JSON.stringify(metadata)}`;
@@ -661,7 +662,7 @@ export class SalesAgent {
 
   private estimateTimeToTravel(context: SalesContext): number {
     if (context.recentProducts.length > 0) {
-      return Math.floor(Math.random() * 30) + 1;
+      return crypto.randomInt(30) + 1;
     }
     return 14;
   }
@@ -673,12 +674,12 @@ export class SalesAgent {
   }
 
   private calculateDeliveryTime(): string {
-    const days = Math.floor(Math.random() * 3) + 1;
+    const days = crypto.randomInt(3) + 1;
     return `Within ${days} business day${days > 1 ? 's' : ''}`;
   }
 
   private getExpectedRestockDate(product: Product): string {
-    const restockDays = Math.floor(Math.random() * 7) + 3;
+    const restockDays = crypto.randomInt(7) + 3;
     const date = new Date();
     date.setDate(date.getDate() + restockDays);
     return date.toISOString().split('T')[0];

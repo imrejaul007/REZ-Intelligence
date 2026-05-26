@@ -1,9 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
+import { randomInt } from 'crypto';
 import mongoose from 'mongoose';
 import axios from 'axios';
 import { Session, ISession } from '../models/Session';
-import { WhatsAppOrder, OrderStatus, OrderCreateInput, CartItem } from '../types/whatsapp';
-import { logger } from '../utils/logger';
+import { WhatsAppOrder, OrderStatus, OrderCreateInput, CartItem, SessionState } from '../types/whatsapp';
+import { logger } from '../utils/logger.js';
 
 // Mock order model - in production, this would be in a separate model file
 interface IOrder extends mongoose.Document {
@@ -133,8 +134,15 @@ export class OrderService {
     const orderId = this.generateOrderId();
 
     // Calculate totals
-    const subtotal = (session as unknown).getCartTotal?.() || 0;
-    const metadata = session.metadata as unknown || {};
+    const subtotal = session.getCartTotal();
+    const metadata: Record<string, unknown> = {};
+    if (session.metadata instanceof Map) {
+      session.metadata.forEach((value, key) => {
+        metadata[key] = value;
+      });
+    } else {
+      Object.assign(metadata, session.metadata);
+    }
     const discount = (metadata.discountAmount as number) || 0;
     const deliveryFee = this.calculateDeliveryFee(subtotal - discount);
     const total = subtotal - discount + deliveryFee;
@@ -159,7 +167,7 @@ export class OrderService {
     });
 
     // Update session state
-    session.state = OrderStatus.PENDING as unknown;
+    session.state = SessionState.PAYMENT_PENDING;
     session.context.currentOrder = {
       id: orderId,
       status: OrderStatus.PENDING,
@@ -168,7 +176,7 @@ export class OrderService {
     await session.save();
 
     // Clear cart after order creation
-    (session as unknown).clearCart?.();
+    session.clearCart();
     await session.save();
 
     logger.info('Order created', {
@@ -194,6 +202,8 @@ export class OrderService {
       return { success: false, error: 'Order already paid' };
     }
 
+    const PAYMENT_TIMEOUT_MS = 10000; // 10 second timeout for payment service
+
     try {
       // Call payment service to create Razorpay order
       const response = await axios.post(
@@ -212,6 +222,7 @@ export class OrderService {
           headers: {
             'X-Internal-Token': process.env.INTERNAL_SERVICE_TOKEN,
           },
+          timeout: PAYMENT_TIMEOUT_MS,
         }
       );
 
@@ -221,22 +232,36 @@ export class OrderService {
         order.paymentLink = paymentLink;
         await order.save();
 
+        logger.info('Payment link generated', { orderId, paymentLink });
         return { success: true, paymentLink };
       }
 
-      return { success: false, error: 'Failed to generate payment link' };
+      logger.error('Payment link not returned from service', { orderId, response: response.data });
+      return { success: false, error: 'Failed to generate payment link - no link returned' };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      // Check for specific timeout error
+      if (errorMessage.includes('timeout') || errorMessage.includes('ETIMEDOUT')) {
+        logger.error('Payment service timeout', { orderId, error: errorMessage });
+        return { success: false, error: 'Payment service timed out. Please try again.' };
+      }
+
       logger.error('Failed to generate payment link', {
         orderId,
-        error,
+        error: errorMessage,
+        errorCode: (error as { code?: string }).code,
       });
 
-      // Fallback: generate mock payment link for development
-      const mockPaymentLink = `https://rzp.io/i/${orderId}`;
-      order.paymentLink = mockPaymentLink;
-      await order.save();
+      // NOTE: Removed silent fallback to mock payment link in production
+      // This ensures we don't return success when the actual operation failed
+      // Uncomment the following lines ONLY for local development:
+      // const mockPaymentLink = `https://rzp.io/i/${orderId}`;
+      // order.paymentLink = mockPaymentLink;
+      // await order.save();
+      // return { success: true, paymentLink: mockPaymentLink };
 
-      return { success: true, paymentLink: mockPaymentLink };
+      return { success: false, error: `Failed to generate payment link: ${errorMessage}` };
     }
   }
 
@@ -349,6 +374,8 @@ export class OrderService {
       return { success: false, error: 'Order already paid' };
     }
 
+    const PAYMENT_TIMEOUT_MS = 10000; // 10 second timeout
+
     try {
       // Verify payment with payment service
       const response = await axios.post(
@@ -362,6 +389,7 @@ export class OrderService {
           headers: {
             'X-Internal-Token': process.env.INTERNAL_SERVICE_TOKEN,
           },
+          timeout: PAYMENT_TIMEOUT_MS,
         }
       );
 
@@ -382,19 +410,37 @@ export class OrderService {
         return { success: true, order };
       }
 
-      return { success: false, error: 'Payment verification failed' };
-    } catch (error) {
-      logger.error('Payment verification failed', {
+      logger.warn('Payment verification returned invalid', {
         orderId,
-        error,
+        paymentId: paymentDetails.razorpayPaymentId,
+        response: response.data,
+      });
+      return { success: false, error: 'Payment verification failed - invalid response' };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      logger.error('Payment verification request failed', {
+        orderId,
+        paymentId: paymentDetails.razorpayPaymentId,
+        error: errorMessage,
+        errorCode: (error as { code?: string }).code,
       });
 
-      // For development, accept payment anyway
-      order.paymentStatus = 'paid';
-      order.status = OrderStatus.CONFIRMED;
-      await order.save();
+      // CRITICAL FIX: Return failure instead of silently accepting payment
+      // This prevents fraud where verification is bypassed
+      // Uncomment the following ONLY for local development when payment service is unavailable:
+      // if (process.env.NODE_ENV === 'development') {
+      //   logger.warn('DEV MODE: Accepting payment without verification', { orderId });
+      //   order.paymentStatus = 'paid';
+      //   order.status = OrderStatus.CONFIRMED;
+      //   await order.save();
+      //   return { success: true, order };
+      // }
 
-      return { success: true, order };
+      return {
+        success: false,
+        error: `Payment verification failed: ${errorMessage}. Please try again or contact support.`
+      };
     }
   }
 
@@ -463,6 +509,8 @@ export class OrderService {
       };
     }
 
+    const DELIVERY_TIMEOUT_MS = 8000; // 8 second timeout for delivery service
+
     try {
       // Call delivery service for real-time tracking
       const response = await axios.get(
@@ -471,40 +519,63 @@ export class OrderService {
           headers: {
             'X-Internal-Token': process.env.INTERNAL_SERVICE_TOKEN,
           },
+          timeout: DELIVERY_TIMEOUT_MS,
         }
       );
 
+      // Validate response has required fields
+      if (!response.data) {
+        logger.warn('Empty delivery tracking response', { orderId });
+        return this.buildFallbackTracking(order);
+      }
+
       return response.data;
     } catch (error) {
-      // Fallback to mock tracking data
-      return {
-        orderId: order.orderId,
-        status: order.status as OrderStatus,
-        estimatedDelivery: new Date(Date.now() + 30 * 60 * 1000), // 30 mins from now
-        timeline: [
-          {
-            status: OrderStatus.CONFIRMED,
-            timestamp: order.createdAt,
-            description: 'Order confirmed',
-          },
-          {
-            status: OrderStatus.PREPARING,
-            timestamp: new Date(order.createdAt.getTime() + 10 * 60 * 1000),
-            description: 'Preparing your order',
-          },
-          {
-            status: OrderStatus.OUT_FOR_DELIVERY,
-            timestamp: new Date(Date.now() - 15 * 60 * 1000),
-            description: 'Driver is on the way',
-          },
-          {
-            status: order.status as OrderStatus,
-            timestamp: new Date(),
-            description: this.getStatusDescription(order.status as OrderStatus),
-          },
-        ],
-      };
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      logger.error('Failed to get delivery tracking', {
+        orderId,
+        error: errorMessage,
+        errorCode: (error as { code?: string }).code,
+      });
+
+      // Fallback to mock tracking data - acceptable for tracking since
+      // it provides basic status info without blocking the user
+      return this.buildFallbackTracking(order);
     }
+  }
+
+  /**
+   * Build fallback tracking data when delivery service is unavailable
+   */
+  private buildFallbackTracking(order: IOrder): DeliveryTracking {
+    return {
+      orderId: order.orderId,
+      status: order.status as OrderStatus,
+      estimatedDelivery: new Date(Date.now() + 30 * 60 * 1000), // 30 mins from now
+      timeline: [
+        {
+          status: OrderStatus.CONFIRMED,
+          timestamp: order.createdAt,
+          description: 'Order confirmed',
+        },
+        {
+          status: OrderStatus.PREPARING,
+          timestamp: new Date(order.createdAt.getTime() + 10 * 60 * 1000),
+          description: 'Preparing your order',
+        },
+        {
+          status: OrderStatus.OUT_FOR_DELIVERY,
+          timestamp: new Date(Date.now() - 15 * 60 * 1000),
+          description: 'Driver is on the way',
+        },
+        {
+          status: order.status as OrderStatus,
+          timestamp: new Date(),
+          description: this.getStatusDescription(order.status as OrderStatus),
+        },
+      ],
+    };
   }
 
   /**
@@ -524,6 +595,8 @@ export class OrderService {
       return { success: false, error: 'Order already refunded' };
     }
 
+    const REFUND_TIMEOUT_MS = 15000; // 15 second timeout for refund
+
     try {
       const response = await axios.post(
         `${this.paymentServiceUrl}/api/payments/refund`,
@@ -536,8 +609,15 @@ export class OrderService {
           headers: {
             'X-Internal-Token': process.env.INTERNAL_SERVICE_TOKEN,
           },
+          timeout: REFUND_TIMEOUT_MS,
         }
       );
+
+      // Validate refund response
+      if (!response.data || !response.data.refundId) {
+        logger.error('Refund response missing refundId', { orderId, response: response.data });
+        return { success: false, error: 'Refund initiated but refund ID not returned' };
+      }
 
       const refundId = response.data.refundId;
 
@@ -556,12 +636,19 @@ export class OrderService {
 
       return { success: true, refundId };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
       logger.error('Failed to initiate refund', {
         orderId,
-        error,
+        error: errorMessage,
+        errorCode: (error as { code?: string }).code,
       });
 
-      return { success: false, error: 'Failed to initiate refund' };
+      // Return actual error instead of generic message
+      return {
+        success: false,
+        error: `Failed to initiate refund: ${errorMessage}. Please try again or contact support.`
+      };
     }
   }
 
@@ -569,7 +656,7 @@ export class OrderService {
 
   private generateOrderId(): string {
     const timestamp = Date.now().toString(36).toUpperCase();
-    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const random = randomInt(10000).toString(16).toUpperCase().padStart(4, '0');
     return `WA${timestamp}${random}`;
   }
 

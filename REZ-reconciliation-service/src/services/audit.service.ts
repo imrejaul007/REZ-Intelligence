@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { format, startOfDay, endOfDay, subDays, differenceInDays } from 'date-fns';
 import { query, queryOne } from '../config/database';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import {
   AuditReport,
   ReportSummary,

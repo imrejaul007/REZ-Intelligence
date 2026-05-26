@@ -1,5 +1,5 @@
-import express, { Express, Request, Response } import logger from './utils/logger';
-import from 'express';
+import express, { Express, Request, Response } from 'express';
+import { logger } from './utils/logger.js';
 import axios from 'axios';
 import { z } from 'zod';
 

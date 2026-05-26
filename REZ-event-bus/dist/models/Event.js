@@ -76,6 +76,7 @@ function createEvent(payload) {
  */
 function isValidEventType(eventType) {
     const validTypes = [
+        // Existing types
         'USER_MESSAGE_RECEIVED',
         'USER_MESSAGE_SENT',
         'INTENT_DETECTED',
@@ -87,6 +88,40 @@ function isValidEventType(eventType) {
         'PAYMENT_INITIATED',
         'PAYMENT_COMPLETED',
         'SERVICE_HEALTH_CHANGED',
+        // New event types
+        'offer.shared',
+        'offer.opened',
+        'referral.clicked',
+        'referral.signed_up',
+        'referral.purchased',
+        'location.visited',
+        'location.dwell',
+        'search.performed',
+        'wishlist.added',
+        'wishlist.removed',
+        'price.alert_set',
+        'price.alert_triggered',
+        'review.submitted',
+        'review.viewed',
+        'profile.updated',
+        'feedback.given',
+        'subscription.started',
+        'subscription.renewed',
+        'subscription.cancelled',
+        'membership.upgraded',
+        'membership.downgraded',
+        'loyalty.redeemed',
+        'loyalty.earned',
+        'competitor.visited',
+        'competitor.switched',
+        'app.installed',
+        'app.opened',
+        'content.viewed',
+        'content.shared',
+        'campaign.started',
+        'campaign.completed',
+        'survey.started',
+        'survey.completed',
     ];
     return validTypes.includes(eventType);
 }

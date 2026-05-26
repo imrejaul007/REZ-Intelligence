@@ -19,7 +19,7 @@ import { recommendationsService } from '../services/recommendations.js';
 import { workflowService } from '../services/workflows.js';
 import { checkInOutService } from '../intents/checkInOut.js';
 import { responseGenerator } from '../responses/templates.js';
-import { logger } from '../utils/logger.js';
+import { logger } from './utils/logger';
 import { validateRequest, asyncHandler } from '../middleware/validation.js';
 import { getCoreBrainClient } from '../services/coreBrainIntegration.js';
 

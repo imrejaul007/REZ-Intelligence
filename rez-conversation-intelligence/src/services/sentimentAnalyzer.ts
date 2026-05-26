@@ -1,6 +1,6 @@
 import { SentimentAnalyzer } from 'sentiment';
 import { config } from '../config/index.js';
-import logger from '../utils/logger.js';
+import logger from './utils/logger';
 
 // Sentiment lexicon for commerce-specific terms
 const COMMERCE_SENTIMENT_LEXICON: Record<string, number> = {

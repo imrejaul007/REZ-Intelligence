@@ -1,5 +1,4 @@
-import express, { Express, Request, Response, NextFunction } import logger from './utils/logger';
-import from 'express';
+import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -7,6 +6,7 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import winston from 'winston';
 import dotenv from 'dotenv';
+import { randomUUID } from 'crypto';
 
 import config from './config/index.js';
 import { connectDatabase, disconnectDatabase, getConnectionStatus } from './database/index.js';
@@ -35,7 +35,7 @@ const logger = winston.createLogger({
     new winston.transports.Console({
       format: winston.format.combine(
         winston.format.colorize(),
-        winston.format.printf(({ level, message, timestamp, ...meta }) => {
+        winston.format.printf(({ level, message, timestamp, ...meta }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
           const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
           return `${timestamp} [${level}]: ${message}${metaStr}`;
         })
@@ -87,7 +87,7 @@ app.use(limiter); // Apply rate limiting
 
 // Request ID middleware
 app.use((req: Request, res: Response, next: NextFunction): void => {
-  req.headers['x-request-id'] = req.headers['x-request-id'] || `req-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+  req.headers['x-request-id'] = req.headers['x-request-id'] || `req-${Date.now()}-${randomUUID().replace(/-/g, '').substring(0, 12)}`;
   res.setHeader('X-Request-ID', req.headers['x-request-id']);
   next();
 });

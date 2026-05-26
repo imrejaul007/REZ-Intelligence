@@ -1,11 +1,3 @@
-/**
- * REZ Memory Layer - Middleware Index
- */
-
-export {
-  authMiddleware,
-  optionalAuthMiddleware,
-  serviceRateLimiter,
-  requestLogger,
-  errorHandler
-} from './auth';
+export * from './auth.js';
+export * from './rateLimit.js';
+export * from './errorHandler.js';

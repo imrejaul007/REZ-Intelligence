@@ -10,7 +10,11 @@ const SIGNAL_URL = process.env.SIGNAL_AGGREGATOR_URL || 'http://localhost:4121';
 const IDENTITY_URL = process.env.IDENTITY_URL || 'http://localhost:4050';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
-async function request(url: string, options: RequestInit = {}): Promise<unknown> {
+interface FetchOptions extends RequestInit {
+  headers?: Record<string, string>;
+}
+
+async function request<T = unknown>(url: string, options: FetchOptions = {}): Promise<T> {
   const res = await fetch(url, {
     ...options,
     headers: {
@@ -20,17 +24,17 @@ async function request(url: string, options: RequestInit = {}): Promise<unknown>
     },
   });
   if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
+  return res.json() as T;
 }
 
 export const intent = {
   predict: async (userId: string, context?: Record<string, unknown>) =>
-    request(`${INTENT_URL}/api/intent/predict`, {
+    request<{ intent?: unknown }>(`${INTENT_URL}/api/intent/predict`, {
       method: 'POST',
       body: JSON.stringify({ user_id: userId, context }),
     }),
-  captureSignal: async (signal) =>
-    request(`${INTENT_URL}/api/intent/capture`, {
+  captureSignal: async (signal: Record<string, unknown>) =>
+    request<void>(`${INTENT_URL}/api/intent/capture`, {
       method: 'POST',
       body: JSON.stringify(signal),
     }),

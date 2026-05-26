@@ -3,7 +3,7 @@ import { appConfig } from '../config';
 
 const { combine, timestamp, printf, colorize, json, errors } = winston.format;
 
-const logFormat = printf(({ level, message, timestamp, ...metadata }) => {
+const logFormat = printf(({ level, message, timestamp, ...metadata }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
   let msg = `${timestamp} [${level}]: ${message}`;
 
   if (Object.keys(metadata).length > 0) {

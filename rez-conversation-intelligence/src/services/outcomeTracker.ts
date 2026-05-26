@@ -1,5 +1,5 @@
 import { ConversationSample } from '../models/index.js';
-import logger from '../utils/logger.js';
+import logger from './utils/logger';
 import { config } from '../config/index.js';
 
 export interface OutcomeMetrics {

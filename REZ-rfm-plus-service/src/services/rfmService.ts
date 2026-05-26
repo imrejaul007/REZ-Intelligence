@@ -150,8 +150,8 @@ class RFMService {
     }
 
     // Check engagement drop
-    const engagement = customer.engagement || {};
-    if (engagement.lastActive) {
+    const engagement = customer.engagement;
+    if (engagement?.lastActive) {
       const daysInactive = (Date.now() - new Date(engagement.lastActive).getTime()) / (1000 * 60 * 60 * 24);
       if (daysInactive > 30) riskScore += 25;
     }
@@ -198,12 +198,10 @@ class RFMService {
     if (cohortSize === 0) return null;
 
     // Calculate retention for each month
-    const retention = [];
+    const retention: { month: number; date: string; retained: number; retentionRate: string }[] = [];
     const now = new Date();
-    const months = Math.min(
-      12,
-      Math.floor((now.getTime() - cohortDate.getTime()) / (30 * 24 * 60 * 60 * 1000)
-    );
+    const msPerMonth = 30 * 24 * 60 * 60 * 1000;
+    const months = Math.min(12, Math.floor((now.getTime() - cohortDate.getTime()) / msPerMonth));
 
     for (let i = 0; i <= months; i++) {
       const monthDate = new Date(cohortDate);

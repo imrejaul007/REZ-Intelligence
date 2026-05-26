@@ -11,7 +11,7 @@
 
 import express, { Request, Response } from 'express';
 import { smartUpsellEngine } from '../services/smartUpsellEngine';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -50,11 +50,18 @@ router.post('/opportunities', async (req: Request, res: Response) => {
       success: true,
       offers: allOffers,
       byType: opportunities,
-      agentSuggestions: smartUpsellEngine.generateAgentSuggestions(opportunities as unknown),
+      agentSuggestions: smartUpsellEngine.generateAgentSuggestions(opportunities as {
+        upgrades: import('../services/smartUpsellEngine').UpsellOffer[];
+        accessories: import('../services/smartUpsellEngine').UpsellOffer[];
+        complementary: import('../services/smartUpsellEngine').UpsellOffer[];
+        premium: import('../services/smartUpsellEngine').UpsellOffer[];
+        newArrivals: import('../services/smartUpsellEngine').UpsellOffer[];
+      }),
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[SmartUpsell] Failed to get opportunities', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -84,8 +91,9 @@ router.post('/upgrades', async (req: Request, res: Response) => {
       upgrades: opportunities.upgrades,
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[SmartUpsell] Failed to get upgrades', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -116,7 +124,7 @@ router.post('/accessories', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('[SmartUpsell] Failed to get accessories', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Unknown error' });
   }
 });
 
@@ -146,7 +154,7 @@ router.post('/complementary', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('[SmartUpsell] Failed to get complementary', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Unknown error' });
   }
 });
 
@@ -174,12 +182,18 @@ router.post('/agent-suggestions', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      suggestions: smartUpsellEngine.generateAgentSuggestions(opportunities as unknown),
+      suggestions: smartUpsellEngine.generateAgentSuggestions(opportunities as {
+        upgrades: import('../services/smartUpsellEngine').UpsellOffer[];
+        accessories: import('../services/smartUpsellEngine').UpsellOffer[];
+        complementary: import('../services/smartUpsellEngine').UpsellOffer[];
+        premium: import('../services/smartUpsellEngine').UpsellOffer[];
+        newArrivals: import('../services/smartUpsellEngine').UpsellOffer[];
+      }),
       topOffers: opportunities.upgrades.slice(0, 2),
     });
   } catch (error) {
     logger.error('[SmartUpsell] Failed to get agent suggestions', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Unknown error' });
   }
 });
 
@@ -199,7 +213,7 @@ router.get('/personalized/:customerId', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('[SmartUpsell] Failed to get personalized', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Unknown error' });
   }
 });
 
@@ -236,7 +250,7 @@ router.post('/track', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('[SmartUpsell] Failed to track', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Unknown error' });
   }
 });
 

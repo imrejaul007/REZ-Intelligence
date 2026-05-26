@@ -1,9 +1,13 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CrossPlatformSync = void 0;
+const logger_js_1 = __importDefault(require("./utils/logger.js"));
 /**
  * CrossPlatformSync.ts - Synchronization Across Platform Services
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.CrossPlatformSync = void 0;
 const uuid_1 = require("uuid");
 const modules_1 = require("../modules");
 class CrossPlatformSync {
@@ -69,7 +73,7 @@ class CrossPlatformSync {
         if (this.isRunning)
             return;
         this.isRunning = true;
-        console.log(`Starting cross-platform sync with interval: ${this.config.intervalMs}ms`);
+        logger_js_1.default.info(`Starting cross-platform sync with interval: ${this.config.intervalMs}ms`);
         this.intervalHandle = setInterval(() => {
             this.runScheduledSync().catch(error => {
                 console.error('Scheduled sync failed:', error);
@@ -85,14 +89,14 @@ class CrossPlatformSync {
             this.intervalHandle = undefined;
         }
         this.isRunning = false;
-        console.log('Cross-platform sync stopped');
+        logger_js_1.default.info('Cross-platform sync stopped');
     }
     /**
      * Run scheduled sync (for all pending merchants)
      */
     async runScheduledSync() {
         // In production, this would fetch merchants that need syncing
-        console.log('Running scheduled sync...');
+        logger_js_1.default.info('Running scheduled sync...');
     }
     /**
      * Sync a single merchant

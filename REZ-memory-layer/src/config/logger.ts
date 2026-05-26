@@ -8,7 +8,7 @@ import path from 'path';
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
 // Custom log format
-const logFormat = printf(({ level, message, timestamp, stack, ...meta }) => {
+const logFormat = printf(({ level, message, timestamp, stack, ...meta }: { level: string; message: string; timestamp?: string; stack?: string; [key: string]: unknown }) => {
   let log = `${timestamp} [${level}]: ${message}`;
 
   if (Object.keys(meta).length > 0) {

@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import mongoose, { Document, Schema, Model } from 'mongoose';
 import { IMemoryEntry } from '../types';
 
@@ -14,6 +15,12 @@ export interface IMemoryDocument extends IMemoryEntry, Document {
   _id: mongoose.Types.ObjectId;
   access(): Promise<void>;
   incrementAccess(): Promise<void>;
+}
+
+// Interface for Memory model with static methods
+export interface IMemoryModel extends Model<IMemoryDocument> {
+  deleteExpired(): Promise<number>;
+  findByUser(userId: string, options?: { type?: MemoryType; limit?: number; skip?: number }): Promise<IMemoryDocument[]>;
 }
 
 // Memory schema
@@ -189,7 +196,7 @@ memorySchema.statics.consolidateMemories = async function (userId: string) {
 memorySchema.pre('save', function (next) {
   // Auto-generate ID if not provided
   if (!this.id) {
-    this.id = `mem_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    this.id = `${crypto.randomUUID()}`;
   }
 
   // Set default expiration for short-term memories
@@ -202,7 +209,7 @@ memorySchema.pre('save', function (next) {
 });
 
 // Create and export model
-export const Memory: Model<IMemoryDocument> = mongoose.model<IMemoryDocument>(
+export const Memory = mongoose.model<IMemoryDocument, IMemoryModel>(
   'Memory',
   memorySchema
 );

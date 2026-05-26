@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import { randomInt, randomUUID } from 'crypto';
 import { GiftCard, Wallet, Transaction } from '../models/index.js';
 import {
   CreateGiftCardInputSchema,
@@ -9,7 +10,6 @@ import {
   CancelGiftCardInputSchema,
   CustomerQuerySchema,
   validateGiftCardValue,
-  validatePIN,
   ApiResponse,
   GiftCardResponse,
   GiftCardDetailsResponse,
@@ -29,13 +29,13 @@ const router = Router();
 function generateCardNumber(): string {
   const prefix = process.env.GIFT_CARD_PREFIX || 'GC';
   const timestamp = Date.now().toString(36).toUpperCase();
-  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+  const random = randomUUID().replace(/-/g, '').substring(0, 6).toUpperCase();
   return `${prefix}${timestamp}${random}`.substring(0, 16);
 }
 
 // Generate PIN
 function generatePIN(): string {
-  return Math.floor(1000 + Math.random() * 9000).toString();
+  return randomInt(1000, 9999).toString();
 }
 
 // Generate transaction ID
@@ -58,8 +58,8 @@ router.post(
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: validationResult.error.errors[0]?.message || 'Invalid input',
-            details: validationResult.error.errors,
+            message: validationResult.error.issues[0]?.message || 'Invalid input',
+            details: validationResult.error.issues,
           },
         };
         res.status(400).json(response);
@@ -246,7 +246,7 @@ router.post(
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: validationResult.error.errors[0]?.message || 'Invalid input',
+            message: validationResult.error.issues[0]?.message || 'Invalid input',
           },
         };
         res.status(400).json(response);
@@ -311,7 +311,7 @@ router.post(
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: validationResult.error.errors[0]?.message || 'Invalid input',
+            message: validationResult.error.issues[0]?.message || 'Invalid input',
           },
         };
         res.status(400).json(response);
@@ -460,14 +460,14 @@ router.post(
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: validationResult.error.errors[0]?.message || 'Invalid input',
+            message: validationResult.error.issues[0]?.message || 'Invalid input',
           },
         };
         res.status(400).json(response);
         return;
       }
 
-      const { amount, pin } = validationResult.data;
+      const { amount } = validationResult.data;
 
       const giftCard = await GiftCard.findOne({ cardId });
 
@@ -640,7 +640,7 @@ router.patch(
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: validationResult.error.errors[0]?.message || 'Invalid input',
+            message: validationResult.error.issues[0]?.message || 'Invalid input',
           },
         };
         res.status(400).json(response);

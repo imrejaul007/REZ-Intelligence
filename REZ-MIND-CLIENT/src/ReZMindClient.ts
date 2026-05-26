@@ -24,6 +24,7 @@ import logger from './utils/logger';
 
 import axios, { AxiosInstance } from 'axios';
 import EventEmitter from 'eventemitter3';
+import { randomUUID } from 'crypto';
 
 // ============================================
 // Configuration
@@ -335,7 +336,7 @@ class ReZMindClient {
   // ============================================
 
   private generateId(): string {
-    return `${this.serviceName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `${this.serviceName}-${Date.now()}-${randomUUID().replace(/-/g, '')}`;
   }
 
   isConnected(): boolean {

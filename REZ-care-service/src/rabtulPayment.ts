@@ -7,11 +7,22 @@
  * - Invoice generation
  */
 
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 
 const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL || 'https://rez-payment-service.onrender.com';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
+
+// Helper to extract error messages from axios errors
+function getAxiosErrorMessage(error: unknown): string {
+  if (error instanceof AxiosError) {
+    return error.response?.data?.error || error.message;
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return 'Unknown error';
+}
 
 // ============================================
 // TYPES
@@ -141,8 +152,8 @@ class RabtulPaymentClient {
 
       return { success: false, error: res.data.error || 'Payment initiation failed' };
     } catch (error) {
-      console.error('[RabtulPayment] Create payment order failed:', error.response?.data || error.message);
-      return { success: false, error: error.response?.data?.error || error.message };
+      console.error('[RabtulPayment] Create payment order failed:', getAxiosErrorMessage(error));
+      return { success: false, error: getAxiosErrorMessage(error) };
     }
   }
 
@@ -161,7 +172,7 @@ class RabtulPaymentClient {
 
       return { success: false, error: res.data.error || 'Payment not found' };
     } catch (error) {
-      return { success: false, error: error.response?.data?.error || error.message };
+      return { success: false, error: getAxiosErrorMessage(error) };
     }
   }
 
@@ -197,8 +208,8 @@ class RabtulPaymentClient {
 
       return { success: false, error: res.data.error || 'Refund failed' };
     } catch (error) {
-      console.error('[RabtulPayment] Process refund failed:', error.response?.data || error.message);
-      return { success: false, error: error.response?.data?.error || error.message };
+      console.error('[RabtulPayment] Process refund failed:', getAxiosErrorMessage(error));
+      return { success: false, error: getAxiosErrorMessage(error) };
     }
   }
 
@@ -218,7 +229,7 @@ class RabtulPaymentClient {
         action: res.data.action,
       };
     } catch (error) {
-      return { success: false, error: error.response?.data?.error || error.message };
+      return { success: false, error: getAxiosErrorMessage(error) };
     }
   }
 
@@ -245,7 +256,7 @@ class RabtulPaymentClient {
 
       return { success: res.data.success };
     } catch (error) {
-      return { success: false, error: error.response?.data?.error || error.message };
+      return { success: false, error: getAxiosErrorMessage(error) };
     }
   }
 

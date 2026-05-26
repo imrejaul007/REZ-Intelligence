@@ -202,6 +202,7 @@ export interface ABCClassificationItem {
   velocity: 'fast' | 'medium' | 'slow';
   suggestedReorderFrequency: 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly';
   turnRate: number;
+  daysOnHand?: number;
 }
 
 export interface ABCSummary {

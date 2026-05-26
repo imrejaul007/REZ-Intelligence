@@ -270,7 +270,7 @@ export class CashbackEngine {
   calculateChannelCoins(
     channel: ChannelType,
     attributedRevenue: number,
-    percentage: number
+    _percentage: number
   ): { baseCoins: number; bonusMultiplier: number; finalCoins: number } {
     const rate = this.getRewardRate(channel);
     let bonusMultiplier = rate.bonusMultiplier;

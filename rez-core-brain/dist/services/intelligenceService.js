@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.intelligenceService = exports.IntelligenceService = void 0;
+exports.IntelligenceService = void 0;
 const GlobalPersonalization_1 = require("../models/GlobalPersonalization");
 const memoryService_1 = require("./memoryService");
 const sessionService_1 = require("./sessionService");
@@ -62,7 +62,11 @@ class IntelligenceService {
      * Get or create intelligence metrics for a user
      */
     async getOrCreateMetrics(userId) {
-        return GlobalPersonalization_1.IntelligenceMetrics.getOrCreate(userId);
+        let metrics = await GlobalPersonalization_1.IntelligenceMetrics.findOne({ userId });
+        if (!metrics) {
+            metrics = await GlobalPersonalization_1.IntelligenceMetrics.create({ userId });
+        }
+        return metrics;
     }
     /**
      * Update intelligence metrics based on user activity
@@ -94,81 +98,81 @@ class IntelligenceService {
         }
         metrics.calculatedAt = new Date();
         await metrics.save();
-        logger_1.logger.info(`Updated intelligence metrics for user: ${userId}`);
     }
     /**
-     * Generate personalized recommendations based on user data
+     * Update session duration in metrics
+     */
+    async recordSessionDuration(userId, duration) {
+        const metrics = await this.getOrCreateMetrics(userId);
+        metrics.engagement.totalSessions += 1;
+        metrics.engagement.averageSessionLength =
+            (metrics.engagement.averageSessionLength * (metrics.engagement.totalSessions - 1) + duration) /
+                metrics.engagement.totalSessions;
+        await metrics.save();
+    }
+    /**
+     * Generate personalized recommendations
      */
     async generateRecommendations(input) {
         const { userId, context, excludedItems = [], limit = 5 } = input;
-        const recommendations = [];
-        // Get user context
-        const intelligenceData = await this.getIntelligenceData({
+        // Get user preferences and metrics
+        const preferences = await personalizationService_1.personalizationService.getOrCreatePreferences(userId);
+        const metrics = await this.getOrCreateMetrics(userId);
+        // Get recent memories to understand context
+        const memories = await memoryService_1.memoryService.getUserMemories({
             userId,
-            includeMetrics: true,
-            includeContext: true,
-            includePreferences: true,
+            type: undefined,
+            limit: 10,
         });
-        const contextualData = intelligenceData.contextualData;
-        const metrics = intelligenceData.metrics;
-        const preferences = intelligenceData.preferences;
-        // Time-based recommendations
-        if (contextualData?.temporalContext?.timeOfDay) {
-            const timeOfDay = contextualData.temporalContext.timeOfDay;
-            if (timeOfDay === 'morning' && !excludedItems.includes('morning_offer')) {
-                recommendations.push({
-                    type: 'promotion',
-                    content: 'Start your day with exclusive morning deals',
-                    confidence: 0.8,
-                    reason: 'Based on your morning browsing patterns',
-                });
-            }
-        }
-        // Loyalty tier-based recommendations
-        if (contextualData?.relationships?.recentIntents?.length) {
-            const recentIntents = contextualData.relationships.recentIntents;
-            const lastIntent = recentIntents[0];
-            if (lastIntent === 'booking' && !excludedItems.includes('loyalty_upgrade')) {
-                recommendations.push({
-                    type: 'loyalty',
-                    content: 'Check out Gold tier benefits - exclusive hotel upgrades await',
-                    confidence: 0.75,
-                    reason: 'Based on your recent booking activity',
-                });
-            }
-        }
-        // Behavior-based recommendations
-        if (metrics?.behavior?.preferredAgents?.length) {
-            const preferredAgents = metrics.behavior.preferredAgents;
-            if (preferredAgents.includes('hotel_assistant') && !excludedItems.includes('hotel_recommendation')) {
-                recommendations.push({
-                    type: 'personalized',
-                    content: 'Explore trending hotels in your favorite destinations',
-                    confidence: 0.85,
-                    reason: 'Based on your hotel assistant usage patterns',
-                });
-            }
-        }
-        // Preference-based recommendations
-        if (preferences?.preferredContentTypes) {
-            const contentTypes = preferences.preferredContentTypes;
-            if (contentTypes.includes('deals') && !excludedItems.includes('deals')) {
-                recommendations.push({
-                    type: 'deals',
-                    content: 'Exclusive deals matching your preferences are available',
-                    confidence: 0.9,
-                    reason: 'Based on your deal-seeking behavior',
-                });
-            }
-        }
-        // Sort by confidence and limit
-        recommendations.sort((a, b) => b.confidence - a.confidence);
-        return {
-            recommendations: recommendations.slice(0, limit),
+        // Simple recommendation logic based on preferences
+        const recommendations = [];
+        // Generate mock recommendations based on user context
+        const toneMap = {
+            formal: 'Professional content',
+            casual: 'Relaxed content',
+            friendly: 'Community content',
+            professional: 'Business content',
         };
+        const baseReason = toneMap[preferences.tone] || 'Personalized content';
+        for (let i = 0; i < limit; i++) {
+            const itemId = `rec_${i}_${Date.now()}`;
+            if (!excludedItems.includes(itemId)) {
+                recommendations.push({
+                    itemId,
+                    score: 0.9 - i * 0.1,
+                    reason: `${baseReason} based on your ${context || 'interests'}`,
+                });
+            }
+        }
+        return recommendations;
     }
     /**
-     * Calculate user intent based on context
+     * Get engagement score for a user
+     */
+    async getEngagementScore(userId) {
+        const metrics = await this.getOrCreateMetrics(userId);
+        const contextualData = await GlobalPersonalization_1.ContextualData.findOne({ userId });
+        const factors = {
+            sessionFrequency: Math.min(metrics.engagement.totalSessions / 10, 1),
+            sessionDuration: Math.min(metrics.engagement.averageSessionLength / 1800, 1), // 30 min max
+            interactionFrequency: Math.min(metrics.engagement.interactionFrequency / 100, 1),
+            diversity: metrics.behavior.preferredAgents.length / 5,
+            recentActivity: contextualData ? 0.5 : 0,
+        };
+        const score = factors.sessionFrequency * 0.2 +
+            factors.sessionDuration * 0.3 +
+            factors.interactionFrequency * 0.2 +
+            factors.diversity * 0.15 +
+            factors.recentActivity * 0.15;
+        let level = 'low';
+        if (score >= 0.6)
+            level = 'high';
+        else if (score >= 0.3)
+            level = 'medium';
+        return { score, level, factors };
+    }
+    /**
+     * Calculate user intent from activity
      */
     async calculateIntent(userId, currentAction, context) {
         // Get recent activity
@@ -181,7 +185,6 @@ class IntelligenceService {
         // Check for intent chains (common patterns)
         if (recentIntents.length >= 2) {
             const lastIntent = recentIntents[0];
-            const secondLastIntent = recentIntents[1];
             // Common intent chains
             const intentChains = {
                 'search': {
@@ -251,141 +254,70 @@ class IntelligenceService {
      * Analyze user behavior patterns
      */
     async analyzeBehaviorPatterns(userId) {
-        const patterns = [];
-        const insights = [];
-        const predictedNextActions = [];
-        // Get user's contextual data
+        const metrics = await this.getOrCreateMetrics(userId);
         const contextualData = await GlobalPersonalization_1.ContextualData.findOne({ userId });
-        const metrics = await GlobalPersonalization_1.IntelligenceMetrics.findOne({ userId });
-        // Analyze temporal patterns
-        if (contextualData?.temporalContext) {
-            const dayOfWeek = contextualData.temporalContext.dayOfWeek;
-            if (dayOfWeek !== undefined) {
-                patterns.push({
-                    pattern: 'weekday_vs_weekend',
-                    frequency: dayOfWeek >= 1 && dayOfWeek <= 5 ? 0.7 : 0.3,
-                    lastOccurrence: new Date(),
-                    confidence: 0.8,
-                });
-                insights.push(dayOfWeek >= 1 && dayOfWeek <= 5
-                    ? 'User is most active on weekdays'
-                    : 'User is most active on weekends');
-            }
+        const patterns = [];
+        // Analyze session patterns
+        if (metrics.engagement.averageSessionLength > 1800) {
+            patterns.push({
+                type: 'deep_engagement',
+                description: 'User tends to have longer sessions',
+                confidence: 0.8,
+            });
+        }
+        if (metrics.engagement.interactionFrequency > 50) {
+            patterns.push({
+                type: 'high_activity',
+                description: 'User is highly active on the platform',
+                confidence: 0.75,
+            });
         }
         // Analyze agent preferences
-        if (metrics?.behavior?.preferredAgents?.length) {
-            const agents = metrics.behavior.preferredAgents;
-            insights.push(`User prefers ${agents[0]} agent`);
-            predictedNextActions.push(`${agents[0]}_quick_action`);
+        const preferredAgents = metrics.behavior.preferredAgents;
+        if (preferredAgents.length > 0) {
+            patterns.push({
+                type: 'agent_loyalty',
+                description: `User prefers: ${preferredAgents.slice(0, 2).join(', ')}`,
+                confidence: 0.7,
+            });
         }
-        // Analyze exploration vs exploitation
-        if (metrics?.behavior?.explorationVsExploitation !== undefined) {
-            const ratio = metrics.behavior.explorationVsExploitation;
-            if (ratio > 0.7) {
-                insights.push('User tends to explore new options');
-                predictedNextActions.push('discovery_mode');
-            }
-            else if (ratio < 0.3) {
-                insights.push('User prefers familiar options');
-                predictedNextActions.push('repeat_purchase');
-            }
-            else {
-                insights.push('User balances exploration with familiar choices');
-            }
-        }
-        return { patterns, insights, predictedNextActions };
+        // Analyze temporal patterns
+        const recentIntents = contextualData?.relationships?.recentIntents || [];
+        const preferredTime = recentIntents.length > 0 ? 'evening' : 'unknown';
+        return {
+            patterns,
+            preferredTime,
+            preferredAgents,
+        };
     }
     /**
-     * Get user engagement score
+     * Predict next action based on history
      */
-    async getEngagementScore(userId) {
-        const metrics = await GlobalPersonalization_1.IntelligenceMetrics.findOne({ userId });
-        if (!metrics) {
+    async predictNextAction(userId) {
+        const contextualData = await GlobalPersonalization_1.ContextualData.findOne({ userId });
+        const recentIntents = contextualData?.relationships?.recentIntents || [];
+        if (recentIntents.length === 0) {
             return {
-                score: 0,
-                level: 'low',
-                factors: {},
+                action: 'explore',
+                confidence: 0.5,
+                reason: 'No history available',
             };
         }
-        const factors = {};
-        let totalScore = 0;
-        let factorCount = 0;
-        // Frequency factor
-        factors.frequency = Math.min(1, metrics.engagement.interactionFrequency / 100);
-        totalScore += factors.frequency;
-        factorCount++;
-        // Recency factor (based on daily active days)
-        factors.recency = Math.min(1, metrics.engagement.dailyActiveDays / 7);
-        totalScore += factors.recency;
-        factorCount++;
-        // Session length factor
-        factors.sessionLength = Math.min(1, metrics.engagement.averageSessionLength / 1800); // 30 min baseline
-        totalScore += factors.sessionLength;
-        factorCount++;
-        // Consistency factor
-        factors.consistency = metrics.preferences.consistencyScore;
-        totalScore += factors.consistency;
-        factorCount++;
-        const score = totalScore / factorCount;
-        let level;
-        if (score < 0.25)
-            level = 'low';
-        else if (score < 0.5)
-            level = 'medium';
-        else if (score < 0.75)
-            level = 'high';
-        else
-            level = 'very_high';
-        return { score, level, factors };
-    }
-    /**
-     * Calculate similarity between users (for collaborative filtering)
-     */
-    async calculateUserSimilarity(userId1, userId2) {
-        const [metrics1, metrics2] = await Promise.all([
-            GlobalPersonalization_1.IntelligenceMetrics.findOne({ userId: userId1 }),
-            GlobalPersonalization_1.IntelligenceMetrics.findOne({ userId: userId2 }),
-        ]);
-        if (!metrics1 || !metrics2) {
-            return { similarity: 0, commonBehaviors: [], commonPreferences: [] };
-        }
-        // Compare behavior metrics
-        let similarityScore = 0;
-        const commonBehaviors = [];
-        const commonPreferences = [];
-        // Preferred agents overlap
-        const commonAgents = metrics1.behavior.preferredAgents.filter((a) => metrics2.behavior.preferredAgents.includes(a));
-        if (commonAgents.length > 0) {
-            similarityScore += 0.3;
-            commonBehaviors.push(...commonAgents.map((a) => `agent:${a}`));
-        }
-        // Peak hours overlap
-        const commonHours = metrics1.behavior.peakActivityHours.filter((h) => metrics2.behavior.peakActivityHours.includes(h));
-        if (commonHours.length > 0) {
-            similarityScore += 0.2;
-        }
-        // Consistency score similarity
-        const consistencyDiff = Math.abs(metrics1.preferences.consistencyScore - metrics2.preferences.consistencyScore);
-        if (consistencyDiff < 0.2) {
-            similarityScore += 0.25;
-            commonPreferences.push('consistency');
-        }
-        // Exploration vs exploitation similarity
-        const explorationDiff = Math.abs(metrics1.behavior.explorationVsExploitation -
-            metrics2.behavior.explorationVsExploitation);
-        if (explorationDiff < 0.2) {
-            similarityScore += 0.25;
-            commonPreferences.push('exploration_style');
-        }
+        // Simple prediction based on last action
+        const lastIntent = recentIntents[0];
+        const predictions = {
+            search: { action: 'view', confidence: 0.7 },
+            view: { action: 'book', confidence: 0.6 },
+            book: { action: 'review', confidence: 0.5 },
+        };
+        const prediction = predictions[lastIntent] || { action: 'explore', confidence: 0.4 };
         return {
-            similarity: similarityScore,
-            commonBehaviors,
-            commonPreferences,
+            action: prediction.action,
+            confidence: prediction.confidence,
+            reason: `Based on recent activity: ${lastIntent}`,
         };
     }
 }
 exports.IntelligenceService = IntelligenceService;
-// Export singleton instance
-exports.intelligenceService = new IntelligenceService();
-exports.default = exports.intelligenceService;
+exports.default = new IntelligenceService();
 //# sourceMappingURL=intelligenceService.js.map

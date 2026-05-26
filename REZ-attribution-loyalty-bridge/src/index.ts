@@ -79,12 +79,13 @@ app.get('/health', (_req: Request, res: Response) => {
 // Readiness check (includes DB connection)
 app.get('/ready', async (_req: Request, res: Response) => {
   const dbState = mongoose.connection.readyState;
-  const dbStatus = {
+  const dbStatusMap: Record<number, string> = {
     0: 'disconnected',
     1: 'connected',
     2: 'connecting',
     3: 'disconnecting'
-  }[dbState] || 'unknown';
+  };
+  const dbStatus = dbStatusMap[dbState] || 'unknown';
 
   if (dbState === 1) {
     res.json({

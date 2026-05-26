@@ -9,6 +9,16 @@ const SIGNAL_SERVICE_URL = process.env.SIGNAL_AGGREGATOR_URL || 'https://REZ-sig
 const RECOMMEND_SERVICE_URL = process.env.RECOMMENDATION_ENGINE_URL || 'https://REZ-recommendation-engine.onrender.com';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
+interface SignalsResponse {
+  signals?: unknown[];
+  [key: string]: unknown;
+}
+
+interface RecommendationsResponse {
+  recommendations?: unknown[];
+  [key: string]: unknown;
+}
+
 // ============================================
 // TYPES
 // ============================================
@@ -132,7 +142,7 @@ export const signalOperations = {
 
   async query(userId: string, filters: SignalFilters = {}): Promise<unknown[]> {
     try {
-      const res = await internalRequest(`${SIGNAL_SERVICE_URL}/api/signals/${userId}`, {
+      const res = await internalRequest<SignalsResponse>(`${SIGNAL_SERVICE_URL}/api/signals/${userId}`, {
         method: 'GET',
         body: JSON.stringify(filters),
       }) as { signals?: unknown[] };
@@ -150,7 +160,7 @@ export const signalOperations = {
 export const recommendationOperations = {
   async get(userId: string, slot: string = 'general'): Promise<unknown[]> {
     try {
-      const res = await internalRequest(`${RECOMMEND_SERVICE_URL}/api/recommendations/${userId}`, {
+      const res = await internalRequest<RecommendationsResponse>(`${RECOMMEND_SERVICE_URL}/api/recommendations/${userId}`, {
         method: 'GET',
         body: JSON.stringify({ slot }),
       }) as { recommendations?: unknown[] };

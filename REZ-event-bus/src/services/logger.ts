@@ -21,7 +21,7 @@ const structuredFormat = winston.format.combine(
 const devFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.colorize(),
-  winston.format.printf(({ timestamp, level, message, ...meta }) => {
+  winston.format.printf(({ timestamp, level, message, ...meta }: { timestamp?: string; level: string; message: string; [key: string]: unknown }) => {
     const metaStr = Object.keys(meta).length ? JSON.stringify(meta, null, 2) : '';
     return `${timestamp} [${level}]: ${message} ${metaStr}`;
   })

@@ -1,5 +1,6 @@
 import { EDUCATION_KNOWLEDGE } from '../config/knowledge';
 import { CourseRecommendation, CourseSearchParams, SearchResult } from '../types/tone';
+import { randomInt, randomUUID } from 'crypto';
 
 interface Course {
   id: string;
@@ -49,15 +50,15 @@ export class CourseService {
     skill: string
   ): Course {
     const skillLower = skill.toLowerCase().replace(/\s+/g, '-');
-    const baseStudents = Math.floor(Math.random() * 50000) + 1000;
-    const baseReviews = Math.floor(Math.random() * 5000) + 100;
+    const baseStudents = Math.floor(randomInt(50000)) + 1000;
+    const baseReviews = Math.floor(randomInt(5000)) + 100;
 
     return {
       id: `${category.id}-${skillLower}`,
       title: `${skill} ${category.name.includes('Development') ? 'Development' : 'Mastery'}`,
       description: `Comprehensive course covering ${skill} fundamentals to advanced concepts. Includes hands-on projects, real-world examples, and practical exercises.`,
       provider: this.getProviderForSkill(skill),
-      rating: Math.round((3.5 + Math.random() * 1.5) * 10) / 10,
+      rating: Math.round((3.5 + (randomInt(150) / 100)) * 10) / 10,
       reviews: baseReviews,
       duration: this.getDurationForSkill(skill),
       level: this.getLevelForSkill(skill),
@@ -135,7 +136,7 @@ export class CourseService {
 
   private getRandomFormat(): string {
     const formats = ['video', 'interactive', 'project', 'reading'];
-    return formats[Math.floor(Math.random() * formats.length)];
+    return formats[randomInt(formats.length)];
   }
 
   private getPriceForLevel(level: string): string {

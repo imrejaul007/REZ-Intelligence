@@ -1,9 +1,11 @@
 import winston from 'winston';
 import { v4 as uuidv4 } from 'uuid';
+import { refundService } from './refundService';
 
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
-const logFormat = printf(({ level, message, timestamp, ...metadata }) => {
+const logFormat = printf((info: winston.Logform.TransformableInfo) => {
+  const { level, message, timestamp, ...metadata } = info;
   let msg = `${timestamp} [${level}]: ${message}`;
   if (Object.keys(metadata).length > 0 && metadata.stack === undefined) {
     msg += ` ${JSON.stringify(metadata)}`;
@@ -90,6 +92,7 @@ export interface Customer {
 
 export interface Ticket {
   id: string;
+  displayId: string;
   subject: string;
   description: string;
   status: TicketStatus;
@@ -205,7 +208,7 @@ export class SupportAgent {
           response = await this.handleFaq(message);
           break;
         default:
-          response = await this.handleGeneralSupport(context, message);
+          response = await this.handleGeneralSupport(context, {}, message);
       }
 
       response.processingTime = Date.now() - startTime;
@@ -415,11 +418,9 @@ export class SupportAgent {
     context: SupportContext,
     entities: Record<string, unknown>
   ): Promise<SupportResponse> {
-    const { getRefundEligibility, processRefundRequest } = await import('./refundService');
-
     const orderId = entities.orderId as string || 'unknown';
 
-    const eligibility = getRefundEligibility({
+    const eligibility = refundService.getRefundEligibility({
       orderId,
       customerId: context.customer?.id || 'anonymous',
       totalSpent: context.customer?.totalSpent || 0,
@@ -593,7 +594,7 @@ export class SupportAgent {
 
     const ticket = await this.createTicket({
       subject: 'Customer Complaint - Requires Immediate Attention',
-      description: entities.description || 'Customer has filed a complaint',
+      description: (entities.description as string) || 'Customer has filed a complaint',
       category: TicketCategory.COMPLAINT,
       priority,
       customerId: context.customer?.id || 'anonymous',
@@ -691,9 +692,9 @@ export class SupportAgent {
       customerName: data.customerName,
       customerEmail: data.customerEmail,
       assignedTo: null,
-      assignedTeam: this.assignTeam(data.category),
+      assignedTeam: this.assignTeam(data.category || TicketCategory.GENERAL),
       tags: data.tags || [],
-      orderId: data.orderId,
+      orderId: data.orderId ?? null,
       relatedTickets: [],
       messages: [{
         id: uuidv4(),
@@ -1016,7 +1017,8 @@ export interface SupportAction {
   type: 'create_ticket' | 'show_ticket_details' | 'track_ticket' | 'show_ticket_history' |
         'process_refund' | 'show_refund_details' | 'show_policy' | 'contact_support' |
         'schedule_callback' | 'confirm_cancellation' | 'open_tracking' | 'escalate_ticket' |
-        'notify_supervisor' | 'show_faq' | 'show_help_options' | 'quick_actions' | 'show_more_faqs';
+        'notify_supervisor' | 'show_faq' | 'show_help_options' | 'quick_actions' | 'show_more_faqs' |
+        'add_ticket_message';
   data: Record<string, unknown>;
 }
 

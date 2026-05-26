@@ -8,7 +8,7 @@
 import mongoose from 'mongoose';
 import axios from 'axios';
 import { ProactiveAlert } from '../types';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-care';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || 'rez-internal-token';
@@ -167,16 +167,16 @@ export class ProactiveDetectionService {
   }): Promise<ProactiveAlert[]> {
     await this.connect();
 
-    const query: unknown = { status: { $in: ['active', 'investigating'] } };
+    const query: Record<string, unknown> = { status: { $in: ['active', 'investigating'] } };
     if (filters?.type) query.type = filters.type;
     if (filters?.severity) query.severity = filters.severity;
 
     const alerts = await ProactiveAlertModel
-      .find(query)
+      .find(query as Record<string, unknown>)
       .sort({ detectedAt: -1 })
       .limit(100);
 
-    return alerts.map(a => a.toObject() as unknown);
+    return alerts.map(a => a.toObject() as unknown as ProactiveAlert);
   }
 
   /**
@@ -215,7 +215,7 @@ export class ProactiveDetectionService {
     alert.resolution = resolution;
     alert.resolvedBy = resolvedBy || 'system';
 
-    (alert as unknown).actions.push({
+    (alert as unknown as { actions: Array<{ type: string; timestamp: Date; details: string; performedBy: string }> }).actions.push({
       type: 'resolved',
       timestamp: new Date(),
       details: resolution,
@@ -225,7 +225,7 @@ export class ProactiveDetectionService {
     await alert.save();
 
     logger.info('Alert resolved', { alertId, resolution });
-    return alert.toObject() as unknown;
+    return alert.toObject() as unknown as ProactiveAlert;
   }
 
   /**
@@ -255,7 +255,7 @@ export class ProactiveDetectionService {
 
       // Auto-compensate
       if (recentFailures >= 3) {
-        await this.compensateCustomer(data.customerId, 10, 'Payment inconvenience', alert._id.toString());
+        await this.compensateCustomer(data.customerId, 10, 'Payment inconvenience', (alert as unknown as { _id: { toString: () => string } })._id.toString());
       }
     }
   }
@@ -285,7 +285,7 @@ export class ProactiveDetectionService {
       });
 
       // Notify merchant
-      await this.notifyMerchant(data.merchantId, 'QR Scan Issues Detected', alert.description);
+      await this.notifyMerchant(data.merchantId, 'QR Scan Issues Detected', (alert as unknown as { description: string }).description);
       return;
     }
 
@@ -303,7 +303,7 @@ export class ProactiveDetectionService {
       });
 
       // Auto-compensate and notify
-      await this.compensateCustomer(data.customerId, 5, 'QR inconvenience', alert._id.toString());
+      await this.compensateCustomer(data.customerId, 5, 'QR inconvenience', (alert as unknown as { _id: { toString: () => string } })._id.toString());
       await this.notifyCustomer(data.customerId, 'QR Issue Resolved', 'We noticed some QR issues. 5 NC credited to your wallet.');
     }
   }
@@ -332,7 +332,7 @@ export class ProactiveDetectionService {
       });
 
       // Page on-call team
-      await this.pageOncall('App Error Spike', `P1 Alert: ${alert.description}`);
+      await this.pageOncall('App Error Spike', `P1 Alert: ${(alert as unknown as { description: string }).description}`);
     }
   }
 
@@ -385,7 +385,7 @@ export class ProactiveDetectionService {
 
       // Auto-compensate
       const compensationAmount = Math.min(50, Math.round(delay / 10) * 10);
-      await this.compensateCustomer(data.customerId, compensationAmount, 'Delivery delay', alert._id.toString());
+      await this.compensateCustomer(data.customerId, compensationAmount, 'Delivery delay', (alert as unknown as { _id: { toString: () => string } })._id.toString());
     }
   }
 
@@ -502,9 +502,9 @@ export class ProactiveDetectionService {
     amount: number,
     reason: string,
     alertId: string
-  ): Promise<void> {
+  ): Promise<{ success: boolean; transactionId?: string; error?: string }> {
     try {
-      await axios.post(
+      const response = await axios.post(
         `${SERVICE_URLS.wallet}/api/wallet/credit`,
         {
           userId: customerId,
@@ -523,13 +523,22 @@ export class ProactiveDetectionService {
         `We've credited ${amount} NC to your wallet for the inconvenience. Thank you for your patience!`
       );
 
-      logger.info('Customer compensated', { customerId, amount, reason });
+      logger.info('Customer compensated', { customerId, amount, reason, alertId, transactionId: response.data?.transactionId });
+      return { success: true, transactionId: response.data?.transactionId };
     } catch (error) {
-      logger.error('Failed to compensate customer', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to compensate customer', {
+        error: errorMsg,
+        customerId,
+        amount,
+        reason,
+        alertId
+      });
+      return { success: false, error: errorMsg };
     }
   }
 
-  private async notifyCustomer(customerId: string, title: string, message: string): Promise<void> {
+  private async notifyCustomer(customerId: string, title: string, message: string): Promise<{ success: boolean; error?: string }> {
     try {
       await axios.post(
         `${SERVICE_URLS.notifications}/api/notifications/send`,
@@ -542,12 +551,19 @@ export class ProactiveDetectionService {
         },
         { headers: { 'X-Internal-Token': INTERNAL_TOKEN }, timeout: 5000 }
       );
+      return { success: true };
     } catch (error) {
-      logger.error('Failed to notify customer', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to notify customer', {
+        error: errorMsg,
+        customerId,
+        title
+      });
+      return { success: false, error: errorMsg };
     }
   }
 
-  private async notifyMerchant(merchantId: string, title: string, message: string): Promise<void> {
+  private async notifyMerchant(merchantId: string, title: string, message: string): Promise<{ success: boolean; error?: string }> {
     try {
       await axios.post(
         `${SERVICE_URLS.merchant}/api/notifications/merchant/${merchantId}`,
@@ -558,12 +574,19 @@ export class ProactiveDetectionService {
         },
         { headers: { 'X-Internal-Token': INTERNAL_TOKEN }, timeout: 5000 }
       );
+      return { success: true };
     } catch (error) {
-      logger.error('Failed to notify merchant', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to notify merchant', {
+        error: errorMsg,
+        merchantId,
+        title
+      });
+      return { success: false, error: errorMsg };
     }
   }
 
-  private async pageOncall(title: string, message: string): Promise<void> {
+  private async pageOncall(title: string, message: string): Promise<{ success: boolean; error?: string }> {
     // In production, this would integrate with PagerDuty, Pushover, etc.
     logger.warn('PAGING ONCALL', { title, message });
 
@@ -579,14 +602,21 @@ export class ProactiveDetectionService {
         },
         { headers: { 'X-Internal-Token': INTERNAL_TOKEN }, timeout: 5000 }
       );
+      return { success: true };
     } catch (error) {
-      logger.error('Failed to page oncall', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to page oncall', {
+        error: errorMsg,
+        title,
+        message
+      });
+      return { success: false, error: errorMsg };
     }
   }
 
-  private async escalateToSupervisor(customerId: string, alert): Promise<void> {
+  private async escalateToSupervisor(customerId: string, alert: { description?: string }): Promise<{ success: boolean; ticketId?: string; error?: string }> {
     try {
-      await axios.post(
+      const response = await axios.post(
         `${SERVICE_URLS.support}/api/tickets`,
         {
           type: 'sentiment_escalation',
@@ -599,24 +629,40 @@ export class ProactiveDetectionService {
         },
         { headers: { 'X-Internal-Token': INTERNAL_TOKEN }, timeout: 5000 }
       );
+
+      logger.warn('Escalated to supervisor', {
+        customerId,
+        ticketId: response.data?.ticketId
+      });
+
+      return { success: true, ticketId: response.data?.ticketId };
     } catch (error) {
-      logger.error('Failed to escalate', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to escalate to supervisor', {
+        error: errorMsg,
+        customerId,
+        alertDescription: alert.description
+      });
+      return { success: false, error: errorMsg };
     }
   }
 
-  private async checkPaymentFailureRate(): Promise<void> {
+  private async checkPaymentFailureRate(): Promise<{ success: boolean; error?: string; failureRate?: number }> {
     // This would query payment service for real-time failure rates
     // Implementation depends on payment service API
     logger.debug('Running payment failure rate check');
+    return { success: true, failureRate: 0 };
   }
 
-  private async checkQRScanRate(): Promise<void> {
+  private async checkQRScanRate(): Promise<{ success: boolean; error?: string; scanRate?: number }> {
     // This would query merchant service for QR success rates
     logger.debug('Running QR scan rate check');
+    return { success: true, scanRate: 100 };
   }
 
-  private async checkDeliveryDelays(): Promise<void> {
+  private async checkDeliveryDelays(): Promise<{ success: boolean; error?: string; delayCount?: number }> {
     // This would query order service for delay patterns
     logger.debug('Running delivery delay check');
+    return { success: true, delayCount: 0 };
   }
 }

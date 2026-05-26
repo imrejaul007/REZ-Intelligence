@@ -3,6 +3,7 @@
  * API endpoints for webhook management and configuration
  */
 
+import crypto from 'crypto';
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { ChannelType, ApiResponse } from '../types';
@@ -305,7 +306,7 @@ export function recordWebhookEvent(
   event: string,
   payload: Record<string, unknown>
 ): string {
-  const eventId = `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const eventId = `evt_${crypto.randomUUID()}`;
 
   const webhookEvent: WebhookEvent = {
     id: eventId,

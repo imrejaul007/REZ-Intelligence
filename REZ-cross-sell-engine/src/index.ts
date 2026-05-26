@@ -1,4 +1,4 @@
-import logger from './utils/logger';
+import { logger } from './utils/logger';
 
 /**
  * REZ Cross-Sell Engine - Entry Point
@@ -6,9 +6,9 @@ import logger from './utils/logger';
  * AI-powered cross-sell recommendations for merchants.
  */
 
-const PORT = process.env.PORT || 4114;
+const PORT = process.env.PORT || '4114';
 
-logger.info(`Cross-Sell Engine starting on port ${PORT}`);
-console.log('[READY] Cross-Sell Engine`);
+logger.info('Cross-Sell Engine starting on port ' + PORT);
+console.log('[READY] Cross-Sell Engine');
 
 export {};

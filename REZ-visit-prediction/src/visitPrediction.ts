@@ -11,6 +11,7 @@
  */
 
 import axios from 'axios';
+import { randomUUID } from 'crypto';
 
 // ============================================================================
 // Configuration
@@ -252,6 +253,13 @@ class VisitProbabilityCalculator {
     const today = new Date();
     const forecasts = [];
 
+    // Seed-based pseudo-random for deterministic results
+    const seed = merchantId ? merchantId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) : Date.now();
+    const seededRandom = (offset: number) => {
+      const x = Math.sin(seed + offset) * 10000;
+      return x - Math.floor(x);
+    };
+
     // Generate 7-day forecast
     for (let i = 0; i < 7; i++) {
       const date = new Date(today);
@@ -265,7 +273,7 @@ class VisitProbabilityCalculator {
         date: date.toISOString().split('T')[0],
         predictedVisits: Math.round(baseVisits * weekendMultiplier),
         predictedRevenue: Math.round(baseVisits * weekendMultiplier * this.getAverageSpend(history)),
-        confidence: 0.7 + (Math.random() * 0.2)
+        confidence: 0.7 + (seededRandom(i) * 0.2)
       });
     }
 

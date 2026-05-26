@@ -5,6 +5,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import Redis from 'ioredis';
 import mongoose from 'mongoose';
 import {
@@ -17,7 +18,9 @@ import {
   NodeStatus,
   ExecutionStatus,
   EdgeType,
-  TriggerType
+  TriggerType,
+  NodeData,
+  WorkflowStatus
 } from '../types/workflow';
 import { Execution, Workflow, IExecution, IWorkflow } from '../models/Execution';
 import { handleNode } from './nodeHandlers';
@@ -126,7 +129,7 @@ async function acquireDistributedLock(
   key: string,
   ttlMs: number = LOCK_TTL_MS
 ): Promise<string | null> {
-  const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const token = `${Date.now()}-${randomUUID().replace(/-/g, '')}`;
   const result = await redis.set(`lock:${key}`, token, 'PX', ttlMs, 'NX');
   return result === 'OK' ? token : null;
 }
@@ -689,7 +692,7 @@ export class ExecutionRecoveryService {
               retryCount: 0,
               failedAt: new Date(),
               workflowDefinition: {} as WorkflowDefinition,
-              nodeData: {} as unknown,
+              nodeData: {} as NodeData,
               context: {} as ExecutionContext
             });
 
@@ -718,7 +721,7 @@ export class ExecutionRecoveryService {
           retryCount: 0,
           failedAt: new Date(),
           workflowDefinition: {} as WorkflowDefinition,
-          nodeData: {} as unknown,
+          nodeData: {} as NodeData,
           context: {} as ExecutionContext
         });
 
@@ -810,29 +813,29 @@ declare module './logger' {
   }
 }
 
-const originalLogger = logger;
-if (!originalLogger.saga) {
-  (originalLogger as unknown).saga = {
+const extendedLogger = logger as unknown as Record<string, unknown>;
+if (!extendedLogger.saga) {
+  extendedLogger.saga = {
     started: (sagaId: string, sagaName: string, stepCount: number) => {
-      originalLogger.info('Saga started', { sagaId, sagaName, stepCount, event: 'saga_started' });
+      logger.info('Saga started', { sagaId, sagaName, stepCount, event: 'saga_started' });
     },
     stepCompleted: (sagaId: string, stepName: string, completedCount: number) => {
-      originalLogger.debug('Saga step completed', { sagaId, stepName, completedCount, event: 'saga_step_completed' });
+      logger.debug('Saga step completed', { sagaId, stepName, completedCount, event: 'saga_step_completed' });
     },
     stepRetried: (sagaId: string, stepName: string, attempt: number, maxRetries: number) => {
-      originalLogger.info('Saga step retry', { sagaId, stepName, attempt, maxRetries, event: 'saga_step_retry' });
+      logger.info('Saga step retry', { sagaId, stepName, attempt, maxRetries, event: 'saga_step_retry' });
     },
     compensating: (sagaId: string, stepName: string) => {
-      originalLogger.info('Compensating saga step', { sagaId, stepName, event: 'saga_compensating' });
+      logger.info('Compensating saga step', { sagaId, stepName, event: 'saga_compensating' });
     },
     compensated: (sagaId: string, stepName: string) => {
-      originalLogger.debug('Saga step compensated', { sagaId, stepName, event: 'saga_compensated' });
+      logger.debug('Saga step compensated', { sagaId, stepName, event: 'saga_compensated' });
     },
     completed: (sagaId: string, sagaName: string) => {
-      originalLogger.info('Saga completed', { sagaId, sagaName, event: 'saga_completed' });
+      logger.info('Saga completed', { sagaId, sagaName, event: 'saga_completed' });
     },
     failed: (sagaId: string, sagaName: string, error: string) => {
-      originalLogger.error('Saga failed', { sagaId, sagaName, error, event: 'saga_failed' });
+      logger.error('Saga failed', { sagaId, sagaName, error, event: 'saga_failed' });
     }
   };
 }
@@ -1318,12 +1321,14 @@ export class WorkflowExecutor {
       name: workflow.name,
       description: workflow.description,
       version: workflow.version,
-      status: workflow.status as unknown,
-      nodes: workflow.nodes as unknown as WorkflowNode[],
-      edges: workflow.edges as unknown as WorkflowEdge[],
-      entryNodeId: workflow.entryNodeId,
-      variables: workflow.variables,
-      metadata: workflow.metadata
+      status: (workflow.status && Object.values(WorkflowStatus).includes(workflow.status as WorkflowStatus))
+        ? workflow.status as WorkflowStatus
+        : WorkflowStatus.DRAFT,
+      nodes: (workflow.nodes || []) as unknown as WorkflowNode[],
+      edges: (workflow.edges || []) as unknown as WorkflowEdge[],
+      entryNodeId: workflow.entryNodeId || workflow.workflowId,
+      variables: workflow.variables || {},
+      metadata: workflow.metadata || {}
     };
     const { nodes, edges, entryNode, errors } = this.parseWorkflow(workflowDef);
 

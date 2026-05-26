@@ -7,7 +7,7 @@
 
 import axios from 'axios';
 import { SelfServiceAction, SelfServiceResult } from '../types';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || 'rez-internal-token';
 
@@ -114,10 +114,10 @@ export class SelfServiceService {
   ): Promise<SelfServiceResult> {
     switch (actionType) {
       case 'cashback_retry':
-        return this.retryCashback(customerId, actionData.transactionId);
+        return this.retryCashback(customerId, actionData.transactionId as string | undefined);
 
       case 'payment_retry':
-        return this.retryPayment(customerId, actionData.orderId);
+        return this.retryPayment(customerId, actionData.orderId as string | undefined);
 
       case 'refund_check':
         return this.checkRefundEligibility(customerId);
@@ -129,7 +129,7 @@ export class SelfServiceService {
         return this.provideQRTroubleshooting(customerId);
 
       case 'booking_reschedule':
-        return this.rescheduleBooking(customerId, actionData.bookingId, actionData.newDate);
+        return this.rescheduleBooking(customerId, actionData.bookingId as string | undefined, actionData.newDate as Date | undefined);
 
       default:
         return {
@@ -426,6 +426,7 @@ export class SelfServiceService {
   private async checkCashbackStatus(customerId: string): Promise<{
     hasPending: boolean;
     pendingCount: number;
+    error?: string;
   }> {
     try {
       const response = await axios.get(
@@ -436,14 +437,17 @@ export class SelfServiceService {
         hasPending: (response.data.pendingCount || 0) > 0,
         pendingCount: response.data.pendingCount || 0
       };
-    } catch {
-      return { hasPending: false, pendingCount: 0 };
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to check cashback status', { error: errorMsg, customerId });
+      return { hasPending: false, pendingCount: 0, error: errorMsg };
     }
   }
 
   private async checkPaymentStatus(customerId: string): Promise<{
     hasFailedPayments: boolean;
     orderId?: string;
+    error?: string;
   }> {
     try {
       const response = await axios.get(
@@ -454,8 +458,10 @@ export class SelfServiceService {
         hasFailedPayments: !!response.data?.orderId,
         orderId: response.data?.orderId
       };
-    } catch {
-      return { hasFailedPayments: false };
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to check payment status', { error: errorMsg, customerId });
+      return { hasFailedPayments: false, error: errorMsg };
     }
   }
 
@@ -471,13 +477,16 @@ export class SelfServiceService {
         message: 'Refund eligibility checked',
         data: { eligible: true, refunds: response.data.refunds || [] }
       };
-    } catch {
-      return { success: false, action: 'refund_check', message: 'Unable to check refund eligibility' };
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to check refund eligibility', { error: errorMsg, customerId });
+      return { success: false, action: 'refund_check', message: `Unable to check refund eligibility: ${errorMsg}` };
     }
   }
 
   private async checkWalletSync(customerId: string): Promise<{
     hasSyncIssue: boolean;
+    error?: string;
   }> {
     try {
       const response = await axios.get(
@@ -487,14 +496,17 @@ export class SelfServiceService {
       return {
         hasSyncIssue: response.data.needsSync || false
       };
-    } catch {
-      return { hasSyncIssue: false };
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to check wallet sync status', { error: errorMsg, customerId });
+      return { hasSyncIssue: false, error: errorMsg };
     }
   }
 
   private async checkBookingStatus(customerId: string): Promise<{
     hasActiveBookings: boolean;
     bookings?: unknown[];
+    error?: string;
   }> {
     try {
       const response = await axios.get(
@@ -506,8 +518,10 @@ export class SelfServiceService {
         hasActiveBookings: bookings.length > 0,
         bookings
       };
-    } catch {
-      return { hasActiveBookings: false };
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to check booking status', { error: errorMsg, customerId });
+      return { hasActiveBookings: false, error: errorMsg };
     }
   }
 }

@@ -1,6 +1,6 @@
 import Redis from 'ioredis';
 import config from '../config';
-import { logger } from './logger';
+import logger from './logger';
 
 /**
  * Redis client singleton

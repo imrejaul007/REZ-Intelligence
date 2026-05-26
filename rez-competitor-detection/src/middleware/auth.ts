@@ -1,106 +1,45 @@
-import { Request, Response, NextFunction } import logger from './utils/logger';
-import from 'express';
-import crypto from 'crypto';
+import { Request, Response, NextFunction } from 'express';
+import { logger } from './utils/logger';
 
-// Extend Express Request
-declare global {
-  namespace Express {
-    interface Request {
-      serviceName?: string;
-      isInternalCall?: boolean;
-    }
-  }
+export interface AuthConfig {
+  apiKeys?: string[];
+  internalTokens?: string[];
+  bypassPaths?: string[];
 }
 
-// Service tokens from environment
-const SERVICE_TOKENS = new Map<string, string>();
+export function createAuthMiddleware(config: AuthConfig) {
+  const { apiKeys = [], internalTokens = [], bypassPaths = ['/health', '/ready'] } = config;
 
-/**
- * Initialize service tokens from environment
- */
-export function initializeServiceTokens(): void {
-  const tokensJson = process.env.INTERNAL_SERVICE_TOKENS_JSON;
-  if (tokensJson) {
-    try {
-      const tokens = JSON.parse(tokensJson);
-      Object.entries(tokens).forEach(([service, token]) => {
-        SERVICE_TOKENS.set(service, token as string);
-      });
-      logger.info(`Loaded ${SERVICE_TOKENS.size} service tokens`);
-    } catch (error) {
-      console.error('Failed to parse INTERNAL_SERVICE_TOKENS_JSON:', error);
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const path = req.path;
+
+    // Bypass health checks
+    if (bypassPaths.some(p => path.startsWith(p))) {
+      return next();
     }
-  }
-}
 
-/**
- * Validate internal service token
- */
-function validateToken(token: string): { valid: boolean; serviceName?: string } {
-  // Check against main service token
-  const mainToken = process.env.INTERNAL_SERVICE_TOKEN;
-  if (mainToken && crypto.timingSafeEqual(Buffer.from(token), Buffer.from(mainToken))) {
-    return { valid: true, serviceName: 'internal' };
-  }
-
-  // Check against individual service tokens
-  for (const [serviceName, serviceToken] of SERVICE_TOKENS.entries()) {
-    try {
-      if (token.length === serviceToken.length &&
-          crypto.timingSafeEqual(Buffer.from(token), Buffer.from(serviceToken))) {
-        return { valid: true, serviceName };
-      }
-    } catch {
-      // Length mismatch, continue checking
+    // Check API key
+    const apiKey = req.headers['x-api-key'] as string | undefined;
+    if (apiKey && apiKeys.includes(apiKey)) {
+      return next();
     }
-  }
 
-  return { valid: false };
-}
+    // Check internal token
+    const internalToken = req.headers['x-internal-token'] as string | undefined;
+    if (internalToken && internalTokens.includes(internalToken)) {
+      return next();
+    }
 
-/**
- * Authentication middleware for internal service calls
- */
-export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
-  const token = req.headers['x-internal-token'] as string;
-
-  if (!token) {
-    res.status(401).json({
-      success: false,
-      error: 'Missing X-Internal-Token header',
-      timestamp: new Date()
+    // No valid auth found
+    logger.warn('Unauthorized access attempt', {
+      path,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
     });
-    return;
-  }
 
-  const validation = validateToken(token);
-  if (!validation.valid) {
     res.status(401).json({
-      success: false,
-      error: 'Invalid internal token',
-      timestamp: new Date()
+      error: 'Unauthorized',
+      message: 'Valid API key or internal token required',
     });
-    return;
-  }
-
-  req.serviceName = validation.serviceName;
-  req.isInternalCall = true;
-  next();
-}
-
-/**
- * Optional auth - doesn't fail if no token provided
- */
-export function optionalAuthMiddleware(req: Request, res: Response, next: NextFunction): void {
-  const token = req.headers['x-internal-token'] as string;
-
-  if (token) {
-    const validation = validateToken(token);
-    if (validation.valid) {
-      req.serviceName = validation.serviceName;
-      req.isInternalCall = true;
-    }
-  }
-
-  next();
+  };
 }

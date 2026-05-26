@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { format, subDays } from 'date-fns';
 import { query, queryOne, transaction } from '../config/database';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import {
   Dispute,
   DisputeEvidence,

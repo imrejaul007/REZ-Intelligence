@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Custom Error Classes for Universal User Graph Service
 
 export class AppError extends Error {

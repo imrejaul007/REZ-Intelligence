@@ -2,7 +2,7 @@
  * TypeScript type definitions for REZ Reorder Engine
  */
 
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 
 /**
  * Commerce categories supported by the reorder engine

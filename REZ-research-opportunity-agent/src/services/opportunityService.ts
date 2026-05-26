@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import {
   Opportunity,
   OpportunityType,
@@ -10,13 +10,19 @@ import {
 import { OpportunityModel, IOpportunityDocument } from '../models/Opportunity.js';
 import { cacheGet, cacheSet, cacheDelete } from '../utils/redis.js';
 import { CACHE_TTL, THRESHOLDS } from '../constants/thresholds.js';
-import logger from '../utils/logger.js';
+import logger from './utils/logger.js';
 
 const log = logger.child({ context: 'OpportunityService' });
 
+// Seeded random for deterministic mock data
+function seededRandom(seed: number, offset: number): number {
+  const x = Math.sin(seed + offset) * 10000;
+  return x - Math.floor(x);
+}
+
 class OpportunityService {
   async create(opportunity: Omit<Opportunity, 'id' | 'createdAt'>): Promise<Opportunity> {
-    const id = uuidv4();
+    const id = randomUUID();
     const createdAt = new Date();
 
     const newOpportunity: Opportunity = {
@@ -220,6 +226,8 @@ class OpportunityService {
     targetSegment: string
   ): Recommendation[] {
     const recommendations: Recommendation[] = [];
+    // Use deterministic seed based on opportunityType and targetSegment
+    const seed = opportunityType * 1000 + targetSegment.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
 
     switch (opportunityType) {
       case OpportunityType.CAMPAIGN:
@@ -228,16 +236,16 @@ class OpportunityService {
           channel: Channel.WHATSAPP,
           targetSegment,
           timing: 'Within 1 week',
-          estimatedReach: Math.floor(Math.random() * 10000) + 5000,
-          estimatedConversion: Math.random() * 10 + 5,
+          estimatedReach: Math.floor(seededRandom(seed, 1) * 10000) + 5000,
+          estimatedConversion: seededRandom(seed, 2) * 10 + 5,
         });
         recommendations.push({
           action: `Send follow-up email sequence`,
           channel: Channel.EMAIL,
           targetSegment,
           timing: 'Days 1, 3, 7',
-          estimatedReach: Math.floor(Math.random() * 15000) + 8000,
-          estimatedConversion: Math.random() * 5 + 2,
+          estimatedReach: Math.floor(seededRandom(seed, 3) * 15000) + 8000,
+          estimatedConversion: seededRandom(seed, 4) * 5 + 2,
         });
         break;
 
@@ -247,16 +255,16 @@ class OpportunityService {
           channel: Channel.PUSH,
           targetSegment,
           timing: 'Immediately',
-          estimatedReach: Math.floor(Math.random() * 5000) + 2000,
-          estimatedConversion: Math.random() * 15 + 10,
+          estimatedReach: Math.floor(seededRandom(seed, 5) * 5000) + 2000,
+          estimatedConversion: seededRandom(seed, 6) * 15 + 10,
         });
         recommendations.push({
           action: `Personalized re-engagement SMS`,
           channel: Channel.SMS,
           targetSegment,
           timing: 'Day 1 and Day 3',
-          estimatedReach: Math.floor(Math.random() * 3000) + 1000,
-          estimatedConversion: Math.random() * 8 + 3,
+          estimatedReach: Math.floor(seededRandom(seed, 7) * 3000) + 1000,
+          estimatedConversion: seededRandom(seed, 8) * 8 + 3,
         });
         break;
 
@@ -266,8 +274,8 @@ class OpportunityService {
           channel: Channel.WHATSAPP,
           targetSegment,
           timing: 'After next purchase',
-          estimatedReach: Math.floor(Math.random() * 8000) + 3000,
-          estimatedConversion: Math.random() * 12 + 5,
+          estimatedReach: Math.floor(seededRandom(seed, 9) * 8000) + 3000,
+          estimatedConversion: seededRandom(seed, 10) * 12 + 5,
         });
         break;
 
@@ -277,8 +285,8 @@ class OpportunityService {
           channel: Channel.EMAIL,
           targetSegment,
           timing: 'Weekly for 4 weeks',
-          estimatedReach: Math.floor(Math.random() * 10000) + 5000,
-          estimatedConversion: Math.random() * 6 + 2,
+          estimatedReach: Math.floor(seededRandom(seed, 11) * 10000) + 5000,
+          estimatedConversion: seededRandom(seed, 12) * 6 + 2,
         });
         break;
 
@@ -288,8 +296,8 @@ class OpportunityService {
           channel: Channel.PUSH,
           targetSegment,
           timing: 'Phased rollout over 3 months',
-          estimatedReach: Math.floor(Math.random() * 20000) + 10000,
-          estimatedConversion: Math.random() * 4 + 2,
+          estimatedReach: Math.floor(seededRandom(seed, 13) * 20000) + 10000,
+          estimatedConversion: seededRandom(seed, 14) * 4 + 2,
         });
         break;
 
@@ -299,16 +307,16 @@ class OpportunityService {
           channel: Channel.WHATSAPP,
           targetSegment,
           timing: 'Launch day',
-          estimatedReach: Math.floor(Math.random() * 15000) + 8000,
-          estimatedConversion: Math.random() * 8 + 3,
+          estimatedReach: Math.floor(seededRandom(seed, 15) * 15000) + 8000,
+          estimatedConversion: seededRandom(seed, 16) * 8 + 3,
         });
         recommendations.push({
           action: `Email product showcase`,
           channel: Channel.EMAIL,
           targetSegment,
           timing: 'Week 1 and Week 2',
-          estimatedReach: Math.floor(Math.random() * 20000) + 10000,
-          estimatedConversion: Math.random() * 5 + 2,
+          estimatedReach: Math.floor(seededRandom(seed, 17) * 20000) + 10000,
+          estimatedConversion: seededRandom(seed, 18) * 5 + 2,
         });
         break;
     }

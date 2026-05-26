@@ -13,7 +13,7 @@ import {
   CheckOutWorkflow,
 } from '../types/index.js';
 import { workflowService } from '../services/workflows.js';
-import { logger } from '../utils/logger.js';
+import { logger } from './utils/logger';
 
 // ============================================
 // CHECK-IN FLOW STATES

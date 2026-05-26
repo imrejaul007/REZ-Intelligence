@@ -1,13 +1,17 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AnalyticsConnector = void 0;
+exports.getAnalyticsConnector = getAnalyticsConnector;
+const logger_1 = __importDefault(require("./utils/logger"));
 /**
  * Analytics Service Connector
  *
  * Connects to rez-analytics-service (Port 4005) for dashboards,
  * KPIs, reporting, and data aggregation.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.AnalyticsConnector = void 0;
-exports.getAnalyticsConnector = getAnalyticsConnector;
 const client_1 = require("../utils/client");
 const DEFAULT_CONFIG = {
     timeout: 30000,
@@ -304,7 +308,7 @@ function getInternalToken() {
         return tokens.orchestrator || tokens.analytics || '';
     }
     catch {
-        console.warn('[AnalyticsConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+        logger_1.default.warn('[AnalyticsConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
         return '';
     }
 }

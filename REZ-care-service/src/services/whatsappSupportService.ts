@@ -7,7 +7,7 @@
 
 import mongoose, { Schema } from 'mongoose';
 import axios from 'axios';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-care';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || 'rez-internal-token';

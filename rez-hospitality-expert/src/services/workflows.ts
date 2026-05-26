@@ -3,6 +3,7 @@
  * Implements standard hotel workflows for common guest interactions
  */
 
+import { randomUUID } from 'crypto';
 import {
   HospitalityIntent,
   ServiceStatus,
@@ -13,7 +14,7 @@ import {
   ServiceRequest,
   ConversationContext,
 } from '../types/index.js';
-import { logger } from '../utils/logger.js';
+import { logger } from './utils/logger';
 
 // ============================================
 // WORKFLOW DEFINITIONS
@@ -552,7 +553,7 @@ export class WorkflowService {
     details: Record<string, unknown>
   ): ServiceRequest {
     return {
-      id: `SR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `SR-${Date.now()}-${randomUUID().replace(/-/g, '').substring(0, 9)}`,
       guestId: context.guest?.id || 'unknown',
       reservationId: context.reservation?.id,
       intent,

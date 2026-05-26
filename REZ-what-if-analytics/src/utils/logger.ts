@@ -2,7 +2,7 @@ import winston from 'winston';
 
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
-const logFormat = printf(({ level, message, timestamp, stack }) => {
+const logFormat = printf(({ level, message, timestamp, stack }: { level: string; message: string; timestamp: string; stack?: string }) => {
   return `${timestamp} [${level}]: ${stack || message}`;
 });
 

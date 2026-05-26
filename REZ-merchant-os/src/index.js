@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 
 const logger = require('../shared/logger');
 const { errorHandler, asyncHandler } = require('../shared/errorHandler');
@@ -241,21 +242,22 @@ class MerchantOSEngine {
     const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
     // Mock metrics - in production, these would come from other services
+    // Using crypto.randomInt for secure mock data generation
     const metrics = {
-      orders: Math.floor(Math.random() * 500) + 100,
-      revenue: Math.floor(Math.random() * 100000) + 10000,
-      customers: Math.floor(Math.random() * 50) + 10,
-      avgOrderValue: Math.floor(Math.random() * 500) + 150,
-      newCustomers: Math.floor(Math.random() * 20) + 5,
-      returningCustomers: Math.floor(Math.random() * 30) + 10,
-      completionRate: Math.floor(Math.random() * 20) + 80,
-      avgDeliveryTime: Math.floor(Math.random() * 20) + 25
+      orders: crypto.randomInt(100, 600),
+      revenue: crypto.randomInt(10000, 110000),
+      customers: crypto.randomInt(10, 60),
+      avgOrderValue: crypto.randomInt(150, 650),
+      newCustomers: crypto.randomInt(5, 25),
+      returningCustomers: crypto.randomInt(10, 40),
+      completionRate: crypto.randomInt(80, 100),
+      avgDeliveryTime: crypto.randomInt(25, 45)
     };
 
     // Calculate growth
     const previousPeriod = {
-      orders: Math.floor(metrics.orders * (0.9 + Math.random() * 0.2)),
-      revenue: Math.floor(metrics.revenue * (0.9 + Math.random() * 0.2))
+      orders: Math.floor(metrics.orders * (0.9 + crypto.randomInt(0, 20) / 100)),
+      revenue: Math.floor(metrics.revenue * (0.9 + crypto.randomInt(0, 20) / 100))
     };
 
     return {
@@ -280,7 +282,7 @@ class MerchantOSEngine {
 
       data.push({
         date: date.toISOString().split('T')[0],
-        value: Math.floor(Math.random() * 100) + 20
+        value: crypto.randomInt(20, 120)
       });
     }
 

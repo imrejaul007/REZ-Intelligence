@@ -3,11 +3,13 @@
  */
 
 import winston from 'winston';
+import { TransformableInfo } from 'logform';
 
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
-const logFormat = printf(({ level, message, timestamp, stack, ...metadata }) => {
-  let msg = `${timestamp} [${level}]: ${message}`;
+const logFormat = printf((info: TransformableInfo) => {
+  let msg = `${info.timestamp} [${info.level}]: ${info.message}`;
+  const { level, message, timestamp, stack, ...metadata } = info;
   if (Object.keys(metadata).length > 0) msg += ` ${JSON.stringify(metadata)}`;
   if (stack) msg += `\n${stack}`;
   return msg;

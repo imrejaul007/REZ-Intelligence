@@ -58,18 +58,18 @@ export const signalIntegration = {
   /**
    * Enrich prediction with user signals
    */
-  async getUserSignals(userId: string): Promise<unknown[]> {
-    return intelligenceRequest(`${SIGNAL_URL}/api/signals/${userId}`);
+  async getUserSignals(userId: string): Promise<Array<{ timestamp: string; type: string; [key: string]: unknown }>> {
+    return intelligenceRequest(`${SIGNAL_URL}/api/signals/${userId}`) as Promise<Array<{ timestamp: string; type: string; [key: string]: unknown }>>;
   },
 
   /**
    * Query behavioral signals
    */
-  async querySignals(filters: Record<string, unknown>): Promise<unknown[]> {
+  async querySignals(filters: Record<string, unknown>): Promise<Array<{ timestamp: string; type: string; [key: string]: unknown }>> {
     return intelligenceRequest(`${SIGNAL_URL}/api/signals/query`, {
       method: 'POST',
       body: JSON.stringify(filters),
-    });
+    }) as Promise<Array<{ timestamp: string; type: string; [key: string]: unknown }>>;
   },
 };
 
@@ -95,28 +95,28 @@ export const segmentIntegration = {
    * Get at-risk segment
    */
   async getAtRiskSegment(): Promise<{ users: string[]; count: number }> {
-    return intelligenceRequest('/api/segments/at_risk/members');
+    return intelligenceRequest('/api/segments/at_risk/members') as Promise<{ users: string[]; count: number }>;
   },
 
   /**
    * Get high-value segment
    */
   async getHighValueSegment(): Promise<{ users: string[]; count: number }> {
-    return intelligenceRequest('/api/segments/high_value/members');
+    return intelligenceRequest('/api/segments/high_value/members') as Promise<{ users: string[]; count: number }>;
   },
 
   /**
    * Get loyal customers segment
    */
   async getLoyalSegment(): Promise<{ users: string[]; count: number }> {
-    return intelligenceRequest('/api/segments/loyal/members');
+    return intelligenceRequest('/api/segments/loyal/members') as Promise<{ users: string[]; count: number }>;
   },
 
   /**
    * Get dormant users segment
    */
   async getDormantSegment(): Promise<{ users: string[]; count: number }> {
-    return intelligenceRequest('/api/segments/dormant/members');
+    return intelligenceRequest('/api/segments/dormant/members') as Promise<{ users: string[]; count: number }>;
   },
 };
 
@@ -136,7 +136,7 @@ export const identityIntegration = {
    * Get all linked identities
    */
   async getLinkedIdentities(userId: string): Promise<{ identifier: string; type: string }[]> {
-    return intelligenceRequest(`${IDENTITY_URL}/api/identity/${userId}/links`);
+    return intelligenceRequest(`${IDENTITY_URL}/api/identity/${userId}/links`) as Promise<{ identifier: string; type: string }[]>;
   },
 
   /**
@@ -146,7 +146,7 @@ export const identityIntegration = {
     const data = await intelligenceRequest(`${IDENTITY_URL}/api/identity/resolve`, {
       method: 'POST',
       body: JSON.stringify({ identifier: deviceId, type: 'device' }),
-    });
+    }) as { resolved: boolean; userId?: string };
     return { resolved: data.resolved, userId: data.userId };
   },
 };
@@ -211,9 +211,9 @@ export const predictionPipeline = {
    * Full prediction pipeline with enrichment
    */
   async runFullPipeline(userId: string): Promise<{
-    churn;
-    ltv;
-    revisit;
+    churn: Record<string, unknown>;
+    ltv: Record<string, unknown>;
+    revisit: Record<string, unknown>;
     features: Record<string, unknown>;
     segments: string[];
   }> {
@@ -221,8 +221,8 @@ export const predictionPipeline = {
     const features = await featureEnrichment.enrichWithFeatures(userId, 'all');
 
     // Get segments
-    const segmentData = await segmentIntegration.updateUserSegments(userId, []);
-    const segments = segmentData ? [] : [];
+    await segmentIntegration.updateUserSegments(userId, []);
+    const segments: string[] = [];
 
     // Return prediction context (actual predictions are in predictionEngine)
     return {

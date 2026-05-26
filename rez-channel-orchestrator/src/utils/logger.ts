@@ -9,7 +9,7 @@ if (!fs.existsSync(logsDir)) {
 
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
-const logFormat = printf(({ level, message, timestamp, ...rest }) => {
+const logFormat = printf(({ level, message, timestamp, ...rest }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
   const meta = Object.keys(rest).length ? JSON.stringify(rest) : '';
   return `${timestamp} [${level}]: ${message} ${meta}`;
 });

@@ -8,7 +8,8 @@ import winston from 'winston';
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
 // Custom format for structured logging
-const structuredFormat = printf(({ level, message, timestamp, ...metadata }) => {
+const structuredFormat = printf((info: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
+  const { level, message, timestamp, ...metadata } = info;
   let msg = `${timestamp} [${level}]: ${message}`;
 
   if (Object.keys(metadata).length > 0 && metadata.stack === undefined) {

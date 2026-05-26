@@ -212,7 +212,7 @@ export class EmbeddingEngine {
 
     const maxIterations = 20;
     for (let iter = 0; iter < maxIterations; iter++) {
-      const clusters: number[][] = Array.from({ length: k }, () => []);
+      const clusters: number[][][] = Array.from({ length: k }, () => []);
 
       for (const vector of vectors) {
         let minDist = Infinity;
@@ -226,7 +226,7 @@ export class EmbeddingEngine {
           }
         }
 
-        clusters[closestCluster].push(...vector);
+        clusters[closestCluster].push(vector);
       }
 
       const newCentroids: number[][] = [];
@@ -235,9 +235,9 @@ export class EmbeddingEngine {
           newCentroids.push(centroids[c]);
         } else {
           const centroid = new Array(dimensions).fill(0);
-          for (const v of clusters[c]) {
+          for (const vec of clusters[c]) {
             for (let d = 0; d < dimensions; d++) {
-              centroid[d] += v[d];
+              centroid[d] += vec[d];
             }
           }
           for (let d = 0; d < dimensions; d++) {

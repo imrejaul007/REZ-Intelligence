@@ -1,5 +1,13 @@
 import { EDUCATION_KNOWLEDGE } from '../config/knowledge';
+import { randomBytes } from 'crypto';
 import { CourseRecommendation, LearningPath, LearningPathStep } from '../types/tone';
+
+/**
+ * Generate a random number between 0 and 1 using crypto
+ */
+function cryptoRandom(): number {
+  return Number(randomBytes(4).readUInt32BE(0)) / 0xFFFFFFFF;
+}
 
 export class ExpertiseService {
   private domains = EDUCATION_KNOWLEDGE.domains;
@@ -64,7 +72,7 @@ export class ExpertiseService {
       title: `${skill} ${category.name.includes('Development') ? 'Development' : 'Fundamentals'}`,
       description: `Master ${skill} with this comprehensive course covering core concepts, practical applications, and real-world projects.`,
       provider: this.getProviderForSkill(skill),
-      rating: Math.round((3.5 + Math.random() * 1.5) * 100) / 100,
+      rating: Math.round((3.5 + cryptoRandom() * 1.5) * 100) / 100,
       duration: this.getDurationForLevel(skill, userLevel),
       level: this.adjustLevelForSkill(skill, userLevel),
       skills: [skill],
@@ -259,7 +267,7 @@ export class ExpertiseService {
               title: skill,
               description: `Course on ${skill}`,
               provider: this.getProviderForSkill(skill),
-              rating: 4 + Math.random(),
+              rating: 4 + cryptoRandom(),
               duration: '6 weeks',
               level: 'intermediate',
               skills: [skill],

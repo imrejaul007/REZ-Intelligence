@@ -14,13 +14,13 @@ const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 /**
  * Make authenticated internal API request
  */
-async function internalRequest(url, options = {}) {
+async function internalRequest<T = unknown>(url: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
       'X-Internal-Token': INTERNAL_TOKEN,
-      ...options.headers,
+      ...(options.headers as Record<string, string>),
     },
   });
 
@@ -28,29 +28,31 @@ async function internalRequest(url, options = {}) {
     throw new Error(`Platform API error: ${response.status}`);
   }
 
-  return response.json();
+  return response.json() as Promise<T>;
 }
 
 // ============================================
 // AUTH OPERATIONS
 // ============================================
 
+interface AuthResponse { success?: boolean; user?: { id: string }; valid?: boolean }
+
 export const authOperations = {
-  async verify(token) {
+  async verify(token: string): Promise<{ id: string } | null> {
     try {
-      const res = await internalRequest(`${AUTH_URL}/api/auth/verify`, {
+      const res = await internalRequest<AuthResponse>(`${AUTH_URL}/api/auth/verify`, {
         method: 'POST',
         body: JSON.stringify({ token }),
       });
-      return res.success ? res.user : null;
+      return res.success ? (res.user || { id: '' }) : null;
     } catch {
       return null;
     }
   },
 
-  async validateInternalToken() {
+  async validateInternalToken(): Promise<boolean> {
     try {
-      const res = await internalRequest(`${AUTH_URL}/api/auth/internal/validate`, {
+      const res = await internalRequest<{ valid?: boolean }>(`${AUTH_URL}/api/auth/internal/validate`, {
         headers: { 'X-Internal-Token': INTERNAL_TOKEN },
       });
       return res.valid ?? false;
@@ -64,46 +66,40 @@ export const authOperations = {
 // WALLET OPERATIONS
 // ============================================
 
+interface WalletBalance { balance?: number }
+interface WalletAdd { success?: boolean }
+
 export const walletOperations = {
-  async getBalance(userId) {
+  async getBalance(userId: string): Promise<number> {
     try {
-      const res = await internalRequest(`${WALLET_URL}/api/wallet/${userId}/balance`);
+      const res = await internalRequest<WalletBalance>(`${WALLET_URL}/api/wallet/${userId}/balance`);
       return res.balance || 0;
     } catch {
       return 0;
     }
   },
 
-  async addCoins(userId, amount, reason, metadata = {}) {
+  async addCoins(userId: string, amount: number, reason: string, metadata: Record<string, unknown> = {}): Promise<boolean> {
     try {
-      await internalRequest(`${WALLET_URL}/api/wallet/add`, {
+      const res = await internalRequest<WalletAdd>(`${WALLET_URL}/api/wallet/add`, {
         method: 'POST',
-        body: JSON.stringify({ userId, amount, reason, metadata }),
+        body: JSON.stringify({ userId, amount, reason, ...metadata }),
       });
-      return true;
+      return res.success ?? true;
     } catch {
       return false;
     }
   },
 
-  async deductCoins(userId, amount, reason, metadata = {}) {
+  async deductCoins(userId: string, amount: number, reason: string): Promise<boolean> {
     try {
-      await internalRequest(`${WALLET_URL}/api/wallet/deduct`, {
+      const res = await internalRequest<WalletAdd>(`${WALLET_URL}/api/wallet/deduct`, {
         method: 'POST',
-        body: JSON.stringify({ userId, amount, reason, metadata }),
+        body: JSON.stringify({ userId, amount, reason }),
       });
-      return true;
+      return res.success ?? true;
     } catch {
       return false;
-    }
-  },
-
-  async getTransactions(userId, limit = 20) {
-    try {
-      const res = await internalRequest(`${WALLET_URL}/api/wallet/${userId}/transactions?limit=${limit}`);
-      return res.transactions || [];
-    } catch {
-      return [];
     }
   },
 };
@@ -112,35 +108,30 @@ export const walletOperations = {
 // NOTIFICATION OPERATIONS
 // ============================================
 
+interface Notification { success?: boolean }
+
 export const notificationOperations = {
-  async send(params) {
+  async send(params: { userId: string; type: string; message: string; title?: string; data?: Record<string, unknown> }): Promise<boolean> {
     try {
-      await internalRequest(`${NOTIFICATION_URL}/api/notifications/send`, {
+      const res = await internalRequest<Notification>(`${NOTIFICATION_URL}/api/notifications/send`, {
         method: 'POST',
-        body: JSON.stringify({
-          userId: params.userId,
-          channel: params.channel || 'push',
-          type: params.type || 'info',
-          title: params.title,
-          message: params.message,
-          data: params.data,
-        }),
+        body: JSON.stringify(params),
       });
-      return true;
+      return res.success ?? true;
     } catch {
       return false;
     }
   },
 
-  async sendBulk(notifications) {
+  async sendBulk(notifications: Array<{ userId: string; type: string; message: string }>): Promise<{ sent: number }> {
     try {
-      await internalRequest(`${NOTIFICATION_URL}/api/notifications/send/batch`, {
+      const res = await internalRequest<{ sent: number }>(`${NOTIFICATION_URL}/api/notifications/bulk`, {
         method: 'POST',
         body: JSON.stringify({ notifications }),
       });
-      return true;
+      return res;
     } catch {
-      return false;
+      return { sent: 0 };
     }
   },
 };
@@ -149,18 +140,16 @@ export const notificationOperations = {
 // ANALYTICS OPERATIONS
 // ============================================
 
+interface AnalyticsEvent { success?: boolean }
+
 export const analyticsOperations = {
-  async track(event, properties = {}) {
+  async trackEvent(event: string, properties: Record<string, unknown> = {}): Promise<boolean> {
     try {
-      await internalRequest(`${ANALYTICS_URL}/api/track`, {
+      const res = await internalRequest<AnalyticsEvent>(`${ANALYTICS_URL}/api/events`, {
         method: 'POST',
-        body: JSON.stringify({
-          event,
-          properties,
-          timestamp: new Date().toISOString(),
-        }),
+        body: JSON.stringify({ event, properties, timestamp: new Date().toISOString() }),
       });
-      return true;
+      return res.success ?? true;
     } catch {
       return false;
     }
@@ -171,45 +160,38 @@ export const analyticsOperations = {
 // EVENT BUS OPERATIONS
 // ============================================
 
+interface EventPublish { success?: boolean }
+
 export const eventBusOperations = {
-  async publish(type, category, data, context = {}) {
+  async publish(type: string, category: string, data: Record<string, unknown>): Promise<boolean> {
     try {
-      await internalRequest(`${EVENT_BUS_URL}/api/events`, {
+      const res = await internalRequest<EventPublish>(`${EVENT_BUS_URL}/api/events/publish`, {
         method: 'POST',
-        body: JSON.stringify({
-          type,
-          category,
-          version: '1.0.0',
-          source: 'REZ-universal-user-graph',
-          data,
-          ...context,
-          timestamp: new Date().toISOString(),
-        }),
+        body: JSON.stringify({ type, category, data, timestamp: new Date().toISOString() }),
       });
-      return true;
+      return res.success ?? true;
     } catch {
       return false;
     }
   },
 
-  async queryEvents(filters, limit = 100) {
+  async query(filters: Record<string, unknown>): Promise<{ events: unknown[] }> {
     try {
-      const res = await internalRequest(`${EVENT_BUS_URL}/api/events/query`, {
+      const res = await internalRequest<{ events: unknown[] }>(`${EVENT_BUS_URL}/api/events/query`, {
         method: 'POST',
-        body: JSON.stringify({ filters, limit }),
+        body: JSON.stringify(filters),
       });
-      return res.events || [];
+      return res;
     } catch {
-      return [];
+      return { events: [] };
     }
   },
 };
 
-// Default export
 export default {
   auth: authOperations,
   wallet: walletOperations,
-  notifications: notificationOperations,
+  notification: notificationOperations,
   analytics: analyticsOperations,
-  events: eventBusOperations,
+  eventBus: eventBusOperations,
 };

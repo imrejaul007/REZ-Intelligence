@@ -6,7 +6,7 @@
 
 import express, { Request, Response } from 'express';
 import { upsellEngine, UpsellOffer } from '../services/upsellEngine';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -35,7 +35,7 @@ router.post('/offers', async (req: Request, res: Response) => {
     });
 
     // Track impressions
-    await upsellEngine.trackConversion('offers_generated', customerId, 'shown');
+    await upsellEngine.trackConversion('clicked', customerId, offers[0]?.id || '');
 
     res.json({
       success: true,
@@ -43,8 +43,9 @@ router.post('/offers', async (req: Request, res: Response) => {
       message: offers.length > 0 ? upsellEngine.generateUpsellMessage(offers) : null,
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[Upsell] Failed to get offers', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -82,7 +83,7 @@ router.post('/ticket/:ticketId', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('[Upsell] Failed to get ticket offers', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Unknown error' });
   }
 });
 
@@ -111,7 +112,7 @@ router.post('/track', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('[Upsell] Failed to track', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Unknown error' });
   }
 });
 

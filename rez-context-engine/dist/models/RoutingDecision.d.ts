@@ -43,70 +43,25 @@ export interface CollaborationRequirement {
  * Schema for routing decision input validation
  */
 export declare const RoutingDecisionInputSchema: z.ZodObject<{
-    entryContext: z.ZodOptional<z.ZodType<Object, z.ZodTypeDef, Object>>;
+    entryContext: z.ZodOptional<z.ZodCustom<Object, Object>>;
     userId: z.ZodOptional<z.ZodString>;
     intent: z.ZodOptional<z.ZodString>;
     entities: z.ZodOptional<z.ZodArray<z.ZodObject<{
         type: z.ZodString;
         value: z.ZodString;
         confidence: z.ZodNumber;
-    }, "strip", z.ZodTypeAny, {
-        value: string;
-        type: string;
-        confidence: number;
-    }, {
-        value: string;
-        type: string;
-        confidence: number;
-    }>, "many">>;
+    }, z.core.$strip>>>;
     sessionHistory: z.ZodOptional<z.ZodArray<z.ZodObject<{
-        role: z.ZodEnum<["user", "assistant"]>;
+        role: z.ZodEnum<{
+            user: "user";
+            assistant: "assistant";
+        }>;
         content: z.ZodString;
         timestamp: z.ZodString;
-    }, "strip", z.ZodTypeAny, {
-        role: "user" | "assistant";
-        content: string;
-        timestamp: string;
-    }, {
-        role: "user" | "assistant";
-        content: string;
-        timestamp: string;
-    }>, "many">>;
-    preferences: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
-    metadata: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
-}, "strip", z.ZodTypeAny, {
-    userId?: string | undefined;
-    metadata?: Record<string, unknown> | undefined;
-    entryContext?: Object | undefined;
-    intent?: string | undefined;
-    entities?: {
-        value: string;
-        type: string;
-        confidence: number;
-    }[] | undefined;
-    sessionHistory?: {
-        role: "user" | "assistant";
-        content: string;
-        timestamp: string;
-    }[] | undefined;
-    preferences?: Record<string, unknown> | undefined;
-}, {
-    userId?: string | undefined;
-    metadata?: Record<string, unknown> | undefined;
-    entryContext?: Object | undefined;
-    intent?: string | undefined;
-    entities?: {
-        value: string;
-        type: string;
-        confidence: number;
-    }[] | undefined;
-    sessionHistory?: {
-        role: "user" | "assistant";
-        content: string;
-        timestamp: string;
-    }[] | undefined;
-    preferences?: Record<string, unknown> | undefined;
-}>;
+    }, z.core.$strip>>>;
+    preferences: z.ZodOptional<z.ZodRecord<z.core.$ZodRecordKey, z.core.SomeType>>;
+    metadata: z.ZodOptional<z.ZodRecord<z.core.$ZodRecordKey, z.core.SomeType>>;
+}, z.core.$strip>;
 export type RoutingDecisionInput = z.infer<typeof RoutingDecisionInputSchema>;
 /**
  * Routing decision structure that determines which expert handles the request

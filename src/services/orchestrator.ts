@@ -4,6 +4,7 @@
  * Central intelligence layer that coordinates all agents
  */
 
+import { randomUUID } from 'crypto';
 import {
   Agent,
   Task,
@@ -170,7 +171,7 @@ export class AgentOrchestrator {
     dependencies?: string[]
   ): Task {
     const task: Task = {
-      id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `task-${randomUUID()}`,
       type: this.classifyTask(description),
       priority,
       status: 'pending',

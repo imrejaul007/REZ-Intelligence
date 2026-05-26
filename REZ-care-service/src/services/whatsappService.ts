@@ -6,7 +6,7 @@
 
 import axios, { AxiosInstance } from 'axios';
 import crypto from 'crypto';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export interface WhatsAppMessage {
   from: string;
@@ -167,7 +167,7 @@ class WhatsAppService {
       };
 
       if (components) {
-        payload.template.components = components;
+        (payload as { template: { components?: typeof components } }).template.components = components;
       }
 
       const response = await this.http.post(`/${this.config.phoneNumberId}/messages`, payload);

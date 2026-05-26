@@ -6,7 +6,6 @@
 import axios, { AxiosError } from 'axios';
 import { getHealthMonitorConfig, ServiceConfig } from '../config/index.js';
 import {
-  CircuitBreaker,
   CircuitState,
   getCircuitBreakerRegistry,
 } from './circuitBreaker.js';

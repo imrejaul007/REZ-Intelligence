@@ -1,6 +1,11 @@
 import logger from './utils/logger';
-
+import crypto from 'crypto';
 import 'dotenv/config';
+
+// Crypto-based random number generator for secure randomness
+function secureRandom(): number {
+  return parseInt(crypto.randomBytes(4).toString('hex'), 16) / 0xFFFFFFFF;
+}
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -45,7 +50,7 @@ const generateTimeSeriesData = (days: number, baseValue: number, variance: numbe
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date(now);
     date.setDate(date.getDate() - i);
-    const value = baseValue + (Math.random() - 0.5) * variance;
+    const value = baseValue + (secureRandom() - 0.5) * variance;
     data.push({
       date: date.toISOString().split("T")[0],
       value: Math.round(value * 100) / 100,
@@ -119,25 +124,25 @@ const tools = [
                 metrics: {
                   revenue: {
                     total: Math.round(1301000 * multiplier),
-                    change: 12.5 + Math.random() * 5,
+                    change: 12.5 + secureRandom() * 5,
                     timeSeries: generateTimeSeriesData(period === "today" ? 24 : 30, 43000 * multiplier / 30, 5000),
                   },
                   orders: {
                     total: Math.round(87400 * multiplier),
-                    change: 8.2 + Math.random() * 4,
-                    averageOrderValue: 148.9 + Math.random() * 10,
+                    change: 8.2 + secureRandom() * 4,
+                    averageOrderValue: 148.9 + secureRandom() * 10,
                     timeSeries: generateTimeSeriesData(30, 2900 * multiplier / 30, 400),
                   },
                   users: {
                     active: Math.round(245000 * multiplier),
                     new: Math.round(12500 * multiplier),
-                    returning: 78.4 + Math.random() * 5,
+                    returning: 78.4 + secureRandom() * 5,
                     timeSeries: generateTimeSeriesData(30, 8100 * multiplier / 30, 1200),
                   },
                   performance: {
-                    conversionRate: 4.8 + Math.random() * 1.5,
-                    cartAbandonmentRate: 32.5 + Math.random() * 5,
-                    customerSatisfaction: 4.2 + Math.random() * 0.5,
+                    conversionRate: 4.8 + secureRandom() * 1.5,
+                    cartAbandonmentRate: 32.5 + secureRandom() * 5,
+                    customerSatisfaction: 4.2 + secureRandom() * 0.5,
                   },
                 },
                 lastUpdated: new Date().toISOString(),
@@ -343,12 +348,12 @@ const tools = [
                 metrics: {
                   dau: {
                     value: Math.round(48500 * multiplier),
-                    change: 5.2 + Math.random() * 3,
+                    change: 5.2 + secureRandom() * 3,
                     timeSeries: generateTimeSeriesData(30, 1616 * multiplier, 300),
                   },
                   mau: {
                     value: Math.round(245000 * multiplier),
-                    change: 8.7 + Math.random() * 4,
+                    change: 8.7 + secureRandom() * 4,
                     timeSeries: generateTimeSeriesData(12, 20416 * multiplier, 2500),
                   },
                   stickiness: {
@@ -356,15 +361,15 @@ const tools = [
                     benchmark: 20,
                   },
                   retention: {
-                    d1: 62.5 + Math.random() * 5,
-                    d7: 38.2 + Math.random() * 5,
-                    d30: 24.8 + Math.random() * 3,
+                    d1: 62.5 + secureRandom() * 5,
+                    d7: 38.2 + secureRandom() * 5,
+                    d30: 24.8 + secureRandom() * 3,
                     timeSeries: generateTimeSeriesData(12, 41.8, 8),
                   },
                   engagement: {
-                    avgSessionDuration: 285 + Math.random() * 60,
-                    sessionsPerUser: 3.2 + Math.random() * 1,
-                    pagesPerSession: 8.5 + Math.random() * 3,
+                    avgSessionDuration: 285 + secureRandom() * 60,
+                    sessionsPerUser: 3.2 + secureRandom() * 1,
+                    pagesPerSession: 8.5 + secureRandom() * 3,
                   },
                   userSegments: [
                     { segment: "Power Users", count: 24500, percentage: 10, avgOrders: 12.5 },

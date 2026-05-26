@@ -5,6 +5,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
+import { randomBytes } from 'crypto';
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 import { z } from 'zod';
 import {
@@ -24,6 +25,13 @@ import {
 } from '../types/workflow';
 import logger from './logger';
 import { CircuitBreaker, circuitBreakerRegistry } from '../../../shared/src/circuitBreaker';
+
+/**
+ * Generate a random number between 0 and 1 using crypto
+ */
+function cryptoRandom(): number {
+  return Number(randomBytes(4).readUInt32BE(0)) / 0xFFFFFFFF;
+}
 
 // ==================== SERVICE URLS ====================
 
@@ -202,7 +210,7 @@ async function withRetry<T>(
         throw lastError;
       }
 
-      const jitter = Math.random() * 0.3 * delay;
+      const jitter = cryptoRandom() * 0.3 * delay;
       const actualDelay = Math.min(delay + jitter, maxDelayMs);
 
       await new Promise(resolve => setTimeout(resolve, actualDelay));

@@ -1,7 +1,3 @@
-/**
- * AIMemoryModule.ts - AI Memory & Preferences for Merchant360
- * Integrates with AgentDB for intelligent merchant memory
- */
 import { AIMemory } from '../MerchantProfile';
 export interface MerchantPreference {
     id: string;

@@ -1,12 +1,13 @@
 "use strict";
-/**
- * Base service client with retry logic and error handling
- */
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ServiceClient = void 0;
+const logger_js_1 = __importDefault(require("./logger.js"));
+/**
+ * Base service client with retry logic and error handling
+ */
 const axios_1 = __importDefault(require("axios"));
 const axios_retry_1 = __importDefault(require("axios-retry"));
 class ServiceClient {
@@ -41,7 +42,7 @@ class ServiceClient {
         });
         // Request interceptor for logging
         this.client.interceptors.request.use((config) => {
-            console.debug(`[${this.serviceName}] ${config.method?.toUpperCase()} ${config.url}`);
+            logger_js_1.default.debug(`[${this.serviceName}] ${config.method?.toUpperCase()} ${config.url}`);
             return config;
         }, (error) => {
             console.error(`[${this.serviceName}] Request error:`, error);
@@ -49,7 +50,7 @@ class ServiceClient {
         });
         // Response interceptor for logging
         this.client.interceptors.response.use((response) => {
-            console.debug(`[${this.serviceName}] Response ${response.status}`);
+            logger_js_1.default.debug(`[${this.serviceName}] Response ${response.status}`);
             return response;
         }, (error) => {
             console.error(`[${this.serviceName}] Response error:`, {

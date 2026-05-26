@@ -1,7 +1,3 @@
-/**
- * Configuration Module
- * Centralized configuration management with environment variables
- */
 export declare const config: {
     readonly server: {
         readonly port: number;

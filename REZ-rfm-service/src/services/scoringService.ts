@@ -8,7 +8,7 @@ import {
   UNKNOWN_SEGMENT,
 } from '../types/index.js';
 import config from '../config/index.js';
-import logger from '../utils/logger.js';
+import logger from './utils/logger.js';
 
 /**
  * RFM Scoring Service

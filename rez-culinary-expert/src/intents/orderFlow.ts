@@ -5,7 +5,7 @@
 
 import { MongoClient, Db, Collection } from 'mongodb';
 import Redis from 'ioredis';
-import { logger } from '../utils/logger.js';
+import { logger } from './utils/logger';
 import { MenuItem } from '../services/menuService.js';
 
 export enum OrderStatus {

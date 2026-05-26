@@ -1,9 +1,4 @@
 "use strict";
-/**
- * REZ Merchant 360 - Unified Merchant Identity Service
- *
- * Main entry point for the Merchant360 service
- */
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -12,6 +7,12 @@ exports.AIMemoryModule = exports.AnalyticsModule = exports.ComplianceModule = ex
 exports.createService = createService;
 exports.getService = getService;
 exports.resetService = resetService;
+const logger_1 = __importDefault(require("./utils/logger"));
+/**
+ * REZ Merchant 360 - Unified Merchant Identity Service
+ *
+ * Main entry point for the Merchant360 service
+ */
 require("dotenv/config");
 // Re-export main service
 var Merchant360_1 = require("./Merchant360");
@@ -76,14 +77,14 @@ function resetService() {
 // CLI / STANDALONE MODE
 // ============================================
 async function main() {
-    console.log('Starting REZ Merchant 360 Service...');
+    logger_1.default.info('Starting REZ Merchant 360 Service...');
     const service = createService();
     // Initialize
     await service.initialize();
-    console.log('Service initialized successfully');
+    logger_1.default.info('Service initialized successfully');
     // Handle graceful shutdown
     const shutdown = async () => {
-        console.log('Shutting down...');
+        logger_1.default.info('Shutting down...');
         await service.shutdown();
         process.exit(0);
     };

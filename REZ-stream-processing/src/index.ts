@@ -10,6 +10,7 @@
  * Port: 4142
  */
 
+import crypto from 'crypto';
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
@@ -155,7 +156,7 @@ app.post('/api/publish', async (req, res) => {
 
     await kafkaService.send(topic, {
       value: {
-        eventId: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        eventId: `evt_${crypto.randomUUID()}`,
         ...event,
         _publishedAt: new Date().toISOString(),
         _publisher: 'api'
@@ -181,7 +182,7 @@ app.post('/api/publish/batch', async (req, res) => {
     const messages = events.map(event => ({
       key: event.key,
       value: {
-        eventId: event.eventId || `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        eventId: event.eventId || `evt_${crypto.randomUUID()}`,
         ...event,
         _publishedAt: new Date().toISOString()
       }

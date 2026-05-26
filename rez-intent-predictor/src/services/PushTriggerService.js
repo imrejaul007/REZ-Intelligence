@@ -1,4 +1,5 @@
 const UserIntentProfile = require('../models/UserIntentProfile');
+const { randomInt } = require('crypto');
 
 class PushTriggerService {
   constructor() {
@@ -184,7 +185,7 @@ class PushTriggerService {
     });
 
     return {
-      offer_type: offers[Math.floor(Math.random() * offers.length)],
+      offer_type: offers[randomInt(0, offers.length)],
       discount_percentage: Math.min(15 + (profile.metrics?.lifetime_value || 0) / 100, 25),
       categories: Array.from(viewedCategories).slice(0, 3),
       personalized_message: `As a valued ${profile.metrics?.lifetime_value > 500 ? 'gold' : 'silver'} member...`

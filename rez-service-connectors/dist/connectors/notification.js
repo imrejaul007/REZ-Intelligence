@@ -1,13 +1,17 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.NotificationConnector = void 0;
+exports.getNotificationConnector = getNotificationConnector;
+const logger_1 = __importDefault(require("./utils/logger"));
 /**
  * Notification Service Connector
  *
  * Connects to rez-notifications-service (Port 4023) for sending
  * push notifications, SMS, email, and in-app messages.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.NotificationConnector = void 0;
-exports.getNotificationConnector = getNotificationConnector;
 const client_1 = require("../utils/client");
 const DEFAULT_CONFIG = {
     timeout: 30000,
@@ -323,7 +327,7 @@ function getInternalToken() {
         return tokens.orchestrator || tokens.notification || '';
     }
     catch {
-        console.warn('[NotificationConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+        logger_1.default.warn('[NotificationConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
         return '';
     }
 }

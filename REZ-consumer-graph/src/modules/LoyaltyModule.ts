@@ -3,6 +3,7 @@
  * Manages loyalty points, tiers, and rewards
  */
 
+import crypto from 'crypto';
 import axios, { AxiosInstance } from 'axios';
 import winston from 'winston';
 import { ConsumerGraph } from '../ConsumerGraph';
@@ -215,7 +216,7 @@ export class LoyaltyModule {
 
     // Create loyalty event
     const event: LoyaltyEvent = {
-      event_id: `loyalty_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      event_id: `${crypto.randomUUID()}`,
       user_id: userId,
       event_type: 'earn',
       points: pointsEarned,
@@ -273,7 +274,7 @@ export class LoyaltyModule {
 
     // Create loyalty event
     const event: LoyaltyEvent = {
-      event_id: `loyalty_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      event_id: `${crypto.randomUUID()}`,
       user_id: userId,
       event_type: 'redeem',
       points: -points,
@@ -343,7 +344,7 @@ export class LoyaltyModule {
 
       // Create tier change event
       const event: LoyaltyEvent = {
-        event_id: `loyalty_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        event_id: `${crypto.randomUUID()}`,
         user_id: userId,
         event_type: 'tier_change',
         points: 0,

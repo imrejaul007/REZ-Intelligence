@@ -15,7 +15,7 @@ import {
   NotFoundError
 } from '../middleware/errorHandler';
 import { PredictionType, ChurnRisk } from '../types';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 
 const router = Router();
 
@@ -56,7 +56,7 @@ router.get('/:userId/churn',
       success: true,
       data: prediction,
       timestamp: new Date().toISOString(),
-      requestId: (req as unknown).requestId
+      requestId: (req as unknown as Record<string, unknown>).requestId
     });
   })
 );
@@ -78,7 +78,7 @@ router.get('/:userId/ltv',
       success: true,
       data: prediction,
       timestamp: new Date().toISOString(),
-      requestId: (req as unknown).requestId
+      requestId: (req as unknown as Record<string, unknown>).requestId
     });
   })
 );
@@ -100,7 +100,7 @@ router.get('/:userId/revisit',
       success: true,
       data: prediction,
       timestamp: new Date().toISOString(),
-      requestId: (req as unknown).requestId
+      requestId: (req as unknown as Record<string, unknown>).requestId
     });
   })
 );
@@ -122,7 +122,7 @@ router.get('/:userId/conversion',
       success: true,
       data: prediction,
       timestamp: new Date().toISOString(),
-      requestId: (req as unknown).requestId
+      requestId: (req as unknown as Record<string, unknown>).requestId
     });
   })
 );
@@ -144,7 +144,7 @@ router.get('/:userId/all',
       success: true,
       data: predictions,
       timestamp: new Date().toISOString(),
-      requestId: (req as unknown).requestId
+      requestId: (req as unknown as Record<string, unknown>).requestId
     });
   })
 );
@@ -173,7 +173,7 @@ router.post('/batch',
       success: true,
       data: result,
       timestamp: new Date().toISOString(),
-      requestId: (req as unknown).requestId
+      requestId: (req as unknown as Record<string, unknown>).requestId
     });
   })
 );
@@ -196,7 +196,7 @@ router.get('/batch/:jobId',
       success: true,
       data: job,
       timestamp: new Date().toISOString(),
-      requestId: (req as unknown).requestId
+      requestId: (req as unknown as Record<string, unknown>).requestId
     });
   })
 );
@@ -222,7 +222,7 @@ router.get('/segments/at-risk',
       success: true,
       data: segment,
       timestamp: new Date().toISOString(),
-      requestId: (req as unknown).requestId
+      requestId: (req as unknown as Record<string, unknown>).requestId
     });
   })
 );
@@ -247,7 +247,7 @@ router.get('/segments/high-value',
       success: true,
       data: segment,
       timestamp: new Date().toISOString(),
-      requestId: (req as unknown).requestId
+      requestId: (req as unknown as Record<string, unknown>).requestId
     });
   })
 );
@@ -264,7 +264,7 @@ router.get('/stats',
       success: true,
       data: stats,
       timestamp: new Date().toISOString(),
-      requestId: (req as unknown).requestId
+      requestId: (req as unknown as Record<string, unknown>).requestId
     });
   })
 );

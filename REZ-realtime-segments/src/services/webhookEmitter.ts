@@ -1,6 +1,5 @@
-import logger from './utils/logger';
+import { logger } from '../utils/logger.js';
 
-import fetch from 'node-fetch';
 import config from '../config/index.js';
 import type { SegmentEventPayload, SegmentEventType } from '../types/index.js';
 
@@ -10,6 +9,7 @@ interface WebhookDeliveryResult {
   statusCode?: number;
   error?: string;
   deliveredAt: string;
+  attempts?: number;
 }
 
 interface WebhookBatchResult {
@@ -26,7 +26,6 @@ let processingInterval: ReturnType<typeof setInterval> | null = null;
 
 // Maximum retries for failed webhooks
 const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 1000;
 
 // Webhook retry tracking
 const retryTracker: Map<string, { attempts: number; lastAttempt: string }> = new Map();

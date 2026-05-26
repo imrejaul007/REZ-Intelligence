@@ -6,8 +6,9 @@ import winston from 'winston';
 
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
-const logFormat = printf(({ level, message, timestamp, stack, ...metadata }) => {
-  let msg = `${timestamp} [${level}]: ${message}`;
+const logFormat = printf((info: winston.Logform.TransformableInfo) => {
+  const { level, message, timestamp: ts, stack, ...metadata } = info;
+  let msg = `${ts} [${level}]: ${message}`;
 
   if (Object.keys(metadata).length > 0) {
     msg += ` ${JSON.stringify(metadata)}`;

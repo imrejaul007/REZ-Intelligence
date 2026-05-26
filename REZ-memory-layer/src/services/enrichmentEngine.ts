@@ -19,8 +19,8 @@ const clients = {
 };
 
 export class EnrichmentEngine {
-  async enrichEvent(event): Promise<unknown> {
-    const enrichments: unknown = {};
+  async enrichEvent(event: { id?: string; data?: { productId?: string; merchantId?: string; campaignId?: string } }): Promise<Record<string, unknown>> {
+    const enrichments: Record<string, unknown> = {};
 
     try {
       if (event.data?.productId) {

@@ -4,6 +4,7 @@
  */
 
 import { EventEmitter } from 'events';
+import { randomBytes } from 'crypto';
 
 // ============================================================================
 // Types & Interfaces
@@ -696,7 +697,7 @@ export class Customer360 extends EventEmitter {
   // ==========================================================================
 
   private generateId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `${Date.now()}-${randomBytes(4).toString('hex')}`;
   }
 
   /**

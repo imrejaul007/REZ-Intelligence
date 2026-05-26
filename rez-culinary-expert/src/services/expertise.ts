@@ -5,7 +5,7 @@
 
 import { MongoClient, Db } from 'mongodb';
 import Redis from 'ioredis';
-import { logger } from '../utils/logger.js';
+import { logger } from './utils/logger';
 import {
   CUISINES,
   DIETARY_TAGS,

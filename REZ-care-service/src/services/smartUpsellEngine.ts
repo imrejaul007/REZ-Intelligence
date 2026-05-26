@@ -10,7 +10,7 @@
  * - Related products
  */
 
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { serviceConnector } from './serviceConnector';
 
 export interface Product {
@@ -112,9 +112,10 @@ class SmartUpsellEngine {
       // Get current product
       let currentProduct: Product | null = null;
       if (context.productId) {
-        currentProduct = await serviceConnector.getProduct(context.productId) as Product;
+        const result = await serviceConnector.getProduct(context.productId) as { product?: unknown; error?: string };
+        currentProduct = result?.product as Product | undefined || null;
       } else if (context.orderId) {
-        const order = await serviceConnector.getOrder(context.orderId);
+        const order = await serviceConnector.getOrder(context.orderId) as { items?: Product[] } | null;
         if (order?.items?.[0]) {
           currentProduct = order.items[0];
         }
@@ -159,9 +160,10 @@ class SmartUpsellEngine {
     try {
       let currentProduct: Product | null = null;
       if (context.productId) {
-        currentProduct = await serviceConnector.getProduct(context.productId) as Product;
+        const result = await serviceConnector.getProduct(context.productId) as { product?: unknown; error?: string };
+        currentProduct = result?.product as Product | undefined || null;
       } else if (context.orderId) {
-        const order = await serviceConnector.getOrder(context.orderId);
+        const order = await serviceConnector.getOrder(context.orderId) as { items?: Product[] } | null;
         if (order?.items?.[0]) {
           currentProduct = order.items[0];
         }
@@ -325,8 +327,8 @@ class SmartUpsellEngine {
         headers: { 'X-Internal-Token': process.env.INTERNAL_SERVICE_TOKEN || 'rez-internal-token' },
       });
       if (res.ok) {
-        const data = await res.json();
-        return (data as unknown).products || [];
+        const data = await res.json() as { products?: Product[] };
+        return data.products || [];
       }
     } catch {
       // Use mock data
@@ -351,16 +353,16 @@ class SmartUpsellEngine {
 
     try {
       // Get customer profile for preferences
-      const profile = await serviceConnector.getCustomerProfile(customerId);
+      const profile = await serviceConnector.getCustomerProfile(customerId) as { preferences?: Record<string, unknown> } | null;
       const preferences = profile?.preferences || {};
 
       // Get customer LTV for pricing tier
-      const ltvData = await serviceConnector.getLTV(customerId);
+      const ltvData = await serviceConnector.getLTV(customerId) as { ltv?: number } | null;
       const isVIP = (ltvData?.ltv || 0) > 50000;
 
       // If VIP, add premium recommendations
       if (isVIP) {
-        const premiumProducts = await this.searchCatalog('premium', preferences.category);
+        const premiumProducts = await this.searchCatalog('premium', String(preferences.category || ''));
         premiumProducts.slice(0, 2).forEach(product => {
           offers.push({
             id: `vip_${product.id}`,
@@ -401,7 +403,13 @@ class SmartUpsellEngine {
   /**
    * Generate agent suggestions for conversation
    */
-  generateAgentSuggestions(offers): string {
+  generateAgentSuggestions(offers: {
+    upgrades: UpsellOffer[];
+    accessories: UpsellOffer[];
+    complementary: UpsellOffer[];
+    premium: UpsellOffer[];
+    newArrivals: UpsellOffer[];
+  }): string {
     let message = '\n\n📦 **UPSELL SUGGESTIONS FOR THIS CUSTOMER:**\n\n';
 
     const allOffers = [

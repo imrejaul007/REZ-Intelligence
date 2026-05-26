@@ -3,6 +3,8 @@
  * Configures test environment with mocks and fixtures
  */
 
+import { randomUUID } from 'crypto';
+
 // Set test environment variables
 process.env.NODE_ENV = 'test';
 process.env.MONGODB_URI = 'mongodb://localhost:27017/rez-whatsapp-test';
@@ -64,7 +66,7 @@ jest.mock('twilio', () => {
   return jest.fn().mockImplementation(() => ({
     messages: {
       create: jest.fn().mockResolvedValue({
-        sid: 'SM' + Math.random().toString(36).substring(7),
+        sid: 'SM' + require('crypto').randomUUID().replace(/-/g, '').substring(0, 8),
         status: 'queued',
       }),
     },
@@ -72,7 +74,7 @@ jest.mock('twilio', () => {
       v1: {
         conversations: {
           create: jest.fn().mockResolvedValue({
-            sid: 'CK' + Math.random().toString(36).substring(7),
+            sid: 'CK' + require('crypto').randomUUID().replace(/-/g, '').substring(0, 8),
           }),
         },
       },
@@ -110,11 +112,11 @@ jest.mock('../utils/logger', () => ({
 export const mockValidToken = 'test-whatsapp-token-98765';
 export const mockInvalidToken = 'invalid-whatsapp-token';
 export const mockPhoneNumber = '+919876543210';
-export const mockSessionId = 'session_' + Math.random().toString(36).substring(7);
+export const mockSessionId = 'session_' + randomUUID().replace(/-/g, '').substring(0, 8);
 
 export function generateMockMessage(overrides = {}) {
   return {
-    id: 'msg_' + Math.random().toString(36).substring(7),
+    id: 'msg_' + randomUUID().replace(/-/g, '').substring(0, 8),
     from: mockPhoneNumber,
     to: '+1234567890',
     body: 'Hello, this is a test message',
@@ -129,7 +131,7 @@ export function generateMockMessage(overrides = {}) {
 
 export function generateMockConversation(overrides = {}) {
   return {
-    conversationId: 'conv_' + Math.random().toString(36).substring(7),
+    conversationId: 'conv_' + randomUUID().replace(/-/g, '').substring(0, 8),
     sessionId: mockSessionId,
     userId: 'user_123',
     merchantId: 'merchant_456',
@@ -144,7 +146,7 @@ export function generateMockConversation(overrides = {}) {
 
 export function generateMockCartItem(overrides = {}) {
   return {
-    productId: 'prod_' + Math.random().toString(36).substring(7),
+    productId: 'prod_' + randomUUID().replace(/-/g, '').substring(0, 8),
     name: 'Test Product',
     price: 299,
     quantity: 1,

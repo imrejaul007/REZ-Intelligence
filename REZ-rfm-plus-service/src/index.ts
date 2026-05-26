@@ -3,9 +3,9 @@
  * Advanced customer segmentation beyond RFM
  */
 
-import express import logger from './utils/logger';
-import from 'express';
+import express, { Request, Response } from 'express';
 import mongoose from 'mongoose';
+import { logger } from './utils/logger.js';
 import { rfmService } from './services/rfmService';
 
 const app = express();

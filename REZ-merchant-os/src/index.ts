@@ -1,11 +1,11 @@
 import 'dotenv/config';
-import express, { Request, Response } import logger from './utils/logger';
-import from 'express';
+import express, { Request, Response } from 'express';
+import { logger } from './utils/logger.js';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import { v4 as uuidv4 } from 'uuid';
-import { logger, requestIdMiddleware } from './logger.js';
+import { requestIdMiddleware } from './logger.js';
 import { errorHandler, asyncHandler } from './errors.js';
 import { engine } from './services/MerchantOSEngine.js';
 import {

@@ -1,10 +1,3 @@
-// Middleware barrel export
-export {
-  internalAuth,
-  corsMiddleware,
-  requestLogger,
-  rateLimitHeaders,
-  errorHandler,
-  notFoundHandler,
-  default as authMiddleware
-} from './auth.js';
+export * from './auth.js';
+export * from './rateLimit.js';
+export * from './errorHandler.js';

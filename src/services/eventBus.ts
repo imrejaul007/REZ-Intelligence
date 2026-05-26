@@ -1,4 +1,5 @@
 import { logger } from '../utils/logger';
+import { randomUUID } from 'crypto';
 
 /**
  * REZ Agent Orchestrator - Real-Time Event Bus
@@ -114,7 +115,7 @@ export class EventBus {
   async publish<T>(event: Omit<Event<T>, 'id' | 'timestamp'>): Promise<void> {
     const fullEvent: Event<T> = {
       ...event,
-      id: `evt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `evt-${randomUUID()}`,
       timestamp: new Date(),
     };
 
@@ -156,7 +157,7 @@ export class EventBus {
     handler: EventHandler<T>,
     options?: { filters?: Record<string, unknown>; priority?: number }
   ): string {
-    const subscriptionId = `sub-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const subscriptionId = `sub-${randomUUID()}`;
 
     const subscription: Subscription = {
       id: subscriptionId,

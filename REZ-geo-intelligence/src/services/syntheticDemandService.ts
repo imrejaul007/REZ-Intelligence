@@ -16,6 +16,7 @@ import mongoose, { Schema, Model, type Document } from 'mongoose';
 import { Redis } from 'ioredis';
 import type { Redis as RedisType } from 'ioredis';
 import axios from 'axios';
+import { randomInt } from 'crypto';
 import {
   SyntheticDemandIndex,
   DemandComponents,
@@ -323,8 +324,8 @@ class SyntheticDemandService {
 
     // Return mock data for development
     return {
-      rideFrequency: this.normalizeRideFrequency(Math.random() * 100),
-      rideDestinationRatio: 0.4 + Math.random() * 0.4,
+      rideFrequency: this.normalizeRideFrequency(randomInt(0, 100)),
+      rideDestinationRatio: 0.4 + randomInt(0, 41) / 100,
       confidence: 0.3,
       source: 'mock',
       timestamp: new Date(),
@@ -354,9 +355,9 @@ class SyntheticDemandService {
 
     // Mock data
     return {
-      orderVelocity: this.normalizeOrderVelocity(Math.random() * 50),
-      basketSize: this.normalizeBasketSize(200 + Math.random() * 600),
-      fulfillmentRate: 0.85 + Math.random() * 0.1,
+      orderVelocity: this.normalizeOrderVelocity(randomInt(0, 51)),
+      basketSize: this.normalizeBasketSize(200 + randomInt(0, 601)),
+      fulfillmentRate: 0.85 + randomInt(0, 11) / 100,
       confidence: 0.3,
       source: 'mock',
       timestamp: new Date(),
@@ -398,10 +399,10 @@ class SyntheticDemandService {
     }
 
     // Mock with occasional events
-    const hasEvent = Math.random() > 0.7;
+    const hasEvent = randomInt(0, 100) > 70;
     return {
-      events: hasEvent ? [{ eventId: `evt_${Date.now()}`, attendance: 50 + Math.floor(Math.random() * 200) }] : [],
-      buzz: hasEvent ? 40 + Math.random() * 40 : 10 + Math.random() * 20,
+      events: hasEvent ? [{ eventId: `evt_${Date.now()}`, attendance: 50 + randomInt(0, 201) }] : [],
+      buzz: hasEvent ? 40 + randomInt(0, 41) : 10 + randomInt(0, 21),
     };
   }
 
@@ -426,7 +427,7 @@ class SyntheticDemandService {
     const hour = new Date().getHours();
     const conditions = ['clear', 'cloudy', 'rain', 'hot'];
     const weights = [0.5, 0.2, 0.1, 0.2];
-    const rand = Math.random();
+    const rand = randomInt(0, 100) / 100;
     let cumWeight = 0;
     let condition = 'clear';
     for (let i = 0; i < conditions.length; i++) {
@@ -464,7 +465,7 @@ class SyntheticDemandService {
 
     // Mock social buzz
     return {
-      eventBuzz: 20 + Math.random() * 60,
+      eventBuzz: 20 + randomInt(0, 61),
       confidence: 0.3,
       source: 'mock',
       timestamp: new Date(),
@@ -493,8 +494,8 @@ class SyntheticDemandService {
 
     // Mock footfall
     return {
-      footfallCount: this.normalizeFootfall(100 + Math.random() * 500),
-      footfallDensity: 0.3 + Math.random() * 0.5,
+      footfallCount: this.normalizeFootfall(100 + randomInt(0, 501)),
+      footfallDensity: 0.3 + randomInt(0, 51) / 100,
       confidence: 0.3,
       source: 'mock',
       timestamp: new Date(),

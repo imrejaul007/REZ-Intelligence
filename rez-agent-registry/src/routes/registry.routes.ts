@@ -145,7 +145,7 @@ export function createRegistryRoutes(config: RegistryRoutesConfig): Router {
           error: {
             code: 'VALIDATION_ERROR',
             message: 'Invalid request body',
-            details: validation.error.errors,
+            details: validation.error.issues,
           },
         });
         return;
@@ -219,7 +219,7 @@ export function createRegistryRoutes(config: RegistryRoutesConfig): Router {
           error: {
             code: 'VALIDATION_ERROR',
             message: 'Invalid request body',
-            details: validation.error.errors,
+            details: validation.error.issues,
           },
         });
         return;
@@ -261,7 +261,7 @@ export function createRegistryRoutes(config: RegistryRoutesConfig): Router {
           error: {
             code: 'VALIDATION_ERROR',
             message: 'Invalid request body',
-            details: validation.error.errors,
+            details: validation.error.issues,
           },
         });
         return;

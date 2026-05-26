@@ -5,6 +5,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
+import { randomInt } from 'crypto';
 import logger from './utils/logger';
 import type {
   GeoPoint,
@@ -700,7 +701,7 @@ export async function searchNearby(request: SearchNearbyRequest): Promise<Search
       }
       if (filters.openNow) {
         // Would check operating hours in production
-        results = results.filter(() => Math.random() > 0.5);
+        results = results.filter(() => randomInt(0, 100) > 50);
       }
     }
 

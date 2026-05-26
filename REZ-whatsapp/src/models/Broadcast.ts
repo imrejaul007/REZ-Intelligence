@@ -29,7 +29,7 @@ export interface IBroadcast extends Document {
   updatedAt: Date;
   metadata: Record<string, unknown>;
   canStart(): boolean;
-  start(): Promise<void>;
+  start(recipients?: Array<{ userId: string; phone: string }>): void;
   cancel(): Promise<void>;
   getProgress(): BroadcastProgress;
 }

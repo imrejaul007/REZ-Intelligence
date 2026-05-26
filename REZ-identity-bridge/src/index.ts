@@ -1,5 +1,5 @@
-import express, { Express, Request, Response, NextFunction } import logger from './utils/logger';
-import from 'express';
+import express, { Express, Request, Response, NextFunction } from 'express';
+import { logger } from './utils/logger.js';
 import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 import axios from 'axios';
 import cors from 'cors';
@@ -8,7 +8,6 @@ import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
-import { createLogger, requestIdMiddleware } from '../../shared';
 
 // ============================================
 // TYPE DEFINITIONS
@@ -20,7 +19,7 @@ type IdentityStatus = 'active' | 'merged' | 'flagged';
 interface ILinkedAccount {
   appId: string;
   userId: string;
-  identifiers: Types.Mixed;
+  identifiers: Record<string, unknown>;
   linkedAt: Date;
   confidence: number;
 }
@@ -30,7 +29,7 @@ interface IProfile {
   email?: string;
   name?: string;
   devices: string[];
-  preferences?: Types.Mixed;
+  preferences?: Record<string, unknown>;
 }
 
 interface IStats {
@@ -119,10 +118,7 @@ unifiedIdentitySchema.index({ 'profile.email': 1 });
 const UnifiedIdentity: Model<IUnifiedIdentity> = mongoose.model<IUnifiedIdentity>('UnifiedIdentity', unifiedIdentitySchema);
 
 // ============================================
-// LOGGER
-// ============================================
-
-const logger = createLogger('identity-bridge');
+// LOGGER (already imported from ./utils/logger.js)
 
 // ============================================
 // ENVIRONMENT CONFIGURATION
@@ -201,7 +197,10 @@ app.use(limiter);
 app.use(express.json({ limit: '100kb' }));
 
 // Request ID middleware
-app.use(requestIdMiddleware);
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  req.headers['x-request-id'] = (req.headers['x-request-id'] as string) || crypto.randomUUID();
+  next();
+});
 
 // Authentication middleware
 const PUBLIC_PATHS = ['/health', '/ready', '/resolve'];
@@ -262,7 +261,9 @@ app.get('/health', (_req: Request, res: Response) => {
 
 app.get('/ready', async (_req: Request, res: Response) => {
   try {
-    await mongoose.connection.db.admin().ping();
+    if (mongoose.connection.db) {
+      await mongoose.connection.db.admin().ping();
+    }
     res.json({ status: 'ready' });
   } catch (err) {
     res.status(503).json({ error: 'Not ready' });
@@ -278,7 +279,7 @@ app.post('/resolve', async (req: Request, res: Response) => {
         error: 'Bad Request',
         code: 'VALIDATION_ERROR',
         message: 'Invalid request body',
-        details: validation.error.errors.map(e => ({
+        details: validation.error.issues.map(e => ({
           field: e.path.join('.'),
           message: e.message
         }))
@@ -447,7 +448,7 @@ app.post('/:unifiedId/link', async (req: Request, res: Response) => {
         error: 'Bad Request',
         code: 'VALIDATION_ERROR',
         message: 'Invalid request body',
-        details: validation.error.errors
+        details: validation.error.issues
       });
       return;
     }

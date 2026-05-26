@@ -1,7 +1,15 @@
+import { randomBytes } from 'crypto';
 import { ProcessedOrchestrationRequest, AgentCapability } from '../models/OrchestrationRequest';
 import { AgentInfo } from './agentRegistry';
 import { appConfig } from '../config';
 import { logger } from '../utils/logger';
+
+/**
+ * Generate a random number between 0 and 1 using crypto
+ */
+function cryptoRandom(): number {
+  return Number(randomBytes(4).readUInt32BE(0)) / 0xFFFFFFFF;
+}
 
 export interface SelectionResult {
   selectedAgent: AgentInfo | null;
@@ -246,7 +254,7 @@ export class ExpertSelector {
     }
 
     // Small random factor to prevent always selecting the same agent
-    score += Math.random() * 5;
+    score += cryptoRandom() * 5;
 
     return score;
   }

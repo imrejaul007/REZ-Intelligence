@@ -34,7 +34,7 @@ export interface CircuitBreakerOptions {
   halfOpenMaxCalls?: number;
 }
 
-const DEFAULT_OPTIONS: Required<CircuitBreakerOptions> = {
+const _DEFAULT_OPTIONS: Required<CircuitBreakerOptions> = {
   failureThreshold: 3,
   resetTimeout: 30000,
   halfOpenMaxCalls: 1,

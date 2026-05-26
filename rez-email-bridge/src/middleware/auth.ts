@@ -1,28 +1,45 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger } from '../utils/logger';
+import { logger } from './utils/logger';
 
-export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
-  const token = req.headers['x-internal-token'] as string;
-  const validTokens = JSON.parse(process.env.INTERNAL_SERVICE_TOKENS_JSON || '{}');
+export interface AuthConfig {
+  apiKeys?: string[];
+  internalTokens?: string[];
+  bypassPaths?: string[];
+}
 
-  // Skip auth for health check
-  if (req.path === '/health') {
-    return next();
-  }
+export function createAuthMiddleware(config: AuthConfig) {
+  const { apiKeys = [], internalTokens = [], bypassPaths = ['/health', '/ready'] } = config;
 
-  if (!token) {
-    logger.warn('Missing auth token', { path: req.path, ip: req.ip });
-    res.status(401).json({ error: 'Authentication required' });
-    return;
-  }
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const path = req.path;
 
-  // Check if token is valid
-  const isValid = Object.values(validTokens).includes(token);
-  if (!isValid && token !== 'orchestrator-token') {
-    logger.warn('Invalid auth token', { path: req.path, ip: req.ip });
-    res.status(403).json({ error: 'Invalid token' });
-    return;
-  }
+    // Bypass health checks
+    if (bypassPaths.some(p => path.startsWith(p))) {
+      return next();
+    }
 
-  next();
+    // Check API key
+    const apiKey = req.headers['x-api-key'] as string | undefined;
+    if (apiKey && apiKeys.includes(apiKey)) {
+      return next();
+    }
+
+    // Check internal token
+    const internalToken = req.headers['x-internal-token'] as string | undefined;
+    if (internalToken && internalTokens.includes(internalToken)) {
+      return next();
+    }
+
+    // No valid auth found
+    logger.warn('Unauthorized access attempt', {
+      path,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    res.status(401).json({
+      error: 'Unauthorized',
+      message: 'Valid API key or internal token required',
+    });
+  };
 }

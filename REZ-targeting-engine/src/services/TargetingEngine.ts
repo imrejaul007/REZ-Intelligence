@@ -1,4 +1,5 @@
 import { FrequencyCap } from '../models/FrequencyCap';
+import { randomInt } from 'crypto';
 import { BudgetPacing } from '../models/BudgetPacing';
 import { PREDEFINED_SEGMENTS, CHANNEL_CONFIG, FREQUENCY_CAPPING_DEFAULTS } from '../config/constants';
 import {
@@ -638,7 +639,7 @@ class TargetingEngine {
       baseDate.setHours(range.start, 0, 0, 0);
     } else if (now.getHours() <= range.end) {
       // We're within the window, add some random delay (0-30 min)
-      baseDate.setHours(now.getHours(), now.getMinutes() + Math.floor(Math.random() * 30), 0, 0);
+      baseDate.setHours(now.getHours(), now.getMinutes() + randomInt(0, 30), 0, 0);
     } else {
       // After the window, schedule for tomorrow
       baseDate.setDate(baseDate.getDate() + 1);

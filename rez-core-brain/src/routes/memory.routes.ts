@@ -4,9 +4,15 @@ import { memoryService } from '../services/memoryService';
 import { authenticate, requestId } from '../middleware/auth';
 import { MemoryType } from '../models/UserMemory';
 import { logger } from '../utils/logger';
-import { v4 as uuidv4 } from 'uuid';
+import { CreateMemoryInput } from '../services/memoryService';
 
 const router = Router();
+
+// Extend Request type to include custom properties
+interface AuthenticatedRequest extends Request {
+  userId?: string;
+  requestId?: string;
+}
 
 // Validation schemas
 const createMemorySchema = z.object({
@@ -39,10 +45,10 @@ const searchMemoriesSchema = z.object({
  * POST /api/memory
  * Create a new memory
  */
-router.post('/', requestId, authenticate, async (req: Request, res: Response) => {
+router.post('/', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
-    const requestId = req.requestId!;
+    const requestIdVal = req.requestId || 'unknown';
 
     const validation = createMemorySchema.safeParse(req.body);
     if (!validation.success) {
@@ -59,17 +65,23 @@ router.post('/', requestId, authenticate, async (req: Request, res: Response) =>
 
     const memory = await memoryService.createMemory({
       userId,
-      ...validation.data,
+      content: validation.data.content,
+      type: validation.data.type as MemoryType,
+      metadata: validation.data.metadata,
+      importance: validation.data.importance,
+      tags: validation.data.tags,
+      source: validation.data.source,
+      ttlSeconds: validation.data.ttlSeconds,
     });
 
-    logger.info(`Memory created: ${memory.id}`, { requestId, userId });
+    logger.info(`Memory created: ${memory.id}`, { requestId: requestIdVal, userId });
 
     res.status(201).json({
       success: true,
       data: memory,
       meta: {
         timestamp: new Date(),
-        requestId,
+        requestId: requestIdVal,
       },
     });
   } catch (error) {
@@ -88,7 +100,7 @@ router.post('/', requestId, authenticate, async (req: Request, res: Response) =>
  * GET /api/memory/:id
  * Get a memory by ID
  */
-router.get('/:id', requestId, authenticate, async (req: Request, res: Response) => {
+router.get('/:id', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
     const { id } = req.params;
@@ -130,7 +142,7 @@ router.get('/:id', requestId, authenticate, async (req: Request, res: Response) 
  * GET /api/memory
  * Get all memories for the current user
  */
-router.get('/', requestId, authenticate, async (req: Request, res: Response) => {
+router.get('/', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
@@ -189,7 +201,7 @@ router.get('/', requestId, authenticate, async (req: Request, res: Response) => 
  * PATCH /api/memory/:id
  * Update a memory
  */
-router.patch('/:id', requestId, authenticate, async (req: Request, res: Response) => {
+router.patch('/:id', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
     const { id } = req.params;
@@ -246,7 +258,7 @@ router.patch('/:id', requestId, authenticate, async (req: Request, res: Response
  * DELETE /api/memory/:id
  * Delete a memory
  */
-router.delete('/:id', requestId, authenticate, async (req: Request, res: Response) => {
+router.delete('/:id', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
     const { id } = req.params;
@@ -289,7 +301,7 @@ router.delete('/:id', requestId, authenticate, async (req: Request, res: Respons
  * DELETE /api/memory
  * Delete all memories for the current user
  */
-router.delete('/', requestId, authenticate, async (req: Request, res: Response) => {
+router.delete('/', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
     const type = req.query.type as MemoryType | undefined;
@@ -322,7 +334,7 @@ router.delete('/', requestId, authenticate, async (req: Request, res: Response) 
  * POST /api/memory/search
  * Semantic search for memories
  */
-router.post('/search', requestId, authenticate, async (req: Request, res: Response) => {
+router.post('/search', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
@@ -374,7 +386,7 @@ router.post('/search', requestId, authenticate, async (req: Request, res: Respon
  * POST /api/memory/batch
  * Batch create memories
  */
-router.post('/batch', requestId, authenticate, async (req: Request, res: Response) => {
+router.post('/batch', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
@@ -395,9 +407,15 @@ router.post('/batch', requestId, authenticate, async (req: Request, res: Respons
       return;
     }
 
-    const memoriesWithUserId = validation.data.memories.map((m) => ({
-      ...m,
+    const memoriesWithUserId: CreateMemoryInput[] = validation.data.memories.map((m) => ({
       userId,
+      content: m.content,
+      type: m.type as MemoryType,
+      metadata: m.metadata,
+      importance: m.importance,
+      tags: m.tags,
+      source: m.source,
+      ttlSeconds: m.ttlSeconds,
     }));
 
     const memories = await memoryService.batchCreateMemories(memoriesWithUserId);
@@ -428,7 +446,7 @@ router.post('/batch', requestId, authenticate, async (req: Request, res: Respons
  * GET /api/memory/stats
  * Get memory statistics for the current user
  */
-router.get('/stats', requestId, authenticate, async (req: Request, res: Response) => {
+router.get('/stats', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
@@ -458,7 +476,7 @@ router.get('/stats', requestId, authenticate, async (req: Request, res: Response
  * POST /api/memory/:id/access
  * Access a memory (increment access count)
  */
-router.post('/:id/access', requestId, authenticate, async (req: Request, res: Response) => {
+router.post('/:id/access', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
     const { id } = req.params;

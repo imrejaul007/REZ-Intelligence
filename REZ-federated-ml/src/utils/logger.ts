@@ -1,25 +1,23 @@
 import winston from 'winston';
 
-const { combine, timestamp, printf, colorize, errors } = winston.format;
+const { combine, timestamp, printf, colorize } = winston.format;
 
-const logFormat = printf(({ level, message, timestamp, stack }) => {
-  return `${timestamp} [${level}]: ${stack || message}`;
+const logFormat = printf(({ level, message, timestamp, ...meta }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
+  const metaStr = Object.keys(meta).length ? JSON.stringify(meta) : '';
+  return `${timestamp} [${level}]: ${message} ${metaStr}`;
 });
 
 export const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: combine(
-    errors({ stack: true }),
-    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    timestamp(),
     logFormat
   ),
   transports: [
     new winston.transports.Console({
-      format: combine(
-        colorize(),
-        timestamp({ format: 'HH:mm:ss' }),
-        logFormat
-      )
-    })
-  ]
+      format: combine(colorize(), timestamp(), logFormat),
+    }),
+  ],
 });
+
+export default logger;

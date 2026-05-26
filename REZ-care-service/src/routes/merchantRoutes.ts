@@ -11,15 +11,69 @@
 
 import express, { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { mlIntelligence } from '../services/mlIntelligence';
 
 const router = express.Router();
 
+// Types for merchant data
+interface TicketMessage {
+  id: string;
+  sender: string;
+  senderName?: string;
+  content: string;
+  timestamp: string;
+  isRead: boolean;
+}
+
+interface Ticket {
+  id: string;
+  ticketNumber: string;
+  merchantId: string;
+  customerId?: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  subject: string;
+  category: string;
+  priority: string;
+  status: string;
+  platform?: string;
+  channel?: string;
+  sentiment?: string;
+  messages: TicketMessage[];
+  resolution?: string;
+  resolvedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface FAQ {
+  id: string;
+  merchantId: string;
+  question: string;
+  answer: string;
+  category: string;
+  language: string;
+  order: number;
+  viewCount: number;
+  helpfulCount: number;
+  notHelpfulCount: number;
+  isPublished: boolean;
+  createdAt: string;
+}
+
+interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
 // In-memory stores (replace with MongoDB in production)
-const merchantTickets: Map<string, unknown[]> = new Map();
-const merchantFAQs: Map<string, unknown[]> = new Map();
-const merchantTeams: Map<string, unknown[]> = new Map();
+const merchantTickets: Map<string, Ticket[]> = new Map();
+const merchantFAQs: Map<string, FAQ[]> = new Map();
+const merchantTeams: Map<string, TeamMember[]> = new Map();
 
 // ============================================
 // MERCHANT TICKETS
@@ -38,14 +92,14 @@ router.get('/:merchantId/tickets', async (req: Request, res: Response) => {
 
     // Filter
     if (status && status !== 'all') {
-      tickets = tickets.filter(t => t.status === status);
+      tickets = tickets.filter((t: Ticket) => t.status === status);
     }
     if (category && category !== 'all') {
-      tickets = tickets.filter(t => t.category === category);
+      tickets = tickets.filter((t: Ticket) => t.category === category);
     }
 
     // Sort by updatedAt
-    tickets.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    tickets.sort((a: Ticket, b: Ticket) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
     // Paginate
     const start = (Number(page) - 1) * Number(limit);
@@ -59,8 +113,9 @@ router.get('/:merchantId/tickets', async (req: Request, res: Response) => {
       pages: Math.ceil(tickets.length / Number(limit)),
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Failed to get tickets', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -81,8 +136,9 @@ router.get('/:merchantId/tickets/:ticketId', async (req: Request, res: Response)
 
     res.json({ success: true, ticket });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Failed to get ticket', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -138,8 +194,9 @@ router.post('/:merchantId/tickets', async (req: Request, res: Response) => {
       message: 'Your support request has been submitted. We will respond soon.',
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Failed to create ticket', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -153,14 +210,14 @@ router.post('/:merchantId/tickets/:ticketId/respond', async (req: Request, res: 
     const { message, agentName } = req.body;
 
     const tickets = merchantTickets.get(merchantId) || [];
-    const ticketIndex = tickets.findIndex(t => t.id === ticketId);
+    const ticketIndex = tickets.findIndex((t: Ticket) => t.id === ticketId);
 
     if (ticketIndex === -1) {
       res.status(404).json({ success: false, error: 'Ticket not found' });
       return;
     }
 
-    const ticket = tickets[ticketIndex];
+    const ticket = tickets[ticketIndex] as Ticket;
     ticket.messages.push({
       id: uuidv4(),
       sender: 'agent',
@@ -179,8 +236,9 @@ router.post('/:merchantId/tickets/:ticketId/respond', async (req: Request, res: 
 
     res.json({ success: true, message: 'Response sent' });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Failed to respond', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -194,14 +252,14 @@ router.post('/:merchantId/tickets/:ticketId/resolve', async (req: Request, res: 
     const { resolution } = req.body;
 
     const tickets = merchantTickets.get(merchantId) || [];
-    const ticketIndex = tickets.findIndex(t => t.id === ticketId);
+    const ticketIndex = tickets.findIndex((t: Ticket) => t.id === ticketId);
 
     if (ticketIndex === -1) {
       res.status(404).json({ success: false, error: 'Ticket not found' });
       return;
     }
 
-    const ticket = tickets[ticketIndex];
+    const ticket = tickets[ticketIndex] as Ticket;
     ticket.status = 'resolved';
     ticket.resolution = resolution;
     ticket.resolvedAt = new Date().toISOString();
@@ -212,8 +270,9 @@ router.post('/:merchantId/tickets/:ticketId/resolve', async (req: Request, res: 
 
     res.json({ success: true, message: 'Ticket resolved' });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Failed to resolve', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -234,25 +293,26 @@ router.get('/:merchantId/kb', async (req: Request, res: Response) => {
 
     // Filter by category
     if (category && category !== 'all') {
-      faqs = faqs.filter(f => f.category === category);
+      faqs = faqs.filter((f: FAQ) => f.category === category);
     }
 
     // Filter by search
     if (search) {
       const searchLower = String(search).toLowerCase();
-      faqs = faqs.filter(f =>
+      faqs = faqs.filter((f: FAQ) =>
         f.question.toLowerCase().includes(searchLower) ||
         f.answer.toLowerCase().includes(searchLower)
       );
     }
 
     // Only published
-    faqs = faqs.filter(f => f.isPublished);
+    faqs = faqs.filter((f: FAQ) => f.isPublished);
 
     res.json({ success: true, faqs });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Failed to get FAQs', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -286,8 +346,9 @@ router.post('/:merchantId/kb', async (req: Request, res: Response) => {
 
     res.status(201).json({ success: true, id: faq.id });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Failed to create FAQ', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -301,7 +362,7 @@ router.put('/:merchantId/kb/:faqId', async (req: Request, res: Response) => {
     const updates = req.body;
 
     const faqs = merchantFAQs.get(merchantId) || [];
-    const faqIndex = faqs.findIndex(f => f.id === faqId);
+    const faqIndex = faqs.findIndex((f: FAQ) => f.id === faqId);
 
     if (faqIndex === -1) {
       res.status(404).json({ success: false, error: 'FAQ not found' });
@@ -313,8 +374,9 @@ router.put('/:merchantId/kb/:faqId', async (req: Request, res: Response) => {
 
     res.json({ success: true });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Failed to update FAQ', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -332,8 +394,9 @@ router.delete('/:merchantId/kb/:faqId', async (req: Request, res: Response) => {
 
     res.json({ success: true });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Failed to delete FAQ', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -346,7 +409,7 @@ router.post('/:merchantId/kb/:faqId/view', async (req: Request, res: Response) =
     const { merchantId, faqId } = req.params;
 
     const faqs = merchantFAQs.get(merchantId) || [];
-    const faqIndex = faqs.findIndex(f => f.id === faqId);
+    const faqIndex = faqs.findIndex((f: FAQ) => f.id === faqId);
 
     if (faqIndex !== -1) {
       faqs[faqIndex].viewCount++;
@@ -369,7 +432,7 @@ router.post('/:merchantId/kb/:faqId/helpful', async (req: Request, res: Response
     const { helpful } = req.body;
 
     const faqs = merchantFAQs.get(merchantId) || [];
-    const faqIndex = faqs.findIndex(f => f.id === faqId);
+    const faqIndex = faqs.findIndex((f: FAQ) => f.id === faqId);
 
     if (faqIndex !== -1) {
       if (helpful) {
@@ -399,32 +462,32 @@ router.get('/:merchantId/stats', async (req: Request, res: Response) => {
     const { merchantId } = req.params;
     const tickets = merchantTickets.get(merchantId) || [];
 
-    const open = tickets.filter(t => t.status === 'open').length;
-    const resolved = tickets.filter(t => t.status === 'resolved').length;
+    const open = tickets.filter((t: Ticket) => t.status === 'open').length;
+    const resolved = tickets.filter((t: Ticket) => t.status === 'resolved').length;
     const total = tickets.length;
 
     // Category breakdown
     const byCategory: Record<string, number> = {};
-    tickets.forEach(t => {
+    tickets.forEach((t: Ticket) => {
       byCategory[t.category] = (byCategory[t.category] || 0) + 1;
     });
 
     // Priority breakdown
     const byPriority: Record<string, number> = {};
-    tickets.forEach(t => {
+    tickets.forEach((t: Ticket) => {
       byPriority[t.priority] = (byPriority[t.priority] || 0) + 1;
     });
 
     // Status breakdown
     const byStatus: Record<string, number> = {};
-    tickets.forEach(t => {
+    tickets.forEach((t: Ticket) => {
       byStatus[t.status] = (byStatus[t.status] || 0) + 1;
     });
 
     // Today
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const ticketsToday = tickets.filter(t => new Date(t.createdAt) >= today).length;
+    const ticketsToday = tickets.filter((t: Ticket) => new Date(t.createdAt) >= today).length;
 
     res.json({
       success: true,
@@ -442,8 +505,9 @@ router.get('/:merchantId/stats', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Failed to get stats', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 

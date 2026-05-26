@@ -1,14 +1,8 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import {
-  ProductMaster,
-  OrderData,
-  DemandDataPoint,
   InventoryStatus,
-  SupplierLeadTime,
-  LeadTimeDataPoint,
-  SeasonalLeadTime,
-  InventoryTurnAnalysis,
-  InventoryAgeBucket,
+  type LeadTimeDataPoint,
+  type SeasonalLeadTime,
 } from '../types/inventory.types.js';
 
 /**

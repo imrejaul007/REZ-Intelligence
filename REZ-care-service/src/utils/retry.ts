@@ -7,6 +7,7 @@
 
 import { logger } from './logger';
 import { generateDLQId } from './idGenerator';
+import { randomInt } from 'crypto';
 
 // ============================================
 // TYPES
@@ -178,7 +179,8 @@ function calculateDelay(attempt: number, config: RetryConfig): number {
   delay = Math.min(delay, config.maxDelay);
 
   // Add jitter (0-25% randomization)
-  const jitter = delay * 0.25 * Math.random();
+  // Using crypto.randomInt for secure jitter generation
+  const jitter = delay * 0.25 * (randomInt(0, 100) / 100);
   delay = delay + jitter;
 
   return Math.floor(delay);

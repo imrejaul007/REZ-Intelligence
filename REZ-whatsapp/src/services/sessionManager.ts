@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import Redis from 'ioredis';
 import { Session, ISession } from '../models/Session';
 import {
@@ -8,7 +9,7 @@ import {
   CartItem,
   MessageRecord,
 } from '../types/whatsapp';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 // ==================== CONSTANTS ====================
 
@@ -31,7 +32,7 @@ export class SessionManager {
   // ==================== DISTRIBUTED LOCK ====================
 
   private async acquireLock(sessionId: string): Promise<string | null> {
-    const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const token = `${Date.now()}-${randomUUID().replace(/-/g, '')}`;
 
     for (let i = 0; i < LOCK_RETRY_COUNT; i++) {
       const result = await this.redis.set(
@@ -374,7 +375,7 @@ export class SessionManager {
   async getCartTotal(sessionId: string): Promise<number> {
     const session = await this.getSession(sessionId);
     if (!session) return 0;
-    return (session as unknown).getCartTotal?.() || 0;
+    return session.getCartTotal();
   }
 
   // ==================== MESSAGE OPERATIONS ====================
@@ -388,7 +389,7 @@ export class SessionManager {
     const session = await this.getSession(sessionId);
     if (!session) return;
 
-    (session as unknown).addMessage?.(role, content, messageId);
+    session.addMessage(role, content, messageId);
     session.lastActivity = new Date();
     await session.save();
     await this.cacheSession(session);

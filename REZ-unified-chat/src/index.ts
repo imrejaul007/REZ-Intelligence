@@ -27,7 +27,7 @@ import { IntentRouter } from './intentRouter';
 import AgentOSHandlers from './handlers/agentOSHandlers';
 import SupportHandlers from './handlers/supportHandlers';
 import SessionManager from './sessionManager';
-import { requireInternalAuth } from './middleware/auth';
+import { createAuthMiddleware } from './middleware/auth';
 
 // Logger setup
 const logger = winston.createLogger({
@@ -67,7 +67,7 @@ interface Config {
 // Extend WebSocket type
 declare module 'ws' {
   interface WebSocket {
-    session?;
+    session?: Record<string, unknown>;
     isAlive?: boolean;
   }
 }
@@ -182,8 +182,14 @@ app.get('/ready', (req: Request, res: Response) => {
 // AUTHENTICATED ROUTES
 // =========================================================================
 
+// Create and apply authentication middleware
+const authMiddleware = createAuthMiddleware({
+  internalTokens: process.env.INTERNAL_SERVICE_TOKEN ? [process.env.INTERNAL_SERVICE_TOKEN] : [],
+  bypassPaths: ['/health', '/ready']
+});
+
 // Apply authentication to all /api routes
-app.use('/api', requireInternalAuth);
+app.use('/api', authMiddleware);
 
 // Voice endpoints
 app.post('/api/voice/transcribe', async (req: Request, res: Response) => {
@@ -348,48 +354,65 @@ app.post('/api/brain/enhance', async (req: Request, res: Response) => {
 // WEBSOCKET
 // =========================================================================
 
+interface WSSession {
+  context: Record<string, unknown>;
+  messages: Array<{ role: string; content: string; routing?: unknown }>;
+}
+
+interface ExtendedWebSocket {
+  session?: WSSession;
+  isAlive?: boolean;
+  send(data: string): void;
+  on(event: string, callback: (...args: unknown[]) => void): void;
+  terminate(): void;
+  ping(): void;
+}
+
 wss.on('connection', (ws: WebSocket, req) => {
+  const extWs = ws as unknown as ExtendedWebSocket;
   const url = new URL(req.url || '', `http://${req.headers.host}`);
   const userId = url.searchParams.get('userId') || 'anonymous';
   const namespace = url.searchParams.get('namespace') || 'general';
 
-  ws.session = sessionManager.getOrCreate(userId, namespace);
-  ws.isAlive = true;
+  const session = sessionManager.getOrCreate(userId, namespace) as WSSession;
+  extWs.session = session;
+  extWs.isAlive = true;
 
-  ws.on('message', async (data) => {
+  extWs.on('message', async (data) => {
     try {
-      const { message, context = {} } = JSON.parse(data.toString());
-      ws.send(JSON.stringify({ type: 'typing', status: true }));
+      const { message, context = {} } = JSON.parse(data as unknown as string);
+      extWs.send(JSON.stringify({ type: 'typing', status: true }));
 
       const routing = router.route(message, { userId, namespace });
       let response;
 
       if (routing.route === 'agent-os') {
-        response = await agentHandlers.handle({ message, context: { ...ws.session.context, ...context } });
+        response = await agentHandlers.handle({ message, context: { ...session.context, ...context } });
       } else {
-        response = await supportHandlers.handle({ message, context: { ...ws.session.context, ...context } });
+        response = await supportHandlers.handle({ message, context: { ...session.context, ...context } });
       }
 
-      ws.session.messages.push({ role: 'assistant', content: response.message, routing });
-      ws.send(JSON.stringify({ type: 'message', response: response.message, routing: routing }));
+      session.messages.push({ role: 'assistant', content: response.message, routing });
+      extWs.send(JSON.stringify({ type: 'message', response: response.message, routing: routing }));
     } catch (err) {
       logger.error('WebSocket error', { error: err.message });
-      ws.send(JSON.stringify({ type: 'error', error: err.message }));
+      extWs.send(JSON.stringify({ type: 'error', error: err.message }));
     }
   });
 
-  ws.on('pong', () => { ws.isAlive = true; });
-  ws.on('close', () => { ws.isAlive = false; });
+  extWs.on('pong', () => { extWs.isAlive = true; });
+  extWs.on('close', () => { extWs.isAlive = false; });
 });
 
 // Heartbeat to detect stale connections
 setInterval(() => {
   wss.clients.forEach((ws) => {
-    if (ws.isAlive === false) {
-      return ws.terminate();
+    const extWs = ws as unknown as ExtendedWebSocket;
+    if (extWs.isAlive === false) {
+      return extWs.terminate();
     }
-    ws.isAlive = false;
-    ws.ping();
+    extWs.isAlive = false;
+    extWs.ping();
   });
 }, 30000);
 

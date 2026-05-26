@@ -2,7 +2,7 @@
  * TypeScript type definitions for REZ Identity Graph
  */
 
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 
 // ============================================
 // CONSTANTS

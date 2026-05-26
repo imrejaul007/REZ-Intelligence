@@ -9,7 +9,7 @@
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import { config } from '../config';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 // Supported signature header names
 const SIGNATURE_HEADERS = [

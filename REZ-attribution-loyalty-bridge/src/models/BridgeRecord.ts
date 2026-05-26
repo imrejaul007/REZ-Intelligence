@@ -3,7 +3,7 @@
  * Tracks all attribution-to-loyalty bridge transactions
  */
 
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 import { ChannelType } from '../types/schemas.js';
 
 // ============================================
@@ -67,6 +67,20 @@ export interface IBridgeRecord extends Document {
 
   // Soft delete
   deletedAt?: Date;
+
+  // Instance methods
+  markProcessing(): Promise<void>;
+  markCompleted(loyaltyTransactionId?: string, walletTransactionId?: string): Promise<void>;
+  markFailed(error: string): Promise<void>;
+  scheduleRetry(delayMinutes: number): Promise<void>;
+}
+
+// Static methods interface
+export interface IBridgeRecordModel extends Model<IBridgeRecord> {
+  findPendingRetries(): Promise<IBridgeRecord[]>;
+  findByConversion(conversionId: string): Promise<IBridgeRecord[]>;
+  findByCustomer(customerId: string, options?: { limit?: number; skip?: number; startDate?: Date; endDate?: Date }): Promise<IBridgeRecord[]>;
+  aggregateByChannel(startDate: Date, endDate: Date, merchantId?: string): Promise<Array<{ channel: string; totalCoins: number; totalCashback: number; count: number }>>;
 }
 
 // ============================================
@@ -362,5 +376,5 @@ BridgeRecordSchema.pre('deleteMany', function () {
 // EXPORT
 // ============================================
 
-export const BridgeRecord = (mongoose.models.BridgeRecord as Model<IBridgeRecord>) ||
-  mongoose.model<IBridgeRecord>('BridgeRecord', BridgeRecordSchema);
+export const BridgeRecord = (mongoose.models.BridgeRecord as Model<IBridgeRecord, IBridgeRecordModel>) ||
+  mongoose.model<IBridgeRecord, IBridgeRecordModel>('BridgeRecord', BridgeRecordSchema);

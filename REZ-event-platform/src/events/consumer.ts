@@ -1,6 +1,6 @@
 import { Queue, Worker, Job } from 'bullmq';
 import { getRedisClient, config } from '../config';
-import { Event, EventType, logger, BaseEvent } from './schema-registry';
+import { Event, EventType, logger, BaseEvent, InventoryLowEventPayloadSchema, OrderCompletedEventPayloadSchema, PaymentSuccessEventPayloadSchema } from './schema-registry';
 import { EventEmitter } from './emitter';
 import { EventStore, DeadLetterEvent } from '../models/event-store';
 import {
@@ -10,6 +10,22 @@ import {
   moveEventToDlq,
   alertOnEventFailure,
 } from '../middleware/eventTracking';
+import {
+  analyzeInventoryPatterns,
+  analyzeOrderPatterns,
+  analyzePaymentRisk,
+  analyzeAdPerformance,
+  analyzeCampaignPerformance,
+  analyzeVoucherPerformance,
+  analyzeNotificationPerformance,
+  InventoryAnalysisInput,
+  OrderAnalysisInput,
+  PaymentAnalysisInput,
+  AdAnalysisInput,
+  CampaignAnalysisInput,
+  VoucherAnalysisInput,
+  NotificationAnalysisInput,
+} from '../services/rez-mind.service';
 
 // Queue instances
 const queues: Map<string, Queue> = new Map();
@@ -126,15 +142,75 @@ async function handleInventoryLow(job: Job): Promise<void> {
     inventoryId: (event as unknown).payload?.inventoryId,
   });
 
-  // ReZ Mind integration stub
-  // TODO: Implement ReZ Mind AI analysis
-  // - Analyze inventory patterns
-  // - Predict restocking needs
-  // - Generate reorder recommendations
+  // Parse and validate payload
+  const payloadResult = InventoryLowEventPayloadSchema.safeParse(event.payload);
+  if (!payloadResult.success) {
+    logger.error('Invalid inventory.low payload', {
+      eventId: event.id,
+      errors: payloadResult.error.issues,
+    });
+    throw new Error(`Invalid inventory.low payload: ${payloadResult.error.message}`);
+  }
+
+  const payload = payloadResult.data;
+
+  // Build AI analysis input
+  const analysisInput: InventoryAnalysisInput = {
+    inventoryId: payload.inventoryId,
+    productId: payload.productId,
+    productName: payload.productName,
+    currentQuantity: payload.currentQuantity,
+    threshold: payload.threshold,
+    warehouseId: payload.warehouseId,
+    sku: payload.sku,
+    supplierId: payload.supplierId,
+    suggestedReorderQuantity: payload.suggestedReorderQuantity,
+    severity: payload.severity,
+    eventTimestamp: event.timestamp,
+  };
+
+  // Call ReZ Mind AI for inventory pattern analysis
+  const analysisResult = await analyzeInventoryPatterns(analysisInput);
+
+  // Log analysis results
+  if (analysisResult.success && analysisResult.data) {
+    logger.info('Inventory AI analysis completed', {
+      eventId: event.id,
+      recommendedReorderQuantity: analysisResult.data.recommendedReorderQuantity,
+      predictedRestockDate: analysisResult.data.predictedRestockDate,
+      urgency: analysisResult.data.urgency,
+      confidence: analysisResult.data.confidence,
+      recommendations: analysisResult.data.recommendations,
+    });
+
+    // PRODUCTION: Trigger restock workflow based on urgency
+    if (analysisResult.data.urgency === 'critical' || analysisResult.data.urgency === 'high') {
+      try {
+        await triggerRestockWorkflow({
+          sku: payload.sku,
+          currentStock: payload.currentStock,
+          recommendedReorderQuantity: analysisResult.data.recommendedReorderQuantity,
+          urgency: analysisResult.data.urgency,
+          predictedRestockDate: analysisResult.data.predictedRestockDate
+        });
+      } catch (e) {
+        logger.error('Failed to trigger restock workflow:', e);
+      }
+    }
+  } else {
+    logger.warn('Inventory AI analysis used fallback', {
+      eventId: event.id,
+      error: analysisResult.error,
+      fallbackActive: analysisResult.fallback,
+    });
+  }
 
   logger.info('inventory.low event processed', {
     eventId: event.id,
-    // Analysis results would go here
+    recommendedReorderQuantity: analysisResult.data?.recommendedReorderQuantity,
+    urgency: analysisResult.data?.urgency,
+    confidence: analysisResult.data?.confidence,
+    analysisSource: analysisResult.fallback ? 'fallback' : 'rez-mind',
   });
 }
 
@@ -151,16 +227,88 @@ async function handleOrderCompleted(job: Job): Promise<void> {
     total: (event as unknown).payload?.total,
   });
 
-  // ReZ Mind integration stub
-  // TODO: Implement ReZ Mind AI analysis
-  // - Analyze purchase patterns
-  // - Update customer profiles
-  // - Trigger fulfillment workflows
-  // - Generate analytics data
+  // Parse and validate payload
+  const payloadResult = OrderCompletedEventPayloadSchema.safeParse(event.payload);
+  if (!payloadResult.success) {
+    logger.error('Invalid order.completed payload', {
+      eventId: event.id,
+      errors: payloadResult.error.issues,
+    });
+    throw new Error(`Invalid order.completed payload: ${payloadResult.error.message}`);
+  }
+
+  const payload = payloadResult.data;
+
+  // Build AI analysis input
+  const analysisInput: OrderAnalysisInput = {
+    orderId: payload.orderId,
+    customerId: payload.customerId,
+    items: payload.items,
+    subtotal: payload.subtotal,
+    tax: payload.tax,
+    shipping: payload.shipping,
+    total: payload.total,
+    currency: payload.currency,
+    paymentMethod: payload.paymentMethod,
+    shippingAddress: payload.shippingAddress,
+    eventTimestamp: event.timestamp,
+  };
+
+  // Call ReZ Mind AI for order pattern analysis
+  const analysisResult = await analyzeOrderPatterns(analysisInput);
+
+  // Log analysis results
+  if (analysisResult.success && analysisResult.data) {
+    logger.info('Order AI analysis completed', {
+      eventId: event.id,
+      orderId: payload.orderId,
+      customerSegment: analysisResult.data.customerSegment,
+      lifetimeValueImpact: analysisResult.data.lifetimeValueImpact,
+      churnRisk: analysisResult.data.churnRisk,
+      nextBestAction: analysisResult.data.nextBestAction,
+      fulfillmentPriority: analysisResult.data.fulfillmentPriority,
+      deliveryEstimate: analysisResult.data.deliveryEstimate,
+      fraudRisk: analysisResult.data.fraudRisk,
+      confidence: analysisResult.data.confidence,
+    });
+
+    // PRODUCTION: Trigger workflows based on analysis
+    try {
+      // Update customer profile with insights
+      await updateCustomerProfile(payload.customerId, {
+        customerSegment: analysisResult.data.customerSegment,
+        churnRisk: analysisResult.data.churnRisk,
+        lifetimeValue: analysisResult.data.lifetimeValue
+      });
+      // Trigger fulfillment workflow
+      await triggerFulfillmentWorkflow(payload.orderId, {
+        priority: analysisResult.data.fulfillmentPriority,
+        deliveryEstimate: analysisResult.data.deliveryEstimate
+      });
+      // Process cross-sell recommendations
+      if (analysisResult.data.crossSellRecommendations?.length > 0) {
+        await processCrossSellRecommendations(payload.customerId, analysisResult.data.crossSellRecommendations);
+      }
+    } catch (e) {
+      logger.error('Failed to trigger workflows after order:', e);
+    }
+  } else {
+    logger.warn('Order AI analysis used fallback', {
+      eventId: event.id,
+      orderId: payload.orderId,
+      error: analysisResult.error,
+      fallbackActive: analysisResult.fallback,
+    });
+  }
 
   logger.info('order.completed event processed', {
     eventId: event.id,
-    // Analysis results would go here
+    orderId: payload.orderId,
+    customerSegment: analysisResult.data?.customerSegment,
+    churnRisk: analysisResult.data?.churnRisk,
+    fulfillmentPriority: analysisResult.data?.fulfillmentPriority,
+    confidence: analysisResult.data?.confidence,
+    analysisSource: analysisResult.fallback ? 'fallback' : 'rez-mind',
   });
 }
 
@@ -177,16 +325,105 @@ async function handlePaymentSuccess(job: Job): Promise<void> {
     amount: (event as unknown).payload?.amount,
   });
 
-  // ReZ Mind integration stub
-  // TODO: Implement ReZ Mind AI analysis
-  // - Fraud detection
-  // - Revenue tracking
-  // - Payment analytics
-  // - Customer credit assessment
+  // Parse and validate payload
+  const payloadResult = PaymentSuccessEventPayloadSchema.safeParse(event.payload);
+  if (!payloadResult.success) {
+    logger.error('Invalid payment.success payload', {
+      eventId: event.id,
+      errors: payloadResult.error.issues,
+    });
+    throw new Error(`Invalid payment.success payload: ${payloadResult.error.message}`);
+  }
+
+  const payload = payloadResult.data;
+
+  // Build AI analysis input
+  const analysisInput: PaymentAnalysisInput = {
+    paymentId: payload.paymentId,
+    orderId: payload.orderId,
+    customerId: payload.customerId,
+    amount: payload.amount,
+    currency: payload.currency,
+    method: payload.method,
+    transactionId: payload.transactionId,
+    gateway: payload.gateway,
+    eventTimestamp: event.timestamp,
+  };
+
+  // Call ReZ Mind AI for fraud detection and payment analytics
+  const analysisResult = await analyzePaymentRisk(analysisInput);
+
+  // Log analysis results
+  if (analysisResult.success && analysisResult.data) {
+    logger.info('Payment AI analysis completed', {
+      eventId: event.id,
+      paymentId: payload.paymentId,
+      fraudScore: analysisResult.data.fraudScore,
+      riskLevel: analysisResult.data.riskLevel,
+      recommendedAction: analysisResult.data.recommendedAction,
+      creditScoreImpact: analysisResult.data.creditScoreImpact,
+      anomalyScore: analysisResult.data.anomalyScore,
+      velocityCheckPassed: analysisResult.data.velocityCheck.passed,
+      geoAnomaly: analysisResult.data.geoAnomaly,
+      confidence: analysisResult.data.confidence,
+    });
+
+    // Handle fraud alerts if detected
+    if (analysisResult.data.riskLevel === 'high' || analysisResult.data.riskLevel === 'critical') {
+      logger.warn('High risk payment detected', {
+        eventId: event.id,
+        paymentId: payload.paymentId,
+        riskLevel: analysisResult.data.riskLevel,
+        fraudIndicators: analysisResult.data.fraudIndicators,
+        recommendedAction: analysisResult.data.recommendedAction,
+      });
+      // PRODUCTION: Trigger fraud alert workflow
+      if (analysisResult.data.riskLevel === 'high' || analysisResult.data.riskLevel === 'critical') {
+        try {
+          await triggerFraudAlert({
+            paymentId: payload.paymentId,
+            customerId: payload.customerId,
+            amount: payload.amount,
+            riskLevel: analysisResult.data.riskLevel,
+            fraudIndicators: analysisResult.data.fraudIndicators
+          });
+        } catch (e) {
+          logger.error('Failed to trigger fraud alert:', e);
+        }
+      }
+    }
+
+    // PRODUCTION: Update payment records with risk scores and track analytics
+    try {
+      await updatePaymentRiskScore(payload.paymentId, {
+        fraudScore: analysisResult.data.fraudScore,
+        riskLevel: analysisResult.data.riskLevel,
+        recommendedAction: analysisResult.data.recommendedAction
+      });
+      await trackRevenueAnalytics(payload, {
+        fraudRisk: analysisResult.data.fraudScore,
+        riskLevel: analysisResult.data.riskLevel
+      });
+    } catch (e) {
+      logger.error('Failed to update payment records:', e);
+    }
+  } else {
+    logger.warn('Payment AI analysis used fallback', {
+      eventId: event.id,
+      paymentId: payload.paymentId,
+      error: analysisResult.error,
+      fallbackActive: analysisResult.fallback,
+    });
+  }
 
   logger.info('payment.success event processed', {
     eventId: event.id,
-    // Analysis results would go here
+    paymentId: payload.paymentId,
+    fraudScore: analysisResult.data?.fraudScore,
+    riskLevel: analysisResult.data?.riskLevel,
+    recommendedAction: analysisResult.data?.recommendedAction,
+    confidence: analysisResult.data?.confidence,
+    analysisSource: analysisResult.fallback ? 'fallback' : 'rez-mind',
   });
 }
 
@@ -489,6 +726,116 @@ export async function initializeWorkers(): Promise<void> {
   createWorker(EventType.NOTIFICATION_OPENED, handleNotificationOpened);
 
   logger.info('All workers initialized');
+}
+
+// PRODUCTION: Helper functions for workflow triggers
+async function triggerRestockWorkflow(data: {
+  sku: string;
+  currentStock: number;
+  recommendedReorderQuantity: number;
+  urgency: string;
+  predictedRestockDate: string;
+}): Promise<void> {
+  try {
+    const response = await axios.post(
+      `${process.env.ORDER_SERVICE_URL || 'http://localhost:4006'}/api/inventory/restock`,
+      data,
+      { headers: { 'X-Internal-Token': process.env.INTERNAL_SERVICE_TOKEN || '' }, timeout: 5000 }
+    );
+    logger.info('Restock workflow triggered', { sku: data.sku, urgency: data.urgency });
+  } catch (error) {
+    logger.error('Failed to trigger restock workflow:', error);
+  }
+}
+
+async function updateCustomerProfile(customerId: string, data: {
+  customerSegment?: string;
+  churnRisk?: number;
+  lifetimeValue?: number;
+}): Promise<void> {
+  try {
+    await axios.patch(
+      `${process.env.PROFILE_SERVICE_URL || 'http://localhost:4013'}/api/profiles/${customerId}`,
+      data,
+      { headers: { 'X-Internal-Token': process.env.INTERNAL_SERVICE_TOKEN || '' }, timeout: 5000 }
+    );
+  } catch (error) {
+    logger.error('Failed to update customer profile:', error);
+  }
+}
+
+async function triggerFulfillmentWorkflow(orderId: string, data: {
+  priority: string;
+  deliveryEstimate?: string;
+}): Promise<void> {
+  try {
+    await axios.post(
+      `${process.env.ORDER_SERVICE_URL || 'http://localhost:4006'}/api/orders/${orderId}/priority`,
+      data,
+      { headers: { 'X-Internal-Token': process.env.INTERNAL_SERVICE_TOKEN || '' }, timeout: 5000 }
+    );
+  } catch (error) {
+    logger.error('Failed to trigger fulfillment workflow:', error);
+  }
+}
+
+async function processCrossSellRecommendations(customerId: string, recommendations: string[]): Promise<void> {
+  try {
+    await axios.post(
+      `${process.env.RECOMMENDATION_URL || 'http://localhost:4008'}/api/recommendations/cross-sell`,
+      { customerId, recommendations },
+      { headers: { 'X-Internal-Token': process.env.INTERNAL_SERVICE_TOKEN || '' }, timeout: 5000 }
+    );
+  } catch (error) {
+    logger.error('Failed to process cross-sell recommendations:', error);
+  }
+}
+
+async function triggerFraudAlert(data: {
+  paymentId: string;
+  customerId: string;
+  amount: number;
+  riskLevel: string;
+  fraudIndicators?: string[];
+}): Promise<void> {
+  try {
+    await axios.post(
+      `${process.env.FRAUD_SERVICE_URL || 'http://localhost:3007'}/api/alerts`,
+      data,
+      { headers: { 'X-Internal-Token': process.env.INTERNAL_SERVICE_TOKEN || '' }, timeout: 5000 }
+    );
+    logger.warn('Fraud alert triggered', { paymentId: data.paymentId, riskLevel: data.riskLevel });
+  } catch (error) {
+    logger.error('Failed to trigger fraud alert:', error);
+  }
+}
+
+async function updatePaymentRiskScore(paymentId: string, data: {
+  fraudScore: number;
+  riskLevel: string;
+  recommendedAction: string;
+}): Promise<void> {
+  try {
+    await axios.patch(
+      `${process.env.PAYMENT_SERVICE_URL || 'http://localhost:4001'}/api/payments/${paymentId}/risk`,
+      data,
+      { headers: { 'X-Internal-Token': process.env.INTERNAL_SERVICE_TOKEN || '' }, timeout: 5000 }
+    );
+  } catch (error) {
+    logger.error('Failed to update payment risk score:', error);
+  }
+}
+
+async function trackRevenueAnalytics(payload: any, data: { fraudRisk?: number; riskLevel?: string }): Promise<void> {
+  try {
+    await axios.post(
+      `${process.env.ANALYTICS_URL || 'http://localhost:4016'}/api/events`,
+      { type: 'revenue.analytics', paymentId: payload.paymentId, amount: payload.amount, ...data },
+      { headers: { 'X-Internal-Token': process.env.INTERNAL_SERVICE_TOKEN || '' }, timeout: 5000 }
+    );
+  } catch (error) {
+    logger.error('Failed to track revenue analytics:', error);
+  }
 }
 
 /**

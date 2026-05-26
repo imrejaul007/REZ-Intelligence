@@ -1,20 +1,28 @@
 /**
  * RABTUL Platform Integration
- * Connects service to RABTUL infrastructure
  */
 
 const AUTH_URL = process.env.AUTH_SERVICE_URL || 'https://rez-auth-service.onrender.com';
-const PAYMENT_URL = process.env.PAYMENT_SERVICE_URL || 'https://rez-payment-service.onrender.com';
 const WALLET_URL = process.env.WALLET_SERVICE_URL || 'https://rez-wallet-service-36vo.onrender.com';
 const NOTIFICATION_URL = process.env.NOTIFICATION_SERVICE_URL || 'https://rez-notifications-service.onrender.com';
 const ANALYTICS_URL = process.env.ANALYTICS_SERVICE_URL || 'https://rez-analytics-service.onrender.com';
-const EVENT_BUS_URL = process.env.EVENT_BUS_URL || 'http://localhost:4025';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
-/**
- * Make authenticated internal API request
- */
-async function internalRequest(url, options = {}) {
+interface RequestOptions extends RequestInit {
+  headers?: Record<string, string>;
+}
+
+interface APIResponse {
+  success?: boolean;
+  user?: Record<string, unknown>;
+  valid?: boolean;
+  balance?: number;
+  transactions?: unknown[];
+  events?: unknown[];
+  [key: string]: unknown;
+}
+
+async function request(url: string, options: RequestOptions = {}): Promise<APIResponse> {
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -23,193 +31,85 @@ async function internalRequest(url, options = {}) {
       ...options.headers,
     },
   });
-
-  if (!response.ok) {
-    throw new Error(`Platform API error: ${response.status}`);
-  }
-
-  return response.json();
+  if (!response.ok) throw new Error(`API error: ${response.status}`);
+  return response.json() as Promise<APIResponse>;
 }
 
-// ============================================
-// AUTH OPERATIONS
-// ============================================
-
 export const authOperations = {
-  async verify(token) {
+  async verify(token: string): Promise<Record<string, unknown> | null> {
     try {
-      const res = await internalRequest(`${AUTH_URL}/api/auth/verify`, {
+      const res = await request(`${AUTH_URL}/api/auth/verify`, {
         method: 'POST',
         body: JSON.stringify({ token }),
       });
-      return res.success ? res.user : null;
-    } catch {
-      return null;
-    }
+      return res.success ? res.user ?? null : null;
+    } catch { return null; }
   },
-
-  async validateInternalToken() {
+  async validateInternalToken(): Promise<boolean> {
     try {
-      const res = await internalRequest(`${AUTH_URL}/api/auth/internal/validate`, {
+      const res = await request(`${AUTH_URL}/api/auth/internal/validate`, {
         headers: { 'X-Internal-Token': INTERNAL_TOKEN },
       });
       return res.valid ?? false;
-    } catch {
-      return false;
-    }
+    } catch { return false; }
   },
 };
-
-// ============================================
-// WALLET OPERATIONS
-// ============================================
 
 export const walletOperations = {
-  async getBalance(userId) {
+  async getBalance(userId: string): Promise<number> {
     try {
-      const res = await internalRequest(`${WALLET_URL}/api/wallet/${userId}/balance`);
-      return res.balance || 0;
-    } catch {
-      return 0;
-    }
+      const res = await request(`${WALLET_URL}/api/wallet/${userId}/balance`);
+      return res.balance ?? 0;
+    } catch { return 0; }
   },
-
-  async addCoins(userId, amount, reason, metadata = {}) {
+  async addCoins(userId: string, amount: number, reason: string): Promise<boolean> {
     try {
-      await internalRequest(`${WALLET_URL}/api/wallet/add`, {
+      await request(`${WALLET_URL}/api/wallet/add`, {
         method: 'POST',
-        body: JSON.stringify({ userId, amount, reason, metadata }),
+        body: JSON.stringify({ userId, amount, reason }),
       });
       return true;
-    } catch {
-      return false;
-    }
+    } catch { return false; }
   },
-
-  async deductCoins(userId, amount, reason, metadata = {}) {
+  async deductCoins(userId: string, amount: number, reason: string): Promise<boolean> {
     try {
-      await internalRequest(`${WALLET_URL}/api/wallet/deduct`, {
+      await request(`${WALLET_URL}/api/wallet/deduct`, {
         method: 'POST',
-        body: JSON.stringify({ userId, amount, reason, metadata }),
+        body: JSON.stringify({ userId, amount, reason }),
       });
       return true;
-    } catch {
-      return false;
-    }
+    } catch { return false; }
   },
-
-  async getTransactions(userId, limit = 20) {
+  async getTransactions(userId: string, limit = 20): Promise<unknown[]> {
     try {
-      const res = await internalRequest(`${WALLET_URL}/api/wallet/${userId}/transactions?limit=${limit}`);
-      return res.transactions || [];
-    } catch {
-      return [];
-    }
+      const res = await request(`${WALLET_URL}/api/wallet/${userId}/transactions?limit=${limit}`);
+      return res.transactions ?? [];
+    } catch { return []; }
   },
 };
-
-// ============================================
-// NOTIFICATION OPERATIONS
-// ============================================
 
 export const notificationOperations = {
-  async send(params) {
+  async send(params: { userId: string; title: string; message: string; channel?: string }): Promise<boolean> {
     try {
-      await internalRequest(`${NOTIFICATION_URL}/api/notifications/send`, {
+      await request(`${NOTIFICATION_URL}/api/notifications/send`, {
         method: 'POST',
-        body: JSON.stringify({
-          userId: params.userId,
-          channel: params.channel || 'push',
-          type: params.type || 'info',
-          title: params.title,
-          message: params.message,
-          data: params.data,
-        }),
+        body: JSON.stringify(params),
       });
       return true;
-    } catch {
-      return false;
-    }
-  },
-
-  async sendBulk(notifications) {
-    try {
-      await internalRequest(`${NOTIFICATION_URL}/api/notifications/send/batch`, {
-        method: 'POST',
-        body: JSON.stringify({ notifications }),
-      });
-      return true;
-    } catch {
-      return false;
-    }
+    } catch { return false; }
   },
 };
-
-// ============================================
-// ANALYTICS OPERATIONS
-// ============================================
 
 export const analyticsOperations = {
-  async track(event, properties = {}) {
+  async track(event: string, properties: Record<string, unknown> = {}): Promise<boolean> {
     try {
-      await internalRequest(`${ANALYTICS_URL}/api/track`, {
+      await request(`${ANALYTICS_URL}/api/track`, {
         method: 'POST',
-        body: JSON.stringify({
-          event,
-          properties,
-          timestamp: new Date().toISOString(),
-        }),
+        body: JSON.stringify({ event, properties, timestamp: new Date().toISOString() }),
       });
       return true;
-    } catch {
-      return false;
-    }
+    } catch { return false; }
   },
 };
 
-// ============================================
-// EVENT BUS OPERATIONS
-// ============================================
-
-export const eventBusOperations = {
-  async publish(type, category, data, context = {}) {
-    try {
-      await internalRequest(`${EVENT_BUS_URL}/api/events`, {
-        method: 'POST',
-        body: JSON.stringify({
-          type,
-          category,
-          version: '1.0.0',
-          source: 'REZ-inventory-intelligence',
-          data,
-          ...context,
-          timestamp: new Date().toISOString(),
-        }),
-      });
-      return true;
-    } catch {
-      return false;
-    }
-  },
-
-  async queryEvents(filters, limit = 100) {
-    try {
-      const res = await internalRequest(`${EVENT_BUS_URL}/api/events/query`, {
-        method: 'POST',
-        body: JSON.stringify({ filters, limit }),
-      });
-      return res.events || [];
-    } catch {
-      return [];
-    }
-  },
-};
-
-// Default export
-export default {
-  auth: authOperations,
-  wallet: walletOperations,
-  notifications: notificationOperations,
-  analytics: analyticsOperations,
-  events: eventBusOperations,
-};
+export default { auth: authOperations, wallet: walletOperations, notifications: notificationOperations, analytics: analyticsOperations };

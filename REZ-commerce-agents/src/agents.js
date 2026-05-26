@@ -7,6 +7,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const cron = require('node-cron');
 const { v4: uuidv4 } = require('uuid');
+const { randomInt, randomUUID } = require('crypto');
 
 // Logger setup
 const logger = {
@@ -346,8 +347,8 @@ class DemandSignalAgent extends BaseAgent {
     const signals = [];
 
     for (const category of categories) {
-      const baseDemand = Math.floor(Math.random() * 500) + 100;
-      const currentDemand = Math.floor(Math.random() * baseDemand * 1.5);
+      const baseDemand = randomInt(100, 600);
+      const currentDemand = randomInt(100, Math.floor(baseDemand * 1.5));
 
       signals.push({
         category,
@@ -371,8 +372,8 @@ class DemandSignalAgent extends BaseAgent {
       signals.push({
         type: 'item',
         ...item,
-        current: Math.floor(item.demand * (0.8 + Math.random() * 0.4)),
-        velocity: (Math.random() - 0.3) * 0.5
+        current: Math.floor(item.demand * (0.8 + randomInt(0, 400) / 1000)),
+        velocity: ((randomInt(0, 200) / 1000) - 0.3) * 0.5
       });
     }
 
@@ -671,7 +672,7 @@ class PriceElasticityAgent extends BaseAgent {
       productId: p.productId,
       history: Array.from({ length: 30 }, (_, i) => ({
         date: new Date(Date.now() - i * 24 * 60 * 60 * 1000),
-        price: p.currentPrice * (0.9 + Math.random() * 0.2)
+        price: p.currentPrice * (0.9 + randomInt(0, 200) / 1000)
       }))
     }));
   }
@@ -682,7 +683,7 @@ class PriceElasticityAgent extends BaseAgent {
       productId: p.productId,
       history: Array.from({ length: 30 }, (_, i) => ({
         date: new Date(Date.now() - i * 24 * 60 * 60 * 1000),
-        demand: Math.floor(50 + Math.random() * 100)
+        demand: randomInt(50, 150)
       }))
     }));
   }
@@ -715,7 +716,7 @@ class PriceElasticityAgent extends BaseAgent {
         currentPrice: product.currentPrice,
         elasticity: normalizedElasticity,
         elasticityLabel: normalizedElasticity < 1 ? 'inelastic' : 'elastic',
-        confidence: 0.6 + Math.random() * 0.3,
+        confidence: 0.6 + randomInt(0, 300) / 1000,
         optimalPriceRange: {
           min: product.currentPrice * 0.85,
           max: product.currentPrice * 1.15
@@ -801,12 +802,12 @@ class ReorderPredictorAgent extends BaseAgent {
     // Simulate active users - replace with actual query
     return Array.from({ length: 50 }, (_, i) => ({
       userId: `USR${String(i + 1).padStart(6, '0')}`,
-      daysSinceLastOrder: Math.floor(Math.random() * 60) + 1,
-      orderFrequency: Math.floor(Math.random() * 10) + 1,
-      avgOrderValue: Math.floor(Math.random() * 5000) + 200,
-      lastCategory: ['restaurant', 'hotel', 'retail', 'travel'][Math.floor(Math.random() * 4)],
-      browsingScore: Math.random(),
-      seasonalFactor: 0.8 + Math.random() * 0.4
+      daysSinceLastOrder: randomInt(1, 61),
+      orderFrequency: randomInt(1, 11),
+      avgOrderValue: randomInt(200, 5200),
+      lastCategory: ['restaurant', 'hotel', 'retail', 'travel'][randomInt(0, 4)],
+      browsingScore: randomInt(0, 1000) / 1000,
+      seasonalFactor: 0.8 + randomInt(0, 400) / 1000
     }));
   }
 
@@ -832,7 +833,7 @@ class ReorderPredictorAgent extends BaseAgent {
 
       // Estimate days until reorder
       const estimatedDays = Math.ceil(
-        (1 - probability) * 30 + Math.random() * 7
+        (1 - probability) * 30 + randomInt(0, 7)
       );
 
       return {
@@ -867,7 +868,7 @@ class ReorderPredictorAgent extends BaseAgent {
       `We miss you! Your favorites are waiting.`,
       `Time to treat yourself again? Exclusive offer inside!`
     ];
-    return messages[Math.floor(Math.random() * messages.length)];
+    return messages[randomInt(0, messages.length)];
   }
 }
 
@@ -933,7 +934,7 @@ class TasteEvolutionAgent extends BaseAgent {
     return Array.from({ length: 100 }, (_, i) => ({
       userId: `USR${String(i + 1).padStart(6, '0')}`,
       preferences: categories.reduce((prefs, cat) => {
-        prefs[cat] = Math.random();
+        prefs[cat] = randomInt(0, 1000) / 1000;
         return prefs;
       }, {}),
       timestamp: new Date()
@@ -1077,14 +1078,14 @@ class ChurnRiskAgent extends BaseAgent {
   async fetchUserMetrics() {
     return Array.from({ length: 200 }, (_, i) => ({
       userId: `USR${String(i + 1).padStart(6, '0')}`,
-      daysSinceActivity: Math.floor(Math.random() * 90) + 1,
-      daysSinceLastOrder: Math.floor(Math.random() * 60) + 1,
-      orderFrequency: Math.floor(Math.random() * 15) + 1,
-      avgOrderValue: Math.floor(Math.random() * 5000) + 100,
-      supportTickets: Math.floor(Math.random() * 5),
-      negativeFeedback: Math.random() > 0.8,
-      engagementScore: Math.random(),
-      accountAge: Math.floor(Math.random() * 1000) + 30
+      daysSinceActivity: randomInt(1, 91),
+      daysSinceLastOrder: randomInt(1, 61),
+      orderFrequency: randomInt(1, 16),
+      avgOrderValue: randomInt(100, 5100),
+      supportTickets: randomInt(0, 5),
+      negativeFeedback: randomInt(0, 1000) / 1000 > 0.8,
+      engagementScore: randomInt(0, 1000) / 1000,
+      accountAge: randomInt(30, 1030)
     }));
   }
 
@@ -1232,17 +1233,17 @@ class LTVPredictorAgent extends BaseAgent {
   async fetchUserData() {
     return Array.from({ length: 500 }, (_, i) => ({
       userId: `USR${String(i + 1).padStart(6, '0')}`,
-      totalOrders: Math.floor(Math.random() * 100) + 1,
-      totalRevenue: Math.floor(Math.random() * 100000) + 500,
-      avgOrderValue: Math.floor(Math.random() * 3000) + 100,
-      orderFrequency: Math.floor(Math.random() * 12) + 1,
-      customerSince: new Date(Date.now() - Math.floor(Math.random() * 1000) * 24 * 60 * 60 * 1000),
-      lastOrderDate: new Date(Date.now() - Math.floor(Math.random() * 90) * 24 * 60 * 60 * 1000),
+      totalOrders: randomInt(1, 101),
+      totalRevenue: randomInt(500, 100500),
+      avgOrderValue: randomInt(100, 3100),
+      orderFrequency: randomInt(1, 13),
+      customerSince: new Date(Date.now() - randomInt(1, 1001) * 24 * 60 * 60 * 1000),
+      lastOrderDate: new Date(Date.now() - randomInt(1, 91) * 24 * 60 * 60 * 1000),
       categoryMix: {
-        restaurant: Math.random(),
-        hotel: Math.random(),
-        retail: Math.random(),
-        travel: Math.random()
+        restaurant: randomInt(0, 1000) / 1000,
+        hotel: randomInt(0, 1000) / 1000,
+        retail: randomInt(0, 1000) / 1000,
+        travel: randomInt(0, 1000) / 1000
       }
     }));
   }
@@ -1554,7 +1555,7 @@ class DemandForecastAgent extends BaseAgent {
         const date = new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000);
         const dayOfWeek = date.getDay();
         const weekendFactor = (dayOfWeek === 0 || dayOfWeek === 6) ? 1.3 : 1;
-        const noise = 0.8 + Math.random() * 0.4;
+        const noise = 0.8 + randomInt(0, 400) / 1000;
         return {
           date,
           demand: Math.floor(p.baseDemand * weekendFactor * noise)
@@ -2027,7 +2028,7 @@ class PriceOptimizerAgent extends BaseAgent {
     return products.map(p => ({
       productId: p.productId,
       history: Array.from({ length: 30 }, (_, i) => ({
-        price: p.currentPrice * (0.9 + Math.random() * 0.2),
+        price: p.currentPrice * (0.9 + randomInt(0, 200) / 1000),
         demand: Math.floor(100 * (1.2 - (i % 10) * 0.02))
       }))
     }));
@@ -2098,7 +2099,7 @@ class PriceOptimizerAgent extends BaseAgent {
         expectedDemandChange,
         expectedRevenueChange,
         reason: this.generateReason(curve, priceChange),
-        confidence: 0.6 + Math.random() * 0.3
+        confidence: 0.6 + randomInt(0, 300) / 1000
       };
     });
   }
@@ -2176,11 +2177,11 @@ class OfferMatcherAgent extends BaseAgent {
   async fetchActiveUsers() {
     return Array.from({ length: 100 }, (_, i) => ({
       userId: `USR${String(i + 1).padStart(6, '0')}`,
-      preferences: ['restaurant', 'hotel', 'retail', 'travel', 'services'].slice(0, Math.floor(Math.random() * 3) + 1),
-      avgOrderValue: Math.floor(Math.random() * 5000) + 200,
-      daysSinceLastOrder: Math.floor(Math.random() * 30) + 1,
-      orderFrequency: Math.floor(Math.random() * 10) + 1,
-      engagementScore: Math.random()
+      preferences: ['restaurant', 'hotel', 'retail', 'travel', 'services'].slice(0, randomInt(1, 4)),
+      avgOrderValue: randomInt(200, 5200),
+      daysSinceLastOrder: randomInt(1, 31),
+      orderFrequency: randomInt(1, 11),
+      engagementScore: randomInt(0, 1000) / 1000
     }));
   }
 
@@ -2314,9 +2315,9 @@ class CrossSellAgent extends BaseAgent {
   async fetchRecentOrders() {
     return Array.from({ length: 200 }, (_, i) => ({
       orderId: `ORD${String(i + 1).padStart(8, '0')}`,
-      userId: `USR${String(Math.floor(Math.random() * 100) + 1).padStart(6, '0')}`,
-      categories: ['restaurant', 'hotel', 'retail', 'travel', 'services'].slice(0, Math.floor(Math.random() * 3) + 1),
-      totalValue: Math.floor(Math.random() * 5000) + 200,
+      userId: `USR${String(randomInt(1, 101)).padStart(6, '0')}`,
+      categories: ['restaurant', 'hotel', 'retail', 'travel', 'services'].slice(0, randomInt(1, 4)),
+      totalValue: randomInt(200, 5200),
       items: this.generateRandomItems()
     }));
   }
@@ -2330,7 +2331,7 @@ class CrossSellAgent extends BaseAgent {
       { id: 'I005', name: 'Electronics Bundle', category: 'retail', price: 25000 }
     ];
 
-    return items.slice(0, Math.floor(Math.random() * 3) + 1);
+    return items.slice(0, randomInt(1, 4));
   }
 
   generateRecommendations(orders) {

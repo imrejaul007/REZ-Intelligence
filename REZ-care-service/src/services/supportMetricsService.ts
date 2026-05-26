@@ -7,7 +7,7 @@
 
 import axios from 'axios';
 import { SupportMetrics } from '../types';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || 'rez-internal-token';
 

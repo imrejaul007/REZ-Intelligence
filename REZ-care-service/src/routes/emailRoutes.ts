@@ -9,7 +9,7 @@
 
 import express, { Request, Response } from 'express';
 import { emailIntegration, EmailMessage } from '../services/emailIntegration';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -74,7 +74,7 @@ router.post('/webhook/ses', async (req: Request, res: Response) => {
         body: mail.content || '',
         date: mail.mail.timestamp,
         messageId: mail.mail.messageId,
-        inReplyTo: mail.mail.headers?.find((h) => h.name === 'In-Reply-To')?.value,
+        inReplyTo: mail.mail.headers?.find((h: { name?: string; value?: string }) => h.name === 'In-Reply-To')?.value,
       };
 
       emailIntegration.processEmailPipeline(email).catch(err => {
@@ -132,7 +132,7 @@ router.post('/webhook/postmark', async (req: Request, res: Response) => {
       subject: Subject,
       body: TextBody,
       html: HtmlBody,
-      attachments: Attachments?.map((a) => a.Name),
+      attachments: Attachments?.map((a: { Name?: string }) => a.Name),
       date: new Date().toISOString(),
       messageId: MessageID,
       inReplyTo: InReplyTo,
@@ -180,8 +180,9 @@ router.post('/submit', async (req: Request, res: Response) => {
       parsed: result.parsed,
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[Email] Manual submission failed', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -213,8 +214,9 @@ router.post('/preview', async (req: Request, res: Response) => {
       suggestedResponse: response,
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[Email] Preview failed', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 
@@ -302,8 +304,9 @@ router.post('/generate', async (req: Request, res: Response) => {
       body,
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[Email] Template generation failed', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: errorMsg });
   }
 });
 

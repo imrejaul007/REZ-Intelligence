@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import express, { Express, Request, Response } from 'express';
 import mongoose, { Schema, Document } from 'mongoose';
 import { z } from 'zod';
@@ -213,7 +214,7 @@ app.post('/api/attribution/track', async (req: Request, res: Response) => {
     const { userId, sessionId, channel, source, campaign, metadata } = req.body;
 
     const event = new AttributionEventModel({
-      eventId: `tp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      eventId: `${crypto.randomUUID()}`,
       userId,
       sessionId,
       touchpoints: [{
@@ -249,7 +250,7 @@ app.post('/api/attribution/convert', async (req: Request, res: Response) => {
     const attribution = calculateAttribution(allTouchpoints, value);
 
     const conversion = new ConversionModel({
-      conversionId: `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      conversionId: `conv_${crypto.randomUUID()}`,
       userId,
       type,
       value: value || 0,

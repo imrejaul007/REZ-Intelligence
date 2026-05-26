@@ -3,6 +3,7 @@
  * Tracks DOOH interactions, QR scans, and campaign engagement
  */
 
+import crypto from 'crypto';
 import winston from 'winston';
 import { ConsumerGraph } from '../ConsumerGraph';
 import { DOOHEngagement, DOOHSummary } from '../types';
@@ -87,7 +88,7 @@ export class DOOHModule {
 
     // Create engagement record
     const engagement: DOOHEngagement = {
-      engagement_id: `dooh_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      engagement_id: `${crypto.randomUUID()}`,
       user_id: userId,
       campaign_id: campaignId,
       location_id: location,
@@ -137,7 +138,7 @@ export class DOOHModule {
     duration?: number
   ): Promise<void> {
     const engagement: DOOHEngagement = {
-      engagement_id: `dooh_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      engagement_id: `${crypto.randomUUID()}`,
       user_id: userId,
       campaign_id: campaignId,
       location_id: locationId,
@@ -159,7 +160,7 @@ export class DOOHModule {
     locationId: string
   ): Promise<void> {
     const engagement: DOOHEngagement = {
-      engagement_id: `dooh_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      engagement_id: `${crypto.randomUUID()}`,
       user_id: userId,
       campaign_id: campaignId,
       location_id: locationId,
@@ -183,7 +184,7 @@ export class DOOHModule {
     if (!profile) return;
 
     const engagement: DOOHEngagement = {
-      engagement_id: `dooh_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      engagement_id: `${crypto.randomUUID()}`,
       user_id: userId,
       campaign_id: campaignId,
       location_id: '',

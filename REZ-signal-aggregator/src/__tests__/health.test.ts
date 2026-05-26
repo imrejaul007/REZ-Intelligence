@@ -2,7 +2,13 @@
  * REZ-signal-aggregator Health Check Tests
  */
 
-import { describe, it, expect } from '@jest/globals';
+// Jest globals are available globally via @types/jest (installed by jest)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const { describe, it, expect } = globalThis as unknown as {
+  describe: (name: string, fn: () => void) => void;
+  it: (name: string, fn: () => void | Promise<void>) => void;
+  expect: (value: unknown) => { toBe: (expected: unknown) => void; toContain: (item: unknown) => void; toBeGreaterThanOrEqual: (num: number) => void; toBeLessThanOrEqual: (num: number) => void; toBeCloseTo: (num: number, precision?: number) => void };
+};
 
 process.env.PORT = '4142';
 process.env.MONGODB_URI = 'mongodb://localhost:27017/test';

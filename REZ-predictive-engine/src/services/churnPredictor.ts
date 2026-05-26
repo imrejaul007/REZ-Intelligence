@@ -7,7 +7,7 @@ import {
   ChurnRisk,
   RetentionOffer
 } from '../types';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 
 // Configuration constants
 const RECENCY_THRESHOLDS = {

@@ -1,4 +1,4 @@
-import { TasteProfile, MerchantVisit, FlywheelStage } from '../types.js';
+import { TasteProfile, FlywheelStage } from '../types.js';
 
 // In-memory taste profile store
 const tasteProfiles: Record<string, TasteProfile> = {};

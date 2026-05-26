@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export interface IEventStore extends Document {
   eventId: string;

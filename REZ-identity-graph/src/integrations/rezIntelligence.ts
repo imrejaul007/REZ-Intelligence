@@ -11,10 +11,24 @@ const SIGNAL_SERVICE_URL = process.env.SIGNAL_AGGREGATOR_URL || 'https://REZ-sig
 const RECOMMEND_SERVICE_URL = process.env.RECOMMENDATION_ENGINE_URL || 'https://REZ-recommendation-engine.onrender.com';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
+interface SignalsResponse {
+  signals?: unknown[];
+  [key: string]: unknown;
+}
+
+interface RecommendationsResponse {
+  recommendations?: unknown[];
+  [key: string]: unknown;
+}
+
+interface FetchOptions extends RequestInit {
+  headers?: Record<string, string>;
+}
+
 /**
  * Make authenticated internal API request
  */
-async function internalRequest(url, options = {}) {
+async function internalRequest<T = unknown>(url: string, options: FetchOptions = {}): Promise<T> {
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -28,7 +42,7 @@ async function internalRequest(url, options = {}) {
     throw new ServiceUnavailableError('Intelligence API', `HTTP ${response.status}`);
   }
 
-  return response.json();
+  return response.json() as T;
 }
 
 // ============================================
@@ -113,7 +127,7 @@ export const signalOperations = {
 
   async query(userId, filters = {}) {
     try {
-      const res = await internalRequest(`${SIGNAL_SERVICE_URL}/api/signals/${userId}`, {
+      const res = await internalRequest<SignalsResponse>(`${SIGNAL_SERVICE_URL}/api/signals/${userId}`, {
         method: 'GET',
         body: JSON.stringify(filters),
       });
@@ -131,7 +145,7 @@ export const signalOperations = {
 export const recommendationOperations = {
   async get(userId, slot = 'general') {
     try {
-      const res = await internalRequest(`${RECOMMEND_SERVICE_URL}/api/recommendations/${userId}`, {
+      const res = await internalRequest<RecommendationsResponse>(`${RECOMMEND_SERVICE_URL}/api/recommendations/${userId}`, {
         method: 'GET',
         body: JSON.stringify({ slot }),
       });

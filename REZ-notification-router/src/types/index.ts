@@ -1,3 +1,4 @@
+import mongoose, { Document } from 'mongoose';
 import { z } from 'zod';
 
 // ============================================================================

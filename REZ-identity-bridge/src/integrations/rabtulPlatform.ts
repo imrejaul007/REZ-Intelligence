@@ -11,10 +11,24 @@ const ANALYTICS_URL = process.env.ANALYTICS_SERVICE_URL || 'https://rez-analytic
 const EVENT_BUS_URL = process.env.EVENT_BUS_URL || 'http://localhost:4025';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
+interface ApiResponse {
+  success?: boolean;
+  user?: unknown;
+  valid?: boolean;
+  balance?: number;
+  transactions?: unknown[];
+  events?: unknown[];
+  [key: string]: unknown;
+}
+
+interface FetchOptions extends RequestInit {
+  headers?: Record<string, string>;
+}
+
 /**
  * Make authenticated internal API request
  */
-async function internalRequest(url, options = {}) {
+async function internalRequest<T = unknown>(url: string, options: FetchOptions = {}): Promise<T> {
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -28,7 +42,7 @@ async function internalRequest(url, options = {}) {
     throw new Error(`Platform API error: ${response.status}`);
   }
 
-  return response.json();
+  return response.json() as Promise<T>;
 }
 
 // ============================================
@@ -36,9 +50,9 @@ async function internalRequest(url, options = {}) {
 // ============================================
 
 export const authOperations = {
-  async verify(token) {
+  async verify(token: string): Promise<unknown | null> {
     try {
-      const res = await internalRequest(`${AUTH_URL}/api/auth/verify`, {
+      const res = await internalRequest<ApiResponse>(`${AUTH_URL}/api/auth/verify`, {
         method: 'POST',
         body: JSON.stringify({ token }),
       });
@@ -48,9 +62,9 @@ export const authOperations = {
     }
   },
 
-  async validateInternalToken() {
+  async validateInternalToken(): Promise<boolean> {
     try {
-      const res = await internalRequest(`${AUTH_URL}/api/auth/internal/validate`, {
+      const res = await internalRequest<ApiResponse>(`${AUTH_URL}/api/auth/internal/validate`, {
         headers: { 'X-Internal-Token': INTERNAL_TOKEN },
       });
       return res.valid ?? false;
@@ -65,20 +79,20 @@ export const authOperations = {
 // ============================================
 
 export const walletOperations = {
-  async getBalance(userId) {
+  async getBalance(userId: string): Promise<number> {
     try {
-      const res = await internalRequest(`${WALLET_URL}/api/wallet/${userId}/balance`);
+      const res = await internalRequest<ApiResponse>(`${WALLET_URL}/api/wallet/${userId}/balance`);
       return res.balance || 0;
     } catch {
       return 0;
     }
   },
 
-  async addCoins(userId, amount, reason, metadata = {}) {
+  async addCoins(userId: string, amount: number, reason: string): Promise<boolean> {
     try {
       await internalRequest(`${WALLET_URL}/api/wallet/add`, {
         method: 'POST',
-        body: JSON.stringify({ userId, amount, reason, metadata }),
+        body: JSON.stringify({ userId, amount, reason }),
       });
       return true;
     } catch {
@@ -86,11 +100,11 @@ export const walletOperations = {
     }
   },
 
-  async deductCoins(userId, amount, reason, metadata = {}) {
+  async deductCoins(userId: string, amount: number, reason: string): Promise<boolean> {
     try {
       await internalRequest(`${WALLET_URL}/api/wallet/deduct`, {
         method: 'POST',
-        body: JSON.stringify({ userId, amount, reason, metadata }),
+        body: JSON.stringify({ userId, amount, reason }),
       });
       return true;
     } catch {
@@ -98,9 +112,9 @@ export const walletOperations = {
     }
   },
 
-  async getTransactions(userId, limit = 20) {
+  async getTransactions(userId: string, limit = 20): Promise<unknown[]> {
     try {
-      const res = await internalRequest(`${WALLET_URL}/api/wallet/${userId}/transactions?limit=${limit}`);
+      const res = await internalRequest<ApiResponse>(`${WALLET_URL}/api/wallet/${userId}/transactions?limit=${limit}`);
       return res.transactions || [];
     } catch {
       return [];
@@ -112,8 +126,16 @@ export const walletOperations = {
 // NOTIFICATION OPERATIONS
 // ============================================
 
+interface NotificationParams {
+  userId?: string;
+  channel?: string;
+  type?: string;
+  title?: string;
+  message?: string;
+}
+
 export const notificationOperations = {
-  async send(params) {
+  async send(params: NotificationParams): Promise<boolean> {
     try {
       await internalRequest(`${NOTIFICATION_URL}/api/notifications/send`, {
         method: 'POST',
@@ -123,7 +145,6 @@ export const notificationOperations = {
           type: params.type || 'info',
           title: params.title,
           message: params.message,
-          data: params.data,
         }),
       });
       return true;
@@ -132,7 +153,7 @@ export const notificationOperations = {
     }
   },
 
-  async sendBulk(notifications) {
+  async sendBulk(notifications: NotificationParams[]): Promise<boolean> {
     try {
       await internalRequest(`${NOTIFICATION_URL}/api/notifications/send/batch`, {
         method: 'POST',
@@ -150,7 +171,7 @@ export const notificationOperations = {
 // ============================================
 
 export const analyticsOperations = {
-  async track(event, properties = {}) {
+  async track(event: string, properties: Record<string, unknown> = {}): Promise<boolean> {
     try {
       await internalRequest(`${ANALYTICS_URL}/api/track`, {
         method: 'POST',
@@ -172,7 +193,7 @@ export const analyticsOperations = {
 // ============================================
 
 export const eventBusOperations = {
-  async publish(type, category, data, context = {}) {
+  async publish(type: string, category: string, data: unknown, context: Record<string, unknown> = {}): Promise<boolean> {
     try {
       await internalRequest(`${EVENT_BUS_URL}/api/events`, {
         method: 'POST',
@@ -192,9 +213,9 @@ export const eventBusOperations = {
     }
   },
 
-  async queryEvents(filters, limit = 100) {
+  async queryEvents(filters: Record<string, unknown>, limit = 100): Promise<unknown[]> {
     try {
-      const res = await internalRequest(`${EVENT_BUS_URL}/api/events/query`, {
+      const res = await internalRequest<ApiResponse>(`${EVENT_BUS_URL}/api/events/query`, {
         method: 'POST',
         body: JSON.stringify({ filters, limit }),
       });

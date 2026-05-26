@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import axios from 'axios';
+import crypto from 'crypto';
 import { FraudCase, FraudCaseSeverity } from '../models/FraudCase';
 import { logger, logFraudAlert } from '../utils/logger';
 
@@ -90,7 +91,7 @@ function mapCaseSeverityToAlertSeverity(severity: FraudCaseSeverity): AlertSever
 // Generate alert ID
 function generateAlertId(): string {
   const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substring(2, 6);
+  const random = crypto.randomUUID().replace(/-/g, '').substring(0, 4);
   return `ALT-${timestamp}-${random}`.toUpperCase();
 }
 

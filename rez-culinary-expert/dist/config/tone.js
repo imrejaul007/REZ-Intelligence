@@ -9,6 +9,7 @@ exports.getToneModifiers = getToneModifiers;
 exports.applyTone = applyTone;
 exports.generateOpener = generateOpener;
 exports.getRotatingAdjective = getRotatingAdjective;
+const crypto_1 = require("crypto");
 exports.TONE_PRESETS = {
     // Default warm, enthusiastic tone
     default: {
@@ -135,7 +136,7 @@ function generateOpener(context, preset = 'default') {
     };
     const levelKey = getToneModifiers(preset).enthusiasm;
     const options = openers[context][levelKey];
-    return options[Math.floor(Math.random() * options.length)];
+    return options[(0, crypto_1.randomInt)(options.length)];
 }
 /**
  * Adjective rotation to avoid repetition
@@ -148,8 +149,8 @@ function getRotatingAdjective(usedAdjectives) {
     ];
     const available = allAdjectives.filter(adj => !usedAdjectives.includes(adj));
     if (available.length === 0) {
-        return allAdjectives[Math.floor(Math.random() * allAdjectives.length)];
+        return allAdjectives[(0, crypto_1.randomInt)(allAdjectives.length)];
     }
-    return available[Math.floor(Math.random() * available.length)];
+    return available[(0, crypto_1.randomInt)(available.length)];
 }
 //# sourceMappingURL=tone.js.map

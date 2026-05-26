@@ -1,6 +1,12 @@
 import axios, { AxiosInstance } from 'axios';
+import crypto from 'crypto';
 import config from '../config/index.js';
-import logger from '../utils/logger.js';
+import logger from './utils/logger.js';
+
+// Crypto-based random number generator for secure randomness
+function secureRandom(): number {
+  return parseInt(crypto.randomBytes(4).toString('hex'), 16) / 0xFFFFFFFF;
+}
 import type {
   InventoryInsight,
   LowStockAlert,
@@ -97,9 +103,6 @@ class InventoryService {
         velocity
       );
 
-      // Get demand forecast
-      const demandForecast = await this.getDemandForecast(productId);
-
       return {
         productId,
         productName: stockData.productName,
@@ -111,7 +114,6 @@ class InventoryService {
         reorderPoint: stockData.reorderPoint || config.inventory.lowStockThreshold,
         reorderQuantity: stockData.reorderQuantity,
         daysUntilStockout,
-        demandForecast,
         supplierLeadTime: stockData.supplierLeadTime,
         supplier: stockData.supplier,
         lastRestocked: stockData.lastRestocked,
@@ -328,10 +330,10 @@ class InventoryService {
       date.setDate(date.getDate() + i);
       return {
         date: date.toISOString().split('T')[0],
-        predicted: Math.floor(Math.random() * 50) + 10,
-        lower: Math.floor(Math.random() * 30) + 5,
-        upper: Math.floor(Math.random() * 70) + 30,
-        confidence: 0.7 + Math.random() * 0.2,
+        predicted: Math.floor(secureRandom() * 50) + 10,
+        lower: Math.floor(secureRandom() * 30) + 5,
+        upper: Math.floor(secureRandom() * 70) + 30,
+        confidence: 0.7 + secureRandom() * 0.2,
       };
     });
 
@@ -355,7 +357,7 @@ class InventoryService {
     logger.info(`Fetching velocity analysis for product ${productId}`);
 
     const currentVelocity = await this.calculateVelocity(productId);
-    const averageVelocity = currentVelocity * (0.9 + Math.random() * 0.2);
+    const averageVelocity = currentVelocity * (0.9 + secureRandom() * 0.2);
     const velocityChange = ((currentVelocity - averageVelocity) / averageVelocity) * 100;
 
     return {

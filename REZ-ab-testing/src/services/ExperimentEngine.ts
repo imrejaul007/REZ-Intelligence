@@ -1,12 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
-import { logger } from '../logger.js';
+import { randomInt } from 'crypto';
 import {
   IExperiment,
-  IAssignment,
   VariantConfig,
-  VariantResult,
-  ControlResult,
-  Results,
   SignificanceResult,
 } from '../types.js';
 
@@ -94,7 +90,8 @@ export class ExperimentEngine {
    */
   assignVariant(variants: VariantConfig[]): string {
     const totalWeight = variants.reduce((sum, v) => sum + v.weight, 0);
-    const random = Math.random() * totalWeight;
+    // Use crypto for secure random variant assignment
+    const random = randomInt(0, totalWeight);
 
     let cumulative = 0;
     for (const variant of variants) {

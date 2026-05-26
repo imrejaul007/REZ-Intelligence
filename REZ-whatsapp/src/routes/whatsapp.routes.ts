@@ -8,13 +8,15 @@ import {
   CreateOrderSchema,
   MessageType,
   ApiResponse,
+  CartItem,
+  OrderAddress,
 } from '../types/whatsapp';
 import { SessionManager } from '../services/sessionManager';
 import { CartService } from '../services/cartService';
 import { OrderService } from '../services/orderService';
 import { ConversationEngine } from '../services/conversationEngine';
 import { validateInternalToken, AuthenticatedRequest } from '../middleware/auth';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export function createWhatsAppRoutes(
   sessionManager: SessionManager,
@@ -41,7 +43,7 @@ export function createWhatsAppRoutes(
             error: {
               code: 'VALIDATION_ERROR',
               message: 'Invalid request body',
-              details: validation.error.errors,
+              details: validation.error.issues,
             },
           };
           res.status(400).json(response);
@@ -108,7 +110,7 @@ export function createWhatsAppRoutes(
             error: {
               code: 'VALIDATION_ERROR',
               message: 'Invalid request body',
-              details: validation.error.errors,
+              details: validation.error.issues,
             },
           };
           res.status(400).json(response);
@@ -228,7 +230,7 @@ export function createWhatsAppRoutes(
             error: {
               code: 'VALIDATION_ERROR',
               message: 'Invalid request body',
-              details: validation.error.errors,
+              details: validation.error.issues,
             },
           };
           res.status(400).json(response);
@@ -245,7 +247,7 @@ export function createWhatsAppRoutes(
               result = { success: false, error: 'Item is required for add operation' };
               break;
             }
-            result = await cartService.addItem(sessionId, item as unknown);
+            result = await cartService.addItem(sessionId, item as CartItem);
             break;
 
           case 'update':
@@ -354,7 +356,7 @@ export function createWhatsAppRoutes(
             error: {
               code: 'VALIDATION_ERROR',
               message: 'Invalid request body',
-              details: validation.error.errors,
+              details: validation.error.issues,
             },
           };
           res.status(400).json(response);
@@ -367,7 +369,7 @@ export function createWhatsAppRoutes(
         const orderResult = await orderService.createOrder({
           sessionId,
           merchantId,
-          deliveryAddress: deliveryAddress as unknown,
+          deliveryAddress: (deliveryAddress || undefined) as OrderAddress | undefined,
           metadata,
         });
 

@@ -1,13 +1,14 @@
 "use strict";
-/**
- * Configuration Module
- * Centralized configuration management with environment variables
- */
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.config = void 0;
+const logger_js_1 = __importDefault(require("./utils/logger.js"));
+/**
+ * Configuration Module
+ * Centralized configuration management with environment variables
+ */
 const dotenv_1 = __importDefault(require("dotenv"));
 // Load environment variables
 dotenv_1.default.config();
@@ -15,7 +16,7 @@ dotenv_1.default.config();
 const requiredEnvVars = ['REDIS_URL'];
 for (const envVar of requiredEnvVars) {
     if (!process.env[envVar]) {
-        console.warn(`Warning: ${envVar} not set, using default`);
+        logger_js_1.default.warn(`Warning: ${envVar} not set, using default`);
     }
 }
 // Server Configuration
@@ -79,7 +80,7 @@ function parseServiceTokens(json) {
         return JSON.parse(json);
     }
     catch {
-        console.error('Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+        logger_js_1.default.error('Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
         return {};
     }
 }

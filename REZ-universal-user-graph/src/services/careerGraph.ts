@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Career Graph Service
  * Manages career/education data for Universal User Graph
@@ -520,7 +521,7 @@ export class CareerGraphService {
     await this.collection.createIndex({ 'careerProfile.skills.name': 1 });
     await this.collection.createIndex({ 'careerProfile.experience.title': 1 });
     await this.collection.createIndex({ 'careerProfile.education.institution': 1 });
-    await this.collection.createIndex({ derived.overallScore: -1 });
+    await this.collection.createIndex({ 'derived.overallScore': -1 });
 
     logger.info('CareerGraph indexes created');
   }

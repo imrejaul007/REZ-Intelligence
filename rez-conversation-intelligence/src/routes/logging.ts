@@ -3,7 +3,7 @@ import { conversationLogger } from '../services/conversationLogger.js';
 import { ConversationCreateSchema, ConversationUpdateSchema, MessageCreateSchema } from '../utils/validators.js';
 import { ValidationError } from '../utils/errors.js';
 import { z } from 'zod';
-import logger from '../utils/logger.js';
+import logger from './utils/logger';
 
 const router = Router();
 
@@ -14,7 +14,7 @@ const validateBody = (schema: z.ZodSchema) => {
       const result = schema.safeParse(req.body);
       if (!result.success) {
         throw new ValidationError('Invalid request body', {
-          errors: result.error.errors,
+          errors: result.error.issues,
         });
       }
       req.body = result.data;
@@ -31,7 +31,7 @@ const validateQuery = (schema: z.ZodSchema) => {
       const result = schema.safeParse(req.query);
       if (!result.success) {
         throw new ValidationError('Invalid query parameters', {
-          errors: result.error.errors,
+          errors: result.error.issues,
         });
       }
       req.query = result.data as Record<string, string>;

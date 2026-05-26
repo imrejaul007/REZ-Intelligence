@@ -57,6 +57,18 @@ export interface ICampaignConfig extends Document {
 
   createdAt: Date;
   updatedAt: Date;
+
+  // Instance methods
+  isChannelEligible(channel: ChannelType): boolean;
+  canRedeem(orderValue: number, isNewCustomer?: boolean): { allowed: boolean; reason?: string };
+  recordRedemption(coinsAwarded: number): Promise<void>;
+}
+
+// Static methods interface
+export interface ICampaignConfigModel extends Model<ICampaignConfig> {
+  findActiveCampaigns(merchantId?: string, channel?: ChannelType): Promise<ICampaignConfig[]>;
+  findByCampaignId(campaignId: string): Promise<ICampaignConfig | null>;
+  updateExpiredCampaigns(): Promise<number>;
 }
 
 // ============================================
@@ -314,7 +326,7 @@ CampaignConfigSchema.statics.findActiveCampaigns = async function (
 
   // Filter by channel eligibility
   if (channel) {
-    return campaigns.filter(c => c.isChannelEligible(channel));
+    return campaigns.filter((c: ICampaignConfig) => c.isChannelEligible(channel));
   }
 
   return campaigns;
@@ -345,5 +357,5 @@ CampaignConfigSchema.statics.updateExpiredCampaigns = async function (): Promise
 // EXPORT
 // ============================================
 
-export const CampaignConfig = (mongoose.models.CampaignConfig as Model<ICampaignConfig>) ||
-  mongoose.model<ICampaignConfig>('CampaignConfig', CampaignConfigSchema);
+export const CampaignConfig = (mongoose.models.CampaignConfig as Model<ICampaignConfig, ICampaignConfigModel>) ||
+  mongoose.model<ICampaignConfig, ICampaignConfigModel>('CampaignConfig', CampaignConfigSchema);

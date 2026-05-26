@@ -5,7 +5,13 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 import logger from './utils/logger';
+
+// Crypto-based random number generator for secure randomness
+function secureRandom(): number {
+  return parseInt(crypto.randomBytes(4).toString('hex'), 16) / 0xFFFFFFFF;
+}
 import type {
   Action,
   ActionType,
@@ -326,7 +332,7 @@ async function executeQueryAction(action: Action): Promise<ActionResult> {
     success: true,
     data: { query, collection, results: [] },
     output: `Query executed on ${collection || 'unknown collection'}`,
-    executionTime: Math.random() * 100,
+    executionTime: secureRandom() * 100,
   };
 }
 
@@ -352,7 +358,7 @@ async function executeCalculationAction(action: Action): Promise<ActionResult> {
     success: true,
     data: { operation, operands: nums, result },
     output: `Calculation result: ${result}`,
-    executionTime: Math.random() * 50,
+    executionTime: secureRandom() * 50,
   };
 }
 
@@ -363,14 +369,14 @@ async function executeDecisionAction(action: Action): Promise<ActionResult> {
   };
 
   // Simple decision logic (in production, this would evaluate complex conditions)
-  const decision = Math.random() > 0.5;
+  const decision = secureRandom() > 0.5;
   const outcome = decision ? options?.ifTrue : options?.ifFalse;
 
   return {
     success: true,
     data: { condition, decision, outcome },
     output: `Decision made: ${decision ? 'true' : 'false'}`,
-    executionTime: Math.random() * 30,
+    executionTime: secureRandom() * 30,
   };
 }
 
@@ -385,7 +391,7 @@ async function executeNotificationAction(action: Action): Promise<ActionResult> 
     success: true,
     data: { recipient, message, channel, sent: true },
     output: `Notification sent to ${recipient} via ${channel || 'default'}`,
-    executionTime: Math.random() * 200,
+    executionTime: secureRandom() * 200,
   };
 }
 
@@ -404,7 +410,7 @@ async function executeWorkflowAction(action: Action): Promise<ActionResult> {
     success: execution.status === 'completed',
     data: { workflowId, executionId: execution.id },
     output: `Workflow ${workflowId} executed`,
-    executionTime: Math.random() * 500,
+    executionTime: secureRandom() * 500,
   };
 }
 
@@ -426,7 +432,7 @@ async function executeExternalApiAction(action: Action): Promise<ActionResult> {
       response: { success: true },
     },
     output: `API call to ${endpoint} completed`,
-    executionTime: Math.random() * 300,
+    executionTime: secureRandom() * 300,
   };
 }
 
@@ -446,7 +452,7 @@ async function executeDatabaseAction(action: Action): Promise<ActionResult> {
       document,
     },
     output: `Database ${operation} on ${collection} completed`,
-    executionTime: Math.random() * 100,
+    executionTime: secureRandom() * 100,
   };
 }
 
@@ -460,7 +466,7 @@ async function executeTransformAction(action: Action): Promise<ActionResult> {
     success: true,
     data: { input, transform, output: input },
     output: `Transform ${transform} applied`,
-    executionTime: Math.random() * 50,
+    executionTime: secureRandom() * 50,
   };
 }
 

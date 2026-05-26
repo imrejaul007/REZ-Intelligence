@@ -23,7 +23,7 @@ import {
   validateMerchantSafe,
 } from '../services/sanitizer.js';
 import { validateMerchantJWT, requirePermission, generateMerchantToken } from '../middleware/auth.js';
-import { logger } from '../utils/logger.js';
+import { logger } from './utils/logger.js';
 import type {
   MerchantCustomer,
   MerchantCustomerDetail,

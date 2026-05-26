@@ -9,7 +9,7 @@
  */
 
 import { emailIntegration, EmailMessage } from './emailIntegration';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 // Client configuration interface
 export interface ClientConfig {

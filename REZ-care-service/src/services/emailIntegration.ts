@@ -10,7 +10,7 @@
  * - Escalate if needed
  */
 
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { mlIntelligence } from './mlIntelligence';
 import { getAIIntegration } from './aiIntegrationService';
 import { getExpertRouter } from './expertRouter';

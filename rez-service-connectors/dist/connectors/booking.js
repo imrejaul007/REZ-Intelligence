@@ -1,13 +1,17 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.BookingConnector = void 0;
+exports.getBookingConnector = getBookingConnector;
+const logger_1 = __importDefault(require("./utils/logger"));
 /**
  * Booking Service Connector
  *
  * Connects to rez-booking-service (Port 4020) for hotel, travel,
  * and event booking management.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.BookingConnector = void 0;
-exports.getBookingConnector = getBookingConnector;
 const client_1 = require("../utils/client");
 const DEFAULT_CONFIG = {
     timeout: 30000,
@@ -259,7 +263,7 @@ function getInternalToken() {
         return tokens.orchestrator || tokens.booking || '';
     }
     catch {
-        console.warn('[BookingConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+        logger_1.default.warn('[BookingConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
         return '';
     }
 }

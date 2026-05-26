@@ -1,13 +1,14 @@
 "use strict";
-/**
- * AIMemoryModule.ts - AI Memory & Preferences for Merchant360
- * Integrates with AgentDB for intelligent merchant memory
- */
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AIMemoryModule = void 0;
+const logger_js_1 = __importDefault(require("./utils/logger.js"));
+/**
+ * AIMemoryModule.ts - AI Memory & Preferences for Merchant360
+ * Integrates with AgentDB for intelligent merchant memory
+ */
 const axios_1 = __importDefault(require("axios"));
 class AIMemoryModule {
     client;
@@ -271,7 +272,7 @@ class AIMemoryModule {
      */
     async semanticSearch(merchantId, query, options = {}) {
         if (!this.agentDBClient) {
-            console.warn('AgentDB not configured, falling back to basic search');
+            logger_js_1.default.warn('AgentDB not configured, falling back to basic search');
             return this.basicSearch(merchantId, query, options);
         }
         try {
@@ -294,7 +295,7 @@ class AIMemoryModule {
      */
     async storeMemory(merchantId, content, metadata = {}) {
         if (!this.agentDBClient) {
-            console.warn('AgentDB not configured, memory not stored');
+            logger_js_1.default.warn('AgentDB not configured, memory not stored');
             return false;
         }
         try {

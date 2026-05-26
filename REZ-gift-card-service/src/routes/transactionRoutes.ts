@@ -25,7 +25,7 @@ router.get(
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: validationResult.error.errors[0]?.message || 'Invalid query parameters',
+            message: validationResult.error.issues[0]?.message || 'Invalid query parameters',
           },
         };
         res.status(400).json(response);

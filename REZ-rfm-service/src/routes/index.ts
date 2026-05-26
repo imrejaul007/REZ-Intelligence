@@ -11,7 +11,7 @@ import {
 } from '../types/index.js';
 import { internalAuth } from '../middleware/auth.js';
 import { rateLimitMiddleware } from '../middleware/rateLimit.js';
-import logger from '../utils/logger.js';
+import logger from './utils/logger.js';
 
 const router = Router();
 

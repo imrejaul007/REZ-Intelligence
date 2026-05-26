@@ -8,7 +8,7 @@ import mongoose from 'mongoose';
 import axios from 'axios';
 
 const app = express();
-app.use(express.json();
+app.use(express.json());
 
 // Connections
 const MERCHANT_API = process.env.MERCHANT_API || 'https://rez-merchant.onrender.com';

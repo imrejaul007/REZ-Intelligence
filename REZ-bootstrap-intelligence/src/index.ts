@@ -1,4 +1,4 @@
-import logger from './utils/logger';
+import { logger } from './utils/logger';
 
 /**
  * REZ Bootstrap Intelligence - Entry Point
@@ -6,9 +6,9 @@ import logger from './utils/logger';
  * AI-powered onboarding and initialization for new merchants.
  */
 
-const PORT = process.env.PORT || 4115;
+const PORT = process.env.PORT || '4115';
 
-logger.info(`Bootstrap Intelligence starting on port ${PORT}`);
-console.log('[READY] Bootstrap Intelligence`);
+logger.info('Bootstrap Intelligence starting on port ' + PORT);
+console.log('[READY] Bootstrap Intelligence');
 
 export {};

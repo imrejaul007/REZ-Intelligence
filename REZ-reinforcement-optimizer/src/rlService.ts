@@ -5,6 +5,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
+import { randomBytes } from 'crypto';
 import logger from './utils/logger';
 import type {
   RLAgent,
@@ -38,6 +39,13 @@ import type {
   HealthStatus,
   ServiceStats,
 } from './types';
+
+/**
+ * Generate a random number between 0 and 1 using crypto
+ */
+function cryptoRandom(): number {
+  return Number(randomBytes(4).readUInt32BE(0)) / 0xFFFFFFFF;
+}
 
 // In-memory stores
 const agents = new Map<string, RLAgent>();
@@ -229,9 +237,9 @@ function initializePolicyParameters(
     const outputSize = actionSpace.actions.length;
 
     // Xavier initialization
-    params['w1'] = Array(inputSize * hiddenSize).fill(0).map(() => (Math.random() - 0.5) * Math.sqrt(2 / (inputSize + hiddenSize)));
+    params['w1'] = Array(inputSize * hiddenSize).fill(0).map(() => (cryptoRandom() - 0.5) * Math.sqrt(2 / (inputSize + hiddenSize)));
     params['b1'] = Array(hiddenSize).fill(0);
-    params['w2'] = Array(hiddenSize * outputSize).fill(0).map(() => (Math.random() - 0.5) * Math.sqrt(2 / (hiddenSize + outputSize)));
+    params['w2'] = Array(hiddenSize * outputSize).fill(0).map(() => (cryptoRandom() - 0.5) * Math.sqrt(2 / (hiddenSize + outputSize)));
     params['b2'] = Array(outputSize).fill(0);
   }
 
@@ -291,11 +299,11 @@ async function selectActionUsingPolicy(
   state: number[],
   epsilon: number
 ): Promise<ActionSelection> {
-  const random = Math.random();
+  const random = cryptoRandom();
 
   if (random < epsilon) {
     // Exploration: random action
-    const action = Math.floor(Math.random() * agent.actionSpace.actions.length);
+    const action = Math.floor(cryptoRandom() * agent.actionSpace.actions.length);
     return {
       action,
       qValue: 0,
@@ -484,7 +492,7 @@ async function computePolicyUpdate(agent: RLAgent, buffer: ReplayBuffer): Promis
   const gradientScale = avgLoss * 0.01;
   for (const key of Object.keys(agent.policy.parameters)) {
     agent.policy.parameters[key] = agent.policy.parameters[key].map(
-      (v: number) => v - gradientScale * (Math.random() - 0.5)
+      (v: number) => v - gradientScale * (cryptoRandom() - 0.5)
     );
   }
 
@@ -498,7 +506,7 @@ function sampleBatch(buffer: ReplayBuffer, batchSize: number): Experience[] {
   const batch: Experience[] = [];
 
   for (let i = 0; i < batchSize && experiences.length > 0; i++) {
-    const idx = Math.floor(Math.random() * experiences.length);
+    const idx = Math.floor(cryptoRandom() * experiences.length);
     batch.push(experiences[idx]);
   }
 
@@ -662,9 +670,9 @@ function initializeState(env: Environment): number[] {
   return env.stateSpace.dimensions.map((dim, i) => {
     const bounds = env.stateSpace.bounds?.[dim];
     if (bounds) {
-      return bounds.min + Math.random() * (bounds.max - bounds.min);
+      return bounds.min + cryptoRandom() * (bounds.max - bounds.min);
     }
-    return Math.random();
+    return cryptoRandom();
   });
 }
 
@@ -675,14 +683,14 @@ function simulateEnvironmentStep(
 ): { nextState: number[]; reward: number; done: boolean } {
   // Simplified environment simulation
   const nextState = state.map((s, i) => {
-    const delta = (Math.random() - 0.5) * 0.1 + (action === i ? 0.1 : 0);
+    const delta = (cryptoRandom() - 0.5) * 0.1 + (action === i ? 0.1 : 0);
     return Math.max(0, Math.min(1, s + delta));
   });
 
   // Simple reward function
   const reward = state.reduce((acc, s) => acc + s, 0) / state.length;
 
-  const done = Math.random() < 0.05; // 5% chance of episode ending
+  const done = cryptoRandom() < 0.05; // 5% chance of episode ending
 
   return { nextState, reward, done };
 }

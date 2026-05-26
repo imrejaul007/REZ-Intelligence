@@ -10,6 +10,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.app = void 0;
+const crypto_1 = __importDefault(require("crypto"));
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
@@ -74,7 +75,7 @@ function setupMiddleware() {
     });
     // Add request ID
     app.use((req, res, next) => {
-        const reqId = req.headers['x-request-id'] || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const reqId = req.headers['x-request-id'] || `${crypto_1.default.randomUUID()}`;
         res.setHeader('X-Request-Id', reqId);
         req.requestId = reqId;
         next();
@@ -242,7 +243,7 @@ async function start() {
                 healthCheck: `http://localhost:${config_1.config.server.port}/health`,
                 apiDocs: `http://localhost:${config_1.config.server.port}/events/types`,
             });
-            console.log(`
+            logger_1.logger.info(`
 ╔══════════════════════════════════════════════════════════╗
 ║        REZ Event Bus Service - Started Successfully      ║
 ╠══════════════════════════════════════════════════════════╣

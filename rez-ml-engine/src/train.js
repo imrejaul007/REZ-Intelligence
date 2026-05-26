@@ -9,20 +9,28 @@ const FraudModel = require('./models/fraud-model');
 const RecommendationModel = require('./models/recommendation-model');
 const PriceModel = require('./models/price-model');
 
-// Generate mock training data
+// Seeded random for deterministic training data generation
+function seededRandom(seed, offset) {
+  const x = Math.sin(seed + offset) * 10000;
+  return x - Math.floor(x);
+}
+
+// Generate mock training data with seeded random for determinism
 function generateFraudTrainingData(count = 1000) {
+  const baseSeed = Date.now();
   const data = [];
   for (let i = 0; i < count; i++) {
-    const isFraud = Math.random() < 0.03;
+    const rand = seededRandom(baseSeed, i);
+    const isFraud = rand < 0.03;
 
     // Fraud indicators
-    const velocity = isFraud ? Math.random() * 30 + 20 : Math.random() * 10;
-    const deviceChanges = isFraud ? Math.random() * 10 + 5 : Math.random() * 2;
-    const failedPayments = isFraud ? Math.random() * 4 + 2 : Math.random();
-    const amount = isFraud ? Math.random() * 40000 + 5000 : Math.random() * 2000 + 100;
-    const accountAge = isFraud ? Math.random() * 30 : Math.random() * 1825;
-    const crossBorder = isFraud ? Math.random() * 0.5 + 0.5 : Math.random() * 0.3;
-    const unusualHours = isFraud ? Math.random() * 8 + 5 : Math.random() * 3;
+    const velocity = isFraud ? seededRandom(baseSeed, i * 20 + 1) * 30 + 20 : seededRandom(baseSeed, i * 20 + 1) * 10;
+    const deviceChanges = isFraud ? seededRandom(baseSeed, i * 20 + 2) * 10 + 5 : seededRandom(baseSeed, i * 20 + 2) * 2;
+    const failedPayments = isFraud ? seededRandom(baseSeed, i * 20 + 3) * 4 + 2 : seededRandom(baseSeed, i * 20 + 3);
+    const amount = isFraud ? seededRandom(baseSeed, i * 20 + 4) * 40000 + 5000 : seededRandom(baseSeed, i * 20 + 4) * 2000 + 100;
+    const accountAge = isFraud ? seededRandom(baseSeed, i * 20 + 5) * 30 : seededRandom(baseSeed, i * 20 + 5) * 1825;
+    const crossBorder = isFraud ? seededRandom(baseSeed, i * 20 + 6) * 0.5 + 0.5 : seededRandom(baseSeed, i * 20 + 6) * 0.3;
+    const unusualHours = isFraud ? seededRandom(baseSeed, i * 20 + 7) * 8 + 5 : seededRandom(baseSeed, i * 20 + 7) * 3;
 
     data.push({
       label: isFraud ? 1 : 0,
@@ -31,14 +39,14 @@ function generateFraudTrainingData(count = 1000) {
         transaction_velocity: velocity,
         account_age_days: accountAge,
         device_change_count: deviceChanges,
-        location_change_count: isFraud ? Math.random() * 15 + 5 : Math.random() * 3,
+        location_change_count: isFraud ? seededRandom(baseSeed, i * 20 + 8) * 15 + 5 : seededRandom(baseSeed, i * 20 + 8) * 3,
         failed_payment_count: failedPayments,
-        avg_transaction_amount: Math.random() * 3000 + 200,
-        transaction_frequency: Math.random() * 20 + 0.5,
+        avg_transaction_amount: seededRandom(baseSeed, i * 20 + 9) * 3000 + 200,
+        transaction_frequency: seededRandom(baseSeed, i * 20 + 10) * 20 + 0.5,
         unusual_hour_count: unusualHours,
-        new_merchant_ratio: Math.random(),
+        new_merchant_ratio: seededRandom(baseSeed, i * 20 + 11),
         cross_border_ratio: crossBorder,
-        max_transaction_24h: isFraud ? Math.random() * 80 + 20 : Math.random() * 10
+        max_transaction_24h: isFraud ? seededRandom(baseSeed, i * 20 + 12) * 80 + 20 : seededRandom(baseSeed, i * 20 + 12) * 10
       }
     });
   }
@@ -46,11 +54,13 @@ function generateFraudTrainingData(count = 1000) {
 }
 
 function generateRecommendationTrainingData(count = 500) {
+  const baseSeed = Date.now() + 1000;
   const data = [];
   for (let i = 0; i < count; i++) {
-    const userId = `user_${Math.floor(Math.random() * 100)}`;
-    const itemId = `item_${Math.floor(Math.random() * 50)}`;
-    const rating = Math.random() < 0.7 ? Math.floor(Math.random() * 3) + 3 : Math.random() < 0.2 ? 1 : 2;
+    const userId = `user_${Math.floor(seededRandom(baseSeed, i * 10) * 100)}`;
+    const itemId = `item_${Math.floor(seededRandom(baseSeed, i * 10 + 1) * 50)}`;
+    const ratingRand = seededRandom(baseSeed, i * 10 + 2);
+    const rating = ratingRand < 0.7 ? Math.floor(seededRandom(baseSeed, i * 10 + 3) * 3) + 3 : seededRandom(baseSeed, i * 10 + 4) < 0.2 ? 1 : 2;
 
     data.push({ userId, itemId, rating });
   }
@@ -58,19 +68,20 @@ function generateRecommendationTrainingData(count = 500) {
 }
 
 function generatePriceTrainingData(count = 500) {
+  const baseSeed = Date.now() + 2000;
   const data = [];
   for (let i = 0; i < count; i++) {
-    const price = Math.random() * 900 + 100;
+    const price = seededRandom(baseSeed, i * 5) * 900 + 100;
     // Higher price = lower demand (inverse relationship)
     const baseDemand = 1000;
     const elasticity = -1.2;
-    const demand = Math.max(10, baseDemand * Math.pow(price / 500, elasticity) + Math.random() * 100);
+    const demand = Math.max(10, baseDemand * Math.pow(price / 500, elasticity) + seededRandom(baseSeed, i * 5 + 1) * 100);
 
     data.push({
       price,
       demand: Math.round(demand),
-      margin: Math.random() * 0.3 + 0.2,
-      segment: Math.random() < 0.3 ? 'premium' : 'general'
+      margin: seededRandom(baseSeed, i * 5 + 2) * 0.3 + 0.2,
+      segment: seededRandom(baseSeed, i * 5 + 3) < 0.3 ? 'premium' : 'general'
     });
   }
   return data;
@@ -131,7 +142,7 @@ async function trainModels(modelType = 'all') {
     const testItems = Array.from({ length: 10 }, (_, i) => ({
       itemId: `item_${i}`,
       itemName: `Product ${i + 1}`,
-      rating: Math.random() * 2 + 3
+      rating: seededRandom(Date.now(), i + 100) * 2 + 3
     }));
 
     const recResult = recModel.recommend(testUser, testItems, { limit: 5 });

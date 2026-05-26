@@ -1,4 +1,4 @@
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 
 /**
  * REZ-unified-attribution → Commerce Graph Sync

@@ -1,3 +1,4 @@
+import { Document } from 'mongoose';
 import { z } from 'zod';
 
 // ============================================================================
@@ -130,6 +131,20 @@ export interface TransactionHistoryEntry {
   transactionId: string;
   timestamp: Date;
   notes?: string;
+}
+
+export interface Transaction {
+  transactionId: string;
+  giftCardId: string;
+  type: TransactionType;
+  status: TransactionStatus;
+  amount: number;
+  balanceBefore: number;
+  balanceAfter: number;
+  paymentMethod?: PaymentMethod;
+  metadata?: TransactionMetadata;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface GiftCardMetadata {

@@ -1,109 +1,45 @@
-/**
- * REZ Unified Chat - Authentication Middleware
- *
- * Uses RABTUL Auth Service for internal service authentication.
- */
+import { Request, Response, NextFunction } from 'express';
+import { logger } from './utils/logger.js';
 
-import { Request, Response, NextFunction } import logger from './utils/logger';
-import from 'express';
-import crypto from 'crypto';
-
-const INTERNAL_SERVICE_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
-const INTERNAL_SERVICE_TOKENS_JSON = process.env.INTERNAL_SERVICE_TOKENS_JSON || '{}';
-const NODE_ENV = process.env.NODE_ENV || 'development';
-
-interface ServiceTokens {
-  [service: string]: string;
+export interface AuthConfig {
+  apiKeys?: string[];
+  internalTokens?: string[];
+  bypassPaths?: string[];
 }
 
-let serviceTokens: ServiceTokens = {};
-try {
-  serviceTokens = JSON.parse(INTERNAL_SERVICE_TOKENS_JSON);
-} catch {
-  serviceTokens = {};
-}
+export function createAuthMiddleware(config: AuthConfig) {
+  const { apiKeys = [], internalTokens = [], bypassPaths = ['/health', '/ready'] } = config;
 
-/**
- * Timing-safe string comparison to prevent timing attacks
- */
-function timingSafeCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) {
-    return false;
-  }
-  try {
-    return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
-  } catch {
-    return false;
-  }
-}
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const path = req.path;
 
-/**
- * Verify internal service token
- */
-function verifyInternalToken(token: string): boolean {
-  if (!token) return false;
-
-  if (INTERNAL_SERVICE_TOKEN && timingSafeCompare(token, INTERNAL_SERVICE_TOKEN)) {
-    return true;
-  }
-
-  for (const t of Object.values(serviceTokens)) {
-    if (timingSafeCompare(token, t)) {
-      return true;
+    // Bypass health checks
+    if (bypassPaths.some(p => path.startsWith(p))) {
+      return next();
     }
-  }
 
-  return false;
-}
+    // Check API key
+    const apiKey = req.headers['x-api-key'] as string | undefined;
+    if (apiKey && apiKeys.includes(apiKey)) {
+      return next();
+    }
 
-/**
- * Authentication middleware for internal services
- * Requires X-Internal-Token header
- */
-export function requireInternalAuth(req: Request, res: Response, next: NextFunction): void {
-  if (NODE_ENV !== 'production' && !INTERNAL_SERVICE_TOKEN && Object.keys(serviceTokens).length === 0) {
-    logger.warn('[AUTH] Running in development mode without authentication');
-    (req as unknown).isInternalService = true;
-    (req as unknown).serviceName = 'development';
-    return next();
-  }
+    // Check internal token
+    const internalToken = req.headers['x-internal-token'] as string | undefined;
+    if (internalToken && internalTokens.includes(internalToken)) {
+      return next();
+    }
 
-  const token = req.headers['x-internal-token'] as string;
-
-  if (!token) {
-    console.warn('Authentication failed: No token provided', {
+    // No valid auth found
+    logger.warn('Unauthorized access attempt', {
+      path,
       ip: req.ip,
-      path: req.path,
-      method: req.method
+      userAgent: req.headers['user-agent'],
     });
 
-    return res.status(401).json({
-      success: false,
-      error: {
-        code: 'UNAUTHORIZED',
-        message: 'Authentication required. Provide X-Internal-Token header.'
-      }
+    res.status(401).json({
+      error: 'Unauthorized',
+      message: 'Valid API key or internal token required',
     });
-  }
-
-  if (!verifyInternalToken(token)) {
-    console.warn('Authentication failed: Invalid token', {
-      ip: req.ip,
-      path: req.path,
-      method: req.method
-    });
-
-    return res.status(401).json({
-      success: false,
-      error: {
-        code: 'INVALID_TOKEN',
-        message: 'Invalid authentication token.'
-      }
-    });
-  }
-
-  (req as unknown).isInternalService = true;
-  (req as unknown).serviceName = 'internal-service';
-
-  next();
+  };
 }

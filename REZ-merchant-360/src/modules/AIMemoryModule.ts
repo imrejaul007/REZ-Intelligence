@@ -1,4 +1,4 @@
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 
 /**
  * AIMemoryModule.ts - AI Memory & Preferences for Merchant360

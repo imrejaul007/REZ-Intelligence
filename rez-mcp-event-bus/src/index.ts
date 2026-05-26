@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import logger from './utils/logger';
 
 import 'dotenv/config';
@@ -234,7 +235,7 @@ async function handleGetEvents(args): Promise<string> {
 
 async function handlePublishEvent(args): Promise<string> {
   const event: Event = {
-    id: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: `evt_${crypto.randomUUID()}`,
     type: args.type,
     channel: args.channel || 'events',
     source: 'mcp-client',

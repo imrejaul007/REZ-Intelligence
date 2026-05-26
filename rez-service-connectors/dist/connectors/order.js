@@ -1,13 +1,17 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.OrderConnector = void 0;
+exports.getOrderConnector = getOrderConnector;
+const logger_1 = __importDefault(require("./utils/logger"));
 /**
  * Order Service Connector
  *
  * Connects to rez-order-service (Port 3008) for order management,
  * status updates, and fulfillment operations.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.OrderConnector = void 0;
-exports.getOrderConnector = getOrderConnector;
 const client_1 = require("../utils/client");
 const DEFAULT_CONFIG = {
     timeout: 30000,
@@ -253,7 +257,7 @@ function getInternalToken() {
         return tokens.orchestrator || tokens.order || '';
     }
     catch {
-        console.warn('[OrderConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+        logger_1.default.warn('[OrderConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
         return '';
     }
 }

@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Session, ISession } from '../models/Session';
 import { CartItem, SessionState } from '../types/whatsapp';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export interface CartSummary {
   items: CartItem[];
@@ -130,7 +130,7 @@ export class CartService {
       }
 
       // Update quantity
-      (session as unknown).updateCartItem(productId, quantity);
+      session.updateCartItem(productId, quantity);
       session.lastActivity = new Date();
       await session.save();
 
@@ -170,7 +170,7 @@ export class CartService {
         return { success: false, error: 'Session not found' };
       }
 
-      (session as unknown).removeFromCart(productId);
+      session.removeFromCart(productId);
       session.lastActivity = new Date();
       await session.save();
 
@@ -318,7 +318,14 @@ export class CartService {
         return { success: false, error: 'Session not found' };
       }
 
-      const metadata = session.metadata as unknown;
+      const metadata: Record<string, unknown> = {};
+      if (session.metadata instanceof Map) {
+        session.metadata.forEach((value, key) => {
+          metadata[key] = value;
+        });
+      } else {
+        Object.assign(metadata, session.metadata);
+      }
       const currentDiscount = metadata?.discountCode;
       if (!currentDiscount) {
         return { success: false, error: 'No discount applied' };
@@ -360,11 +367,18 @@ export class CartService {
   private calculateCartSummary(session: ISession): CartSummary {
     const items = session.context.cart;
     const itemCount = items.reduce((sum: number, item) => sum + item.quantity, 0);
-    const subtotal = (session as unknown).getCartTotal?.() || items.reduce((sum: number, item) => sum + (item.price || 0) * (item.quantity || 0), 0);
+    const subtotal = session.getCartTotal();
 
     // Calculate discount
     let discount = 0;
-    const metadata = session.metadata as unknown || {};
+    const metadata: Record<string, unknown> = {};
+    if (session.metadata instanceof Map) {
+      session.metadata.forEach((value, key) => {
+        metadata[key] = value;
+      });
+    } else {
+      Object.assign(metadata, session.metadata);
+    }
     const discountCode = metadata.discountCode;
     const discountAmount = metadata.discountAmount;
     const discountType = metadata.discountType;
@@ -495,9 +509,9 @@ export class CartService {
             existingItem.quantity + item.quantity,
             this.maxQuantityPerItem
           );
-          (targetSession as unknown).updateCartItem?.(item.productId, newQty);
+          targetSession.updateCartItem(item.productId, newQty);
         } else {
-          (targetSession as unknown).addToCart?.(item);
+          targetSession.addToCart(item);
         }
       }
 

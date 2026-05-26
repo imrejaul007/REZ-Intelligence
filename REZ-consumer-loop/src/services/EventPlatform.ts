@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Event, EventType, FlywheelStage } from '../types.js';
+import { Event, EventType } from '../types.js';
 
 // In-memory event store
 const events: Event[] = [];

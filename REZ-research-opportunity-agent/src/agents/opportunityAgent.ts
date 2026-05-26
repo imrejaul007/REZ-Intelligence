@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { v4 as uuidv4 } from 'uuid';
+import { randomInt } from 'crypto';
 import config from '../config/index.js';
 import {
   Opportunity,
@@ -12,7 +13,7 @@ import {
 import { businessAnalysisService, competitorAnalysisService, opportunityService, alertService } from '../services/index.js';
 import { OPPORTUNITY_SYSTEM_PROMPT, OPPORTUNITY_USER_PROMPT } from '../prompts/opportunityPrompt.js';
 import { THRESHOLDS } from '../constants/thresholds.js';
-import logger from '../utils/logger.js';
+import logger from './utils/logger.js';
 
 const log = logger.child({ context: 'OpportunityAgent' });
 
@@ -193,9 +194,10 @@ class OpportunityAgent {
       return segmentMatch[1].trim();
     }
 
-    // Default segments
+    // Default segments - use deterministic selection based on content hash
     const segments = ['VIP', 'Regular', 'New', 'At-Risk', 'High-Value'];
-    return segments[Math.floor(Math.random() * segments.length)];
+    const hash = content.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    return segments[hash % segments.length];
   }
 
   private extractRecommendations(

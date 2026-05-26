@@ -4,10 +4,15 @@ import { personalizationService } from '../services/personalizationService';
 import { contextService } from '../services/contextService';
 import { intelligenceService } from '../services/intelligenceService';
 import { authenticate, requestId } from '../middleware/auth';
-import { Tone, PrivacyLevel } from '../models/GlobalPersonalization';
 import { logger } from '../utils/logger';
 
 const router = Router();
+
+// Extend Request type to include custom properties
+interface AuthenticatedRequest extends Request {
+  userId?: string;
+  requestId?: string;
+}
 
 // Validation schemas
 const updatePreferencesSchema = z.object({
@@ -53,7 +58,7 @@ const recordPurchaseSchema = z.object({
  * GET /api/personalization/preferences
  * Get user preferences
  */
-router.get('/preferences', requestId, authenticate, async (req: Request, res: Response) => {
+router.get('/preferences', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
@@ -83,7 +88,7 @@ router.get('/preferences', requestId, authenticate, async (req: Request, res: Re
  * PATCH /api/personalization/preferences
  * Update user preferences
  */
-router.patch('/preferences', requestId, authenticate, async (req: Request, res: Response) => {
+router.patch('/preferences', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
@@ -126,7 +131,7 @@ router.patch('/preferences', requestId, authenticate, async (req: Request, res: 
  * POST /api/personalization/preferences/reset
  * Reset preferences to defaults
  */
-router.post('/preferences/reset', requestId, authenticate, async (req: Request, res: Response) => {
+router.post('/preferences/reset', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
@@ -171,7 +176,7 @@ router.post('/preferences/reset', requestId, authenticate, async (req: Request, 
  * GET /api/personalization/loyalty
  * Get loyalty profile
  */
-router.get('/loyalty', requestId, authenticate, async (req: Request, res: Response) => {
+router.get('/loyalty', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
@@ -201,7 +206,7 @@ router.get('/loyalty', requestId, authenticate, async (req: Request, res: Respon
  * PATCH /api/personalization/loyalty
  * Update loyalty profile
  */
-router.patch('/loyalty', requestId, authenticate, async (req: Request, res: Response) => {
+router.patch('/loyalty', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
@@ -216,11 +221,6 @@ router.patch('/loyalty', requestId, authenticate, async (req: Request, res: Resp
         },
       });
       return;
-    }
-
-    // Process history dates
-    if (validation.data.history?.lastPurchaseDate) {
-      validation.data.history.lastPurchaseDate = new Date(validation.data.history.lastPurchaseDate);
     }
 
     const profile = await personalizationService.updateLoyaltyProfile(userId, validation.data);
@@ -260,7 +260,7 @@ router.patch('/loyalty', requestId, authenticate, async (req: Request, res: Resp
  * GET /api/personalization/loyalty/benefits
  * Get tier benefits
  */
-router.get('/loyalty/benefits', requestId, authenticate, async (req: Request, res: Response) => {
+router.get('/loyalty/benefits', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
@@ -301,7 +301,7 @@ router.get('/loyalty/benefits', requestId, authenticate, async (req: Request, re
  * POST /api/personalization/loyalty/purchase
  * Record a purchase and update loyalty
  */
-router.post('/loyalty/purchase', requestId, authenticate, async (req: Request, res: Response) => {
+router.post('/loyalty/purchase', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
@@ -352,7 +352,7 @@ router.post('/loyalty/purchase', requestId, authenticate, async (req: Request, r
  * GET /api/personalization/context
  * Get contextual data
  */
-router.get('/context', requestId, authenticate, async (req: Request, res: Response) => {
+router.get('/context', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
@@ -382,7 +382,7 @@ router.get('/context', requestId, authenticate, async (req: Request, res: Respon
  * PATCH /api/personalization/context
  * Update contextual data
  */
-router.patch('/context', requestId, authenticate, async (req: Request, res: Response) => {
+router.patch('/context', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
@@ -434,7 +434,7 @@ router.patch('/context', requestId, authenticate, async (req: Request, res: Resp
  * POST /api/personalization/context/activity
  * Update recent activity
  */
-router.post('/context/activity', requestId, authenticate, async (req: Request, res: Response) => {
+router.post('/context/activity', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
@@ -494,7 +494,7 @@ router.post('/context/activity', requestId, authenticate, async (req: Request, r
  * GET /api/personalization/intelligence
  * Get comprehensive intelligence data
  */
-router.get('/intelligence', requestId, authenticate, async (req: Request, res: Response) => {
+router.get('/intelligence', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
@@ -548,7 +548,7 @@ router.get('/intelligence', requestId, authenticate, async (req: Request, res: R
  * POST /api/personalization/recommendations
  * Generate personalized recommendations
  */
-router.post('/recommendations', requestId, authenticate, async (req: Request, res: Response) => {
+router.post('/recommendations', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
@@ -602,7 +602,7 @@ router.post('/recommendations', requestId, authenticate, async (req: Request, re
  * GET /api/personalization/engagement
  * Get engagement score
  */
-router.get('/engagement', requestId, authenticate, async (req: Request, res: Response) => {
+router.get('/engagement', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
@@ -632,7 +632,7 @@ router.get('/engagement', requestId, authenticate, async (req: Request, res: Res
  * GET /api/personalization/behavior
  * Analyze behavior patterns
  */
-router.get('/behavior', requestId, authenticate, async (req: Request, res: Response) => {
+router.get('/behavior', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
@@ -662,7 +662,7 @@ router.get('/behavior', requestId, authenticate, async (req: Request, res: Respo
  * POST /api/personalization/greeting
  * Get personalized greeting
  */
-router.post('/greeting', requestId, authenticate, async (req: Request, res: Response) => {
+router.post('/greeting', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
 

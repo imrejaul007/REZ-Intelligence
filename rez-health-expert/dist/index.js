@@ -1,84 +1,227 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.healthExpert = exports.startServer = exports.app = void 0;
-const express_1 = __importDefault(require("express"));
-const cors_1 = __importDefault(require("cors"));
-const helmet_1 = __importDefault(require("helmet"));
-const health_routes_1 = require("./routes/health.routes");
-const healthExpert_1 = require("./services/healthExpert");
-Object.defineProperty(exports, "healthExpert", { enumerable: true, get: function () { return healthExpert_1.healthExpert; } });
-const expertise_1 = require("./services/expertise");
-const app = (0, express_1.default)();
-exports.app = app;
-const PORT = process.env.PORT || 3011;
-app.use((0, helmet_1.default)());
-app.use((0, cors_1.default)({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
-    credentials: true
-}));
-app.use(express_1.default.json());
-app.use(express_1.default.urlencoded({ extended: true }));
-app.use((req, res, next) => {
-    healthExpert_1.logger.info(`${req.method} ${req.path}`, {
-        ip: req.ip,
-        userAgent: req.get('user-agent')
+/**
+ * REZ Health Expert Agent
+ * Main entry point with TypeScript, Zod validation, and proper error handling
+ */
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import compression from 'compression';
+import { configSchema } from './config/index.js';
+import { logger } from './services/healthExpert.js';
+import { healthRouter } from './routes/health.routes.js';
+import { errorHandler, notFoundHandler, requestLogger, asyncHandler } from './middleware/validation.js';
+import { ServiceError } from './types/index.js';
+// ============================================
+// CONFIGURATION VALIDATION
+// ============================================
+function loadConfig() {
+    const result = configSchema.safeParse({
+        port: process.env.PORT,
+        nodeEnv: process.env.NODE_ENV,
+        corsOrigins: process.env.ALLOWED_ORIGINS,
+        rateLimitWindowMs: process.env.RATE_LIMIT_WINDOW_MS,
+        rateLimitMaxRequests: process.env.RATE_LIMIT_MAX_REQUESTS,
+        logLevel: process.env.LOG_LEVEL
     });
-    next();
+    if (!result.success) {
+        console.error('Configuration validation failed:', result.error.format());
+        throw new ServiceError('Invalid configuration', 'CONFIG_ERROR', 1);
+    }
+    const data = result.data;
+    return {
+        port: data.port ?? 3011,
+        nodeEnv: data.nodeEnv ?? 'development',
+        corsOrigins: data.corsOrigins ?? ['http://localhost:3000'],
+        rateLimitWindowMs: data.rateLimitWindowMs ?? 60000,
+        rateLimitMaxRequests: data.rateLimitMaxRequests ?? 100,
+        logLevel: data.logLevel ?? 'info',
+        serviceName: 'rez-health-expert',
+        version: '1.0.0'
+    };
+}
+const config = loadConfig();
+// ============================================
+// APP INITIALIZATION
+// ============================================
+const app = express();
+// ============================================
+// SECURITY MIDDLEWARE
+// ============================================
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrc: ["'self'"],
+            imgSrc: ["'self'", 'data:', 'https:'],
+        },
+    },
+    crossOriginEmbedderPolicy: false,
+}));
+// CORS
+app.use(cors({
+    origin: config.corsOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Internal-Token']
+}));
+// Body parsing
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+// Compression
+app.use(compression());
+// Request logging
+app.use(requestLogger);
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: config.rateLimitWindowMs,
+    max: config.rateLimitMaxRequests,
+    message: {
+        success: false,
+        error: {
+            code: 'RATE_LIMIT_EXCEEDED',
+            message: 'Too many requests, please try again later'
+        }
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => {
+        return req.body?.sessionId || req.ip || 'unknown';
+    },
 });
+app.use('/api/', limiter);
+// ============================================
+// HEALTH CHECKS
+// ============================================
 app.get('/health', (req, res) => {
     res.json({
         status: 'healthy',
-        service: 'rez-health-expert',
+        service: config.serviceName,
+        version: config.version,
         timestamp: new Date().toISOString(),
-        version: process.env.npm_package_version || '1.0.0'
+        uptime: process.uptime()
     });
 });
-app.use('/api/v1/health', health_routes_1.healthRouter);
-app.use((err, req, res, next) => {
-    healthExpert_1.logger.error('Unhandled error', {
-        error: err.message,
-        stack: err.stack,
-        path: req.path,
-        method: req.method
+app.get('/health/detailed', asyncHandler(async (req, res) => {
+    const memoryUsage = process.memoryUsage();
+    const healthData = {
+        status: 'healthy',
+        service: config.serviceName,
+        version: config.version,
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: config.nodeEnv,
+        memory: {
+            heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024),
+            heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024),
+            rss: Math.round(memoryUsage.rss / 1024 / 1024),
+            external: Math.round(memoryUsage.external / 1024 / 1024)
+        },
+        process: {
+            pid: process.pid,
+            platform: process.platform,
+            nodeVersion: process.version
+        }
+    };
+    res.json(healthData);
+}));
+app.get('/health/ready', (req, res) => {
+    const checks = {
+        initialized: true,
+        memory: process.memoryUsage().heapUsed < 500 * 1024 * 1024
+    };
+    const isReady = Object.values(checks).every(Boolean);
+    res.status(isReady ? 200 : 503).json({
+        ready: isReady,
+        checks,
+        timestamp: new Date().toISOString()
     });
-    res.status(500).json({
-        success: false,
-        error: {
-            code: 'INTERNAL_ERROR',
-            message: 'An unexpected error occurred'
+});
+// ============================================
+// API ROUTES
+// ============================================
+app.use('/api/v1/health', healthRouter);
+// Root endpoint
+app.get('/', (req, res) => {
+    res.json({
+        service: config.serviceName,
+        version: config.version,
+        description: 'AI-powered health expert for symptom guidance, wellness tips, and appointment booking',
+        endpoints: {
+            health: 'GET /health',
+            healthDetailed: 'GET /health/detailed',
+            healthReady: 'GET /health/ready',
+            chat: 'POST /api/v1/health/chat',
+            symptom: 'POST /api/v1/health/symptom',
+            appointment: 'POST /api/v1/health/appointment',
+            wellness: 'GET /api/v1/health/wellness',
+            glossary: 'GET /api/v1/health/glossary'
         }
     });
 });
-app.use((req, res) => {
-    res.status(404).json({
-        success: false,
-        error: {
-            code: 'NOT_FOUND',
-            message: `Route ${req.method} ${req.path} not found`
-        }
-    });
-});
-const startServer = async () => {
+// ============================================
+// ERROR HANDLING
+// ============================================
+app.use(notFoundHandler);
+app.use(errorHandler);
+// ============================================
+// GRACEFUL SHUTDOWN
+// ============================================
+let server = null;
+async function shutdown(signal) {
+    logger.info(`Received ${signal}. Starting graceful shutdown...`);
+    if (server) {
+        server.close(() => {
+            logger.info('HTTP server closed');
+        });
+    }
+    process.exit(0);
+}
+// ============================================
+// SERVER STARTUP
+// ============================================
+function startServer() {
     try {
-        (0, expertise_1.validateEnv)();
-        healthExpert_1.logger.info('REZ Health Expert starting...');
-        app.listen(PORT, () => {
-            healthExpert_1.logger.info(`REZ Health Expert started on port ${PORT}`, {
-                port: PORT,
-                env: process.env.NODE_ENV || 'development'
-            });
+        server = app.listen(config.port, () => {
+            logger.info(`
+╔═══════════════════════════════════════════════════════════════╗
+║                   REZ Health Expert Agent                     ║
+╠═══════════════════════════════════════════════════════════════╣
+║  Status:     Running                                         ║
+║  Port:       ${String(config.port).padEnd(53)}║
+║  Environment: ${config.nodeEnv.padEnd(45)}║
+║  Log Level:  ${config.logLevel.padEnd(47)}║
+╚═══════════════════════════════════════════════════════════════╝
+      `);
+            logger.info('API Endpoints:');
+            logger.info('  POST /api/v1/health/chat         - Chat with health expert');
+            logger.info('  POST /api/v1/health/symptom       - Get symptom guidance');
+            logger.info('  POST /api/v1/health/appointment  - Book appointment');
+            logger.info('  GET  /api/v1/health/wellness     - Get wellness tips');
+            logger.info('  GET  /health                     - Health check');
+        });
+        // Graceful shutdown
+        process.on('SIGTERM', () => shutdown('SIGTERM'));
+        process.on('SIGINT', () => shutdown('SIGINT'));
+        // Unhandled rejection
+        process.on('unhandledRejection', (reason) => {
+            logger.error('Unhandled Rejection:', { reason });
+        });
+        // Uncaught exception
+        process.on('uncaughtException', (error) => {
+            logger.error('Uncaught Exception:', error);
+            process.exit(1);
         });
     }
     catch (error) {
-        healthExpert_1.logger.error('Failed to start server', { error });
+        logger.error('Failed to start server:', error);
         process.exit(1);
     }
-};
-exports.startServer = startServer;
-if (require.main === module) {
+}
+// Start server if this is the main module
+if (require.main === module || process.argv[1]?.endsWith('index.ts')) {
     startServer();
 }
+export { app, startServer, config };
 //# sourceMappingURL=index.js.map

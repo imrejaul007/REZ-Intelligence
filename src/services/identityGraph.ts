@@ -4,6 +4,8 @@
  * Unified identity layer linking all consumer touchpoints
  */
 
+import { randomUUID } from 'crypto';
+
 export interface UnifiedProfile {
   id: string;
   primaryIdentifier: {
@@ -122,7 +124,7 @@ export class ConsumerIdentityGraph {
     attributes: ProfileAttributes,
     merchantId?: string
   ): UnifiedProfile {
-    const profileId = `profile-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const profileId = `profile-${randomUUID()}`;
 
     const linkedProfile: LinkedProfile = {
       profileId,
@@ -158,7 +160,7 @@ export class ConsumerIdentityGraph {
 
     // Create new unified profile
     const unifiedProfile: UnifiedProfile = {
-      id: `unified-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `unified-${randomUUID()}`,
       primaryIdentifier: {
         phone: attributes.phone,
         email: attributes.email,

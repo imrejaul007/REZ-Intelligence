@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios';
 import { ServiceHealth, HealthStatus, ServiceConfig, CachedHealthData } from '../types/index.js';
-import { logError, logWarn } from './logger.js';
+import { logWarn } from './logger.js';
 
 // Cache TTL in milliseconds (30 seconds)
 const CACHE_TTL = 30000;

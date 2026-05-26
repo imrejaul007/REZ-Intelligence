@@ -1,6 +1,13 @@
-import crypto from 'crypto';
+import { randomUUID, randomBytes } from 'crypto';
 import { Scenario, ScenarioResult, MetricType, MonteCarloParams, MonteCarloResult } from '../types/index.js';
-import { logger } from '../utils/logger.js';
+import { logger } from './utils/logger.js';
+
+/**
+ * Generate a random number between 0 and 1 using crypto
+ */
+function cryptoRandom(): number {
+  return Number(randomBytes(4).readUInt32BE(0)) / 0xFFFFFFFF;
+}
 
 export class SimulationEngine {
   private baselineMetrics: Map<string, Record<MetricType, number>> = new Map();
@@ -20,7 +27,7 @@ export class SimulationEngine {
     const percentChanges = this.calculatePercentChanges(baseline, projectedMetrics);
 
     const result: ScenarioResult = {
-      scenarioId: scenario.id || crypto.randomUUID(),
+      scenarioId: scenario.id || randomUUID(),
       baselineMetrics: baseline,
       projectedMetrics,
       deltas,
@@ -231,13 +238,13 @@ export class SimulationEngine {
       case 'uniform':
         const min = params.min || 0;
         const max = params.max || 1;
-        return min + Math.random() * (max - min);
+        return min + cryptoRandom() * (max - min);
 
       case 'normal':
         const mean = params.mean || 0;
         const std = params.std || 1;
-        const u1 = Math.random();
-        const u2 = Math.random();
+        const u1 = cryptoRandom();
+        const u2 = cryptoRandom();
         const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
         return mean + std * z;
 
@@ -245,7 +252,7 @@ export class SimulationEngine {
         const tMin = params.min || 0;
         const tMax = params.max || 1;
         const mode = params.mode || (tMin + tMax) / 2;
-        const u = Math.random();
+        const u = cryptoRandom();
         const cf = (mode - tMin) / (tMax - tMin);
         if (u < cf) {
           return tMin + Math.sqrt(u * (tMax - tMin) * (mode - tMin));
@@ -260,13 +267,13 @@ export class SimulationEngine {
         let p = 1;
         do {
           k++;
-          p *= Math.random();
+          p *= cryptoRandom();
         } while (p > l);
         return k - 1;
 
       case 'exponential':
         const rate = params.rate || 1;
-        return -Math.log(1 - Math.random()) / rate;
+        return -Math.log(1 - cryptoRandom()) / rate;
 
       default:
         return params.mean || 0;

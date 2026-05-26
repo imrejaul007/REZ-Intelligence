@@ -4,7 +4,7 @@ import {
   ConversionPrediction,
   ConversionPredictionResult
 } from '../types';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 
 // Funnel stages
 type FunnelStage = 'awareness' | 'interest' | 'consideration' | 'intent' | 'purchase';

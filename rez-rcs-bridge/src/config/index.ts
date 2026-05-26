@@ -1,5 +1,3 @@
-import logger from './utils/logger';
-
 import dotenv from 'dotenv';
 import { z } from 'zod';
 
@@ -52,7 +50,7 @@ function parseServiceTokens(json: string): ServiceTokens {
   try {
     return JSON.parse(json);
   } catch {
-    logger.error('Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+    console.error('Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
     return {};
   }
 }

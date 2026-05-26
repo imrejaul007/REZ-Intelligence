@@ -1,8 +1,8 @@
 import { Router, Response, NextFunction } from 'express';
 import { validateInternalToken, AuthenticatedRequest } from '../middleware/auth';
 import { BroadcastService } from '../services/broadcastService';
-import { CreateBroadcastSchema, BroadcastStatus, ApiResponse } from '../types/whatsapp';
-import { logger } from '../utils/logger';
+import { CreateBroadcastSchema, BroadcastStatus, ApiResponse, BroadcastSegment } from '../types/whatsapp';
+import { logger } from '../utils/logger.js';
 
 export function createBroadcastRoutes(
   broadcastService: BroadcastService
@@ -25,7 +25,7 @@ export function createBroadcastRoutes(
             error: {
               code: 'VALIDATION_ERROR',
               message: 'Invalid request body',
-              details: validation.error.errors,
+              details: validation.error.issues,
             },
           };
           res.status(400).json(response);
@@ -36,11 +36,18 @@ export function createBroadcastRoutes(
 
         const merchantId = req.query.merchantId as string;
 
+        const segmentData: BroadcastSegment = {
+          type: segment?.type || 'all',
+          merchantId: segment?.merchantId,
+          tags: segment?.tags,
+          userIds: segment?.userIds,
+        };
+
         const result = await broadcastService.createBroadcast(
           {
             name,
             templateId,
-            segment: segment as unknown,
+            segment: segmentData,
             scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
             metadata,
           },
@@ -157,9 +164,13 @@ export function createBroadcastRoutes(
         const response: ApiResponse<{
           broadcast: unknown;
           progress: {
-            percentage: number;
-            eta?: number;
-            status: string;
+            total: number;
+            sent: number;
+            delivered: number;
+            read: number;
+            failed: number;
+            startTime: Date;
+            endTime?: Date;
           };
         }> = {
           success: true,

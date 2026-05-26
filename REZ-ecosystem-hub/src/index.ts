@@ -18,8 +18,8 @@
  * CorpPerks (Enterprise)
  */
 
-import express, { Request, Response } import logger from './utils/logger';
-import from 'express';
+import express, { Request, Response } from 'express';
+import { logger } from './utils/logger.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '4105', 10);

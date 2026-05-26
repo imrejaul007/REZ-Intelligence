@@ -11,7 +11,7 @@ export function createLogger(service: string): winston.Logger {
     format: winston.format.combine(
       winston.format.timestamp({ format: 'YYYY-MM-DDTHH:mm:ss.SSSZ' }),
       winston.format.errors({ stack: true }),
-      winston.format.printf(({ level, message, timestamp, ...meta }) => {
+      winston.format.printf(({ level, message, timestamp, ...meta }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
         return JSON.stringify({
           timestamp,
           level,

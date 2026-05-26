@@ -6,7 +6,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CulinaryExpertiseService = void 0;
 exports.getCulinaryExpertiseService = getCulinaryExpertiseService;
-const logger_js_1 = require("../utils/logger.js");
+const logger_1 = require("./utils/logger");
 const knowledge_js_1 = require("../config/knowledge.js");
 class CulinaryExpertiseService {
     db = null;
@@ -18,7 +18,7 @@ class CulinaryExpertiseService {
         this.redis = redis;
         await this.loadCuisineCache();
         this.initialized = true;
-        logger_js_1.logger.info('CulinaryExpertiseService initialized');
+        logger_1.logger.info('CulinaryExpertiseService initialized');
     }
     async loadCuisineCache() {
         for (const [key, cuisine] of Object.entries(knowledge_js_1.CUISINES)) {

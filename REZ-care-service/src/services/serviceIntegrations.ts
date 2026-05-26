@@ -18,7 +18,7 @@
  */
 
 import axios from 'axios';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 // Service URLs from environment
 const SERVICES = {
@@ -75,11 +75,14 @@ async function callService<T>(
 
     return { success: true, data: response.data };
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.warn(`Service ${serviceName} call failed: ${path}`, {
-      error: error.message,
+      error: errorMsg,
       status: error.response?.status,
+      serviceUrl: service.url,
+      path
     });
-    return { success: false, error: error.message };
+    return { success: false, error: errorMsg };
   }
 }
 
@@ -100,7 +103,13 @@ export async function getSupportHistory(userId: string): Promise<{
   const result = await callService('supportCopilot', `/user/${userId}/history`);
 
   if (result.success && result.data) {
-    const data = result.data as unknown;
+    const data = result.data as {
+      totalTickets?: number;
+      openTickets?: number;
+      avgResolutionTime?: number;
+      sentiment?: string;
+      lastTicket?: unknown;
+    };
     return {
       totalTickets: data.totalTickets || 0,
       openTickets: data.openTickets || 0,
@@ -129,7 +138,10 @@ export async function getTicketSuggestions(ticketId: string): Promise<{
   const result = await callService('supportCopilot', `/ticket/${ticketId}/suggestions`);
 
   if (result.success && result.data) {
-    const data = result.data as unknown;
+    const data = result.data as {
+      suggestions?: string[];
+      similarTickets?: unknown[];
+    };
     return {
       suggestions: data.suggestions || [],
       similarTickets: data.similarTickets || [],
@@ -158,7 +170,7 @@ export async function getSentimentAnalysis(text: string): Promise<{
 
   if (result.success && result.data) {
     return {
-      sentiment: result.data.sentiment as unknown,
+      sentiment: (result.data.sentiment as 'positive' | 'neutral' | 'negative') || 'neutral',
       score: result.data.score || 3,
       keywords: result.data.keywords || [],
     };
@@ -218,7 +230,12 @@ export async function getMerchantDashboard(merchantId: string): Promise<{
   const result = await callService('merchantIntelligence', `/merchant/${merchantId}/dashboard`);
 
   if (result.success && result.data) {
-    return result.data as unknown;
+    return result.data as {
+      overview: { totalCustomers: number; monthlyRevenue: number; repeatRate: number };
+      segments: Record<string, number>;
+      predictions: unknown;
+      recommendations: unknown[];
+    };
   }
 
   return {
@@ -309,7 +326,7 @@ export async function searchKnowledgeBase(query: string, options?: {
   const result = await callService<{ articles: unknown[]; suggestions: string[] }>(
     'knowledgeBase',
     '/search',
-    { params: { q: query, limit: options?.limit, category: options?.category } as unknown }
+    { params: { q: query, limit: String(options?.limit), category: options?.category || '' } }
   );
 
   if (result.success && result.data) {

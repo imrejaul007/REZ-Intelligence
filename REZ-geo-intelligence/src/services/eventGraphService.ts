@@ -3,6 +3,7 @@
  * Connects Z-Events to the unified Geo Intelligence Graph
  */
 
+import crypto from 'crypto';
 import { EventModel, MerchantModel, ConsumerModel, GraphEdgeModel } from '../models/index.js';
 import { EventNode, GeoPoint, EventCategory, SpilloverEffect } from '../types/index.js';
 import logger from '../utils/logger.js';
@@ -234,7 +235,7 @@ export class EventGraphService {
             },
           },
           $setOnInsert: {
-            edgeId: `edge_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            edgeId: `${crypto.randomUUID()}`,
             createdAt: new Date(),
             updatedAt: new Date(),
           },

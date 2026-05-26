@@ -6,7 +6,7 @@
  */
 
 import axios, { AxiosInstance } from 'axios';
-import { logger } from '../utils/logger.js';
+import { logger } from './utils/logger';
 
 export interface ExpertRegistration {
   serviceId: string;

@@ -14,6 +14,7 @@
  */
 
 import crypto from 'crypto';
+import { randomInt } from 'crypto';
 import { AgentTask, AgentType } from './AgentOrchestrator';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -302,7 +303,7 @@ function calculateBackoff(attempt: number, options: RetryOptions): number {
     options.BASE_DELAY_MS * Math.pow(2, attempt - 1),
     options.MAX_DELAY_MS
   );
-  const jitterMs = Math.floor(Math.random() * options.JITTER_MAX_MS);
+  const jitterMs = randomInt(0, options.JITTER_MAX_MS);
   return expDelay + jitterMs;
 }
 

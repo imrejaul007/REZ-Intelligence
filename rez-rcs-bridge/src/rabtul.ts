@@ -28,7 +28,7 @@ export async function sendRCS(params: {
     });
     return { success: true, messageId: res.data.messageId };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 
@@ -54,7 +54,7 @@ export async function sendRCSWithCards(params: {
     });
     return { success: true, messageId: res.data.messageId };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 
@@ -68,7 +68,7 @@ export async function getRCSStatus(messageId: string): Promise<{ status: string;
     });
     return { status: res.data.status };
   } catch (error) {
-    return { status: 'unknown', error: error.message };
+    return { status: 'unknown', error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 

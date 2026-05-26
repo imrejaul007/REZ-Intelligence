@@ -12,7 +12,7 @@
  * - Culinary (restaurant, recipes)
  */
 
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 // Expert types
 export type ExpertType = 'hospitality' | 'salon' | 'fitness' | 'health' | 'education' | 'travel' | 'retail' | 'culinary';

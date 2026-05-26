@@ -422,7 +422,7 @@ export async function triggerSegmentEvaluation(segmentId: string): Promise<{
   jobId: string;
   status: string;
 }> {
-  const jobId = `job-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+  const jobId = `job-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
 
   // Create job record
   await SegmentEvaluationJobModel.create({

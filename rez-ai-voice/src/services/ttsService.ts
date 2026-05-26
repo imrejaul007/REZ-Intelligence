@@ -6,6 +6,7 @@
 import fs from 'fs';
 import path from 'path';
 import axios from 'axios';
+import { randomUUID } from 'crypto';
 import { getElevenLabsConfig } from '../config/ai.config';
 import { logger, logAIService, logMetric } from '../utils/logger';
 import { SynthesisResult } from '../types';
@@ -275,7 +276,7 @@ export class TextToSpeechService {
    * Generate short ID for filename
    */
   private generateShortId(): string {
-    return Math.random().toString(36).substring(2, 8);
+    return randomUUID().replace(/-/g, '').substring(0, 6);
   }
 
   /**

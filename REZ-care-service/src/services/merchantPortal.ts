@@ -10,7 +10,7 @@
  */
 
 import axios from 'axios';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 const REZ_CARE_URL = process.env.REZ_CARE_URL || 'http://localhost:4058';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || 'rez-internal-token';

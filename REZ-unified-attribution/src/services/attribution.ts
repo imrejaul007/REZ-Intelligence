@@ -11,6 +11,7 @@
  * - Data Driven (placeholder for ML)
  */
 
+import crypto from 'crypto';
 import { Touchpoint, Conversion, Channel, Spend, IConversion, ITouchpoint } from '../models/attribution.js';
 import { logger } from './logger.js';
 import { AttributionModel, ChannelType } from '../models/attribution.js';
@@ -397,7 +398,7 @@ export async function trackDOOHAttribution(
   converted: boolean = false
 ): Promise<void> {
   await Touchpoint.create({
-    touchpointId: `dooh_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    touchpointId: `${crypto.randomUUID()}`,
     merchantId,
     customerId,
     channel: ChannelType.DOOH,
@@ -423,7 +424,7 @@ export async function trackQRAttribution(
   converted: boolean = false
 ): Promise<void> {
   await Touchpoint.create({
-    touchpointId: `qr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    touchpointId: `${crypto.randomUUID()}`,
     merchantId,
     customerId,
     channel: ChannelType.QR,
@@ -447,7 +448,7 @@ export async function trackCreatorAttribution(
   couponUsed: boolean = false
 ): Promise<void> {
   await Touchpoint.create({
-    touchpointId: `creator_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    touchpointId: `${crypto.randomUUID()}`,
     merchantId,
     customerId,
     channel: ChannelType.CREATOR,
@@ -472,7 +473,7 @@ export async function trackAggregatorAttribution(
   orderPlaced: boolean = false
 ): Promise<void> {
   await Touchpoint.create({
-    touchpointId: `agg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    touchpointId: `${crypto.randomUUID()}`,
     merchantId,
     customerId,
     channel: ChannelType.AGGREGATOR,

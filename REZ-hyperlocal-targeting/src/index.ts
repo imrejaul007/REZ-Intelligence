@@ -1,9 +1,10 @@
-import express, { Request, Response, NextFunction } import logger from './utils/logger';
-import from 'express';
+import express, { Request, Response, NextFunction } from 'express';
+import { logger } from './utils/logger.js';
 import cors from 'cors';
 import helmet from 'helmet';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
+import crypto from 'crypto';
 
 // ============================================
 // Type Definitions
@@ -487,9 +488,9 @@ function generateFootfallAnalytics(zone: Zone): FootfallAnalytics {
     monthly[month] = Math.round(monthlyFootfall);
   });
 
-  const dailyChange = (Math.random() - 0.5) * 10;
-  const weeklyChange = (Math.random() - 0.3) * 15;
-  const monthlyChange = (Math.random() - 0.2) * 20;
+  const dailyChange = (crypto.randomInt(0, 100) / 100 - 0.5) * 10;
+  const weeklyChange = (crypto.randomInt(0, 100) / 100 - 0.3) * 15;
+  const monthlyChange = (crypto.randomInt(0, 100) / 100 - 0.2) * 20;
 
   return {
     zoneId: zone.zoneId,
@@ -572,7 +573,7 @@ app.post('/target/geofence', (req: Request, res: Response) => {
       return res.status(400).json({
         success: false,
         error: 'Invalid request',
-        details: validation.error.errors
+        details: validation.error.issues
       });
     }
 
@@ -923,7 +924,7 @@ app.post('/zones/:zoneId/booking', (req: Request, res: Response) => {
       return res.status(400).json({
         success: false,
         error: 'Invalid booking request',
-        details: validation.error.errors
+        details: validation.error.issues
       });
     }
 
@@ -1063,7 +1064,7 @@ app.get('/target/audience-size', (req: Request, res: Response) => {
       return res.status(400).json({
         success: false,
         error: 'Invalid request',
-        details: validation.error.errors
+        details: validation.error.issues
       });
     }
 
