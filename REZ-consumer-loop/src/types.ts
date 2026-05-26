@@ -38,7 +38,7 @@ export const TasteProfileSchema = z.object({
 export const SearchRecordSchema = z.object({
   id: z.string(),
   query: z.string(),
-  context: z.record(z.unknown()),
+  context: z.record(z.string(), z.unknown()),
   timestamp: z.string().datetime(),
 });
 
@@ -112,9 +112,9 @@ export const ConversionTrackingSchema = z.object({
 export const UserProfileSchema = z.object({
   userId: z.string(),
   tasteProfile: TasteProfileSchema.optional(),
-  identity: z.record(z.unknown()).optional(),
+  identity: z.record(z.string(), z.unknown()).optional(),
   events: z.array(EventSchema).optional(),
-  searchContext: z.record(z.unknown()).optional(),
+  searchContext: z.record(z.string(), z.unknown()).optional(),
   totalOrders: z.number(),
   flywheelStage: z.nativeEnum(FlywheelStage),
 });

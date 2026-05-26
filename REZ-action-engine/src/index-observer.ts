@@ -76,7 +76,7 @@ app.get('/stats', async (req: Request, res: Response) => {
 // Decisions list
 app.get('/decisions', async (req: Request, res: Response) => {
   try {
-    const decisions = await Decision.find().sort({ createdAt: -1 }).limit(50);
+    const decisions = await (Decision as any).find().sort({ createdAt: -1 }).limit(50);
     res.json({ decisions });
   } catch (error) {
     res.status(500).json({ error: error.message });

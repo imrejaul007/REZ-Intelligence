@@ -104,7 +104,7 @@ const decisionSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-const Decision = mongoose.models.Decision || mongoose.model('Decision', decisionSchema, 'decisions');
+const Decision: any = mongoose.models.Decision || mongoose.model('Decision', decisionSchema, 'decisions');
 
 // Learned params comparison metrics schema (stores adaptive vs baseline comparison)
 const learnedParamsComparisonSchema = new mongoose.Schema({
@@ -137,7 +137,7 @@ const learnedParamsComparisonSchema = new mongoose.Schema({
 // Compound index for efficient lookups
 learnedParamsComparisonSchema.index({ merchantId: 1, itemId: 1, eventType: 1 }, { unique: true });
 
-const LearnedParamsComparison = mongoose.models.LearnedParamsComparison ||
+const LearnedParamsComparison: any = mongoose.models.LearnedParamsComparison ||
   mongoose.model('LearnedParamsComparison', learnedParamsComparisonSchema, 'learned_params_comparison');
 
 // Middleware
@@ -238,7 +238,7 @@ app.get('/stats/compare', async (req: Request, res: Response) => {
     const { merchantId, itemId, eventType } = req.query;
 
     // Build match filter
-    const matchFilter: unknown = {};
+    const matchFilter: Record<string, unknown> = {};
     if (merchantId) matchFilter['payload.data.merchant_id'] = merchantId;
     if (itemId) matchFilter['payload.data.item_id'] = itemId;
     if (eventType) matchFilter.eventType = eventType;
@@ -399,10 +399,10 @@ async function getLearnedParams(merchantId: string, itemId: string): Promise<unk
  */
 function determineActionLevel(
   confidence: number,
-  learnedParams: unknown
+  learnedParams: { found?: boolean; params?: { totalDecisions?: number; approvalRate?: number } }
 ): { level: 'SAFE' | 'SEMI_SAFE' | 'RISKY'; recommendation: ActionRecommendation; reason: string } {
-  const totalDecisions = learnedParams.found ? learnedParams.params.totalDecisions || 0 : 0;
-  const approvalRate = learnedParams.found ? learnedParams.params.approvalRate || 0 : 0;
+  const totalDecisions = (learnedParams as any).found ? (learnedParams as any).params?.totalDecisions || 0 : 0;
+  const approvalRate = (learnedParams as any).found ? (learnedParams as any).params?.approvalRate || 0 : 0;
 
   // RISKY: Any new item (< 5 decisions) OR confidence < 0.7
   if (totalDecisions < SAFETY_THRESHOLDS.RISKY.maxNewItemDecisions || confidence < SAFETY_THRESHOLDS.RISKY.maxConfidence) {
@@ -630,10 +630,10 @@ app.post('/webhook/events', async (req: Request, res: Response) => {
       actionLevel: decision.actionLevel,
       actionRecommendation: decision.actionRecommendation,
       payload: event,
-      usedLearnedParams: learnedParams.found,
-      learnedParams: learnedParams.found ? {
-        multiplier: learnedParams.params.quantityMultiplier,
-        bias: learnedParams.params.confidenceBias,
+      usedLearnedParams: (learnedParams as any).found,
+      learnedParams: (learnedParams as any).found ? {
+        multiplier: (learnedParams as any).params?.quantityMultiplier,
+        bias: (learnedParams as any).params?.confidenceBias,
       } : null,
       baseQuantity: decision.baseQuantity,
       finalQuantity: decision.finalQuantity,
@@ -651,8 +651,8 @@ app.post('/webhook/events', async (req: Request, res: Response) => {
       actionLevel: decision.actionLevel,
       actionRecommendation: decision.actionRecommendation,
       safetyCapped: decision.safety?.capped || false,
-      usedLearning: learnedParams.found,
-      multiplier: learnedParams.found ? learnedParams.params.quantityMultiplier : 'N/A',
+      usedLearning: (learnedParams as any).found,
+      multiplier: (learnedParams as any).found ? (learnedParams as any).params?.quantityMultiplier : 'N/A',
       group: groupAssignment.group,
       isBaseline: groupAssignment.isBaseline,
     });
@@ -664,8 +664,8 @@ app.post('/webhook/events', async (req: Request, res: Response) => {
       decisionId: doc._id,
       group: groupAssignment,
       learning: {
-        usedLearnedParams: learnedParams.found,
-        params: learnedParams.found ? learnedParams.params : null,
+        usedLearnedParams: (learnedParams as any).found,
+        params: (learnedParams as any).found ? (learnedParams as any).params : null,
       },
     });
   } catch (error) {
@@ -889,17 +889,17 @@ app.get('/adaptive/:merchantId/:itemId', async (req: Request, res: Response) => 
 
   // Show what decision would look like with/without learning
   const baseQuantity = 10;
-  const multiplier = learnedParams.found ? learnedParams.params.quantityMultiplier : 1.0;
+  const multiplier = (learnedParams as any).found ? (learnedParams as any).params?.quantityMultiplier : 1.0;
 
   res.json({
     merchantId,
     itemId,
-    learned: learnedParams.found,
-    params: learnedParams.found ? learnedParams.params : null,
+    learned: (learnedParams as any).found,
+    params: (learnedParams as any).found ? (learnedParams as any).params : null,
     impact: {
       baseSuggestion: baseQuantity,
       adaptiveSuggestion: Math.round(baseQuantity * multiplier),
-      improvement: learnedParams.found
+      improvement: (learnedParams as any).found
         ? `+${((multiplier - 1) * 100).toFixed(1)}% more accurate`
         : 'No learning data yet',
     },
