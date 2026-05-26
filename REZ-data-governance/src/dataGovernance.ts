@@ -51,13 +51,13 @@ const PII_PATTERNS: PIIPattern[] = [
 ];
 
 // Consent store
-const consents = new Map<string, Consent[]>();
+const consents = new Map<string, Consent>();
 
 // Data requests store
 const dataRequests = new Map<string, DataRequest>();
 
 // Audit log
-const auditLog: unknown[] = [];
+const auditLog: { user_id?: string; action: string; timestamp: string; [key: string]: unknown }[] = [];
 
 // ============================================
 // PII DETECTION & ANONYMIZATION

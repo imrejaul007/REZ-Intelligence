@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import crypto from 'crypto';
 import config from '../config/index.js';
-import logger from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 // Crypto-based random number generator for secure randomness
 function secureRandom(): number {
@@ -246,7 +246,7 @@ class DeliveryService {
       const orders = ordersResponse?.data?.orders || [];
 
       // Fetch locations
-      const routePoints: RoutePoint[] = orders.map((order) => ({
+      const routePoints: RoutePoint[] = orders.map((order: Record<string, unknown>) => ({
         orderId: order.orderId,
         customerAddress: order.shippingAddress,
         latitude: order.shippingLatitude || 0,
@@ -563,7 +563,7 @@ class DeliveryService {
 
       const orders = ordersResponse?.data?.orders || [];
       const deliveries = await Promise.all(
-        orders.slice(offset, offset + limit).map((order) => this.getDeliveryInsight(order.orderId))
+        orders.slice(offset, offset + limit).map((order: Record<string, unknown>) => this.getDeliveryInsight(order.orderId as string))
       );
 
       return {

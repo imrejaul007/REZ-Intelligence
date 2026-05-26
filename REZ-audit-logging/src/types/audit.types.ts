@@ -1,6 +1,6 @@
 export interface AuditEvent {
   id: string;
-  tenantId: string;
+  tenantId?: string;
   timestamp: Date;
   eventType: AuditEventType;
   action: string;
@@ -17,7 +17,7 @@ export interface AuditEvent {
 }
 
 export interface CreateAuditEventInput {
-  tenantId: string;
+  tenantId?: string;
   eventType: AuditEventType;
   action: string;
   resource: string;

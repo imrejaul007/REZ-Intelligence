@@ -1,15 +1,149 @@
 /**
  * REZ A/B Testing Platform
  * PRODUCTION: MongoDB persistence
+ * INPUT VALIDATION: All request bodies and parameters validated with Zod schemas
  */
 
-import express from 'express';
+import express, { Request, Response } from 'express';
 import axios from 'axios';
 import mongoose from 'mongoose';
 import { randomInt } from 'crypto';
 import rateLimit from 'express-rate-limit';
+import { z } from 'zod';
 
 const router = express.Router();
+
+// ============================================
+// ZOD VALIDATION SCHEMAS
+// ============================================
+
+/**
+ * Traffic split entry - percentage for a variant
+ */
+const TrafficSplitEntrySchema = z.record(z.number().min(0).max(100));
+
+/**
+ * Create experiment request body
+ */
+const CreateExperimentSchema = z.object({
+  name: z.string().min(1, 'name is required').max(200, 'name cannot exceed 200 characters'),
+  description: z.string().max(1000, 'description cannot exceed 1000 characters').optional(),
+  traffic_split: TrafficSplitEntrySchema.optional(),
+  target_metric: z.string().min(1).max(100).optional().default('conversion_rate'),
+  min_sample_size: z.number().int().min(1).max(1000000).optional().default(1000),
+  confidence_level: z.number().min(0.5).max(0.999).optional().default(0.95)
+}).refine(
+  (data) => {
+    if (!data.traffic_split) return true;
+    const total = Object.values(data.traffic_split).reduce((sum, val) => sum + val, 0);
+    return Math.abs(total - 100) < 0.01; // Allow small floating point errors
+  },
+  { message: 'traffic_split percentages must sum to 100', path: ['traffic_split'] }
+);
+
+/**
+ * List experiments query params
+ */
+const ListExperimentsQuerySchema = z.object({
+  status: z.enum(['draft', 'running', 'paused', 'completed']).optional()
+});
+
+/**
+ * Experiment ID path param
+ */
+const ExperimentIdParamSchema = z.object({
+  id: z.string().min(1, 'experiment id is required')
+});
+
+/**
+ * Create variant request body
+ */
+const CreateVariantSchema = z.object({
+  name: z.string().min(1, 'variant name is required').max(100, 'name cannot exceed 100 characters'),
+  description: z.string().max(500, 'description cannot exceed 500 characters').optional(),
+  config: z.record(z.unknown()).optional()
+});
+
+/**
+ * Assign user query params
+ */
+const AssignUserQuerySchema = z.object({
+  user_id: z.string().min(1, 'user_id is required')
+});
+
+/**
+ * Record conversion request body
+ */
+const RecordConversionSchema = z.object({
+  user_id: z.string().min(1, 'user_id is required'),
+  value: z.number().min(0).optional().default(0)
+});
+
+// ============================================
+// TYPE EXPORTS FROM ZOD SCHEMAS
+// ============================================
+
+export type CreateExperimentInput = z.infer<typeof CreateExperimentSchema>;
+export type ListExperimentsQueryInput = z.infer<typeof ListExperimentsQuerySchema>;
+export type CreateVariantInput = z.infer<typeof CreateVariantSchema>;
+export type AssignUserQueryInput = z.infer<typeof AssignUserQuerySchema>;
+export type RecordConversionInput = z.infer<typeof RecordConversionSchema>;
+
+// ============================================
+// VALIDATION HELPER
+// ============================================
+
+/**
+ * Safely parse and validate request body against a Zod schema
+ */
+function validateBody<T>(schema: z.ZodType<T>, body: unknown, context: string): T {
+  const result = schema.safeParse(body);
+  if (!result.success) {
+    const errorMessages = result.error.issues
+      .map((e) => `${e.path.join('.')}: ${e.message}`)
+      .join('; ');
+    throw new ValidationError(`[AB-Testing] ${context} validation failed: ${errorMessages}`);
+  }
+  return result.data;
+}
+
+/**
+ * Safely parse and validate query params against a Zod schema
+ */
+function validateQuery<T>(schema: z.ZodType<T>, query: unknown, context: string): T {
+  const result = schema.safeParse(query);
+  if (!result.success) {
+    const errorMessages = result.error.issues
+      .map((e) => `${e.path.join('.')}: ${e.message}`)
+      .join('; ');
+    throw new ValidationError(`[AB-Testing] ${context} validation failed: ${errorMessages}`);
+  }
+  return result.data;
+}
+
+/**
+ * Safely parse and validate path params against a Zod schema
+ */
+function validateParams<T>(schema: z.ZodType<T>, params: unknown, context: string): T {
+  const result = schema.safeParse(params);
+  if (!result.success) {
+    const errorMessages = result.error.issues
+      .map((e) => `${e.path.join('.')}: ${e.message}`)
+      .join('; ');
+    throw new ValidationError(`[AB-Testing] ${context} validation failed: ${errorMessages}`);
+  }
+  return result.data;
+}
+
+/**
+ * Custom error class for validation failures
+ */
+class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
 
 const EVENT_BUS_URL = process.env.EVENT_BUS_URL || 'https://REZ-event-bus.onrender.com';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-ab-testing';
@@ -224,10 +358,13 @@ router.get('/health', async (_req: any, _res: any) => {
  * POST /api/experiments
  * Create a new experiment
  */
-router.post('/experiments', async (req, res) => {
+router.post('/experiments', async (req: Request, res: Response) => {
   try {
+    // Validate request body
+    const validatedBody = validateBody(CreateExperimentSchema, req.body, 'POST /experiments');
+
     await connectDB();
-    const { name, description, traffic_split, target_metric, min_sample_size, confidence_level } = req.body;
+    const { name, description, traffic_split, target_metric, min_sample_size, confidence_level } = validatedBody;
     const experiment_id = `exp_${Date.now()}_${randomInt(1000, 9999)}`;
 
     const experiment = new ExperimentModel({
@@ -248,6 +385,9 @@ router.post('/experiments', async (req, res) => {
 
     res.status(201).json({ success: true, experiment_id, experiment: experiment.toObject() });
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
     console.error('[AB-Testing] Create experiment error:', error);
     res.status(500).json({ success: false, error: 'Failed to create experiment' });
   }
@@ -257,12 +397,13 @@ router.post('/experiments', async (req, res) => {
  * GET /api/experiments
  * List all experiments
  */
-router.get('/experiments', async (req: any, res: any) => {
+router.get('/experiments', async (req: Request, res: Response) => {
   try {
-    await connectDB();
-    const { status } = req.query;
+    // Validate query params
+    const validatedQuery = validateQuery(ListExperimentsQuerySchema, req.query, 'GET /experiments');
 
-    const query = status ? { status } : {};
+    await connectDB();
+    const query = validatedQuery.status ? { status: validatedQuery.status } : {};
     const list = await ExperimentModel.find(query).lean();
 
     const withStats = await Promise.all(list.map(async (e: any) => {
@@ -272,6 +413,9 @@ router.get('/experiments', async (req: any, res: any) => {
 
     res.json({ success: true, experiments: withStats, count: list.length });
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
     console.error('[AB-Testing] List experiments error:', error);
     res.status(500).json({ success: false, error: 'Failed to list experiments' });
   }
@@ -281,10 +425,13 @@ router.get('/experiments', async (req: any, res: any) => {
  * GET /api/experiments/:id
  * Get experiment details
  */
-router.get('/experiments/:id', async (req: any, res: any) => {
+router.get('/experiments/:id', async (req: Request, res: Response) => {
   try {
+    // Validate path params
+    const { id } = validateParams(ExperimentIdParamSchema, req.params, 'GET /experiments/:id');
+
     await connectDB();
-    const experiment = await ExperimentModel.findOne({ id: req.params.id }).lean() as Record<string, unknown> | null;
+    const experiment = await ExperimentModel.findOne({ id }).lean() as Record<string, unknown> | null;
 
     if (!experiment) {
       return res.status(404).json({ success: false, error: 'Experiment not found' });
@@ -294,6 +441,9 @@ router.get('/experiments/:id', async (req: any, res: any) => {
     const experimentVariants = await VariantModel.find({ experiment_id: experimentId }).lean();
     res.json({ success: true, experiment, variants: experimentVariants });
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
     console.error('[AB-Testing] Get experiment error:', error);
     res.status(500).json({ success: false, error: 'Failed to get experiment' });
   }
@@ -303,10 +453,13 @@ router.get('/experiments/:id', async (req: any, res: any) => {
  * POST /api/experiments/:id/start
  * Start experiment
  */
-router.post('/experiments/:id/start', async (req: any, res: any) => {
+router.post('/experiments/:id/start', async (req: Request, res: Response) => {
   try {
+    // Validate path params
+    const { id } = validateParams(ExperimentIdParamSchema, req.params, 'POST /experiments/:id/start');
+
     await connectDB();
-    const experiment = await ExperimentModel.findOne({ id: req.params.id });
+    const experiment = await ExperimentModel.findOne({ id });
 
     if (!experiment) {
       return res.status(404).json({ success: false, error: 'Experiment not found' });
@@ -324,6 +477,9 @@ router.post('/experiments/:id/start', async (req: any, res: any) => {
 
     res.json({ success: true, experiment: experiment.toObject() });
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
     console.error('[AB-Testing] Start experiment error:', error);
     res.status(500).json({ success: false, error: 'Failed to start experiment' });
   }
@@ -333,10 +489,13 @@ router.post('/experiments/:id/start', async (req: any, res: any) => {
  * POST /api/experiments/:id/pause
  * Pause experiment
  */
-router.post('/experiments/:id/pause', async (req: any, res: any) => {
+router.post('/experiments/:id/pause', async (req: Request, res: Response) => {
   try {
+    // Validate path params
+    const { id } = validateParams(ExperimentIdParamSchema, req.params, 'POST /experiments/:id/pause');
+
     await connectDB();
-    const experiment = await ExperimentModel.findOne({ id: req.params.id });
+    const experiment = await ExperimentModel.findOne({ id });
 
     if (!experiment) {
       return res.status(404).json({ success: false, error: 'Experiment not found' });
@@ -348,6 +507,9 @@ router.post('/experiments/:id/pause', async (req: any, res: any) => {
 
     res.json({ success: true, experiment: experiment.toObject() });
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
     console.error('[AB-Testing] Pause experiment error:', error);
     res.status(500).json({ success: false, error: 'Failed to pause experiment' });
   }
@@ -357,22 +519,34 @@ router.post('/experiments/:id/pause', async (req: any, res: any) => {
  * POST /api/experiments/:id/complete
  * Complete experiment and select winner
  */
-router.post('/experiments/:id/complete', (req, res): void => {
-  const experiment = experiments.get(req.params.id);
+router.post('/experiments/:id/complete', (req: Request, res: Response): void => {
+  try {
+    // Validate path params
+    const { id } = validateParams(ExperimentIdParamSchema, req.params, 'POST /experiments/:id/complete');
 
-  if (!experiment) {
-    res.status(404).json({ error: 'Experiment not found' });
-    return;
+    const experiment = experiments.get(id);
+
+    if (!experiment) {
+      res.status(404).json({ error: 'Experiment not found' });
+      return;
+    }
+
+    const stats = calculateStats(experiment);
+    const winner = determineWinner(stats);
+
+    experiment.status = 'completed';
+    experiment.ended_at = new Date().toISOString();
+    experiment.winner = winner?.variant_id;
+
+    res.json({ success: true, winner, stats });
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      res.status(400).json({ success: false, error: error.message });
+      return;
+    }
+    console.error('[AB-Testing] Complete experiment error:', error);
+    res.status(500).json({ success: false, error: 'Failed to complete experiment' });
   }
-
-  const stats = calculateStats(experiment);
-  const winner = determineWinner(stats);
-
-  experiment.status = 'completed';
-  experiment.ended_at = new Date().toISOString();
-  experiment.winner = winner?.variant_id;
-
-  res.json({ success: true, winner, stats });
 });
 
 // ============================================
@@ -383,42 +557,66 @@ router.post('/experiments/:id/complete', (req, res): void => {
  * POST /api/experiments/:id/variants
  * Add variant to experiment
  */
-router.post('/experiments/:id/variants', (req, res): void => {
-  const { name, description, config } = req.body;
+router.post('/experiments/:id/variants', (req: Request, res: Response): void => {
+  try {
+    // Validate path and body params
+    const { id } = validateParams(ExperimentIdParamSchema, req.params, 'POST /experiments/:id/variants');
+    const validatedBody = validateBody(CreateVariantSchema, req.body, 'POST /experiments/:id/variants');
+    const { name, description, config } = validatedBody;
 
-  const experiment = experiments.get(req.params.id);
-  if (!experiment) {
-    res.status(404).json({ error: 'Experiment not found' });
-    return;
+    const experiment = experiments.get(id);
+    if (!experiment) {
+      res.status(404).json({ error: 'Experiment not found' });
+      return;
+    }
+
+    const variant_id = `var_${Date.now()}`;
+
+    const variant: Variant = {
+      id: variant_id,
+      experiment_id: id,
+      name,
+      description: description ?? '',
+      config: config ?? {},
+      impressions: 0,
+      conversions: 0,
+      conversions_value: 0
+    };
+
+    const experimentVariants = variants.get(id) || [];
+    experimentVariants.push(variant);
+    variants.set(id, experimentVariants);
+
+    res.status(201).json({ variant_id, variant });
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      res.status(400).json({ success: false, error: error.message });
+      return;
+    }
+    console.error('[AB-Testing] Create variant error:', error);
+    res.status(500).json({ success: false, error: 'Failed to create variant' });
   }
-
-  const variant_id = `var_${Date.now()}`;
-
-  const variant: Variant = {
-    id: variant_id,
-    experiment_id: req.params.id,
-    name,
-    description,
-    config,
-    impressions: 0,
-    conversions: 0,
-    conversions_value: 0
-  };
-
-  const experimentVariants = variants.get(req.params.id) || [];
-  experimentVariants.push(variant);
-  variants.set(req.params.id, experimentVariants);
-
-  res.status(201).json({ variant_id, variant });
 });
 
 /**
  * GET /api/experiments/:id/variants
  * List variants
  */
-router.get('/experiments/:id/variants', (req, res) => {
-  const experimentVariants = variants.get(req.params.id) || [];
-  res.json({ variants: experimentVariants });
+router.get('/experiments/:id/variants', (req: Request, res: Response) => {
+  try {
+    // Validate path params
+    const { id } = validateParams(ExperimentIdParamSchema, req.params, 'GET /experiments/:id/variants');
+
+    const experimentVariants = variants.get(id) || [];
+    res.json({ variants: experimentVariants });
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      res.status(400).json({ success: false, error: error.message });
+      return;
+    }
+    console.error('[AB-Testing] List variants error:', error);
+    res.status(500).json({ success: false, error: 'Failed to list variants' });
+  }
 });
 
 // ============================================
@@ -429,80 +627,102 @@ router.get('/experiments/:id/variants', (req, res) => {
  * GET /api/experiments/:id/assign
  * Get variant assignment for user
  */
-router.get('/experiments/:id/assign', (req, res): void => {
-  const { user_id } = req.query;
+router.get('/experiments/:id/assign', (req: Request, res: Response): void => {
+  try {
+    // Validate path and query params
+    const { id } = validateParams(ExperimentIdParamSchema, req.params, 'GET /experiments/:id/assign');
+    const { user_id } = validateQuery(AssignUserQuerySchema, req.query, 'GET /experiments/:id/assign');
 
-  const experiment = experiments.get(req.params.id);
-  if (!experiment) {
-    res.status(404).json({ error: 'Experiment not found' });
-    return;
-  }
+    const experiment = experiments.get(id);
+    if (!experiment) {
+      res.status(404).json({ error: 'Experiment not found' });
+      return;
+    }
 
-  if (experiment.status !== 'running') {
-    res.json({ assigned: false, reason: 'Experiment not running' });
-    return;
-  }
+    if (experiment.status !== 'running') {
+      res.json({ assigned: false, reason: 'Experiment not running' });
+      return;
+    }
 
-  // Check if already assigned
-  const userAssignments = assignments.get(user_id as string) || [];
-  const existing = userAssignments.find(a => a.experiment_id === req.params.id);
+    // Check if already assigned
+    const userAssignments = assignments.get(user_id) || [];
+    const existing = userAssignments.find(a => a.experiment_id === id);
 
-  if (existing) {
-    const variant = getVariantById(existing.variant_id);
+    if (existing) {
+      const variant = getVariantById(existing.variant_id);
+      res.json({ assigned: true, variant });
+      return;
+    }
+
+    // Assign based on traffic split
+    const assignment = assignUserToVariant(experiment);
+    userAssignments.push(assignment);
+    assignments.set(user_id, userAssignments);
+
+    // Increment impression
+    const variant = getVariantById(assignment.variant_id);
+    if (variant) variant.impressions++;
+
     res.json({ assigned: true, variant });
-    return;
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      res.status(400).json({ success: false, error: error.message });
+      return;
+    }
+    console.error('[AB-Testing] Assign user error:', error);
+    res.status(500).json({ success: false, error: 'Failed to assign user' });
   }
-
-  // Assign based on traffic split
-  const assignment = assignUserToVariant(experiment);
-  userAssignments.push(assignment);
-  assignments.set(user_id as string, userAssignments);
-
-  // Increment impression
-  const variant = getVariantById(assignment.variant_id);
-  if (variant) variant.impressions++;
-
-  res.json({ assigned: true, variant });
 });
 
 /**
  * POST /api/experiments/:id/convert
  * Record conversion
  */
-router.post('/experiments/:id/convert', (req, res): void => {
-  const { user_id, value } = req.body;
+router.post('/experiments/:id/convert', (req: Request, res: Response): void => {
+  try {
+    // Validate path and body params
+    const { id } = validateParams(ExperimentIdParamSchema, req.params, 'POST /experiments/:id/convert');
+    const { user_id, value } = validateBody(RecordConversionSchema, req.body, 'POST /experiments/:id/convert');
 
-  const experiment = experiments.get(req.params.id);
-  if (!experiment) {
-    res.status(404).json({ error: 'Experiment not found' });
-    return;
+    const experiment = experiments.get(id);
+    if (!experiment) {
+      res.status(404).json({ error: 'Experiment not found' });
+      return;
+    }
+
+    // Find user's assignment
+    const userAssignments = assignments.get(user_id) || [];
+    const assignment = userAssignments.find(a => a.experiment_id === id);
+
+    if (!assignment) {
+      res.status(400).json({ error: 'User not assigned to experiment' });
+      return;
+    }
+
+    // Record conversion
+    const variant = getVariantById(assignment.variant_id);
+    if (variant) {
+      variant.conversions++;
+      variant.conversions_value += value || 0;
+    }
+
+    // Publish event
+    publishEvent('ab.conversion', {
+      experiment_id: id,
+      variant_id: assignment.variant_id,
+      user_id,
+      value
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      res.status(400).json({ success: false, error: error.message });
+      return;
+    }
+    console.error('[AB-Testing] Record conversion error:', error);
+    res.status(500).json({ success: false, error: 'Failed to record conversion' });
   }
-
-  // Find user's assignment
-  const userAssignments = assignments.get(user_id) || [];
-  const assignment = userAssignments.find(a => a.experiment_id === req.params.id);
-
-  if (!assignment) {
-    res.status(400).json({ error: 'User not assigned to experiment' });
-    return;
-  }
-
-  // Record conversion
-  const variant = getVariantById(assignment.variant_id);
-  if (variant) {
-    variant.conversions++;
-    variant.conversions_value += value || 0;
-  }
-
-  // Publish event
-  publishEvent('ab.conversion', {
-    experiment_id: req.params.id,
-    variant_id: assignment.variant_id,
-    user_id,
-    value
-  });
-
-  res.json({ success: true });
 });
 
 // ============================================
@@ -513,57 +733,81 @@ router.post('/experiments/:id/convert', (req, res): void => {
  * GET /api/experiments/:id/stats
  * Get experiment statistics (rate limited - expensive operation)
  */
-router.get('/experiments/:id/stats', strictLimiter, (req, res): void => {
-  const experiment = experiments.get(req.params.id);
+router.get('/experiments/:id/stats', strictLimiter, (req: Request, res: Response): void => {
+  try {
+    // Validate path params
+    const { id } = validateParams(ExperimentIdParamSchema, req.params, 'GET /experiments/:id/stats');
 
-  if (!experiment) {
-    res.status(404).json({ error: 'Experiment not found' });
-    return;
+    const experiment = experiments.get(id);
+
+    if (!experiment) {
+      res.status(404).json({ error: 'Experiment not found' });
+      return;
+    }
+
+    const stats = calculateStats(experiment);
+    const winner = determineWinner(stats);
+
+    res.json({
+      experiment_id: id,
+      stats,
+      winner,
+      recommendations: getRecommendations(stats, experiment)
+    });
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      res.status(400).json({ success: false, error: error.message });
+      return;
+    }
+    console.error('[AB-Testing] Get stats error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get stats' });
   }
-
-  const stats = calculateStats(experiment);
-  const winner = determineWinner(stats);
-
-  res.json({
-    experiment_id: req.params.id,
-    stats,
-    winner,
-    recommendations: getRecommendations(stats, experiment)
-  });
 });
 
 /**
  * GET /api/experiments/:id/export
  * Export experiment data (rate limited - expensive operation)
  */
-router.get('/experiments/:id/export', strictLimiter, (req, res): void => {
-  const experiment = experiments.get(req.params.id);
+router.get('/experiments/:id/export', strictLimiter, (req: Request, res: Response): void => {
+  try {
+    // Validate path params
+    const { id } = validateParams(ExperimentIdParamSchema, req.params, 'GET /experiments/:id/export');
 
-  if (!experiment) {
-    res.status(404).json({ error: 'Experiment not found' });
-    return;
+    const experiment = experiments.get(id);
+
+    if (!experiment) {
+      res.status(404).json({ error: 'Experiment not found' });
+      return;
+    }
+
+    const experimentVariants = variants.get(id) || [];
+    const stats = calculateStats(experiment);
+
+    const exportData = {
+      experiment: {
+        id: experiment.id,
+        name: experiment.name,
+        status: experiment.status,
+        started_at: experiment.started_at,
+        ended_at: experiment.ended_at
+      },
+      variants: experimentVariants.map(v => ({
+        ...v,
+        conversion_rate: v.impressions > 0 ? v.conversions / v.impressions : 0,
+        revenue_per_impression: v.impressions > 0 ? v.conversions_value / v.impressions : 0
+      })),
+      stats
+    };
+
+    res.json(exportData);
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      res.status(400).json({ success: false, error: error.message });
+      return;
+    }
+    console.error('[AB-Testing] Export experiment error:', error);
+    res.status(500).json({ success: false, error: 'Failed to export experiment' });
   }
-
-  const experimentVariants = variants.get(req.params.id) || [];
-  const stats = calculateStats(experiment);
-
-  const exportData = {
-    experiment: {
-      id: experiment.id,
-      name: experiment.name,
-      status: experiment.status,
-      started_at: experiment.started_at,
-      ended_at: experiment.ended_at
-    },
-    variants: experimentVariants.map(v => ({
-      ...v,
-      conversion_rate: v.impressions > 0 ? v.conversions / v.impressions : 0,
-      revenue_per_impression: v.impressions > 0 ? v.conversions_value / v.impressions : 0
-    })),
-    stats
-  };
-
-  res.json(exportData);
 });
 
 // ============================================

@@ -3,7 +3,7 @@
  * REST API for the Attribution-Loyalty Bridge Service
  */
 
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { BridgeRecord, IBridgeRecordModel } from '../models/BridgeRecord.js';
 import { CampaignConfig, ICampaignConfigModel } from '../models/CampaignConfig.js';

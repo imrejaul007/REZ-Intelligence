@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { deliveryService } from '../services/deliveryService.js';
-import logger from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 import { ZodError } from 'zod';
 
 const router = Router();

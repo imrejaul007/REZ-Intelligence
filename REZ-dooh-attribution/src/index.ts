@@ -12,7 +12,7 @@ import axios from 'axios';
 import { randomUUID } from 'crypto';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
-import logger from './utils/logger';
+import { logger } from './utils/logger.js';
 
 // ============================================
 // ZOD VALIDATION SCHEMAS (Zod v3 API)
@@ -164,6 +164,19 @@ const ConversionSchema = new mongoose.Schema({
 const Touchpoint = mongoose.models.Touchpoint || mongoose.model('Touchpoint', TouchpointSchema);
 const Conversion = mongoose.models.Conversion || mongoose.model('Conversion', ConversionSchema);
 
+// ============================================
+// RATE LIMITING
+// ============================================
+
+// General API rate limiter - 100 requests per 15 minutes
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per window
+  message: { success: false, error: 'Too many requests, please try again later.' },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
 // Express setup
 const app = express();
 app.use(helmet());
@@ -186,19 +199,6 @@ async function connectDB(): Promise<void> {
     throw error;
   }
 }
-
-// ============================================
-// RATE LIMITING
-// ============================================
-
-// General API rate limiter - 100 requests per 15 minutes
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per window
-  message: { success: false, error: 'Too many requests, please try again later.' },
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-});
 
 // Strict rate limiter for expensive operations - 30 requests per 15 minutes
 const metricsLimiter = rateLimit({
@@ -263,15 +263,25 @@ async function fetchConversions(userId: string, startTime: Date, endTime: Date):
 
 // Health check - Comprehensive
 app.get('/health', async (_req: Request, res: Response) => {
-  const health = {
+  const health: {
+    status: string;
+    timestamp: string;
+    uptime: number;
+    service: string;
+    checks: {
+      mongodb: { status: string; error?: string };
+      redis: { status: string };
+      external: { status: string; services: Record<string, string> };
+    };
+  } = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     service: 'rez-dooh-attribution',
     checks: {
-      mongodb: { status: 'unknown' as string },
-      redis: { status: 'not_configured' as string },
-      external: { status: 'unknown' as string }
+      mongodb: { status: 'unknown' },
+      redis: { status: 'not_configured' },
+      external: { status: 'unknown', services: {} }
     }
   };
 
@@ -306,7 +316,7 @@ app.get('/health', async (_req: Request, res: Response) => {
       externalResults[svc.name] = 'unavailable';
     }
   }
-  health.checks.external = { status: externalResults };
+  health.checks.external = { status: 'checked', services: externalResults };
 
   // Set status based on checks
   if (health.status === 'degraded' || Object.values(externalResults).some(s => s === 'unavailable')) {
@@ -412,11 +422,11 @@ app.get('/api/metrics/screen/:screenId', metricsLimiter, async (req: Request, re
       timestamp: { $gte: start, $lte: end }
     });
 
-    const impressions = touchpoints.filter(t => t.event === 'impression').length;
-    const engagements = touchpoints.filter(t => t.event === 'view_through' || t.event === 'click').length;
+    const impressions = touchpoints.filter(t => (t.event as string) === 'impression').length;
+    const engagements = touchpoints.filter(t => (t.event as string) === 'view_through' || (t.event as string) === 'click').length;
 
     // Get real conversion data
-    const userIds = [...new Set(touchpoints.map(t => t.userId).filter(Boolean))];
+    const userIds = [...new Set(touchpoints.map(t => t.userId as string).filter(Boolean))];
     let totalAppVisits = 0, totalSearches = 0, totalConversions = 0, totalRevenue = 0;
 
     for (const userId of userIds.slice(0, 100)) { // Limit external calls
@@ -458,7 +468,7 @@ app.post('/api/metrics/aggregate', metricsLimiter, async (req: Request, res: Res
     const validatedBody = validateBody(AggregateMetricsSchema, req.body, 'POST /api/metrics/aggregate');
 
     await connectDB();
-    const { screenIds, period, groupBy } = validatedBody;
+    const { screenIds, period = 7, groupBy } = validatedBody;
     const end = new Date();
     const start = new Date(end.getTime() - period * 24 * 60 * 60 * 1000);
 
@@ -482,7 +492,7 @@ app.post('/api/metrics/aggregate', metricsLimiter, async (req: Request, res: Res
       }}
     ]);
 
-    const totals = aggregation.reduce((acc, g) => ({
+    const totals = aggregation.reduce((acc: { impressions: number; engagements: number; uniqueUsers: number }, g: { impressions: number; engagements: number; uniqueUsers: number }) => ({
       impressions: acc.impressions + g.impressions,
       engagements: acc.engagements + g.engagements,
       uniqueUsers: acc.uniqueUsers + g.uniqueUsers

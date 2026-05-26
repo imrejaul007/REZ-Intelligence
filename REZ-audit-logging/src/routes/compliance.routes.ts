@@ -10,7 +10,7 @@ router.get('/status', async (req: Request, res: Response) => {
 
     if (req.query.startDate) filter.startDate = new Date(req.query.startDate as string);
     if (req.query.endDate) filter.endDate = new Date(req.query.endDate as string);
-    if (req.query.eventTypes) filter.eventTypes = (req.query.eventTypes as string).split(',') as unknown[];
+    if (req.query.eventTypes) filter.eventTypes = (req.query.eventTypes as string).split(',') as import('../types/audit.types').AuditEventType[];
     if (req.query.userId) filter.userId = req.query.userId as string;
     if (req.query.resource) filter.resource = req.query.resource as string;
     if (req.query.status) filter.status = req.query.status as 'success' | 'failure' | 'warning';
@@ -28,7 +28,7 @@ router.get('/report', async (req: Request, res: Response) => {
 
     if (req.query.startDate) filter.startDate = new Date(req.query.startDate as string);
     if (req.query.endDate) filter.endDate = new Date(req.query.endDate as string);
-    if (req.query.eventTypes) filter.eventTypes = (req.query.eventTypes as string).split(',') as unknown[];
+    if (req.query.eventTypes) filter.eventTypes = (req.query.eventTypes as string).split(',') as import('../types/audit.types').AuditEventType[];
     if (req.query.userId) filter.userId = req.query.userId as string;
     if (req.query.resource) filter.resource = req.query.resource as string;
     if (req.query.status) filter.status = req.query.status as 'success' | 'failure' | 'warning';
