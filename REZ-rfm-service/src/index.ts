@@ -120,10 +120,10 @@ async function main(): Promise<void> {
     await connectDatabase();
 
     // Create Express app
-    const app = createApp();
+    const _app = createApp();
 
     // Start server
-    const server = app.listen(config.port, () => {
+    _app.listen(config.port, () => {
       logger.info(`REZ RFM Service started on port ${config.port}`);
       logger.info(`Environment: ${config.nodeEnv}`);
       logger.info(`Health check: http://localhost:${config.port}/api/rfm/health`);
@@ -143,8 +143,6 @@ async function main(): Promise<void> {
       logger.error('Uncaught Exception', { error: error.message, stack: error.stack });
       process.exit(1);
     });
-
-    return server;
   } catch (error) {
     logger.error('Failed to start server', { error });
     process.exit(1);
@@ -152,6 +150,6 @@ async function main(): Promise<void> {
 }
 
 // Start the application
-main();
+void main();
 
 export { createApp, connectDatabase };

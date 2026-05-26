@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError, ZodSchema } from 'zod';
-import logger from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Custom Application Error

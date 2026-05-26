@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
-import { IRFMScore, RFMScoreValue } from '../types/index.js';
+import { IRFMScore } from '../types/index.js';
 
 export interface IRFMScoreDocument extends Omit<IRFMScore, 'metadata'>, Document {
   metadata?: {
@@ -7,6 +7,12 @@ export interface IRFMScoreDocument extends Omit<IRFMScore, 'metadata'>, Document
     totalOrders: number;
     totalSpent: number;
   };
+}
+
+export interface IRFMScoreModel extends Model<IRFMScoreDocument> {
+  findByCustomerId(customerId: string): Promise<IRFMScoreDocument | null>;
+  findBySegment(segment: string, options?: { limit?: number; skip?: number }): Promise<IRFMScoreDocument[]>;
+  getSegmentDistribution(): Promise<Record<string, number>>;
 }
 
 const RFMScoreSchema = new Schema<IRFMScoreDocument>(
@@ -80,11 +86,10 @@ const RFMScoreSchema = new Schema<IRFMScoreDocument>(
   {
     timestamps: true,
     toJSON: {
-      transform: (_doc, ret) => {
+      transform: (_doc, ret: Record<string, unknown>) => {
         ret.id = ret._id;
-        delete ret._id;
-        delete ret.__v;
-        return ret;
+        const { _id, __v, ...rest } = ret;
+        return rest;
       },
     },
   }

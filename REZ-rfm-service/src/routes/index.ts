@@ -11,7 +11,7 @@ import {
 } from '../types/index.js';
 import { createAuthMiddleware } from '../middleware/auth.js';
 import { createRateLimiter } from '../middleware/rateLimit.js';
-import { logger } from '../utils/logger.js';
+import logger from '../utils/logger.js';
 
 const internalAuth = createAuthMiddleware({
   internalTokens: process.env['INTERNAL_SERVICE_TOKEN'] ? [process.env['INTERNAL_SERVICE_TOKEN']] : [],

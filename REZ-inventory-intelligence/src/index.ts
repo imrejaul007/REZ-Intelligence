@@ -4,7 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import config, { validateConfig } from './config/index.js';
-import logger from './utils/logger.js';
+import { logger } from './utils/logger.js';
 import inventoryRoutes from './routes/index.js';
 import { createAuthMiddleware, createRateLimiter, errorHandler } from './middleware/index.js';
 

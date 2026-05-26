@@ -33,11 +33,9 @@ const SegmentSchema = new Schema<ISegmentDocument>(
   {
     timestamps: true,
     toJSON: {
-      transform: (_doc, ret) => {
-        ret.id = ret._id;
-        delete ret._id;
-        delete ret.__v;
-        return ret;
+      transform: (_doc, ret: Record<string, unknown>) => {
+        const { _id, __v, ...rest } = ret;
+        return { id: _id, ...rest };
       },
     },
   }
