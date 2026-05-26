@@ -5,8 +5,8 @@
 
 import axios from 'axios';
 
-const ECOSYSTEM_URL = process.env.ECOSYSTEM_URL || 'http://localhost:4105';
-const SIGNALS_URL = process.env.SIGNALS_URL || 'http://localhost:4121';
+const ECOSYSTEM_URL = process.env['ECOSYSTEM_URL'] || 'http://localhost:4105';
+const SIGNALS_URL = process.env['SIGNALS_URL'] || 'http://localhost:4121';
 
 // ============================================
 // IDENTITY EVENTS

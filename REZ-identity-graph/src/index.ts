@@ -648,7 +648,7 @@ app.post('/api/identity/resolve', asyncHandler(async (req: Request, res: Respons
 // Get unified identity
 app.get('/api/identity/:unifiedId', asyncHandler(async (req: Request, res: Response) => {
   const { unifiedId } = req.params;
-  const includeLinked = req.query.includeLinked === 'true';
+  const includeLinked = req.query['includeLinked'] === 'true';
 
   const identity = await Identity.findOne({ unifiedId });
 
@@ -837,7 +837,7 @@ app.post('/api/identity/:unifiedId/stats', asyncHandler(async (req: Request, res
   const update: Record<string, unknown> = { $set: { 'stats.lastActivity': new Date() } };
 
   if (transactionAmount) {
-    update.$inc = {
+    (update as Record<string, Record<string, number>>)['$inc'] = {
       'stats.totalTransactions': 1,
       'stats.totalSpend': transactionAmount
     };
