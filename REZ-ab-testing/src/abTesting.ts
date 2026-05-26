@@ -386,7 +386,8 @@ router.post('/experiments', async (req: Request, res: Response) => {
     res.status(201).json({ success: true, experiment_id, experiment: experiment.toObject() });
   } catch (error) {
     if (error instanceof ValidationError) {
-      return res.status(400).json({ success: false, error: error.message });
+      res.status(400).json({ success: false, error: error.message });
+      return;
     }
     console.error('[AB-Testing] Create experiment error:', error);
     res.status(500).json({ success: false, error: 'Failed to create experiment' });
@@ -414,7 +415,8 @@ router.get('/experiments', async (req: Request, res: Response) => {
     res.json({ success: true, experiments: withStats, count: list.length });
   } catch (error) {
     if (error instanceof ValidationError) {
-      return res.status(400).json({ success: false, error: error.message });
+      res.status(400).json({ success: false, error: error.message });
+      return;
     }
     console.error('[AB-Testing] List experiments error:', error);
     res.status(500).json({ success: false, error: 'Failed to list experiments' });
@@ -434,7 +436,8 @@ router.get('/experiments/:id', async (req: Request, res: Response) => {
     const experiment = await ExperimentModel.findOne({ id }).lean() as Record<string, unknown> | null;
 
     if (!experiment) {
-      return res.status(404).json({ success: false, error: 'Experiment not found' });
+      res.status(404).json({ success: false, error: 'Experiment not found' });
+      return;
     }
 
     const experimentId = experiment.id as string;
@@ -442,7 +445,8 @@ router.get('/experiments/:id', async (req: Request, res: Response) => {
     res.json({ success: true, experiment, variants: experimentVariants });
   } catch (error) {
     if (error instanceof ValidationError) {
-      return res.status(400).json({ success: false, error: error.message });
+      res.status(400).json({ success: false, error: error.message });
+      return;
     }
     console.error('[AB-Testing] Get experiment error:', error);
     res.status(500).json({ success: false, error: 'Failed to get experiment' });
@@ -462,12 +466,14 @@ router.post('/experiments/:id/start', async (req: Request, res: Response) => {
     const experiment = await ExperimentModel.findOne({ id });
 
     if (!experiment) {
-      return res.status(404).json({ success: false, error: 'Experiment not found' });
+      res.status(404).json({ success: false, error: 'Experiment not found' });
+      return;
     }
 
     const varCount = await VariantModel.countDocuments({ experiment_id: experiment.id });
     if (varCount < 2) {
-      return res.status(400).json({ success: false, error: 'Need at least 2 variants' });
+      res.status(400).json({ success: false, error: 'Need at least 2 variants' });
+      return;
     }
 
     experiment.status = 'running';
@@ -478,7 +484,8 @@ router.post('/experiments/:id/start', async (req: Request, res: Response) => {
     res.json({ success: true, experiment: experiment.toObject() });
   } catch (error) {
     if (error instanceof ValidationError) {
-      return res.status(400).json({ success: false, error: error.message });
+      res.status(400).json({ success: false, error: error.message });
+      return;
     }
     console.error('[AB-Testing] Start experiment error:', error);
     res.status(500).json({ success: false, error: 'Failed to start experiment' });
@@ -498,7 +505,8 @@ router.post('/experiments/:id/pause', async (req: Request, res: Response) => {
     const experiment = await ExperimentModel.findOne({ id });
 
     if (!experiment) {
-      return res.status(404).json({ success: false, error: 'Experiment not found' });
+      res.status(404).json({ success: false, error: 'Experiment not found' });
+      return;
     }
 
     experiment.status = 'paused';
@@ -508,7 +516,8 @@ router.post('/experiments/:id/pause', async (req: Request, res: Response) => {
     res.json({ success: true, experiment: experiment.toObject() });
   } catch (error) {
     if (error instanceof ValidationError) {
-      return res.status(400).json({ success: false, error: error.message });
+      res.status(400).json({ success: false, error: error.message });
+      return;
     }
     console.error('[AB-Testing] Pause experiment error:', error);
     res.status(500).json({ success: false, error: 'Failed to pause experiment' });
