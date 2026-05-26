@@ -33,8 +33,9 @@ import {
 // LOGGING SETUP
 // ============================================
 
-const SERVICE_NAME = process.env.SERVICE_NAME || 'rez-demand-forecast';
-const NODE_ENV = process.env.NODE_ENV || 'development';
+const SERVICE_NAME = process.env['SERVICE_NAME'] || 'rez-demand-forecast';
+const NODE_ENV = process.env['NODE_ENV'] || 'development';
+const LOG_LEVEL = process.env['LOG_LEVEL'] || 'info';
 
 const structuredFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DDTHH:mm:ss.SSSZ' }),
@@ -45,14 +46,14 @@ const structuredFormat = winston.format.combine(
 const prettyFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.colorize({ all: true }),
-  winston.format.printf(({ timestamp, level, message, ...meta }: { timestamp?: string; level: string; message: string; [key: string]: unknown }) => {
+  winston.format.printf(({ timestamp, level, message, ...meta }) => {
     const metaStr = Object.keys(meta).length ? JSON.stringify(meta, null, 2) : '';
     return `${timestamp} ${level} [${SERVICE_NAME}]: ${message} ${metaStr}`;
   })
 );
 
 const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
+  level: LOG_LEVEL,
   format: NODE_ENV === 'production' ? structuredFormat : prettyFormat,
   defaultMeta: { service: SERVICE_NAME },
   transports: [

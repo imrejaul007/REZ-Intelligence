@@ -1,9 +1,5 @@
 import { RFMScore } from '../models/RFMScore.js';
-import { Segment } from '../models/Segment.js';
-import { scoringService } from './scoringService.js';
-import { segmentService } from './segmentService.js';
 import { RFMAnalyticsResponse, SegmentAnalytics, SEGMENTS } from '../types/index.js';
-import logger from './utils/logger.js';
 
 /**
  * Analytics Service
@@ -17,17 +13,15 @@ class AnalyticsService {
     const [
       totalCustomers,
       segmentDistribution,
-      globalStats,
     ] = await Promise.all([
       RFMScore.countDocuments(),
       RFMScore.getSegmentDistribution(),
-      this.getGlobalStats(),
     ]);
 
     const segments: SegmentAnalytics[] = [];
     const distribution: Record<string, number> = {};
 
-    for (const [segmentCode, segment] of Object.entries(SEGMENTS)) {
+    for (const [segmentCode] of Object.entries(SEGMENTS)) {
       const customerCount = segmentDistribution[segmentCode] || 0;
       const percentage = totalCustomers > 0 ? (customerCount / totalCustomers) * 100 : 0;
 
@@ -287,8 +281,12 @@ class AnalyticsService {
   /**
    * Get scoring thresholds reference
    */
-  getScoringThresholds(): ReturnType<typeof scoringService.getThresholds> {
-    return scoringService.getThresholds();
+  getScoringThresholds(): { r: number[]; f: number[]; m: number[] } {
+    return {
+      r: [0, 30, 60, 90, 180],
+      f: [1, 2, 5, 10, 20],
+      m: [0, 500, 1000, 5000, 10000],
+    };
   }
 }
 
