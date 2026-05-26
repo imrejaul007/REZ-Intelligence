@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Escalation, CreateEscalation, EscalationStatus } from '../types/index.js';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 export class EscalationService {
   private escalations: Map<string, Escalation> = new Map();

@@ -1,9 +1,12 @@
-import { RFMScore } from '../models/RFMScore.js';
+import { RFMScore, IRFMScoreDocument } from '../models/RFMScore.js';
 import {
   IRFMScore,
   ICustomerOrderData,
   SEGMENTS,
+  UNKNOWN_SEGMENT,
+  RFMScoreValue,
 } from '../types/index.js';
+import logger from '../utils/logger.js';
 
 /**
  * RFM Scoring Service

@@ -316,7 +316,8 @@ router.get('/analytics', async (_req: Request, res: Response, next: NextFunction
  */
 router.get('/thresholds', async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const thresholds = analyticsService.getScoringThresholds();
+    // Use the scoring thresholds directly since response is hardcoded
+    scoringService.getThresholds();
 
     res.json({
       success: true,

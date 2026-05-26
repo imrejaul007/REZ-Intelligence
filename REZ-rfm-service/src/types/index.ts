@@ -33,7 +33,7 @@ export interface ICustomerOrderData {
   customerId: string;
   orders: Array<{
     orderId: string;
-    orderDate: Date;
+    orderDate: string | Date;
     totalAmount: number;
   }>;
 }
