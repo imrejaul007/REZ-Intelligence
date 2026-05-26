@@ -117,9 +117,9 @@ class IntelligenceService {
         const { userId, context, excludedItems = [], limit = 5 } = input;
         // Get user preferences and metrics
         const preferences = await personalizationService_1.personalizationService.getOrCreatePreferences(userId);
-        const metrics = await this.getOrCreateMetrics(userId);
+        await this.getOrCreateMetrics(userId);
         // Get recent memories to understand context
-        const memories = await memoryService_1.memoryService.getUserMemories({
+        await memoryService_1.memoryService.getUserMemories({
             userId,
             type: undefined,
             limit: 10,
@@ -189,7 +189,7 @@ class IntelligenceService {
         const alternativeIntents = [];
         // Check for intent chains (common patterns)
         if (recentIntents.length >= 2) {
-            const lastIntent = recentIntents[0];
+            const lastIntent = recentIntents[0] || '';
             // Common intent chains
             const intentChains = {
                 'search': {
@@ -309,7 +309,7 @@ class IntelligenceService {
             };
         }
         // Simple prediction based on last action
-        const lastIntent = recentIntents[0];
+        const lastIntent = recentIntents[0] || 'explore';
         const predictions = {
             search: { action: 'view', confidence: 0.7 },
             view: { action: 'book', confidence: 0.6 },

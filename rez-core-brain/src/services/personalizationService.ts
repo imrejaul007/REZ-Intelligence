@@ -96,7 +96,8 @@ export class PersonalizationService {
         if (key === 'notificationPreferences' && typeof value === 'object') {
           Object.assign(preferences.notificationPreferences, value);
         } else {
-          (preferences as Record<string, unknown>)[key] = value;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (preferences as any)[key] = value;
         }
       }
     }
@@ -242,12 +243,12 @@ export class PersonalizationService {
       return null;
     }
 
-    const tiers = Object.values(LoyaltyTier);
+    const tiers = Object.values(LoyaltyTier) as string[];
     const currentIndex = tiers.indexOf(profile.tier);
-    const nextTier = currentIndex < tiers.length - 1 ? tiers[currentIndex + 1] : undefined;
+    const nextTierValue = currentIndex < tiers.length - 1 ? tiers[currentIndex + 1] : undefined;
 
     let nextTierInfo;
-    if (nextTier) {
+    if (nextTierValue) {
       const thresholds: Record<string, number> = {
         [LoyaltyTier.BRONZE]: 0,
         [LoyaltyTier.SILVER]: 1000,
@@ -255,14 +256,15 @@ export class PersonalizationService {
         [LoyaltyTier.PLATINUM]: 15000,
         [LoyaltyTier.DIAMOND]: 50000,
       };
+      const tierEnum = nextTierValue as LoyaltyTier;
       nextTierInfo = {
-        tier: nextTier,
-        pointsNeeded: thresholds[nextTier] - profile.points,
+        tier: tierEnum,
+        pointsNeeded: (thresholds[nextTierValue] ?? 0) - profile.points,
       };
     }
 
     return {
-      tier: profile.tier,
+      tier: profile.tier as LoyaltyTier,
       benefits: profile.benefits,
       points: profile.points,
       nextTier: nextTierInfo,
@@ -325,7 +327,7 @@ export class PersonalizationService {
     const loyaltyStyle = loyaltyProfile?.preferences.communicationStyle;
 
     // Combine preferences for communication style
-    let tone = preferences.tone;
+    let tone: Tone = preferences.tone as Tone;
     if (loyaltyStyle === 'formal') {
       tone = Tone.FORMAL;
     } else if (loyaltyStyle === 'casual') {
@@ -335,7 +337,7 @@ export class PersonalizationService {
     return {
       tone,
       language: preferences.language,
-      privacyLevel: preferences.privacyLevel,
+      privacyLevel: preferences.privacyLevel as PrivacyLevel,
     };
   }
 

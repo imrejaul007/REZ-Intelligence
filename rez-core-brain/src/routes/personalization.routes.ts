@@ -5,6 +5,7 @@ import { contextService } from '../services/contextService';
 import intelligenceService from '../services/intelligenceService';
 import { authenticate, requestId } from '../middleware/auth';
 import { logger } from '../utils/logger';
+import { UpdatePreferencesInput, UpdateLoyaltyInput } from '../services/personalizationService';
 
 const router = Router();
 
@@ -105,7 +106,7 @@ router.patch('/preferences', requestId, authenticate, async (req: AuthenticatedR
       return;
     }
 
-    const preferences = await personalizationService.updatePreferences(userId, validation.data);
+    const preferences = await personalizationService.updatePreferences(userId, validation.data as UpdatePreferencesInput);
 
     res.json({
       success: true,
@@ -223,7 +224,7 @@ router.patch('/loyalty', requestId, authenticate, async (req: AuthenticatedReque
       return;
     }
 
-    const profile = await personalizationService.updateLoyaltyProfile(userId, validation.data);
+    const profile = await personalizationService.updateLoyaltyProfile(userId, validation.data as UpdateLoyaltyInput);
 
     res.json({
       success: true,

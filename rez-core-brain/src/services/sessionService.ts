@@ -316,7 +316,9 @@ export class SessionService {
       if (session.state === SessionState.PAUSED) paused++;
 
       if (session.endTime) {
-        totalDuration += session.duration as number;
+        const endTime = session.endTime instanceof Date ? session.endTime : new Date(session.endTime);
+        const startTime = session.startTime instanceof Date ? session.startTime : new Date(session.startTime);
+        totalDuration += endTime.getTime() - startTime.getTime();
         durationCount++;
       }
     }

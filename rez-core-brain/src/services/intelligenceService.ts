@@ -176,10 +176,10 @@ export class IntelligenceService {
 
     // Get user preferences and metrics
     const preferences = await personalizationService.getOrCreatePreferences(userId);
-    const metrics = await this.getOrCreateMetrics(userId);
+    await this.getOrCreateMetrics(userId);
 
     // Get recent memories to understand context
-    const memories = await memoryService.getUserMemories({
+    await memoryService.getUserMemories({
       userId,
       type: undefined,
       limit: 10,
@@ -274,7 +274,7 @@ export class IntelligenceService {
 
     // Check for intent chains (common patterns)
     if (recentIntents.length >= 2) {
-      const lastIntent = recentIntents[0];
+      const lastIntent = recentIntents[0] || '';
 
       // Common intent chains
       const intentChains: Record<string, Record<string, { intent: string; confidence: number }>> = {
@@ -420,7 +420,7 @@ export class IntelligenceService {
     }
 
     // Simple prediction based on last action
-    const lastIntent = recentIntents[0];
+    const lastIntent = recentIntents[0] || 'explore';
     const predictions: Record<string, { action: string; confidence: number }> = {
       search: { action: 'view', confidence: 0.7 },
       view: { action: 'book', confidence: 0.6 },

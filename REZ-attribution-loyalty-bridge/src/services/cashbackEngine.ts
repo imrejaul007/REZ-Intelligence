@@ -12,7 +12,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { BridgeRecord } from '../models/BridgeRecord.js';
-import { CampaignConfig, ICampaignConfigModel } from '../models/CampaignConfigTyped.js';
+import { CampaignConfig, ICampaignConfigModel } from '../models/CampaignConfig.js';
 import { cashbackLogger as logger } from './logger.js';
 import {
   CashbackRequest,

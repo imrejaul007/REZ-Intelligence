@@ -306,7 +306,8 @@ router.post('/:id/context', auth_1.requestId, auth_1.authenticate, async (req, r
 router.delete('/:id/context/:key', auth_1.requestId, auth_1.authenticate, async (req, res) => {
     try {
         const userId = req.userId;
-        const { id, key } = req.params;
+        const id = req.params.id;
+        const key = req.params.key;
         const session = await sessionService_1.sessionService.removeContext(id, userId, key);
         if (!session) {
             res.status(404).json({

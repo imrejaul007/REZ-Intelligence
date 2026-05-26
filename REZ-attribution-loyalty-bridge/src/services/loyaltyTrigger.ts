@@ -12,8 +12,11 @@
 
 import axios, { AxiosInstance } from 'axios';
 import { BridgeRecord, IBridgeRecord } from '../models/BridgeRecord.js';
-import { CampaignConfig } from '../models/CampaignConfig.js';
+import { CampaignConfig, ICampaignConfigModel } from '../models/CampaignConfig.js';
 import { loyaltyLogger as logger } from './logger.js';
+
+// Cast model to include static methods
+const CampaignConfigTyped = CampaignConfig as unknown as ICampaignConfigModel;
 
 // ============================================
 // TYPES
@@ -264,7 +267,7 @@ export class LoyaltyTriggerService {
       // Get campaign name if applicable
       let campaignName: string | undefined;
       if (bridgeRecord.campaignId) {
-        const campaign = await CampaignConfig.findByCampaignId(bridgeRecord.campaignId);
+        const campaign = await CampaignConfigTyped.findByCampaignId(bridgeRecord.campaignId);
         campaignName = campaign?.name;
       }
 
@@ -332,7 +335,7 @@ export class LoyaltyTriggerService {
    */
   private async updateCampaignStats(campaignId: string, coinsAwarded: number): Promise<void> {
     try {
-      const campaign = await CampaignConfig.findByCampaignId(campaignId);
+      const campaign = await CampaignConfigTyped.findByCampaignId(campaignId);
       if (campaign) {
         await campaign.recordRedemption(coinsAwarded);
         logger.info('Campaign stats updated', { campaignId, coinsAwarded });

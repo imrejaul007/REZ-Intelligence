@@ -345,7 +345,8 @@ router.post('/:id/context', requestId, authenticate, async (req: AuthenticatedRe
 router.delete('/:id/context/:key', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
-    const { id, key } = req.params;
+    const id = req.params.id as string;
+    const key = req.params.key as string;
 
     const session = await sessionService.removeContext(id, userId, key);
 

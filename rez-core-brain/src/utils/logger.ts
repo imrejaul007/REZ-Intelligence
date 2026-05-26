@@ -4,12 +4,14 @@ import { config, isProduction } from '../config';
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
 // Custom log format
-const logFormat = printf(({ level, message, timestamp, ...metadata }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
-  let msg = `${timestamp} [${level}]: ${message}`;
+const logFormat = printf((info: winston.Logform.TransformableInfo) => {
+  const { level, message, timestamp: ts, ...metadata } = info;
+  let msg = `${ts} [${level}]: ${message}`;
 
-  if (Object.keys(metadata).length > 0 && metadata.stack) {
+  const metaKeys = Object.keys(metadata);
+  if (metaKeys.length > 0 && metadata.stack) {
     msg += `\n${metadata.stack}`;
-  } else if (Object.keys(metadata).length > 0) {
+  } else if (metaKeys.length > 0) {
     msg += ` ${JSON.stringify(metadata)}`;
   }
 

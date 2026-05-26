@@ -13,11 +13,11 @@
 import axios, { AxiosInstance } from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import Redis from 'ioredis';
-import { BridgeRecord, IBridgeRecordModel } from '../models/BridgeRecordTyped.js';
+import { BridgeRecord, IBridgeRecordModel } from '../models/BridgeRecord.js';
 import { cashbackEngine } from './cashbackEngine.js';
 import { loyaltyTriggerService } from './loyaltyTrigger.js';
 import { attributionLogger as logger } from './logger.js';
-import { AttributionWebhookSchema, ChannelType } from '../types/schemas.js';
+import { AttributionWebhookSchema, AttributionWebhook, ChannelType } from '../types/schemas.js';
 
 // Cast model to include static methods
 const BridgeRecordTyped = BridgeRecord as unknown as IBridgeRecordModel;

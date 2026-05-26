@@ -3,17 +3,18 @@
  * REST API for the Attribution-Loyalty Bridge Service
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { BridgeRecord, IBridgeRecordModel } from '../models/BridgeRecordTyped.js';
-import { CampaignConfig, ICampaignConfigModel } from '../models/CampaignConfigTyped.js';
+import { BridgeRecord, IBridgeRecordModel } from '../models/BridgeRecord.js';
+import { CampaignConfig, ICampaignConfigModel } from '../models/CampaignConfig.js';
 import { cashbackEngine } from '../services/cashbackEngine.js';
 import { loyaltyTriggerService } from '../services/loyaltyTrigger.js';
 import { attributionListener } from '../services/attributionListener.js';
 import { bridgeLogger as logger } from '../services/logger.js';
 import {
   CashbackRequestSchema,
-  AttributionWebhookSchema
+  AttributionWebhookSchema,
+  ChannelTypeSchema
 } from '../types/schemas.js';
 
 // Cast models to include static methods
@@ -47,16 +48,6 @@ interface ApiResponse<T = unknown> {
  */
 function requestIdMiddleware(req: Request, _res: Response, next: NextFunction): void {
   (req as unknown as { requestId: string }).requestId = (req.headers['x-request-id'] as string) || uuidv4();
-  next();
-}
-
-/**
- * Validate internal service token
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function _validateInternalToken(_req: Request, _res: Response, next: NextFunction): void {
-  // Note: This function is currently unused but kept for future implementation
-  // Token validation is handled by API gateway middleware
   next();
 }
 
@@ -440,9 +431,10 @@ export function createBridgeRouter(): Router {
 
       let campaigns;
       if (active === 'true') {
+        const channelValue = channel ? ChannelTypeSchema.parse(channel) : undefined;
         campaigns = await CampaignConfigTyped.findActiveCampaigns(
           merchantId as string | undefined,
-          channel as unknown
+          channelValue
         );
       } else {
         const query: Record<string, unknown> = {};

@@ -50,6 +50,7 @@ class PersonalizationService {
                     Object.assign(preferences.notificationPreferences, value);
                 }
                 else {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     preferences[key] = value;
                 }
             }
@@ -173,9 +174,9 @@ class PersonalizationService {
         }
         const tiers = Object.values(GlobalPersonalization_1.LoyaltyTier);
         const currentIndex = tiers.indexOf(profile.tier);
-        const nextTier = currentIndex < tiers.length - 1 ? tiers[currentIndex + 1] : undefined;
+        const nextTierValue = currentIndex < tiers.length - 1 ? tiers[currentIndex + 1] : undefined;
         let nextTierInfo;
-        if (nextTier) {
+        if (nextTierValue) {
             const thresholds = {
                 [GlobalPersonalization_1.LoyaltyTier.BRONZE]: 0,
                 [GlobalPersonalization_1.LoyaltyTier.SILVER]: 1000,
@@ -183,9 +184,10 @@ class PersonalizationService {
                 [GlobalPersonalization_1.LoyaltyTier.PLATINUM]: 15000,
                 [GlobalPersonalization_1.LoyaltyTier.DIAMOND]: 50000,
             };
+            const tierEnum = nextTierValue;
             nextTierInfo = {
-                tier: nextTier,
-                pointsNeeded: thresholds[nextTier] - profile.points,
+                tier: tierEnum,
+                pointsNeeded: (thresholds[nextTierValue] ?? 0) - profile.points,
             };
         }
         return {
