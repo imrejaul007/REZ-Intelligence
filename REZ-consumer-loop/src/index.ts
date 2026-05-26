@@ -23,7 +23,7 @@ import {
 import { generateMockRecommendations, determineFlywheelStage, calculateReorderWindow } from './helpers.js';
 
 const app = express();
-const PORT = parseInt(process.env.PORT || '4154', 10);
+const PORT = parseInt(process.env['PORT'] || '4154', 10);
 
 // Middleware
 app.use(cors());
@@ -63,7 +63,6 @@ app.post('/api/qr-scan', asyncHandler(async (req: Request, res: Response) => {
 
     // Step 1: Record in Event Platform
     await eventPlatform.record({
-      id: eventId,
       type: EventType.QR_SCAN,
       userId,
       merchantId,
@@ -131,7 +130,6 @@ app.post('/api/browse', asyncHandler(async (req: Request, res: Response) => {
 
     // Step 2: Record in Event Platform
     await eventPlatform.record({
-      id: eventId,
       type: EventType.BROWSE,
       userId,
       merchantId,
@@ -205,11 +203,9 @@ app.post('/api/order', asyncHandler(async (req: Request, res: Response) => {
 
     // Step 1: Record in Event Platform
     await eventPlatform.record({
-      id: orderId,
       type: EventType.ORDER,
       userId,
       merchantId,
-      orderId,
       items,
       totalAmount: order.totalAmount,
       stage: FlywheelStage.CONVERSION,
@@ -319,7 +315,7 @@ app.post('/api/reorder/trigger', asyncHandler(async (_req: Request, res: Respons
  * Get reorder scores for a specific user
  */
 app.get('/api/reorder/scores/:userId', asyncHandler(async (req: Request, res: Response) => {
-  const { userId } = req.params;
+  const userId = req.params.userId as string;
 
   const userOrders = identityGraph.getOrders().filter((o) => o.userId === userId);
 
@@ -346,7 +342,7 @@ app.get('/api/reorder/scores/:userId', asyncHandler(async (req: Request, res: Re
  * Get complete user profile across all services
  */
 app.get('/api/user/:userId/profile', asyncHandler(async (req: Request, res: Response) => {
-  const { userId } = req.params;
+  const userId = req.params.userId as string;
 
   const [tasteProfile, events, searchContext, allOrders] = await Promise.all([
     tasteProfileService.get(userId),

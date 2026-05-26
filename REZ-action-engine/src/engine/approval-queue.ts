@@ -312,6 +312,46 @@ export class ApprovalQueue {
       await mongoose.disconnect();
     }
   }
+
+  /**
+   * Cancel an approval request
+   */
+  async cancel(approvalId: string, cancelledBy: string): Promise<{ success: boolean; request?: ApprovalRequest; error?: string }> {
+    await ensureConnection();
+
+    const doc = await ApprovalRequestModel.findOne({ id: approvalId });
+    if (!doc) {
+      return { success: false, error: 'Approval request not found' };
+    }
+
+    if (doc.status !== ActionStatus.PENDING) {
+      return { success: false, error: 'Only pending requests can be cancelled' };
+    }
+
+    doc.status = ActionStatus.CANCELLED;
+    doc.resolvedAt = new Date();
+    doc.resolvedBy = cancelledBy;
+    doc.metadata = { ...doc.metadata, cancelledBy };
+    await doc.save();
+
+    return { success: true, request: doc.toObject() as unknown as ApprovalRequest };
+  }
+
+  /**
+   * Get approval statistics
+   */
+  async getStats(): Promise<{ pending: number; approved: number; rejected: number; cancelled: number }> {
+    await ensureConnection();
+
+    const [pending, approved, rejected, cancelled] = await Promise.all([
+      ApprovalRequestModel.countDocuments({ status: ActionStatus.PENDING }),
+      ApprovalRequestModel.countDocuments({ status: ActionStatus.APPROVED }),
+      ApprovalRequestModel.countDocuments({ status: ActionStatus.REJECTED }),
+      ApprovalRequestModel.countDocuments({ status: ActionStatus.CANCELLED }),
+    ]);
+
+    return { pending, approved, rejected, cancelled };
+  }
 }
 
 // Export singleton getter

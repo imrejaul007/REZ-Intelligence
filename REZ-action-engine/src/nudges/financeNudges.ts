@@ -110,7 +110,7 @@ export const financeNudges: FinanceNudge[] = [
 /**
  * Process finance nudges for a user
  */
-export async function processFinanceNudge(user): Promise<void> {
+export async function processFinanceNudge(user: any): Promise<void> {
   for (const nudge of financeNudges) {
     if (nudge.condition(user)) {
       await sendFinanceNudge(user, nudge);
@@ -134,7 +134,7 @@ async function sendFinanceNudge(user, nudge: FinanceNudge): Promise<void> {
   }
 }
 
-function personalizeTemplate(template, user): unknown {
+function personalizeTemplate(template: any, user: any): unknown {
   const personalized = { ...template };
 
   // Replace placeholders with user data

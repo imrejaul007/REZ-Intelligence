@@ -378,7 +378,7 @@ app.use((req: Request, res: Response) => {
 // Error handler
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   // Handle payload too large
-  if (err.type === 'entity.too.large') {
+  if ((err as any).type === 'entity.too.large') {
     return res.status(413).json({
       success: false,
       error: 'Payload too large',

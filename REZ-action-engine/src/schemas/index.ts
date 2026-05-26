@@ -143,22 +143,22 @@ export const TriggerTypeSchema = z.enum([
 // ── Validation Middleware Factory ────────────────────────────────────────
 
 export function validateBody<T>(schema: z.ZodSchema<T>) {
-  return (data: unknown): { success: true; data: T } | { success: false; errors: z.ZodError } => {
+  return (data: unknown): { success: true; data: T } | { success: false; errors: any } => {
     const result = schema.safeParse(data);
     if (result.success) {
       return { success: true, data: result.data };
     }
-    return { success: false, errors: result.error };
+    return { success: false, errors: (result as any).error };
   };
 }
 
 export function validateQuery<T>(schema: z.ZodSchema<T>) {
-  return (query: unknown): { success: true; data: T } | { success: false; errors: z.ZodError } => {
+  return (query: unknown): { success: true; data: T } | { success: false; errors: any } => {
     const result = schema.safeParse(query);
     if (result.success) {
       return { success: true, data: result.data };
     }
-    return { success: false, errors: result.error };
+    return { success: false, errors: (result as any).error };
   };
 }
 
@@ -178,7 +178,7 @@ export function validateRequest(schema: {
     if (schema.body) {
       const result = schema.body.safeParse(req.body);
       if (!result.success) {
-        errors.push(`Body: ${result.error.message}`);
+        errors.push(`Body: ${(result as any).error.message}`);
       } else {
         req.body = result.data;
       }
@@ -187,7 +187,7 @@ export function validateRequest(schema: {
     if (schema.query) {
       const result = schema.query.safeParse(req.query);
       if (!result.success) {
-        errors.push(`Query: ${result.error.message}`);
+        errors.push(`Query: ${(result as any).error.message}`);
       } else {
         req.query = result.data as typeof req.query;
       }
@@ -196,7 +196,7 @@ export function validateRequest(schema: {
     if (schema.params) {
       const result = schema.params.safeParse(req.params);
       if (!result.success) {
-        errors.push(`Params: ${result.error.message}`);
+        errors.push(`Params: ${(result as any).error.message}`);
       }
     }
 
