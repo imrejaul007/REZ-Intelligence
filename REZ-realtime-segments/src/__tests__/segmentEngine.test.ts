@@ -32,6 +32,7 @@ describe('SegmentEngine', () => {
       const rule: SegmentRule = {
         field: 'signals.competitor.switchRisk',
         operator: 'ne',
+        logic: 'AND',
         value: 'HIGH'
       };
       expect(evaluateRule(rule, userData)).toBe(true);
@@ -44,6 +45,7 @@ describe('SegmentEngine', () => {
       const rule: SegmentRule = {
         field: 'lifetime.totalSpend',
         operator: 'gt',
+        logic: 'AND',
         value: 10000
       };
       expect(evaluateRule(rule, userData)).toBe(true);
@@ -56,6 +58,7 @@ describe('SegmentEngine', () => {
       const rule: SegmentRule = {
         field: 'lifetime.avgOrderValue',
         operator: 'lt',
+        logic: 'AND',
         value: 1500
       };
       expect(evaluateRule(rule, userData)).toBe(true);
@@ -68,6 +71,7 @@ describe('SegmentEngine', () => {
       const rule: SegmentRule = {
         field: 'lifetime.totalOrders',
         operator: 'gte',
+        logic: 'AND',
         value: 10
       };
       expect(evaluateRule(rule, userData)).toBe(true);
@@ -77,6 +81,7 @@ describe('SegmentEngine', () => {
       const rule: SegmentRule = {
         field: 'activity.last30Days.orders',
         operator: 'lte',
+        logic: 'AND',
         value: 5
       };
       expect(evaluateRule(rule, userData)).toBe(true);
@@ -86,6 +91,7 @@ describe('SegmentEngine', () => {
       const rule: SegmentRule = {
         field: 'signals.social.influenceTier',
         operator: 'in',
+        logic: 'AND',
         value: ['micro', 'mid', 'macro']
       };
       expect(evaluateRule(rule, userData)).toBe(true);
@@ -98,6 +104,7 @@ describe('SegmentEngine', () => {
       const rule: SegmentRule = {
         field: 'signals.location.segments',
         operator: 'contains',
+        logic: 'AND',
         value: 'food_enthusiast'
       };
       expect(evaluateRule(rule, userData)).toBe(true);
@@ -110,6 +117,7 @@ describe('SegmentEngine', () => {
       const rule: SegmentRule = {
         field: 'nonexistent.field',
         operator: 'eq',
+        logic: 'AND',
         value: 'test'
       };
       expect(evaluateRule(rule, userData)).toBe(false);
@@ -121,8 +129,8 @@ describe('SegmentEngine', () => {
 
     it('should evaluate AND logic correctly', () => {
       const rules: SegmentRule[] = [
-        { field: 'lifetime.totalSpend', operator: 'gte', value: 10000 },
-        { field: 'lifetime.avgOrderValue', operator: 'gte', value: 1000 }
+        { field: 'lifetime.totalSpend', operator: 'gte', logic: 'AND', value: 10000 },
+        { field: 'lifetime.avgOrderValue', operator: 'gte', logic: 'AND', value: 1000 }
       ];
 
       const result = evaluateRules(rules, userData);
@@ -133,8 +141,8 @@ describe('SegmentEngine', () => {
 
     it('should fail when one AND rule fails', () => {
       const rules: SegmentRule[] = [
-        { field: 'lifetime.totalSpend', operator: 'gte', value: 10000 },
-        { field: 'lifetime.avgOrderValue', operator: 'gte', value: 5000 } // This will fail
+        { field: 'lifetime.totalSpend', operator: 'gte', logic: 'AND', value: 10000 },
+        { field: 'lifetime.avgOrderValue', operator: 'gte', logic: 'AND', value: 5000 } // This will fail
       ];
 
       const result = evaluateRules(rules, userData);
@@ -145,8 +153,8 @@ describe('SegmentEngine', () => {
 
     it('should evaluate OR logic correctly', () => {
       const rules: SegmentRule[] = [
-        { field: 'lifetime.totalSpend', operator: 'gte', value: 100000 }, // Will fail
-        { field: 'lifetime.avgOrderValue', operator: 'gte', value: 1000, logic: 'OR' } // Will pass
+        { field: 'lifetime.totalSpend', operator: 'gte', logic: 'AND', value: 100000 }, // Will fail
+        { field: 'lifetime.avgOrderValue', operator: 'gte', logic: 'OR', value: 1000 } // Will pass
       ];
 
       const result = evaluateRules(rules, userData);
@@ -192,14 +200,12 @@ describe('SegmentEngine', () => {
       });
 
       const newCustomerSegment = findSegmentById('new_customer');
-      const dormantSegment = findSegmentById('dormant');
 
-      if (!newCustomerSegment || !dormantSegment) {
+      if (!newCustomerSegment) {
         throw new Error('Segment not found');
       }
 
       const newCustomerResult = evaluateSegment(newCustomerSegment, userData);
-      const dormantResult = evaluateSegment(dormantSegment, userData);
 
       expect(newCustomerResult.matches).toBe(true);
       // Dormant requires no orders in 30 days, so new customer won't match
@@ -240,7 +246,7 @@ describe('SegmentEngine', () => {
         name: 'Test Segment',
         description: 'A test segment',
         rules: [
-          { field: 'lifetime.totalSpend', operator: 'gte', value: 1000 }
+          { field: 'lifetime.totalSpend', operator: 'gte', logic: 'AND', value: 1000 }
         ]
       };
 

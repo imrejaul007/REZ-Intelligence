@@ -3,10 +3,10 @@
  * Connect segments to other AI services
  */
 
-const SIGNAL_URL = process.env.SIGNAL_AGGREGATOR_URL || 'http://localhost:4121';
-const PREDICT_URL = process.env.PREDICTIVE_ENGINE_URL || 'http://localhost:4123';
-const IDENTITY_URL = process.env.IDENTITY_URL || 'http://localhost:4050';
-const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
+const SIGNAL_URL = process.env['SIGNAL_AGGREGATOR_URL'] || 'http://localhost:4121';
+const PREDICT_URL = process.env['PREDICTIVE_ENGINE_URL'] || 'http://localhost:4123';
+const IDENTITY_URL = process.env['IDENTITY_URL'] || 'http://localhost:4050';
+const INTERNAL_TOKEN = process.env['INTERNAL_SERVICE_TOKEN'] || '';
 
 async function intelligenceRequest(url: string, options: RequestInit = {}): Promise<unknown> {
   const response = await fetch(url, {
@@ -30,6 +30,15 @@ async function intelligenceRequest(url: string, options: RequestInit = {}): Prom
 // ============================================
 
 const signalConfig = { baseUrl: SIGNAL_URL, token: INTERNAL_TOKEN };
+
+interface SignalResponse {
+  overall?: number;
+  behavioral?: number;
+  engagement?: number;
+  social?: number;
+  competitor?: number;
+  location?: number;
+}
 
 async function signalRequest(path: string, options: RequestInit = {}): Promise<unknown> {
   const response = await fetch(`${signalConfig.baseUrl}${path}`, {
@@ -60,14 +69,14 @@ export const signalIntegration = {
     competitor: number;
     location: number;
   }> {
-    const data = await signalRequest(`/signals/${userId}/summary`);
+    const data = await signalRequest(`/signals/${userId}/summary`) as SignalResponse;
     return {
-      overall: data.overall || 50,
-      behavioral: data.behavioral || 50,
-      engagement: data.engagement || 50,
-      social: data.social || 50,
-      competitor: data.competitor || 50,
-      location: data.location || 50,
+      overall: data?.overall || 50,
+      behavioral: data?.behavioral || 50,
+      engagement: data?.engagement || 50,
+      social: data?.social || 50,
+      competitor: data?.competitor || 50,
+      location: data?.location || 50,
     };
   },
 
@@ -100,6 +109,11 @@ export const signalIntegration = {
 // ============================================
 
 const predictConfig = { baseUrl: PREDICT_URL, token: INTERNAL_TOKEN };
+
+interface ChurnResponse { probability?: number; daysUntilChurn?: number; }
+interface LTVResponse { predictedLTV365?: number; tier?: string; }
+interface RevisitResponse { probability?: number; }
+interface ProfileResponse { devices?: Array<{ id: string }>; [key: string]: unknown; }
 
 async function predictRequest(path: string, options: RequestInit = {}): Promise<unknown> {
   const response = await fetch(`${predictConfig.baseUrl}${path}`, {
@@ -144,19 +158,23 @@ export const predictiveIntegration = {
       }).catch(() => null),
     ]);
 
+    const churnData = churn as ChurnResponse | null;
+    const ltvData = ltv as LTVResponse | null;
+    const revisitData = revisit as RevisitResponse | null;
+
     return {
-      churnRisk: churn?.probability,
-      churnDaysUntil: churn?.daysUntilChurn,
-      ltv: ltv?.predictedLTV365,
-      ltvTier: ltv?.tier,
-      revisitProbability: revisit?.probability,
+      churnRisk: churnData?.probability,
+      churnDaysUntil: churnData?.daysUntilChurn,
+      ltv: ltvData?.predictedLTV365,
+      ltvTier: ltvData?.tier,
+      revisitProbability: revisitData?.probability,
     };
   },
 
   /**
    * Trigger retention for at-risk segment
    */
-  async triggerRetentionIfAtRisk(userId: string, churnRisk?: number): Promise<boolean> {
+  async triggerRetentionIfAtRisk(_userId: string, churnRisk?: number): Promise<boolean> {
     if (!churnRisk || churnRisk < 0.5) return false;
 
     // Trigger is handled by segment handlers in rabtulPlatform
@@ -203,10 +221,11 @@ export const identityIntegration = {
     crossDeviceSegments: string[];
   }> {
     try {
-      const profile = await identityRequest(`/api/identity/${userId}/profile`);
+      const profile = await identityRequest(`/api/identity/${userId}/profile`) as ProfileResponse;
+      const deviceCount = profile?.devices?.length || 0;
       return {
-        deviceCount: profile.devices?.length || 0,
-        crossDeviceSegments: profile.devices?.length > 1 ? ['multi_device'] : [],
+        deviceCount,
+        crossDeviceSegments: deviceCount > 1 ? ['multi_device'] : [],
       };
     } catch {
       return { deviceCount: 0, crossDeviceSegments: [] };
@@ -223,9 +242,9 @@ export const segmentHelpers = {
    * Full segment context enrichment
    */
   async enrichSegmentContext(userId: string): Promise<{
-    signals: ReturnType<typeof signalIntegration.getUserSignals>;
-    predictions: ReturnType<typeof predictiveIntegration.getUserPredictions>;
-    crossDevice: ReturnType<typeof identityIntegration.enrichWithCrossDevice>;
+    signals: { overall: number; behavioral: number; engagement: number; social: number; competitor: number; location: number; };
+    predictions: { churnRisk?: number; churnDaysUntil?: number; ltv?: number; ltvTier?: string; revisitProbability?: number; };
+    crossDevice: { deviceCount: number; crossDeviceSegments: string[]; };
   }> {
     const [signals, predictions, crossDevice] = await Promise.all([
       signalIntegration.getUserSignals(userId),

@@ -8,13 +8,6 @@ export interface AuthConfig {
 }
 
 export function createAuthMiddleware(config: AuthConfig) {
-}
-
-export const authMiddleware = createAuthMiddleware({
-  apiKeys: process.env.API_KEYS?.split(',') || [],
-  internalTokens: process.env.INTERNAL_TOKENS?.split(',') || [process.env.INTERNAL_SERVICE_TOKEN],
-  bypassPaths: ['/health', '/ready']
-});
   const { apiKeys = [], internalTokens = [], bypassPaths = ['/health', '/ready'] } = config;
 
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -49,4 +42,20 @@ export const authMiddleware = createAuthMiddleware({
       message: 'Valid API key or internal token required',
     });
   };
+}
+
+export const authMiddleware = createAuthMiddleware({
+  apiKeys: (process.env['API_KEYS'] || '').split(',').filter(Boolean),
+  internalTokens: (process.env['INTERNAL_TOKENS'] || '').split(',').filter(Boolean).concat([process.env['INTERNAL_SERVICE_TOKEN'] || '']).filter(Boolean),
+  bypassPaths: ['/health', '/ready']
+});
+
+// Request ID middleware
+export function requestIdMiddleware(_req: Request, _res: Response, next: NextFunction): void {
+  next();
+}
+
+// CORS middleware placeholder
+export function corsMiddleware(_req: Request, _res: Response, next: NextFunction): void {
+  next();
 }

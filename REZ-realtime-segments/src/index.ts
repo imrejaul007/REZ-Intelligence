@@ -342,8 +342,8 @@ async function startServer(): Promise<void> {
   }
 }
 
-// Demo function to test segment evaluation
-async function runDemo(): Promise<void> {
+// Demo function to test segment evaluation (used for manual testing)
+async function _runDemo(): Promise<void> {
   logger.info('\n=== Running Segment Evaluation Demo ===\n');
 
   const mockUser = createMockUserData({
@@ -379,9 +379,10 @@ async function runDemo(): Promise<void> {
 // Export for testing
 export { app };
 
-// Start server if this is the main module
-if (import.meta.url === `file://${process.argv[1]}`) {
-  startServer();
-}
+// Start server
+startServer().catch((err) => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
+});
 
 export default app;

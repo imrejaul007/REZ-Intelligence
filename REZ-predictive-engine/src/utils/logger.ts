@@ -1,13 +1,13 @@
 import winston from 'winston';
 import path from 'path';
 
-const logDir = process.env.LOG_DIR || 'logs';
+const logDir = process.env['LOG_DIR'] || 'logs';
 
 // Custom format for console output
 const consoleFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.colorize({ all: true }),
-  winston.format.printf(({ timestamp, level, message, ...meta }: { timestamp?: string; level: string; message: string; [key: string]: unknown }) => {
+  winston.format.printf(({ timestamp, level, message, ...meta }) => {
     const metaStr = Object.keys(meta).length ? JSON.stringify(meta, null, 2) : '';
     return `[${timestamp}] ${level}: ${message} ${metaStr}`;
   })
@@ -44,21 +44,21 @@ interface ExtendedLogger extends winston.Logger {
 
 // Create logger instance
 const baseLogger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
+  level: process.env['LOG_LEVEL'] || 'info',
   defaultMeta: {
     service: 'rez-predictive-engine',
-    version: process.env.npm_package_version || '1.0.0'
+    version: process.env['npm_package_version'] || '1.0.0'
   },
   transports: [
     // Console transport - always enabled in development
     new winston.transports.Console({
-      format: process.env.NODE_ENV === 'production' ? fileFormat : consoleFormat
+      format: process.env['NODE_ENV'] === 'production' ? fileFormat : consoleFormat
     })
   ]
 });
 
 // Add file transports in production
-if (process.env.NODE_ENV === 'production') {
+if (process.env['NODE_ENV'] === 'production') {
   // Error log
   baseLogger.add(
     new winston.transports.File({
