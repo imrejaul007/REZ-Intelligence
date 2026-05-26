@@ -366,7 +366,6 @@ class CacheService {
     try {
       this.redis = new Redis(config.redisUrl, {
         maxRetriesPerRequest: 3,
-        retryDelayOnFailover: 100,
         lazyConnect: true,
       });
 

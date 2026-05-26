@@ -3,9 +3,9 @@ import express, { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
-import { logger, requestIdMiddleware } from './logger';
-import { errorHandler, asyncHandler } from './errors';
-import { syncEngine } from './services/InventorySyncEngine';
+import { logger, requestIdMiddleware } from './logger.js';
+import { errorHandler, asyncHandler } from './errors.js';
+import { syncEngine } from './services/InventorySyncEngine.js';
 import {
   ItemStatus,
   SyncStatus,
@@ -14,7 +14,7 @@ import {
   InventoryAlert,
   InventoryAnalytics,
   UpdateStockRequest,
-} from './types';
+} from './types.js';
 
 // Environment validation
 const REQUIRED_ENV = ['MONGODB_URI', 'INTERNAL_SERVICE_TOKEN'];
@@ -59,7 +59,12 @@ app.get('/health', (_req: Request, res: Response) => {
 
 app.get('/ready', asyncHandler(async (_req: Request, res: Response) => {
   try {
-    await mongoose.connection.db.admin().ping();
+    const db = mongoose.connection.db;
+    if (!db) {
+      res.status(503).json({ status: 'not ready', error: 'No database connection' });
+      return;
+    }
+    await db.admin().ping();
     res.json({ status: 'ready' });
   } catch (err) {
     res.status(503).json({ status: 'not ready' });

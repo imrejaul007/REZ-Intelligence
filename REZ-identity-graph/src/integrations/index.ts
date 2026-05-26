@@ -2,7 +2,7 @@
  * Integration Exports
  */
 
-export * from './rabtulPlatform';
-export { default as rabtulPlatform } from './rabtulPlatform';
-export * from './rezIntelligence';
-export { default as rezIntelligence } from './rezIntelligence';
+export * from './rabtulPlatform.js';
+export { default as rabtulPlatform } from './rabtulPlatform.js';
+export * from './rezIntelligence.js';
+export { default as rezIntelligence } from './rezIntelligence.js';

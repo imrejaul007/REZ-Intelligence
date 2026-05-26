@@ -283,13 +283,23 @@ const listSchema = z.object({
 router.post('/list', asyncHandler(async (req: Request, res: Response) => {
   const { to, header, body, footer, buttonTitle, sections } = listSchema.parse(req.body);
 
+  // Cast sections to match the expected type
+  const typedSections = sections.map(section => ({
+    title: section.title,
+    rows: section.rows.map(row => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+    })),
+  }));
+
   const result = await whatsappService.sendList(
     to,
     header,
     body,
     footer || '',
     buttonTitle,
-    sections
+    typedSections
   );
 
   if (result.success) {
