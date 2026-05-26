@@ -1,5 +1,5 @@
 import winston from 'winston';
-import path from 'path';
+import { join as pathJoin } from 'path';
 
 const logDir = process.env['LOG_DIR'] || 'logs';
 
@@ -62,7 +62,7 @@ if (process.env['NODE_ENV'] === 'production') {
   // Error log
   baseLogger.add(
     new winston.transports.File({
-      filename: path.join(logDir, 'error.log'),
+      filename: pathJoin(logDir, 'error.log'),
       level: 'error',
       format: fileFormat,
       maxsize: 10 * 1024 * 1024, // 10MB
@@ -73,7 +73,7 @@ if (process.env['NODE_ENV'] === 'production') {
   // Combined log
   baseLogger.add(
     new winston.transports.File({
-      filename: path.join(logDir, 'combined.log'),
+      filename: pathJoin(logDir, 'combined.log'),
       format: fileFormat,
       maxsize: 10 * 1024 * 1024, // 10MB
       maxFiles: 5
@@ -83,7 +83,7 @@ if (process.env['NODE_ENV'] === 'production') {
   // Prediction specific log
   baseLogger.add(
     new winston.transports.File({
-      filename: path.join(logDir, 'predictions.log'),
+      filename: pathJoin(logDir, 'predictions.log'),
       format: fileFormat,
       maxsize: 20 * 1024 * 1024, // 20MB
       maxFiles: 10

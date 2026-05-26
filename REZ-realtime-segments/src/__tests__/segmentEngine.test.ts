@@ -273,7 +273,7 @@ describe('SegmentEngine', () => {
         segmentId: 'test',
         name: 'Test',
         rules: [
-          { field: 'test', operator: 'invalid' as any, value: 0 }
+          { field: 'test', operator: 'invalid' as 'eq', logic: 'AND', value: 0 }
         ]
       };
 

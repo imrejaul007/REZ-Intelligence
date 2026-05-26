@@ -139,7 +139,7 @@ function asyncHandler(
 // ============================================================================
 
 // Health check
-router.get('/api/v1/health', asyncHandler(async (req: Request, res: Response) => {
+router.get('/api/v1/health', asyncHandler(async (_req: Request, res: Response) => {
   const mongoHealthy = getConnectionStatus();
   const redisHealthy = await redisHealthCheck();
 
@@ -156,7 +156,7 @@ router.get('/api/v1/health', asyncHandler(async (req: Request, res: Response) =>
 }));
 
 // Get system status
-router.get('/api/v1/status', asyncHandler(async (req: Request, res: Response) => {
+router.get('/api/v1/status', asyncHandler(async (_req: Request, res: Response) => {
   const segments = await getAllSegments();
   const webhookStatus = getQueueStatus();
   const redisHealthy = await redisHealthCheck();

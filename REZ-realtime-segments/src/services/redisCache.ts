@@ -25,7 +25,6 @@ export async function connectRedis(): Promise<void> {
   try {
     redisClient = new Redis(config.redis.url, {
       maxRetriesPerRequest: 3,
-      retryDelayOnFailover: 100,
       lazyConnect: true,
       enableReadyCheck: true,
       connectTimeout: 5000

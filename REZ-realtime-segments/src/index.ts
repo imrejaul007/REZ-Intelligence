@@ -5,7 +5,6 @@ import compression from 'compression';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import winston from 'winston';
-import type { TransformableInfo } from 'winston/lib/winston/create-logger.js';
 import dotenv from 'dotenv';
 import { randomUUID } from 'crypto';
 
@@ -13,10 +12,9 @@ import config from './config/index.js';
 import { connectDatabase, disconnectDatabase } from './database/index.js';
 import { connectRedis, disconnectRedis } from './services/redisCache.js';
 import { startWebhookProcessor, stopWebhookProcessor } from './services/webhookEmitter.js';
-import { DEFAULT_SEGMENTS, createMockUserData } from './services/segmentEngine.js';
+import { DEFAULT_SEGMENTS } from './services/segmentEngine.js';
 import segmentRoutes from './routes/segments.js';
 import { initializeBehaviorTracker, disconnectBehaviorTracker } from './services/behaviorTracker.js';
-import { startRealtimeService } from './services/realtimeUpdate.js';
 import type { ApiResponse } from './types/index.js';
 
 // Load environment variables
@@ -36,8 +34,8 @@ const logger = winston.createLogger({
     new winston.transports.Console({
       format: winston.format.combine(
         winston.format.colorize(),
-        winston.format.printf((info: TransformableInfo) => {
-          const { level, message, timestamp, ...meta } = info;
+        winston.format.printf((info: unknown) => {
+          const { level, message, timestamp, ...meta } = info as Record<string, unknown>;
           const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
           return `${timestamp} [${level}]: ${message}${metaStr}`;
         })
@@ -386,3 +384,6 @@ startServer().catch((err) => {
 });
 
 export default app;
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _unusedDemo() { /* Reserved for manual testing */ }

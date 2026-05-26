@@ -46,9 +46,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(requestIdMiddleware);
 
 // Rate limiting
-const rateLimitWindow = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000', 10);
-const rateLimitMax = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10);
-app.use(rateLimitMiddleware(rateLimitWindow, rateLimitMax));
+app.use(rateLimitMiddleware);
 
 // Request logging
 app.use((req, res, next) => {
