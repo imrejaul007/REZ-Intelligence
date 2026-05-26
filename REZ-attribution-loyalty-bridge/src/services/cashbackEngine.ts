@@ -12,7 +12,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { BridgeRecord } from '../models/BridgeRecord.js';
-import { CampaignConfig } from '../models/CampaignConfig.js';
+import { CampaignConfig, ICampaignConfigModel } from '../models/CampaignConfigTyped.js';
 import { cashbackLogger as logger } from './logger.js';
 import {
   CashbackRequest,
@@ -20,6 +20,9 @@ import {
   ChannelTypeSchema,
   CreateBridgeRecordSchema
 } from '../types/schemas.js';
+
+// Cast model to include static methods
+const CampaignConfigTyped = CampaignConfig as unknown as ICampaignConfigModel;
 
 // ============================================
 // TYPES
@@ -320,7 +323,7 @@ export class CashbackEngine {
     }
 
     try {
-      const campaign = await CampaignConfig.findByCampaignId(campaignId);
+      const campaign = await CampaignConfigTyped.findByCampaignId(campaignId);
       if (!campaign) {
         // Try to parse from environment variable
         const multipliers = process.env.CAMPAIGN_MULTIPLIERS_JSON;

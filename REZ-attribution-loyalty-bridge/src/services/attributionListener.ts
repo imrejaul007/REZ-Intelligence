@@ -13,11 +13,14 @@
 import axios, { AxiosInstance } from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import Redis from 'ioredis';
-import { BridgeRecord } from '../models/BridgeRecord.js';
+import { BridgeRecord, IBridgeRecordModel } from '../models/BridgeRecordTyped.js';
 import { cashbackEngine } from './cashbackEngine.js';
 import { loyaltyTriggerService } from './loyaltyTrigger.js';
 import { attributionLogger as logger } from './logger.js';
-import { AttributionWebhook, ChannelType } from '../types/schemas.js';
+import { AttributionWebhookSchema, ChannelType } from '../types/schemas.js';
+
+// Cast model to include static methods
+const BridgeRecordTyped = BridgeRecord as unknown as IBridgeRecordModel;
 
 // ============================================
 // TYPES
@@ -175,7 +178,7 @@ export class AttributionListener {
     }
 
     // Check if already bridged
-    const existingRecords = await BridgeRecord.findByConversion(conversionId);
+    const existingRecords = await BridgeRecordTyped.findByConversion(conversionId);
     const completedRecord = existingRecords.find((r: { status: string }) => r.status === 'completed');
     if (completedRecord) {
       logger.info('Conversion already bridged', { conversionId, bridgeId: completedRecord.bridgeId });
@@ -256,7 +259,7 @@ export class AttributionListener {
     }
 
     // Validate payload
-    const validationResult = AttributionWebhook.safeParse(payload);
+    const validationResult = AttributionWebhookSchema.safeParse(payload);
     if (!validationResult.success) {
       logger.warn('Invalid webhook payload', { errors: validationResult.error.issues });
       return { accepted: false, processed: false, error: 'Invalid payload' };

@@ -103,7 +103,7 @@ router.post('/', requestId, authenticate, async (req: AuthenticatedRequest, res:
 router.get('/:id', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const memory = await memoryService.getMemory(id!, userId);
 
@@ -204,7 +204,7 @@ router.get('/', requestId, authenticate, async (req: AuthenticatedRequest, res: 
 router.patch('/:id', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const validation = updateMemorySchema.safeParse(req.body);
     if (!validation.success) {
@@ -261,7 +261,7 @@ router.patch('/:id', requestId, authenticate, async (req: AuthenticatedRequest, 
 router.delete('/:id', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const deleted = await memoryService.deleteMemory(id!, userId);
 
@@ -479,9 +479,9 @@ router.get('/stats', requestId, authenticate, async (req: AuthenticatedRequest, 
 router.post('/:id/access', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
-    const { id } = req.params;
+    const id = req.params.id as string;
 
-    const memory = await memoryService.accessMemory(id, userId);
+    const memory = await memoryService.accessMemory(id!, userId);
 
     if (!memory) {
       res.status(404).json({

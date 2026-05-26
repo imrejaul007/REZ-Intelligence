@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { personalizationService } from '../services/personalizationService';
 import { contextService } from '../services/contextService';
-import { intelligenceService } from '../services/intelligenceService';
+import intelligenceService from '../services/intelligenceService';
 import { authenticate, requestId } from '../middleware/auth';
 import { logger } from '../utils/logger';
 

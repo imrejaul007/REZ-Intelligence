@@ -113,7 +113,7 @@ router.get('/', auth_1.requestId, auth_1.authenticate, async (req, res) => {
 router.get('/:id', auth_1.requestId, auth_1.authenticate, async (req, res) => {
     try {
         const userId = req.userId;
-        const { id } = req.params;
+        const id = req.params.id;
         const session = await sessionService_1.sessionService.getSession(id, userId);
         if (!session) {
             res.status(404).json({
@@ -203,7 +203,7 @@ router.get('/list/user', auth_1.requestId, auth_1.authenticate, async (req, res)
 router.patch('/:id', auth_1.requestId, auth_1.authenticate, async (req, res) => {
     try {
         const userId = req.userId;
-        const { id } = req.params;
+        const id = req.params.id;
         const validation = updateSessionSchema.safeParse(req.body);
         if (!validation.success) {
             res.status(400).json({
@@ -255,7 +255,7 @@ router.patch('/:id', auth_1.requestId, auth_1.authenticate, async (req, res) => 
 router.post('/:id/context', auth_1.requestId, auth_1.authenticate, async (req, res) => {
     try {
         const userId = req.userId;
-        const { id } = req.params;
+        const id = req.params.id;
         const validation = addContextSchema.safeParse(req.body);
         if (!validation.success) {
             res.status(400).json({
@@ -345,7 +345,7 @@ router.delete('/:id/context/:key', auth_1.requestId, auth_1.authenticate, async 
 router.post('/:id/pause', auth_1.requestId, auth_1.authenticate, async (req, res) => {
     try {
         const userId = req.userId;
-        const { id } = req.params;
+        const id = req.params.id;
         const session = await sessionService_1.sessionService.pauseSession(id, userId);
         if (!session) {
             res.status(404).json({
@@ -385,7 +385,7 @@ router.post('/:id/pause', auth_1.requestId, auth_1.authenticate, async (req, res
 router.post('/:id/resume', auth_1.requestId, auth_1.authenticate, async (req, res) => {
     try {
         const userId = req.userId;
-        const { id } = req.params;
+        const id = req.params.id;
         const session = await sessionService_1.sessionService.resumeSession(id, userId);
         if (!session) {
             res.status(404).json({
@@ -425,7 +425,7 @@ router.post('/:id/resume', auth_1.requestId, auth_1.authenticate, async (req, re
 router.post('/:id/end', auth_1.requestId, auth_1.authenticate, async (req, res) => {
     try {
         const userId = req.userId;
-        const { id } = req.params;
+        const id = req.params.id;
         const session = await sessionService_1.sessionService.endSession(id, userId);
         if (!session) {
             res.status(404).json({

@@ -131,7 +131,7 @@ router.get('/', requestId, authenticate, async (req: AuthenticatedRequest, res: 
 router.get('/:id', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const session = await sessionService.getSession(id, userId);
 
@@ -228,7 +228,7 @@ router.get('/list/user', requestId, authenticate, async (req: AuthenticatedReque
 router.patch('/:id', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const validation = updateSessionSchema.safeParse(req.body);
     if (!validation.success) {
@@ -285,7 +285,7 @@ router.patch('/:id', requestId, authenticate, async (req: AuthenticatedRequest, 
 router.post('/:id/context', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const validation = addContextSchema.safeParse(req.body);
     if (!validation.success) {
@@ -387,7 +387,7 @@ router.delete('/:id/context/:key', requestId, authenticate, async (req: Authenti
 router.post('/:id/pause', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const session = await sessionService.pauseSession(id, userId);
 
@@ -431,7 +431,7 @@ router.post('/:id/pause', requestId, authenticate, async (req: AuthenticatedRequ
 router.post('/:id/resume', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const session = await sessionService.resumeSession(id, userId);
 
@@ -475,7 +475,7 @@ router.post('/:id/resume', requestId, authenticate, async (req: AuthenticatedReq
 router.post('/:id/end', requestId, authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId!;
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const session = await sessionService.endSession(id, userId);
 

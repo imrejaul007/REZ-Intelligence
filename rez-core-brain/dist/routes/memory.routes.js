@@ -88,7 +88,7 @@ router.post('/', auth_1.requestId, auth_1.authenticate, async (req, res) => {
 router.get('/:id', auth_1.requestId, auth_1.authenticate, async (req, res) => {
     try {
         const userId = req.userId;
-        const { id } = req.params;
+        const id = req.params.id;
         const memory = await memoryService_1.memoryService.getMemory(id, userId);
         if (!memory) {
             res.status(404).json({
@@ -182,7 +182,7 @@ router.get('/', auth_1.requestId, auth_1.authenticate, async (req, res) => {
 router.patch('/:id', auth_1.requestId, auth_1.authenticate, async (req, res) => {
     try {
         const userId = req.userId;
-        const { id } = req.params;
+        const id = req.params.id;
         const validation = updateMemorySchema.safeParse(req.body);
         if (!validation.success) {
             res.status(400).json({
@@ -234,7 +234,7 @@ router.patch('/:id', auth_1.requestId, auth_1.authenticate, async (req, res) => 
 router.delete('/:id', auth_1.requestId, auth_1.authenticate, async (req, res) => {
     try {
         const userId = req.userId;
-        const { id } = req.params;
+        const id = req.params.id;
         const deleted = await memoryService_1.memoryService.deleteMemory(id, userId);
         if (!deleted) {
             res.status(404).json({
@@ -429,7 +429,7 @@ router.get('/stats', auth_1.requestId, auth_1.authenticate, async (req, res) => 
 router.post('/:id/access', auth_1.requestId, auth_1.authenticate, async (req, res) => {
     try {
         const userId = req.userId;
-        const { id } = req.params;
+        const id = req.params.id;
         const memory = await memoryService_1.memoryService.accessMemory(id, userId);
         if (!memory) {
             res.status(404).json({

@@ -1,10 +1,13 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const zod_1 = require("zod");
 const personalizationService_1 = require("../services/personalizationService");
 const contextService_1 = require("../services/contextService");
-const intelligenceService_1 = require("../services/intelligenceService");
+const intelligenceService_1 = __importDefault(require("../services/intelligenceService"));
 const auth_1 = require("../middleware/auth");
 const logger_1 = require("../utils/logger");
 const router = (0, express_1.Router)();
@@ -413,7 +416,7 @@ router.post('/context/activity', auth_1.requestId, auth_1.authenticate, async (r
         }
         await contextService_1.contextService.updateRecentActivity(userId, validation.data.action, validation.data.agent, validation.data.topic, validation.data.search);
         // Also update intelligence
-        await intelligenceService_1.intelligenceService.updateUserIntent(userId, validation.data.action);
+        await intelligenceService_1.default.updateUserIntent(userId, validation.data.action);
         res.json({
             success: true,
             meta: {
@@ -460,7 +463,7 @@ router.get('/intelligence', auth_1.requestId, auth_1.authenticate, async (req, r
             });
             return;
         }
-        const data = await intelligenceService_1.intelligenceService.getIntelligenceData({
+        const data = await intelligenceService_1.default.getIntelligenceData({
             userId,
             ...validation.data,
         });
@@ -508,7 +511,7 @@ router.post('/recommendations', auth_1.requestId, auth_1.authenticate, async (re
             });
             return;
         }
-        const recommendations = await intelligenceService_1.intelligenceService.generateRecommendations({
+        const recommendations = await intelligenceService_1.default.generateRecommendations({
             userId,
             context: validation.data.context,
             excludedItems: validation.data.excludedItems,
@@ -541,7 +544,7 @@ router.post('/recommendations', auth_1.requestId, auth_1.authenticate, async (re
 router.get('/engagement', auth_1.requestId, auth_1.authenticate, async (req, res) => {
     try {
         const userId = req.userId;
-        const score = await intelligenceService_1.intelligenceService.getEngagementScore(userId);
+        const score = await intelligenceService_1.default.getEngagementScore(userId);
         res.json({
             success: true,
             data: score,
@@ -569,7 +572,7 @@ router.get('/engagement', auth_1.requestId, auth_1.authenticate, async (req, res
 router.get('/behavior', auth_1.requestId, auth_1.authenticate, async (req, res) => {
     try {
         const userId = req.userId;
-        const analysis = await intelligenceService_1.intelligenceService.analyzeBehaviorPatterns(userId);
+        const analysis = await intelligenceService_1.default.analyzeBehaviorPatterns(userId);
         res.json({
             success: true,
             data: analysis,

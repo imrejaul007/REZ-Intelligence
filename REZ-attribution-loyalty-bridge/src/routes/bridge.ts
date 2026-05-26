@@ -5,8 +5,8 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { BridgeRecord } from '../models/BridgeRecord.js';
-import { CampaignConfig } from '../models/CampaignConfig.js';
+import { BridgeRecord, IBridgeRecordModel } from '../models/BridgeRecordTyped.js';
+import { CampaignConfig, ICampaignConfigModel } from '../models/CampaignConfigTyped.js';
 import { cashbackEngine } from '../services/cashbackEngine.js';
 import { loyaltyTriggerService } from '../services/loyaltyTrigger.js';
 import { attributionListener } from '../services/attributionListener.js';
@@ -15,6 +15,10 @@ import {
   CashbackRequestSchema,
   AttributionWebhookSchema
 } from '../types/schemas.js';
+
+// Cast models to include static methods
+const BridgeRecordTyped = BridgeRecord as unknown as IBridgeRecordModel;
+const CampaignConfigTyped = CampaignConfig as unknown as ICampaignConfigModel;
 
 // ============================================
 // TYPES
@@ -135,12 +139,12 @@ export function createBridgeRouter(): Router {
    */
   router.get('/status', async (_req: Request, res: Response) => {
     try {
-      const pendingCount = await BridgeRecord.countDocuments({ status: 'pending' });
-      const processingCount = await BridgeRecord.countDocuments({ status: 'processing' });
-      const completedCount = await BridgeRecord.countDocuments({ status: 'completed' });
-      const failedCount = await BridgeRecord.countDocuments({ status: 'failed' });
+      const pendingCount = await BridgeRecordTyped.countDocuments({ status: 'pending' });
+      const processingCount = await BridgeRecordTyped.countDocuments({ status: 'processing' });
+      const completedCount = await BridgeRecordTyped.countDocuments({ status: 'completed' });
+      const failedCount = await BridgeRecordTyped.countDocuments({ status: 'failed' });
 
-      const recentBridges = await BridgeRecord.find()
+      const recentBridges = await BridgeRecordTyped.find()
         .sort({ createdAt: -1 })
         .limit(5)
         .select('bridgeId conversionId status totalCoins createdAt');
@@ -265,12 +269,12 @@ export function createBridgeRouter(): Router {
         if (endDate) (query.createdAt as Record<string, Date>).$lte = new Date(endDate as string);
       }
 
-      const bridges = await BridgeRecord.find(query)
+      const bridges = await BridgeRecordTyped.find(query)
         .sort({ createdAt: -1 })
         .skip(parseInt(skip as string))
         .limit(parseInt(limit as string));
 
-      const total = await BridgeRecord.countDocuments(query);
+      const total = await BridgeRecordTyped.countDocuments(query);
 
       return createResponse(res, {
         bridges,
@@ -293,7 +297,7 @@ export function createBridgeRouter(): Router {
   router.get('/bridges/:bridgeId', async (req: Request, res: Response) => {
     try {
       const bridgeId = Array.isArray(req.params.bridgeId) ? req.params.bridgeId[0] : req.params.bridgeId;
-      const bridge = await BridgeRecord.findOne({
+      const bridge = await BridgeRecordTyped.findOne({
         bridgeId,
         deletedAt: { $exists: false }
       });
@@ -330,7 +334,7 @@ export function createBridgeRouter(): Router {
   router.post('/bridges/:bridgeId/retry', async (req: Request, res: Response) => {
     try {
       const bridgeId = Array.isArray(req.params.bridgeId) ? req.params.bridgeId[0] : req.params.bridgeId;
-      const bridge = await BridgeRecord.findOne({
+      const bridge = await BridgeRecordTyped.findOne({
         bridgeId,
         deletedAt: { $exists: false }
       });
@@ -436,14 +440,14 @@ export function createBridgeRouter(): Router {
 
       let campaigns;
       if (active === 'true') {
-        campaigns = await CampaignConfig.findActiveCampaigns(
+        campaigns = await CampaignConfigTyped.findActiveCampaigns(
           merchantId as string | undefined,
           channel as unknown
         );
       } else {
         const query: Record<string, unknown> = {};
         if (merchantId) query.merchantId = merchantId;
-        campaigns = await CampaignConfig.find(query)
+        campaigns = await CampaignConfigTyped.find(query)
           .sort({ startDate: -1 })
           .limit(50);
       }
@@ -479,7 +483,7 @@ export function createBridgeRouter(): Router {
   router.get('/campaigns/:campaignId', async (req: Request, res: Response) => {
     try {
       const campaignId = Array.isArray(req.params.campaignId) ? req.params.campaignId[0] : req.params.campaignId;
-      const campaign = await CampaignConfig.findByCampaignId(campaignId);
+      const campaign = await CampaignConfigTyped.findByCampaignId(campaignId);
 
       if (!campaign) {
         return createErrorResponse(res, 404, 'NOT_FOUND', 'Campaign not found');
@@ -498,7 +502,7 @@ export function createBridgeRouter(): Router {
   router.patch('/campaigns/:campaignId', async (req: Request, res: Response) => {
     try {
       const campaignId = Array.isArray(req.params.campaignId) ? req.params.campaignId[0] : req.params.campaignId;
-      const campaign = await CampaignConfig.findByCampaignId(campaignId);
+      const campaign = await CampaignConfigTyped.findByCampaignId(campaignId);
 
       if (!campaign) {
         return createErrorResponse(res, 404, 'NOT_FOUND', 'Campaign not found');
@@ -539,7 +543,7 @@ export function createBridgeRouter(): Router {
 
       if (merchantId) match.merchantId = merchantId;
 
-      const summary = await BridgeRecord.aggregate([
+      const summary = await BridgeRecordTyped.aggregate([
         { $match: match },
         {
           $group: {
@@ -555,7 +559,7 @@ export function createBridgeRouter(): Router {
       ]);
 
       // Channel breakdown
-      const channelBreakdown = await BridgeRecord.aggregateByChannel(
+      const channelBreakdown = await BridgeRecordTyped.aggregateByChannel(
         startDate ? new Date(startDate as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
         endDate ? new Date(endDate as string) : new Date(),
         merchantId as string | undefined
@@ -604,7 +608,7 @@ export function createBridgeRouter(): Router {
 
       const merchantId = req.params.merchantId as string;
       const [summary, topChannels, recentBridges] = await Promise.all([
-        BridgeRecord.aggregate([
+        BridgeRecordTyped.aggregate([
           { $match: match },
           {
             $group: {
@@ -615,12 +619,12 @@ export function createBridgeRouter(): Router {
             }
           }
         ]),
-        BridgeRecord.aggregateByChannel(
+        BridgeRecordTyped.aggregateByChannel(
           startDate ? new Date(startDate as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
           endDate ? new Date(endDate as string) : new Date(),
           merchantId
         ),
-        BridgeRecord.find({ merchantId })
+        BridgeRecordTyped.find({ merchantId })
           .sort({ createdAt: -1 })
           .limit(10)
           .select('bridgeId totalCoins totalCashback createdAt')
