@@ -579,7 +579,8 @@ router.get(
 
 // POST /api/v1/events - Track behavior event
 router.post('/api/v1/events', asyncHandler(async (req: Request, res: Response) => {
-  const params = UserIdParamsSchema.parse(req.params).catch(() => ({ userId: '' }));
+  const parseResult = UserIdParamsSchema.safeParse(req.params);
+  const params = parseResult.success ? parseResult.data : { userId: '' };
   const body = TrackEventBodySchema.parse(req.body);
 
   // Extract userId from body if not in params
@@ -618,7 +619,8 @@ router.post('/api/v1/events', asyncHandler(async (req: Request, res: Response) =
 router.post(
   '/api/v1/sessions/start',
   asyncHandler(async (req: Request, res: Response) => {
-    const params = UserIdParamsSchema.parse(req.params).catch(() => ({ userId: '' }));
+    const parseResult = UserIdParamsSchema.safeParse(req.params);
+    const params = parseResult.success ? parseResult.data : { userId: '' };
     const body = StartSessionBodySchema.parse(req.body);
 
     const userId = params.userId || (body.metadata?.userId as string);

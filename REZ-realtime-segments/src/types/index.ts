@@ -19,7 +19,7 @@ export const SegmentRuleSchema = z.object({
   field: z.string().min(1),
   operator: SegmentOperatorSchema,
   value: z.unknown(),
-  logic: z.enum(['AND', 'OR']).default('AND')
+  logic: z.enum(['AND', 'OR']).optional()
 });
 
 export type SegmentRule = z.infer<typeof SegmentRuleSchema>;

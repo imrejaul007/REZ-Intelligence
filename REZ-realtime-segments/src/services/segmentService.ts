@@ -553,13 +553,22 @@ export async function updateSegment(
   updates: Partial<SegmentDefinition>
 ): Promise<SegmentDefinition | null> {
   try {
+    // Validate rules if provided
+    let validatedRules: SegmentRule[] | undefined;
+    if (updates.rules) {
+      validatedRules = updates.rules.map(rule => ({
+        ...rule,
+        logic: rule.logic ?? 'AND'
+      }));
+    }
+
     const updated = await SegmentDefinitionModel.findOneAndUpdate(
       { segmentId },
       {
         $set: {
           ...(updates.name && { name: updates.name }),
           ...(updates.description !== undefined && { description: updates.description }),
-          ...(updates.rules && { rules: updates.rules }),
+          ...(validatedRules && { rules: validatedRules }),
           ...(updates.refreshInterval && { refreshInterval: updates.refreshInterval }),
           updatedAt: new Date(),
         },
@@ -572,7 +581,7 @@ export async function updateSegment(
         segmentId: updated.segmentId,
         name: updated.name,
         description: updated.description,
-        rules: updated.rules as SegmentDefinition['rules'],
+        rules: (updated.rules || []) as SegmentDefinition['rules'],
         refreshInterval: updated.refreshInterval,
       };
     }

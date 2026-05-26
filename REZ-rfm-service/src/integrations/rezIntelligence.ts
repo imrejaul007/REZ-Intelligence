@@ -3,11 +3,11 @@
  * Connects to AI/ML services
  */
 
-const INTENT_SERVICE_URL = process.env.INTENT_SERVICE_URL || 'https://rez-intent-predictor.onrender.com';
-const PREDICTIVE_SERVICE_URL = process.env.PREDICTIVE_ENGINE_URL || 'https://REZ-predictive-engine.onrender.com';
-const SIGNAL_SERVICE_URL = process.env.SIGNAL_AGGREGATOR_URL || 'https://REZ-signal-aggregator.onrender.com';
-const RECOMMEND_SERVICE_URL = process.env.RECOMMENDATION_ENGINE_URL || 'https://REZ-recommendation-engine.onrender.com';
-const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
+const INTENT_SERVICE_URL = process.env['INTENT_SERVICE_URL'] || 'https://rez-intent-predictor.onrender.com';
+const PREDICTIVE_SERVICE_URL = process.env['PREDICTIVE_ENGINE_URL'] || 'https://REZ-predictive-engine.onrender.com';
+const SIGNAL_SERVICE_URL = process.env['SIGNAL_AGGREGATOR_URL'] || 'https://REZ-signal-aggregator.onrender.com';
+const RECOMMEND_SERVICE_URL = process.env['RECOMMENDATION_ENGINE_URL'] || 'https://REZ-recommendation-engine.onrender.com';
+const INTERNAL_TOKEN = process.env['INTERNAL_SERVICE_TOKEN'] || '';
 
 interface SignalsResponse {
   signals?: unknown[];
@@ -19,16 +19,10 @@ interface RecommendationsResponse {
   [key: string]: unknown;
 }
 
-/**
- * Make authenticated internal API request
- */
 interface FetchOptions extends RequestInit {
   headers?: Record<string, string>;
 }
 
-/**
- * Make authenticated internal API request
- */
 async function internalRequest<T = unknown>(url: string, options: FetchOptions = {}): Promise<T> {
   const response = await fetch(url, {
     ...options,
@@ -51,7 +45,7 @@ async function internalRequest<T = unknown>(url: string, options: FetchOptions =
 // ============================================
 
 export const intentOperations = {
-  async predict(userId, context = {}) {
+  async predict(userId: string, context: Record<string, unknown> = {}): Promise<unknown | null> {
     try {
       const res = await internalRequest(`${INTENT_SERVICE_URL}/api/intent/predict`, {
         method: 'POST',
@@ -63,7 +57,7 @@ export const intentOperations = {
     }
   },
 
-  async captureSignal(signal) {
+  async captureSignal(signal: Record<string, unknown>): Promise<boolean> {
     try {
       await internalRequest(`${INTENT_SERVICE_URL}/api/intent/capture`, {
         method: 'POST',
@@ -81,7 +75,7 @@ export const intentOperations = {
 // ============================================
 
 export const predictiveOperations = {
-  async predictChurn(userId) {
+  async predictChurn(userId: string): Promise<unknown | null> {
     try {
       const res = await internalRequest(`${PREDICTIVE_SERVICE_URL}/predict/${userId}/churn`);
       return res;
@@ -90,7 +84,7 @@ export const predictiveOperations = {
     }
   },
 
-  async predictLTV(userId) {
+  async predictLTV(userId: string): Promise<unknown | null> {
     try {
       const res = await internalRequest(`${PREDICTIVE_SERVICE_URL}/predict/${userId}/ltv`);
       return res;
@@ -99,7 +93,7 @@ export const predictiveOperations = {
     }
   },
 
-  async predictRevisit(userId) {
+  async predictRevisit(userId: string): Promise<unknown | null> {
     try {
       const res = await internalRequest(`${PREDICTIVE_SERVICE_URL}/predict/${userId}/revisit`);
       return res;
@@ -114,7 +108,7 @@ export const predictiveOperations = {
 // ============================================
 
 export const signalOperations = {
-  async record(signal) {
+  async record(signal: Record<string, unknown>): Promise<boolean> {
     try {
       await internalRequest(`${SIGNAL_SERVICE_URL}/api/signals`, {
         method: 'POST',
@@ -126,7 +120,7 @@ export const signalOperations = {
     }
   },
 
-  async query(userId, filters = {}) {
+  async query(userId: string, filters: Record<string, unknown> = {}): Promise<unknown[]> {
     try {
       const res = await internalRequest<SignalsResponse>(`${SIGNAL_SERVICE_URL}/api/signals/${userId}`, {
         method: 'GET',
@@ -144,7 +138,7 @@ export const signalOperations = {
 // ============================================
 
 export const recommendationOperations = {
-  async get(userId, slot = 'general') {
+  async get(userId: string, slot: string = 'general'): Promise<unknown[]> {
     try {
       const res = await internalRequest<RecommendationsResponse>(`${RECOMMEND_SERVICE_URL}/api/recommendations/${userId}`, {
         method: 'GET',

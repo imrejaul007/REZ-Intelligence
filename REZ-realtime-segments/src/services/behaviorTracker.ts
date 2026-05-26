@@ -635,7 +635,7 @@ export async function getEventAggregation(
   );
 
   const uniqueSessions = new Set(events.map((e) => e.sessionId)).size;
-  const sessionIds = [...new Set(events.map((e) => e.sessionId))];
+  const sessionIds = [...new Set(events.map((e) => e.sessionId).filter((id): id is string => id !== undefined))];
   const sessionsData = await Promise.all(
     sessionIds.map((id) => redisClient!.hgetall(keys.sessionData(id)))
   );

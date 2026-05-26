@@ -213,7 +213,7 @@ export const analyticsOperations = {
 // SEGMENT ACTION HANDLERS
 // ============================================
 
-const segmentHandlers: Record<string, (userId: string, userData?) => Promise<void>> = {
+const segmentHandlers: Record<string, (userId: string, userData?: unknown) => Promise<void>> = {
   high_spender: async (userId) => {
     await segmentActions.rewardHighSpender(userId);
     await segmentActions.alertSalesForHighSpender(userId, 'high');
