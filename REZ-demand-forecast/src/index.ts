@@ -391,12 +391,13 @@ function errorHandler(
   });
 }
 
-function asyncHandler<T>(
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<T>
-) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    Promise.resolve(fn(req, res, next)).catch(next);
+function asyncHandler(
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>
+): (req: Request, res: Response, next: NextFunction) => void {
+  const handler = (req: Request, res: Response, next: NextFunction): void => {
+    fn(req, res, next).catch((err: unknown) => next(err));
   };
+  return handler;
 }
 
 // ============================================
