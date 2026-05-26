@@ -1,209 +1,246 @@
-# REZ Agent Orchestrator
+# REZ Intelligence Platform
 
-**Central Intelligence Layer for REZ Ecosystem**
-
-> The orchestrator converts "many tools" into "one intelligent operating system."
+**AI-powered platform for local commerce with 3 client types, tenant isolation, and 170+ ML services.**
 
 ---
 
-## Overview
+## Quick Start
 
-REZ Agent Orchestrator is the central nervous system that coordinates all AI agents across the REZ ecosystem. It enables:
+```bash
+# Start all services
+cd REZ-Intelligence && docker compose up -d
 
-- Task coordination across 38+ agents
-- Real-time event-driven architecture
-- Unified consumer identity
-- Autonomous decision-making
+# View logs
+docker compose logs -f
 
----
-
-## Core Components
-
-### 1. Agent Orchestrator
-
-Coordinates all agents:
-
-```typescript
-// Create task
-const task = orchestrator.createTask(
-  'Detect churn risk for high-value customers',
-  { merchantId: 'merchant-123' },
-  'high'
-);
-
-// Assign to best agent
-orchestrator.assignTask(task.id);
-
-// Execute
-await orchestrator.executeTask(task.id, executor);
+# Stop all services
+docker compose down
 ```
 
-### 2. Event Bus
+---
 
-Real-time event infrastructure:
+## Architecture Overview
 
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         REZ INTELLIGENCE PLATFORM                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐                 │
+│  │   REZ App   │     │  Merchant   │     │  Partner    │                 │
+│  │  (Consumer) │     │    App      │     │  Systems    │                 │
+│  └──────┬──────┘     └──────┬──────┘     └──────┬──────┘                 │
+│         │                   │                   │                         │
+│         └───────────────────┼───────────────────┘                         │
+│                             ▼                                               │
+│                   ┌─────────────────┐                                       │
+│                   │  REZ API        │  Port 4300                          │
+│                   │  Gateway        │  - Rate limiting                     │
+│                   │                 │  - Tenant isolation                   │
+│                   └────────┬────────┘  - Auth                           │
+│                            │                                              │
+│         ┌──────────────────┼──────────────────┐                           │
+│         ▼                  ▼                  ▼                             │
+│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐                     │
+│  │   Intent    │   │ Predictive  │   │    Flow     │                     │
+│  │  Predictor  │   │   Engine   │   │   Runtime   │                     │
+│  │  Port 4018  │   │  Port 4141 │   │  Port 4200 │                     │
+│  └─────────────┘   └─────────────┘   └─────────────┘                     │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 3 Client Types
+
+| Client Type | API Prefix | Intelligence Level | Data Isolation |
+|-------------|------------|-------------------|----------------|
+| **REZ_ECOSYSTEM** | `rez_*` | Full | Shared |
+| **NON_REZ** | `ext_*` | Isolated | Strict |
+| **RABTUL_SAAS** | `saas_*` | Full | White-label |
+
+---
+
+## Services (42 total)
+
+### Gateway Services (Ports 4200-4300)
+| Service | Port | Description |
+|---------|------|-------------|
+| `rez-api-gateway` | 4300 | Unified entry point with tenant isolation |
+| `rez-tenant-adapter` | 4210 | Multi-tenant adapter layer |
+| `rez-saas-runtime` | 4220 | Onboarding, billing, lifecycle |
+| `rez-monitoring` | 4250 | Health check aggregator |
+
+### Memory & Workflow (Ports 4200-4202)
+| Service | Port | Description |
+|---------|------|-------------|
+| `rez-flow-runtime` | 4200 | Workflow execution engine |
+| `rez-memory-layer` | 4201 | Customer timeline |
+| `rez-whatsapp` | 4202 | WhatsApp integration |
+
+### AI/ML Services (Ports 4018-4141)
+| Service | Port | Description |
+|---------|------|-------------|
+| `rez-intent-predictor` | 4018 | Intent prediction |
+| `rez-predictive-engine` | 4141 | Churn, LTV, Revisit |
+| `rez-knowledge-graph` | 4060 | Knowledge relationships |
+| `rez-care-service` | 4058 | Customer support intelligence |
+
+### Expert Agents (Ports 3003-3010)
+| Service | Port | Domain |
+|---------|------|--------|
+| `rez-travel-expert` | 3003 | Travel |
+| `rez-hospitality-expert` | 3004 | Hotels |
+| `rez-retail-expert` | 3005 | Retail |
+| `rez-health-expert` | 3006 | Health |
+| `rez-fitness-expert` | 3007 | Fitness |
+| `rez-salon-expert` | 3008 | Salon |
+| `rez-culinary-expert` | 3009 | Food |
+| `rez-education-expert` | 3010 | Education |
+
+---
+
+## API Reference
+
+### Health Check
+```bash
+curl http://localhost:4300/health
+```
+
+### Predict Intent
+```bash
+curl -X POST http://localhost:4300/api/intent/predict \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: rez_your_tenant_123" \
+  -d '{
+    "userId": "user_abc123",
+    "context": {
+      "location": { "lat": 12.9716, "lng": 77.5946 },
+      "time": { "hour": 19, "dayOfWeek": "friday" }
+    }
+  }'
+```
+
+### Create Tenant (Admin)
+```bash
+curl -X POST http://localhost:4210/api/tenants \
+  -H "Content-Type: application/json" \
+  -H "X-Internal-Token: your-internal-token" \
+  -d '{
+    "clientType": "REZ_ECOSYSTEM",
+    "displayName": "Acme Corp",
+    "industry": "retail",
+    "email": "admin@acme.com"
+  }'
+```
+
+---
+
+## SDK Usage
+
+### TypeScript
 ```typescript
-// Subscribe to events
-eventBus.subscribe('customer.churn_risk', async (event) => {
-  // Trigger retention campaign
+import { REZIntelligenceClient, ClientType } from '@rez/intelligence-sdk';
+
+const client = new REZIntelligenceClient({
+  baseUrl: 'http://localhost:4300',
+  apiKey: 'rez_your_tenant_123',
 });
 
-// Publish events
-await events.weatherChanged('mumbai', 'rainy', 25);
-```
-
-### 3. Consumer Identity Graph
-
-Unified customer view:
-
-```typescript
-// Create/merge profiles
-const profile = identityGraph.createProfile('merchant', {
-  phone: '+91-9876543210',
-  name: 'Rahul',
-  lifetimeValue: 50000,
+// Predict intent
+const prediction = await client.predictIntent({
+  userId: 'user_123',
+  context: {
+    location: { lat: 12.97, lng: 77.59 },
+    time: { hour: 12, dayOfWeek: 'monday' }
+  }
 });
 
-// Get cross-app journey
-const journey = identityGraph.getCrossAppJourney(profile.id);
+// Create workflow
+const workflow = await client.createWorkflow({
+  name: 'Welcome Flow',
+  nodes: [...],
+  edges: [...]
+});
+```
+
+### Python
+```python
+from rez_intelligence import REZIntelligence
+
+client = REZIntelligence(api_key="your-api-key")
+
+# Predict intent
+prediction = client.intent.predict(
+    user_id="user_123",
+    context={"location": {"lat": 12.97, "lng": 77.59}}
+)
 ```
 
 ---
 
-## Connected Agents
+## Documentation
 
-| Agent | Capabilities |
-|-------|--------------|
-| demand-signal-agent | demand_signal, trend_detector |
-| churn-risk-agent | churn_risk, ltv_predictor |
-| price-optimizer-agent | price_optimizer |
-| inventory-agent | inventory_alert |
-| personalization-agent | personalization, recommendation |
-| retention-agent | retention, winback |
-| competitor-agent | competitor_monitor |
-| campaign-agent | campaign_optimize |
-| attribution-agent | attribution |
-
----
-
-## Event Types
-
-### Commerce Events
-- `order.created` - New order placed
-- `inventory.low` - Stock running low
-- `inventory.depleted` - Out of stock
-
-### Customer Events
-- `customer.churn_risk` - High-value customer at risk
-- `customer.inactive` - Customer not engaged
-- `customer.ltv_changed` - Lifetime value update
-
-### Market Events
-- `weather.changed` - Weather update
-- `weather.rain_detected` - Rain detected
-- `event.detected` - Local event (IPL, festival)
-- `competitor.discount_detected` - Competitor offer
-
-### System Events
-- `demand.spike` - Sudden demand increase
-- `demand.drop` - Demand decrease
-- `anomaly.detected` - Unusual pattern
+| Document | Purpose |
+|----------|---------|
+| [PRODUCT.md](PRODUCT.md) | Product overview & positioning |
+| [PRODUCT-FEATURES.md](PRODUCT-FEATURES.md) | Feature deep dive |
+| [PRICING.md](PRICING.md) | Pricing & plans |
+| [docs/API-REFERENCE.md](docs/API-REFERENCE.md) | Complete API documentation |
+| [DOCKER-DEPLOY.md](DOCKER-DEPLOY.md) | Docker deployment guide |
+| [LAUNCH-CHECKLIST.md](LAUNCH-CHECKLIST.md) | Production launch checklist |
+| [MASTER-SERVICE-INDEX.md](MASTER-SERVICE-INDEX.md) | 170+ AI/ML services index |
+| [TECHNICAL-ROADMAP.md](TECHNICAL-ROADMAP.md) | Gap analysis & priorities |
 
 ---
 
-## Architecture
+## Monitoring
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                   AGENT ORCHESTRATOR                          │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────┐ │
-│  │ Agent Registry  │  │  Task Queue     │  │ Goal Manager│ │
-│  └─────────────────┘  └─────────────────┘  └─────────────┘ │
-│                                                              │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────┐ │
-│  │ Event Bus       │  │ Identity Graph  │  │ Conflict    │ │
-│  │ (Real-time)    │  │ (Consumer)      │  │ Resolution  │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────┘ │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
-         │                    │                    │
-         ▼                    ▼                    ▼
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│ REZ-Commerce    │  │ REZ-Media      │  │ RABTUL         │
-│ Agents          │  │ Agents          │  │ Services       │
-└─────────────────┘  └─────────────────┘  └─────────────────┘
+**Dashboard:** http://localhost:4250/dashboard
+
+```bash
+# Check all services
+curl http://localhost:4250/api/health
+
+# Check specific service
+curl http://localhost:4250/api/health/rez-api-gateway
 ```
 
 ---
 
-## How It Works
+## Environment Variables
 
-### 1. Event Detection
-```
-Weather changes → Event Bus publishes 'weather.rain_detected'
-```
+```bash
+# Core
+INTERNAL_SERVICE_TOKEN=your-token
+ALLOWED_ORIGINS=http://localhost:3000,https://rez.money
 
-### 2. Agent Notification
-```
-Event Bus → demand-signal-agent → business-ai → retention-agent
-```
+# RABTUL Services
+AUTH_SERVICE_URL=http://localhost:4002
+PAYMENT_SERVICE_URL=http://localhost:4001
+WALLET_SERVICE_URL=http://localhost:4004
 
-### 3. Task Creation
-```
-demand-signal-agent → Creates task: "Launch rainy day campaign"
-```
-
-### 4. Orchestration
-```
-Task → Priority check → Best agent assignment → Execution
-```
-
-### 5. Consumer Action
-```
-Campaign → Notification → Offer → Conversion
-```
-
-### 6. Learning
-```
-Result → Identity Graph → Memory Layer → Future optimization
+# REZ Intelligence (internal)
+REZ_MEMORY_URL=http://rez-memory-layer:4201
+REZ_FLOW_URL=http://rez-flow-runtime:4200
+REZ_INTENT_URL=http://rez-intent-predictor:4018
 ```
 
 ---
 
-## Integration Points
+## Testing
 
-### With REZ Business AI
-- Goals from Business AI → Orchestrator
-- Actions from Orchestrator → Business AI execution
-- Events from Orchestrator → Business AI monitoring
+```bash
+# Run integration tests
+npm test
 
-### With Industry Mind Services
-- Demand signals → Industry Mind analysis
-- Recommendations → Orchestrator queue
-
-### With REZ-Agent-OS
-- 38 agents connected via orchestrator
-- Central coordination layer
+# Check service health
+curl http://localhost:4250/api/health/summary
+```
 
 ---
 
-## Port
+## License
 
-**Port: 4040** (planned)
-
----
-
-## Related Services
-
-| Service | Purpose |
-|---------|---------|
-| REZ Business AI | Execution layer |
-| REZ-Agent-OS | Agent definitions |
-| Industry Mind | Domain expertise |
-| Intent Graph | Consumer intelligence |
-
----
-
-*Version: 1.0.0*
+MIT - REZ Engineering

@@ -5,6 +5,44 @@ This document is the COMPLETE index of all AI/ML services in the REZ ecosystem. 
 
 ---
 
+## PRODUCT LAYER - Stage 1 Products
+
+### RezOps AI (Port 4175)
+**AI Employee for WhatsApp Businesses**
+
+Stage 1 product - "AI-powered business operating assistant that works through WhatsApp"
+
+Features:
+- WhatsApp AI Assistant (queries, FAQs, bookings, order updates)
+- Customer Memory (previous visits, preferences, complaints, birthdays)
+- Workflow Automation (reminders, follow-ups, confirmations)
+- Merchant Knowledge Base (products, pricing, FAQs, policies)
+- Human Approval System (refunds, discounts, rescheduling)
+- Merchant Dashboard (conversations, sales, metrics)
+
+Target Customers:
+- Primary: restaurants, salons, clinics, gyms, local stores
+- Secondary: SMB retailers, agencies, repair businesses
+
+Routes:
+- `POST /api/merchants` - Register merchant
+- `POST /api/customers` - Register customer
+- `GET /api/merchants/:id/customers` - List customers
+- `GET /api/merchants/:id/conversations` - View conversations
+- `POST /api/bookings` - Create booking
+- `GET /api/bookings/availability` - Check availability
+- `GET /api/merchants/:id/analytics` - Dashboard analytics
+- `POST /api/knowledge` - Add to knowledge base
+- `POST /api/approvals` - Request approval
+- `POST /api/webhook/whatsapp` - WhatsApp webhook
+
+Integrations:
+- REZ-whatsapp (Port 4202)
+- REZ-memory-layer (Port 4201)
+- REZ-flow-runtime (Port 4200)
+
+---
+
 ## CORE INTELLIGENCE LAYER
 
 ### REZ-autonomous-agents (Port 4062)
@@ -782,13 +820,25 @@ Features:
 
 ## INVENTORY & OPERATIONS
 
-### REZ-inventory-intelligence
-**Inventory optimization**
+### REZ-inventory-intelligence (Port 4081)
+**Inventory optimization with AI-powered forecasting**
 
 Features:
-- Demand forecasting
-- Stock optimization
-- Reorder alerts
+- Demand forecasting (8 methods: Simple/Weighted/Exponential Moving Average, Holt-Winters, Linear Regression, Seasonal Decomposition, Croston's, Ensemble)
+- Stock optimization (ABC analysis, safety stock calculation, reorder points)
+- Reorder alerts with supplier lead time intelligence
+- Velocity analysis and trend detection
+- Seasonal pattern detection
+
+Key Routes:
+- `/api/v1/forecast/:sku` - Demand forecasting
+- `/api/v1/reorder/:sku` - Reorder suggestions
+- `/api/v1/optimize/:sku` - Stock optimization
+- `/api/v1/abc-analysis` - ABC classification
+- `/api/v1/low-stock-alerts` - Alert management
+
+Models:
+- ProductMaster, OrderData, DemandData, ForecastCache, SupplierLeadTime, InventoryAnalysis
 
 ---
 
@@ -996,13 +1046,20 @@ Features:
 
 ---
 
-### REZ-rcs-bridge
-**RCS messaging**
+### REZ-rcs-bridge (Port 4140)
+**RCS messaging bridge for rich communications**
 
 Features:
-- Rich messaging
-- Carousels
-- Actions
+- Rich messaging with cards and carousels
+- Action buttons (URL, phone, quick reply)
+- Webhook handling for inbound messages
+- Message status tracking (sent, delivered, read)
+- Template management for outbound messages
+
+Key Routes:
+- `/api/webhook` - Inbound RCS webhooks
+- `/api/send` - Send messages
+- `/api/messages/:id` - Message status
 
 ---
 
@@ -1063,7 +1120,104 @@ Routes:
 
 ---
 
+### REZ-workflow-builder (Port 4199)
+**Visual workflow builder with drag-and-drop interface**
+
+Features:
+- Visual workflow creation and editing
+- Multiple node types (trigger, action, condition, transform)
+- Execution history and monitoring
+- Dead letter queue management
+- Webhook integration
+
+Key Routes:
+- `GET /api/workflows` - List workflows
+- `POST /api/workflows` - Create workflow
+- `GET /api/workflows/:id` - Get workflow
+- `PUT /api/workflows/:id` - Update workflow
+- `POST /api/workflows/:id/execute` - Execute workflow
+- `GET /api/executions` - List executions
+- `GET /api/dlq` - Dead letter queue
+
+---
+
+### REZ-planning-agent (Port 4170)
+**AI planning and reasoning agent**
+
+Features:
+- Multi-step planning with chain-of-thought
+- Goal decomposition
+- Plan execution and monitoring
+- Alternative plan generation
+- Reasoning with confidence scores
+
+Key Routes:
+- `POST /api/plan` - Generate plan
+- `GET /api/plan/:planId` - Get plan
+- `POST /api/plan/:planId/execute` - Execute plan
+- `GET /api/plan/:planId/status` - Plan status
+
+---
+
+### REZ-human-in-loop (Port 4160)
+**Human-in-the-loop approval system**
+
+Features:
+- Escalation queue management
+- Approval/rejection workflows
+- Agent oversight
+- Audit logging
+
+Key Routes:
+- `GET /api/escalations` - List escalations
+- `POST /api/escalations` - Create escalation
+- `GET /api/escalations/:id` - Get escalation
+- `POST /api/escalations/:id/resolve` - Resolve escalation
+
+---
+
 ## MACHINE LEARNING
+
+### REZ-multilingual (Port 4150)
+**Multi-language support for 11 Indian languages**
+
+Supported Languages:
+- English (en), Hindi (hi), Bengali (bn), Tamil (ta), Telugu (te)
+- Marathi (mr), Gujarati (gu), Kannada (kn), Malayalam (ml), Punjabi (pa), Urdu (ur)
+
+Features:
+- Text translation between all supported languages
+- Batch translation with formality control
+- Language detection with confidence scores
+- Format preservation
+
+Key Routes:
+- `POST /api/translate` - Single text translation
+- `POST /api/translate/batch` - Batch translation
+- `POST /api/detect` - Language detection
+
+---
+
+### REZ-federated-ml (Port 4165)
+**Federated learning for privacy-preserving ML**
+
+Features:
+- Distributed model training across client nodes
+- Client node registration and management
+- Multiple aggregation algorithms (FedAvg, FedProx, SCAFFOLD, FedNova)
+- Differential privacy support
+- Secure aggregation
+- Training progress monitoring
+
+Key Routes:
+- `POST /api/federated/clients` - Register client node
+- `GET /api/federated/clients` - List clients
+- `POST /api/federated/training/start` - Start training
+- `GET /api/federated/training/:id` - Training status
+- `POST /api/federated/model/update` - Submit model update
+- `GET /api/federated/metrics/:id` - Training metrics
+
+---
 
 ### REZ-ml-engine
 **ML training and inference**
@@ -1125,13 +1279,24 @@ Features:
 
 ---
 
-### REZ-synthetic-data
-**Synthetic data generation**
+### REZ-synthetic-data (Port 4145)
+**Synthetic data generation for testing and privacy**
 
 Features:
-- Privacy-preserving data
-- Augmentation
-- Testing data
+- Schema-based data generation (string, number, boolean, date, email, phone, name, address, uuid, enum, array, object)
+- Dataset templates (User Profile, Product Catalog, Transaction, Merchant)
+- Data anonymization with format preservation
+- Quality report generation
+- Batch processing
+
+Key Routes:
+- `POST /api/generate` - Generate from schema
+- `POST /api/generate/users` - User dataset
+- `POST /api/generate/products` - Product dataset
+- `POST /api/generate/orders` - Order dataset
+- `POST /api/anonymize` - Anonymize PII
+- `POST /api/quality-report` - Data quality analysis
+- `GET /api/templates` - Available templates
 
 ---
 
@@ -1583,13 +1748,25 @@ Features:
 
 ---
 
-### REZ-dooh-intelligence
-**DOOH advertising**
+### REZ-dooh-intelligence (Port 4080)
+**Digital Out-of-Home advertising intelligence**
 
 Features:
-- Screen intelligence
-- Audience measurement
-- Campaign optimization
+- Real-time audience targeting
+- Screen performance analytics
+- Campaign optimization with A/B testing
+- Engagement metrics tracking
+- Geolocation-based ad selection
+
+Key Routes:
+- `POST /api/target` - Get targeting options
+- `POST /api/engage` - Track engagement
+- `GET /api/analytics` - Campaign analytics
+- `POST /api/optimize` - Auto-optimize campaign
+
+Integrations:
+- RABTUL Platform (Auth, Wallet)
+- REZ Intelligence (Intent, Signals, Predictive)
 
 ---
 
@@ -1859,7 +2036,7 @@ REZ-Intelligence/
 │   ├── src/businessService.ts     # Cross-domain workflow execution
 │   └── src/index.ts              # /api/workflows, /api/rules, /api/templates
 │
-├── REZ-merchant-graph/          # Port 4150
+├── REZ-merchant-graph/          # Port 4151
 │   ├── src/types.ts             # Merchant, Relationship, Network, GraphQuery types
 │   ├── src/merchantGraphService.ts  # Graph queries, network analysis
 │   └── src/index.ts              # /api/merchants, /api/relationships, /api/graph
