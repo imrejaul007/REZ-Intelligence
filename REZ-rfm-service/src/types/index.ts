@@ -76,6 +76,14 @@ export const CalculateAllSchema = z.object({
   batchSize: z.number().int().min(1).max(1000).optional().default(100),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
+  customerData: z.array(z.object({
+    customerId: z.string().min(1),
+    orders: z.array(z.object({
+      orderId: z.string().min(1),
+      orderDate: z.union([z.string(), z.date()]),
+      totalAmount: z.number().min(0),
+    })),
+  })).optional(),
 });
 
 export const CalculateSingleSchema = z.object({

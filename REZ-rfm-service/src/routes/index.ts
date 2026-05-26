@@ -56,12 +56,7 @@ router.post('/calculate', async (req: Request, res: Response, next: NextFunction
       return;
     }
 
-    const { customerData } = req.body as {
-      customerData: Array<{
-        customerId: string;
-        orders: Array<{ orderId: string; orderDate: string; totalAmount: number }>;
-      }>;
-    };
+    const customerData = parsed.data.customerData;
 
     if (!customerData || !Array.isArray(customerData)) {
       res.status(400).json({
@@ -316,9 +311,6 @@ router.get('/analytics', async (_req: Request, res: Response, next: NextFunction
  */
 router.get('/thresholds', async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    // Use the scoring thresholds directly since response is hardcoded
-    scoringService.getThresholds();
-
     res.json({
       success: true,
       data: {
