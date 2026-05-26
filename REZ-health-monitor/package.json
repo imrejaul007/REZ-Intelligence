@@ -13,15 +13,12 @@
     "lint": "eslint src/**/*.ts"
   },
   "dependencies": {
-    "@rez/logger": "file:../packages/rez-logger",
-    "@rez/security-middleware": "file:../packages/rez-security-middleware",
-    "@rez/shared-types": "file:../packages/rez-shared-types",
     "axios": "^1.6.2",
     "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "helmet": "^7.1.0",
-    "ioredis": "^5.3.2",
-    "dotenv": "^16.3.1"
+    "ioredis": "^5.3.2"
   },
   "devDependencies": {
     "@types/compression": "^1.7.5",

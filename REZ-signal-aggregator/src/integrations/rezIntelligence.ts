@@ -3,10 +3,10 @@
  * Connect signals to other AI services
  */
 
-const PREDICT_URL = process.env.PREDICTIVE_ENGINE_URL || 'http://localhost:4123';
-const SEGMENTS_URL = process.env.REALTIME_SEGMENTS_URL || 'http://localhost:4126';
-const IDENTITY_URL = process.env.IDENTITY_URL || 'http://localhost:4050';
-const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
+const PREDICT_URL = process.env['PREDICTIVE_ENGINE_URL'] || 'http://localhost:4123';
+const SEGMENTS_URL = process.env['REALTIME_SEGMENTS_URL'] || 'http://localhost:4126';
+const IDENTITY_URL = process.env['IDENTITY_URL'] || 'http://localhost:4050';
+const INTERNAL_TOKEN = process.env['INTERNAL_SERVICE_TOKEN'] || '';
 
 async function intelligenceRequest(url: string, options: RequestInit = {}): Promise<unknown> {
   const response = await fetch(url, {
@@ -54,10 +54,11 @@ export const predictiveIntegration = {
    */
   async enrichWithChurnRisk(userId: string): Promise<{ probability: number; risk: string } | null> {
     try {
-      return await predictRequest('/api/predict/churn', {
+      const result = await predictRequest('/api/predict/churn', {
         method: 'POST',
         body: JSON.stringify({ user_id: userId }),
-      });
+      }) as { probability: number; risk: string } | null;
+      return result ?? { probability: 0, risk: 'unknown' };
     } catch {
       return null;
     }
@@ -68,10 +69,11 @@ export const predictiveIntegration = {
    */
   async enrichWithLTV(userId: string): Promise<{ ltv: number; tier: string } | null> {
     try {
-      return await predictRequest('/api/predict/ltv', {
+      const result = await predictRequest('/api/predict/ltv', {
         method: 'POST',
         body: JSON.stringify({ user_id: userId }),
-      });
+      }) as { ltv: number; tier: string } | null;
+      return result ?? { ltv: 0, tier: 'unknown' };
     } catch {
       return null;
     }
@@ -138,7 +140,8 @@ export const realtimeSegments = {
    * Get existing segments for enrichment
    */
   async getSegments(userId: string): Promise<{ segments: string[]; scores: Record<string, number> }> {
-    return segmentsRequest(`/api/segments/${userId}`);
+    const result = await segmentsRequest(`/api/segments/${userId}`) as { segments: string[]; scores: Record<string, number> } | null;
+    return result ?? { segments: [], scores: {} };
   },
 };
 
@@ -175,7 +178,7 @@ export const identityIntegration = {
     devices: string[];
   }> {
     try {
-      const profile = await identityRequest(`/api/identity/${userId}/profile`);
+      const profile = await identityRequest(`/api/identity/${userId}/profile`) as { email?: string; phone?: string; devices?: string[] };
       return {
         email: profile.email,
         phone: profile.phone,

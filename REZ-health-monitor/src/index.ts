@@ -330,7 +330,7 @@ app.post('/services', (req: Request, res: Response) => {
  * Remove a service from monitoring
  */
 app.delete('/services/:serviceName', (req: Request, res: Response) => {
-  const { serviceName } = req.params;
+  const serviceName = req.params.serviceName as string;
   const index = servicesToMonitor.findIndex(s => s.name === serviceName);
 
   if (index === -1) {
