@@ -441,6 +441,10 @@ app.get('/health', (_req: Request, res: Response) => {
 // Readiness check
 app.get('/ready', async (_req: Request, res: Response) => {
   try {
+    if (!mongoose.connection.db) {
+      res.status(503).json({ status: 'not ready', reason: 'no db connection' });
+      return;
+    }
     await mongoose.connection.db.admin().ping();
     res.json({ status: 'ready' });
   } catch {
@@ -464,9 +468,10 @@ app.get('/api/forecast/:merchantId', asyncHandler(async (req: Request, res: Resp
 
   // Get weekly forecast if requested
   let weeklyForecast = null;
-  if (days > 1) {
+  const forecastDays = days ?? 1;
+  if (forecastDays > 1) {
     weeklyForecast = [];
-    for (let i = 0; i < days; i++) {
+    for (let i = 0; i < forecastDays; i++) {
       const dayDate = new Date(forecastDate);
       dayDate.setDate(dayDate.getDate() + i);
       const dayForecast = await forecaster.forecastDay(merchantId, dayDate);
@@ -709,11 +714,11 @@ app.use(errorHandler);
 // SERVER STARTUP
 // ============================================
 
-const PORT = process.env.PORT || 4042;
+const PORT = process.env['PORT'] || 4042;
 
 async function start(): Promise<void> {
   try {
-    await mongoose.connect(process.env.MONGODB_URI!);
+    await mongoose.connect(process.env['MONGODB_URI']!);
     logger.info('Connected to MongoDB');
     app.listen(PORT, () => {
       logger.info(`Demand Forecast Service started on port ${PORT}`);
