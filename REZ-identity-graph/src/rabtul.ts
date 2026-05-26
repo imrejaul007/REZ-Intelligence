@@ -5,17 +5,49 @@
 
 import axios from 'axios';
 
-const AUTH_URL = process.env.AUTH_SERVICE_URL || 'https://rez-auth-service.onrender.com';
-const PROFILE_URL = process.env.PROFILE_SERVICE_URL || 'https://rez-profile-service.onrender.com';
-const WALLET_URL = process.env.WALLET_SERVICE_URL || 'https://rez-wallet-service.onrender.com';
-const NOTIFICATION_URL = process.env.NOTIFICATION_SERVICE_URL || 'https://rez-notifications-service.onrender.com';
-const EVENT_BUS_URL = process.env.EVENT_BUS_URL || 'https://rez-event-bus.onrender.com';
-const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
+const AUTH_URL = process.env['AUTH_SERVICE_URL'] || 'https://rez-auth-service.onrender.com';
+const PROFILE_URL = process.env['PROFILE_SERVICE_URL'] || 'https://rez-profile-service.onrender.com';
+const WALLET_URL = process.env['WALLET_SERVICE_URL'] || 'https://rez-wallet-service.onrender.com';
+const EVENT_BUS_URL = process.env['EVENT_BUS_URL'] || 'https://rez-event-bus.onrender.com';
+const INTERNAL_TOKEN = process.env['INTERNAL_SERVICE_TOKEN'] || '';
+
+// ============================================
+// TYPES
+// ============================================
+
+interface TokenVerificationResult {
+  valid: boolean;
+  user?: unknown;
+  error?: string;
+}
+
+interface ProfileResult {
+  profile: unknown;
+  error?: string;
+}
+
+interface WalletResult {
+  wallet: unknown;
+  error?: string;
+}
+
+// ============================================
+// HELPERS
+// ============================================
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
+// ============================================
+// FUNCTIONS
+// ============================================
 
 /**
  * Verify token
  */
-export async function verifyToken(token: string): Promise<{ valid: boolean; user?; error?: string }> {
+export async function verifyToken(token: string): Promise<TokenVerificationResult> {
   try {
     const res = await axios.get(`${AUTH_URL}/api/auth/verify`, {
       headers: { 'Authorization': `Bearer ${token}`, 'X-Internal-Token': INTERNAL_TOKEN },
@@ -25,21 +57,21 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; user
     }
     return { valid: false, error: 'Invalid token' };
   } catch (error) {
-    return { valid: false, error: error.message };
+    return { valid: false, error: getErrorMessage(error) };
   }
 }
 
 /**
  * Get unified profile
  */
-export async function getUnifiedProfile(userId: string): Promise<{ profile; error?: string }> {
+export async function getUnifiedProfile(userId: string): Promise<ProfileResult> {
   try {
     const res = await axios.get(`${PROFILE_URL}/api/profiles/${userId}`, {
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { profile: res.data };
   } catch (error) {
-    return { profile: null, error: error.message };
+    return { profile: null, error: getErrorMessage(error) };
   }
 }
 
@@ -53,7 +85,7 @@ export async function updateUnifiedProfile(userId: string, updates: Record<strin
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -67,7 +99,7 @@ export async function linkIdentity(userId: string, identity: { type: string; val
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -81,21 +113,21 @@ export async function resolveIdentity(identifier: string, type: 'phone' | 'email
     });
     return { userId: res.data.userId };
   } catch (error) {
-    return { error: error.message };
+    return { error: getErrorMessage(error) };
   }
 }
 
 /**
  * Get user wallet for verification
  */
-export async function getUserWallet(userId: string): Promise<{ wallet; error?: string }> {
+export async function getUserWallet(userId: string): Promise<WalletResult> {
   try {
     const res = await axios.get(`${WALLET_URL}/api/wallet/${userId}/balance`, {
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { wallet: res.data };
   } catch (error) {
-    return { wallet: null, error: error.message };
+    return { wallet: null, error: getErrorMessage(error) };
   }
 }
 
@@ -114,7 +146,7 @@ export async function publishIdentityEvent(eventType: string, data: Record<strin
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 

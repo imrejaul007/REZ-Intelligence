@@ -194,11 +194,11 @@ app.get('/api/inventory/:merchantId', asyncHandler(async (req: Request, res: Res
   const InventoryItem = getInventoryItemModel();
   const items = await InventoryItem.find(query)
     .sort({ status: 1, 'predictions.daysOfStockLeft': 1 })
-    .lean();
+    .lean() as Array<Record<string, unknown>>;
 
   res.json({
     success: true,
-    items: items.map((i) => ({
+    items: items.map((i: Record<string, unknown>) => ({
       itemId: i.itemId,
       name: i.name,
       category: i.category,

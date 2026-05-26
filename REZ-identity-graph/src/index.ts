@@ -23,8 +23,6 @@ import {
   LinkedIdentity,
   UserProfile,
   BehaviorFingerprint,
-  IdentityStats,
-  IdentityFlags,
   IIdentity,
   IdentityResolveResponse,
   IdentityDetailResponse,
@@ -47,8 +45,9 @@ import {
 // LOGGING SETUP
 // ============================================
 
-const SERVICE_NAME = process.env.SERVICE_NAME || 'rez-identity-graph';
-const NODE_ENV = process.env.NODE_ENV || 'development';
+const SERVICE_NAME = process.env['SERVICE_NAME'] || 'rez-identity-graph';
+const NODE_ENV = process.env['NODE_ENV'] || 'development';
+const LOG_LEVEL = process.env['LOG_LEVEL'] || 'info';
 
 const structuredFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DDTHH:mm:ss.SSSZ' }),
@@ -66,7 +65,7 @@ const prettyFormat = winston.format.combine(
 );
 
 const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
+  level: LOG_LEVEL,
   format: NODE_ENV === 'production' ? structuredFormat : prettyFormat,
   defaultMeta: { service: SERVICE_NAME },
   transports: [
@@ -542,8 +541,8 @@ const app = express();
 app.use(helmet());
 
 // CORS - restrictive configuration
-const isProduction = process.env.NODE_ENV === 'production';
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').filter(Boolean) || [];
+const isProduction = process.env['NODE_ENV'] === 'production';
+const allowedOrigins = process.env['ALLOWED_ORIGINS']?.split(',').filter(Boolean) || [];
 
 if (isProduction && allowedOrigins.length === 0) {
   logger.error('FATAL: ALLOWED_ORIGINS environment variable is required in production');
@@ -575,12 +574,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // Authentication middleware
-app.use((req: Request, res: Response, next: NextFunction) => {
+app.use((req: Request, _res: Response, next: NextFunction) => {
   const publicPaths = ['/health', '/ready'];
   if (publicPaths.some(p => req.path.startsWith(p))) return next();
 
   const token = req.headers['x-internal-token'] as string;
-  const expectedToken = process.env.INTERNAL_SERVICE_TOKEN;
+  const expectedToken = process.env['INTERNAL_SERVICE_TOKEN'];
 
   // Use timing-safe comparison to prevent timing attacks
   if (!token || !expectedToken || !timingSafeEqual(token, expectedToken)) {
@@ -603,7 +602,9 @@ app.get('/health', (_req: Request, res: Response) => {
 // Readiness check
 app.get('/ready', async (_req: Request, res: Response) => {
   try {
-    await mongoose.connection.db.admin().ping();
+    if (mongoose.connection.db) {
+      await mongoose.connection.db.admin().ping();
+    }
     res.json({ status: 'ready' });
   } catch {
     res.status(503).json({ status: 'not ready' });
@@ -660,7 +661,7 @@ app.get('/api/identity/:unifiedId', asyncHandler(async (req: Request, res: Respo
     identities: identity.identities.map(i => ({
       source: i.source,
       type: i.type,
-      value: maskIdentifier(i.type, i.value),
+      value: maskIdentifier(i.type, i.value) ?? i.value,
       verified: i.verified,
       lastSeen: i.lastSeen
     })),

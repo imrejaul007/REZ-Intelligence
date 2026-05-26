@@ -1,4 +1,4 @@
-import logger from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * REZ-identity-graph → Commerce Graph Sync
@@ -8,8 +8,8 @@ import logger from './utils/logger.js';
 
 import axios from 'axios';
 
-const COMMERCE_GRAPH_URL = process.env.COMMERCE_GRAPH_URL || 'http://localhost:4170';
-const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
+const COMMERCE_GRAPH_URL = process.env['COMMERCE_GRAPH_URL'] || 'http://localhost:4170';
+const INTERNAL_TOKEN = process.env['INTERNAL_SERVICE_TOKEN'] || '';
 
 // ============================================
 // TYPES
@@ -27,12 +27,21 @@ interface IdentityUpdate {
   location?: { lat: number; lng: number };
 }
 
-interface IdentityNode {
+interface CustomerNode {
   userId: string;
   type: string;
   identifiers: Record<string, string>;
   platform: string;
   confidence: number;
+}
+
+// ============================================
+// HELPERS
+// ============================================
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
 }
 
 // ============================================
@@ -67,7 +76,7 @@ class CommerceGraphSync {
       );
       logger.info(`[CommerceSync] Identity synced for ${update.userId}`);
     } catch (error) {
-      logger.error(`[CommerceSync] Failed to sync identity: ${error.message}`);
+      logger.error(`[CommerceSync] Failed to sync identity: ${getErrorMessage(error)}`);
     }
   }
 
@@ -96,8 +105,9 @@ class CommerceGraphSync {
       logger.info(`[CommerceSync] Customer node upserted: ${node.userId}`);
     } catch (error) {
       // Ignore if already exists
-      if (!error.message?.includes('409')) {
-        logger.error(`[CommerceSync] Failed to upsert customer: ${error.message}`);
+      const errorMessage = getErrorMessage(error);
+      if (!errorMessage.includes('409')) {
+        logger.error(`[CommerceSync] Failed to upsert customer: ${errorMessage}`);
       }
     }
   }
@@ -126,7 +136,7 @@ class CommerceGraphSync {
       );
       logger.info(`[CommerceSync] Identity linked: ${identityType} -> ${userId}`);
     } catch (error) {
-      logger.error(`[CommerceSync] Failed to link identity: ${error.message}`);
+      logger.error(`[CommerceSync] Failed to link identity: ${getErrorMessage(error)}`);
     }
   }
 
@@ -145,7 +155,7 @@ class CommerceGraphSync {
       );
       return response.data.data;
     } catch (error) {
-      logger.error(`[CommerceSync] Failed to get customer: ${error.message}`);
+      logger.error(`[CommerceSync] Failed to get customer: ${getErrorMessage(error)}`);
       return null;
     }
   }
