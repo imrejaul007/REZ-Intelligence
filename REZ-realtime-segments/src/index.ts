@@ -5,17 +5,18 @@ import compression from 'compression';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import winston from 'winston';
+import type { TransformableInfo } from 'winston/lib/winston/create-logger.js';
 import dotenv from 'dotenv';
 import { randomUUID } from 'crypto';
 
 import config from './config/index.js';
-import { connectDatabase, disconnectDatabase, getConnectionStatus } from './database/index.js';
-import { connectRedis, disconnectRedis, redisHealthCheck, getRedisClient } from './services/redisCache.js';
+import { connectDatabase, disconnectDatabase } from './database/index.js';
+import { connectRedis, disconnectRedis } from './services/redisCache.js';
 import { startWebhookProcessor, stopWebhookProcessor } from './services/webhookEmitter.js';
 import { DEFAULT_SEGMENTS, createMockUserData } from './services/segmentEngine.js';
 import segmentRoutes from './routes/segments.js';
 import { initializeBehaviorTracker, disconnectBehaviorTracker } from './services/behaviorTracker.js';
-import { startRealtimeService, stopRealtimeService } from './services/realtimeUpdate.js';
+import { startRealtimeService } from './services/realtimeUpdate.js';
 import type { ApiResponse } from './types/index.js';
 
 // Load environment variables
@@ -35,7 +36,8 @@ const logger = winston.createLogger({
     new winston.transports.Console({
       format: winston.format.combine(
         winston.format.colorize(),
-        winston.format.printf(({ level, message, timestamp, ...meta }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
+        winston.format.printf((info: TransformableInfo) => {
+          const { level, message, timestamp, ...meta } = info;
           const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
           return `${timestamp} [${level}]: ${message}${metaStr}`;
         })
@@ -135,7 +137,7 @@ app.use('/', (req: Request, res: Response) => {
 });
 
 // Root endpoint
-app.get('/', (req: Request, res: Response): void => {
+app.get('/', (_req: Request, res: Response): void => {
   res.json({
     service: 'REZ Realtime Segments',
     version: '1.0.0',
@@ -152,11 +154,11 @@ app.get('/', (req: Request, res: Response): void => {
     },
     documentation: '/docs',
     timestamp: new Date().toISOString()
-  } as ApiResponse<unknown>);
+  });
 });
 
 // API Documentation endpoint
-app.get('/docs', (req: Request, res: Response): void => {
+app.get('/docs', (_req: Request, res: Response): void => {
   res.json({
     service: 'REZ Realtime Segments API',
     version: '1.0.0',
@@ -233,7 +235,7 @@ app.get('/docs', (req: Request, res: Response): void => {
       description: s.description
     })),
     timestamp: new Date().toISOString()
-  } as ApiResponse<unknown>);
+  });
 });
 
 // 404 handler
@@ -246,7 +248,7 @@ app.use((req: Request, res: Response): void => {
 });
 
 // Error handling middleware
-app.use((err: Error, req: Request, res: Response, next: NextFunction): void => {
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction): void => {
   console.error('Unhandled error:', err);
 
   res.status(500).json({

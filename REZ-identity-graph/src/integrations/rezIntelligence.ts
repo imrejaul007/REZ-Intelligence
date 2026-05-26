@@ -3,7 +3,13 @@
  * Connects to AI/ML services
  */
 
-import { ServiceUnavailableError } from '../../../../shared/rez-errors/src/index.js';
+// Local error class to avoid cross-repo import issues
+class ServiceUnavailableError extends Error {
+  constructor(public service: string, public details?: string) {
+    super(`${service} is unavailable${details ? `: ${details}` : ''}`);
+    this.name = 'ServiceUnavailableError';
+  }
+}
 
 const INTENT_SERVICE_URL = process.env['INTENT_SERVICE_URL'] || 'https://rez-intent-predictor.onrender.com';
 const PREDICTIVE_SERVICE_URL = process.env['PREDICTIVE_ENGINE_URL'] || 'https://REZ-predictive-engine.onrender.com';

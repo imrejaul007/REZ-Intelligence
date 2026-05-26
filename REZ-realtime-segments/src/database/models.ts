@@ -1,10 +1,4 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import type {
-  SegmentDefinition,
-  UserSegmentMembership,
-  SegmentStats,
-  SegmentEvaluationJob
-} from '../types/index.js';
 
 // Segment Definition Schema
 export interface ISegmentDefinition extends Document {

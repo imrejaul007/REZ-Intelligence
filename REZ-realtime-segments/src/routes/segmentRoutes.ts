@@ -36,37 +36,6 @@ const EvaluateUserBodySchema = z.object({
   userData: z.unknown().optional()
 });
 
-const CreateSegmentBodySchema = z.object({
-  segmentId: z.string().min(1),
-  name: z.string().min(1),
-  description: z.string(),
-  rules: z.array(z.object({
-    field: z.string(),
-    operator: z.enum(['eq', 'ne', 'gt', 'lt', 'gte', 'lte', 'in', 'contains']),
-    value: z.unknown(),
-    logic: z.enum(['AND', 'OR']).optional()
-  })),
-  refreshInterval: z.number().min(1).default(60)
-});
-
-// Auth middleware
-async function authMiddleware(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const token = req.headers['x-internal-token'] as string;
-
-  if (!token) {
-    res.status(401).json({
-      success: false,
-      error: 'Missing X-Internal-Token header',
-      timestamp: new Date().toISOString()
-    } as ApiResponse<never>);
-    return;
-  }
-
-  // In production, validate against INTERNAL_SERVICE_TOKENS_JSON
-  // For now, just check if token exists
-  next();
-}
-
 // Error handler wrapper
 function asyncHandler(fn: (req: Request, res: Response) => Promise<void>) {
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -75,7 +44,7 @@ function asyncHandler(fn: (req: Request, res: Response) => Promise<void>) {
 }
 
 // Health check
-router.get('/health', asyncHandler(async (req: Request, res: Response) => {
+router.get('/health', asyncHandler(async (_req: Request, res: Response) => {
   const mongoHealthy = getConnectionStatus();
   const redisHealthy = await redisHealthCheck();
 
@@ -92,7 +61,7 @@ router.get('/health', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 // Get system status
-router.get('/status', asyncHandler(async (req: Request, res: Response) => {
+router.get('/status', asyncHandler(async (_req: Request, res: Response) => {
   const segments = await getAllSegments();
   const webhookStatus = getQueueStatus();
   const redisHealthy = await redisHealthCheck();
@@ -351,7 +320,7 @@ router.get(
 );
 
 // Error handling middleware
-router.use((err: Error, req: Request, res: Response, next: NextFunction): void => {
+router.use((err: Error, _req: Request, res: Response, _next: NextFunction): void => {
   console.error('Route error:', err);
 
   if (err instanceof z.ZodError) {

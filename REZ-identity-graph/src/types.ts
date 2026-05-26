@@ -2,7 +2,7 @@
  * TypeScript type definitions for REZ Identity Graph
  */
 
-import mongoose, { Types } from 'mongoose';
+import { Types } from 'mongoose';
 
 // ============================================
 // CONSTANTS
@@ -135,9 +135,9 @@ export interface IdentityFlags {
 }
 
 /**
- * Identity document
+ * Identity document for Mongoose queries (lean result)
  */
-export interface IIdentity {
+export interface IIdentityLean {
   _id: Types.ObjectId;
   unifiedId: string;
   identities: IdentityRecord[];
@@ -149,6 +149,13 @@ export interface IIdentity {
   createdAt: Date;
   updatedAt: Date;
 }
+
+/**
+ * Identity document with save method (returned from findOne, etc.)
+ */
+export type IIdentity = IIdentityLean & {
+  save(): Promise<IIdentity>;
+};
 
 // ============================================
 // API RESPONSE TYPES

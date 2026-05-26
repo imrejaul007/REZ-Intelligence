@@ -10,7 +10,6 @@ import {
   triggerSegmentEvaluation,
   getJobStatus,
   getUserCurrentSegments,
-  refreshSegmentDefinitions,
   createSegment,
   updateSegment,
   deleteSegment,
@@ -23,8 +22,6 @@ import { getConnectionStatus } from '../database/index.js';
 import {
   trackEvent,
   getUserBehaviorProfile,
-  profileToUserData,
-  calculateRFMScore,
   getCachedRFMScore,
   getEventAggregation,
   startSession,
@@ -35,9 +32,7 @@ import {
 import {
   subscribe,
   unsubscribe,
-  getRecentEvents,
   getSubscriptionStats,
-  getUserEvents as getRealtimeUserEvents,
   emitSegmentChange,
 } from '../services/realtimeUpdate.js';
 import type {
@@ -45,7 +40,6 @@ import type {
   SegmentEvaluationResult,
   SegmentDefinition,
   UserData,
-  SegmentEventPayload,
 } from '../types/index.js';
 
 const router = Router();
@@ -200,7 +194,7 @@ router.get('/api/v1/status', asyncHandler(async (req: Request, res: Response) =>
 // ============================================================================
 
 // GET /api/v1/segments - List all segments
-router.get('/api/v1/segments', asyncHandler(async (req: Request, res: Response) => {
+router.get('/api/v1/segments', asyncHandler(async (_req: Request, res: Response) => {
   const segments = await getAllSegments();
 
   res.json({
@@ -550,7 +544,7 @@ router.get(
         rfmScore,
       },
       timestamp: new Date().toISOString(),
-    } as ApiResponse<unknown>);
+    });
   })
 );
 
@@ -877,7 +871,7 @@ router.get(
 // ============================================================================
 
 // Error handling middleware
-router.use((err: Error, req: Request, res: Response, next: NextFunction): void => {
+router.use((err: Error, _req: Request, res: Response, _next: NextFunction): void => {
   console.error('Route error:', err);
 
   if (err instanceof z.ZodError) {
