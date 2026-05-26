@@ -3,7 +3,13 @@
  * Connects service to RABTUL infrastructure
  */
 
-import { ServiceUnavailableError } from '../../../../shared/rez-errors/src/index.js';
+// Local error class to avoid cross-repo import issues
+class ServiceUnavailableError extends Error {
+  constructor(public service: string, public details?: string) {
+    super(`${service} is unavailable${details ? `: ${details}` : ''}`);
+    this.name = 'ServiceUnavailableError';
+  }
+}
 
 const AUTH_URL = process.env['AUTH_SERVICE_URL'] || 'https://rez-auth-service.onrender.com';
 const WALLET_URL = process.env['WALLET_SERVICE_URL'] || 'https://rez-wallet-service-36vo.onrender.com';

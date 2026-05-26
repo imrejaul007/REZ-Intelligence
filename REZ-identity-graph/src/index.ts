@@ -58,7 +58,7 @@ const structuredFormat = winston.format.combine(
 const prettyFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.colorize({ all: true }),
-  winston.format.printf(({ timestamp, level, message, ...meta }: { timestamp?: string; level: string; message: string; [key: string]: unknown }) => {
+  winston.format.printf(({ timestamp, level, message, ...meta }) => {
     const metaStr = Object.keys(meta).length ? JSON.stringify(meta, null, 2) : '';
     return `${timestamp} ${level} [${SERVICE_NAME}]: ${message} ${metaStr}`;
   })
@@ -257,7 +257,7 @@ class IdentityResolver {
   ): Promise<IIdentity> {
     const identity = await Identity.findOne({ unifiedId });
     if (!identity) {
-      throw new NotFoundError('Identity', unifiedId);
+      throw new NotFoundError();
     }
 
     // Check if already linked
