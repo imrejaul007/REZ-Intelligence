@@ -173,7 +173,7 @@ class DemandForecaster {
    */
   async getHistoricalAvg(merchantId: string, itemId?: string | null, dayOfWeek?: number | null): Promise<number> {
     const match: Record<string, unknown> = { merchantId };
-    if (itemId) match.itemId = itemId;
+    if (itemId) match['itemId'] = itemId;
 
     const records = await DemandForecast.find(match)
       .sort({ date: -1 })
@@ -422,7 +422,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   if (publicPaths.some(p => req.path.startsWith(p))) return next();
 
   const token = req.headers['x-internal-token'] as string;
-  if (token !== process.env.INTERNAL_SERVICE_TOKEN) {
+  if (token !== process.env['INTERNAL_SERVICE_TOKEN']) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
   }
