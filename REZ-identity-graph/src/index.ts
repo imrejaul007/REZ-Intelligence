@@ -31,7 +31,7 @@ import {
   PlatformStats,
   StatsBySource
 } from './types.js';
-import { NotFoundError } from '../../../shared/rez-errors/src/index.js';
+import { AppError, NotFoundError, ValidationError, AuthenticationError } from './utils/errors.js';
 import {
   resolveIdentitySchema,
   linkIdentitySchema,
@@ -455,31 +455,6 @@ const resolver = new IdentityResolver();
 // ERROR HANDLING
 // ============================================
 
-class AppError extends Error {
-  constructor(
-    message: string,
-    public statusCode: number = 500,
-    public code: string = 'INTERNAL_ERROR'
-  ) {
-    super(message);
-    this.name = 'AppError';
-  }
-}
-
-class ValidationError extends AppError {
-  constructor(message: string, public details: unknown[] = []) {
-    super(message, 400, 'VALIDATION_ERROR');
-    this.name = 'ValidationError';
-  }
-}
-
-class AuthenticationError extends AppError {
-  constructor(message: string = 'Authentication required') {
-    super(message, 401, 'AUTHENTICATION_ERROR');
-    this.name = 'AuthenticationError';
-  }
-}
-
 function errorHandler(
   err: Error,
   req: Request,
@@ -877,8 +852,8 @@ app.get('/api/identity/:unifiedId/graph', asyncHandler(async (req: Request, res:
     'linkedTo.unifiedId': unifiedId
   }).lean();
 
-  // Find who this identity links to
-  const linksTo = await Identity.find({
+  // Find who this identity links to (used for future expansion)
+  await Identity.find({
     unifiedId: { $in: identity.linkedTo.map(l => l.unifiedId) }
   }).lean();
 
@@ -911,7 +886,7 @@ app.get('/api/identity/:unifiedId/graph', asyncHandler(async (req: Request, res:
 }));
 
 // Analytics
-app.get('/api/identity/stats', asyncHandler(async (req: Request, res: Response) => {
+app.get('/api/identity/stats', asyncHandler(async (_req: Request, res: Response) => {
   const stats = await Identity.aggregate([
     {
       $group: {
@@ -975,11 +950,11 @@ app.use(errorHandler);
 // SERVER STARTUP
 // ============================================
 
-const PORT = process.env.PORT || 4050;
+const PORT = parseInt(process.env['PORT'] || '4050', 10);
 
 async function start(): Promise<void> {
   try {
-    await mongoose.connect(process.env.MONGODB_URI!, {
+    await mongoose.connect(process.env['MONGODB_URI'] || '', {
       w: 'majority',
       journal: true,
       retryWrites: true,
