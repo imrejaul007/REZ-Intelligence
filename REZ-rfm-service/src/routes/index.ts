@@ -9,9 +9,15 @@ import {
   SegmentParamSchema,
   SEGMENTS,
 } from '../types/index.js';
-import { internalAuth } from '../middleware/auth.js';
-import { rateLimitMiddleware } from '../middleware/rateLimit.js';
-import logger from './utils/logger.js';
+import { createAuthMiddleware } from '../middleware/auth.js';
+import { createRateLimiter } from '../middleware/rateLimit.js';
+import { logger } from '../utils/logger.js';
+
+const internalAuth = createAuthMiddleware({
+  internalTokens: process.env['INTERNAL_SERVICE_TOKEN'] ? [process.env['INTERNAL_SERVICE_TOKEN']] : [],
+});
+
+const rateLimitMiddleware = createRateLimiter({ windowMs: 60000, max: 100 });
 
 const router = Router();
 

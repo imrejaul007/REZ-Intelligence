@@ -293,7 +293,6 @@ app.post('/api/v1/convert/batch', async (req: Request, res: Response) => {
       status: 'completed',
     };
 
-    conversions.push(record);
     return record;
   });
 

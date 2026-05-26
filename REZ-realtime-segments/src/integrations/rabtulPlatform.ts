@@ -213,6 +213,14 @@ export const analyticsOperations = {
 // SEGMENT ACTION HANDLERS
 // ============================================
 
+interface UserDataWithSignals {
+  signals?: {
+    competitor?: {
+      switchRisk?: string;
+    };
+  };
+}
+
 const segmentHandlers: Record<string, (userId: string, userData?: unknown) => Promise<void>> = {
   high_spender: async (userId) => {
     await segmentActions.rewardHighSpender(userId);
@@ -225,9 +233,8 @@ const segmentHandlers: Record<string, (userId: string, userData?: unknown) => Pr
     await segmentActions.rewardPowerUser(userId);
   },
   at_risk: async (userId, userData) => {
-    const userDataRecord = userData as Record<string, unknown> | undefined;
-    const signals = userDataRecord?.signals as Record<string, unknown> | undefined;
-    const competitor = signals?.competitor as Record<string, string> | undefined;
+    const userDataRecord = userData as UserDataWithSignals | undefined;
+    const competitor = userDataRecord?.signals?.competitor;
     const riskLevel = competitor?.switchRisk || 'HIGH';
     await segmentActions.notifyAtRiskUser(userId, riskLevel);
   },
