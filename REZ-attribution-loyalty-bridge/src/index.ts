@@ -25,7 +25,7 @@ import { logger } from './services/logger.js';
 import { bridgeRouter } from './routes/bridge.js';
 import { attributionListener } from './services/attributionListener.js';
 import { cashbackEngine } from './services/cashbackEngine.js';
-import { CampaignConfig } from './models/CampaignConfig.js';
+import { CampaignConfig, ICampaignConfigModel } from './models/CampaignConfig.js';
 
 // Load environment variables
 config();
@@ -236,7 +236,7 @@ async function start(): Promise<void> {
     // Update expired campaigns periodically
     setInterval(async () => {
       try {
-        const updated = await CampaignConfig.updateExpiredCampaigns();
+        const updated = await (CampaignConfig as unknown as ICampaignConfigModel).updateExpiredCampaigns();
         if (updated > 0) {
           logger.info(`Updated ${updated} expired campaigns`);
         }

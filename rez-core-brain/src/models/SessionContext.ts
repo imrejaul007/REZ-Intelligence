@@ -169,7 +169,7 @@ sessionSchema.statics.findOrCreate = async function (
   userId: string,
   agentId?: string
 ): Promise<ISessionDocument> {
-  const Model = this as unknown as ISessionModel;
+  const Model = this as ISessionModel;
   let session = await Model.findActiveByUser(userId);
 
   if (!session) {

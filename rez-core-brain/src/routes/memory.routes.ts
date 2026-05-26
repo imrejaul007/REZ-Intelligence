@@ -219,7 +219,7 @@ router.patch('/:id', requestId, authenticate, async (req: AuthenticatedRequest, 
       return;
     }
 
-    const memory = await memoryService.updateMemory(id, userId, validation.data);
+    const memory = await memoryService.updateMemory(id!, userId, validation.data);
 
     if (!memory) {
       res.status(404).json({
@@ -263,7 +263,7 @@ router.delete('/:id', requestId, authenticate, async (req: AuthenticatedRequest,
     const userId = req.userId!;
     const { id } = req.params;
 
-    const deleted = await memoryService.deleteMemory(id, userId);
+    const deleted = await memoryService.deleteMemory(id!, userId);
 
     if (!deleted) {
       res.status(404).json({

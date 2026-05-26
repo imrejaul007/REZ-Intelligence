@@ -152,18 +152,23 @@ class IntelligenceService {
     async getEngagementScore(userId) {
         const metrics = await this.getOrCreateMetrics(userId);
         const contextualData = await GlobalPersonalization_1.ContextualData.findOne({ userId });
+        const sessionFrequency = Math.min(metrics.engagement.totalSessions / 10, 1);
+        const sessionDuration = Math.min(metrics.engagement.averageSessionLength / 1800, 1);
+        const interactionFrequency = Math.min(metrics.engagement.interactionFrequency / 100, 1);
+        const diversity = metrics.behavior.preferredAgents.length / 5;
+        const recentActivity = contextualData ? 0.5 : 0;
         const factors = {
-            sessionFrequency: Math.min(metrics.engagement.totalSessions / 10, 1),
-            sessionDuration: Math.min(metrics.engagement.averageSessionLength / 1800, 1), // 30 min max
-            interactionFrequency: Math.min(metrics.engagement.interactionFrequency / 100, 1),
-            diversity: metrics.behavior.preferredAgents.length / 5,
-            recentActivity: contextualData ? 0.5 : 0,
+            sessionFrequency,
+            sessionDuration,
+            interactionFrequency,
+            diversity,
+            recentActivity,
         };
-        const score = factors.sessionFrequency * 0.2 +
-            factors.sessionDuration * 0.3 +
-            factors.interactionFrequency * 0.2 +
-            factors.diversity * 0.15 +
-            factors.recentActivity * 0.15;
+        const score = sessionFrequency * 0.2 +
+            sessionDuration * 0.3 +
+            interactionFrequency * 0.2 +
+            diversity * 0.15 +
+            recentActivity * 0.15;
         let level = 'low';
         if (score >= 0.6)
             level = 'high';

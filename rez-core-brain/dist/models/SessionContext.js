@@ -164,10 +164,11 @@ sessionSchema.statics.findByUser = function (userId, options = {}) {
         .limit(options.limit || 20);
 };
 sessionSchema.statics.findOrCreate = async function (userId, agentId) {
-    let session = await this.findActiveByUser(userId);
+    const Model = this;
+    let session = await Model.findActiveByUser(userId);
     if (!session) {
         const sessionId = `sess_${crypto_1.default.randomUUID()}`;
-        session = await this.create({
+        session = await Model.create({
             id: sessionId,
             userId,
             agentId,
