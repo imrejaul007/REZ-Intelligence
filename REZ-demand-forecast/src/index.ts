@@ -563,10 +563,11 @@ app.get('/api/insights/:merchantId', asyncHandler(async (req: Request, res: Resp
   const merchantDemand = await MerchantDemand.findOne({ merchantId });
 
   if (!merchantDemand) {
-    return res.json({
+    res.json({
       success: true,
       insights: { message: 'Insufficient data for insights' }
     });
+    return;
   }
 
   const insights: DemandInsights = {
