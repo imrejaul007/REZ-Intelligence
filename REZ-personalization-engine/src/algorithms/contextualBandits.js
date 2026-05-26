@@ -1,4 +1,5 @@
 const math = require('mathjs');
+const { random, randomInt } = require('crypto');
 const logger = require('../utils/logger');
 const UserDNAProfile = require('../models/UserDNAProfile');
 const Interaction = require('../models/Interaction');
@@ -65,9 +66,9 @@ class ContextualBandit {
     const epsilon = this.options.explorationRate;
 
     // Explore with probability epsilon
-    if (Math.random() < epsilon) {
+    if (random() < epsilon) {
       return {
-        armId: availableArms[Math.floor(Math.random() * availableArms.length)],
+        armId: availableArms[randomInt(availableArms.length)],
         explore: true
       };
     }
@@ -92,7 +93,7 @@ class ContextualBandit {
     // If no stats, explore randomly
     if (!bestArm && availableArms.length > 0) {
       return {
-        armId: availableArms[Math.floor(Math.random() * availableArms.length)],
+        armId: availableArms[randomInt(availableArms.length)],
         explore: true
       };
     }
@@ -111,7 +112,7 @@ class ContextualBandit {
 
       if (!stats || stats.count === 0) {
         // Unobserved arms get high variance prior
-        samples.push({ armId, sample: Math.random() * 0.5 + 0.5 });
+        samples.push({ armId, sample: random() * 0.5 + 0.5 });
         continue;
       }
 
@@ -149,7 +150,7 @@ class ContextualBandit {
       if (!stats || !stats.linearModel) {
         // No model yet, return random
         return {
-          armId: availableArms[Math.floor(Math.random() * availableArms.length)],
+          armId: availableArms[randomInt(availableArms.length)],
           explore: true
         };
       }
@@ -284,7 +285,7 @@ class ContextualBandit {
    */
   sampleGamma(shape) {
     if (shape < 1) {
-      return this.sampleGamma(shape + 1) * Math.pow(Math.random(), 1 / shape);
+      return this.sampleGamma(shape + 1) * Math.pow(random(), 1 / shape);
     }
 
     const d = shape - 1 / 3;
@@ -300,7 +301,7 @@ class ContextualBandit {
       } while (v <= 0);
 
       v = v * v * v;
-      const u = Math.random();
+      const u = random();
 
       if (u < 1 - 0.0331 * (x * x) * (x * x)) {
         return d * v;
@@ -316,8 +317,8 @@ class ContextualBandit {
    * Standard normal random sample
    */
   randn() {
-    const u1 = Math.random();
-    const u2 = Math.random();
+    const u1 = random();
+    const u2 = random();
     return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
   }
 

@@ -1,11 +1,17 @@
 import axios, { AxiosInstance } from 'axios';
 import { EventEmitter } from 'events';
+import crypto from 'crypto';
 import { logger } from '../config/logger';
 import { config } from '../config';
 import { ActionEngine } from '../engine/action-engine';
 import { getActionsByTrigger } from '../rules/action-registry';
 import { ActionRequest } from '../types/action-levels';
 import { handleDormantFinanceUser, handleEMIDueReminder } from '../handlers/financeHandler';
+
+// Crypto-based random number generator for secure randomness
+function secureRandom(): number {
+  return parseInt(crypto.randomBytes(4).toString('hex'), 16) / 0xFFFFFFFF;
+}
 
 type EventHandler = (data) => Promise<void>;
 
@@ -308,7 +314,7 @@ export class EventConsumer extends EventEmitter {
     ];
 
     // Pick a random event to simulate
-    const event = simulatedEvents[Math.floor(Math.random() * simulatedEvents.length)];
+    const event = simulatedEvents[Math.floor(secureRandom() * simulatedEvents.length)];
 
     logger.info('Simulating event (dev mode)', {
       eventId: event.id,

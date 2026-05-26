@@ -4,6 +4,28 @@
  * Tests for action triggering, execution, and the rules engine.
  */
 
+// Declare jest globals for TypeScript
+declare const describe: (name: string, fn: () => void) => void;
+declare const it: (name: string, fn: () => void | Promise<void>) => void;
+declare const expect: (value: unknown) => {
+  toBe: (expected: unknown) => void;
+  toBeUndefined: () => void;
+  toBeDefined: () => void;
+  toEqual: (expected: unknown) => void;
+  toBeGreaterThan: (num: number) => void;
+  toBeLessThan: (num: number) => void;
+  toBeLessThanOrEqual: (num: number) => void;
+  toContain: (item: unknown) => void;
+  toHaveProperty: (key: string) => void;
+  toBeInstanceOf: (cls: new (...args: unknown[]) => unknown) => void;
+};
+declare const jest: {
+  fn: () => unknown;
+  mock: (path: string, factory: () => unknown) => void;
+  clearAllMocks: () => void;
+  spyOn: (obj: unknown, method: string) => { mockResolvedValue: (val: unknown) => unknown; mockReturnValue: (val: unknown) => unknown };
+};
+
 import {
   ActionLevel,
   ActionStatus,

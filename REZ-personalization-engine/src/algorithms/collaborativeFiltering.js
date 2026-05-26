@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const math = require('mathjs');
+const { randomInt } = require('crypto');
 const logger = require('../utils/logger');
 const Interaction = require('../models/Interaction');
 const UserDNAProfile = require('../models/UserDNAProfile');
@@ -337,10 +338,10 @@ class CollaborativeFiltering {
 
     // Initialize latent factors
     const P = Array(numUsers).fill(null).map(() =>
-      Array(numFactors).fill(null).map(() => Math.random() * 0.1)
+      Array(numFactors).fill(null).map(() => randomInt(0, 1000) / 10000)
     );
     const Q = Array(numItems).fill(null).map(() =>
-      Array(numFactors).fill(null).map(() => Math.random() * 0.1)
+      Array(numFactors).fill(null).map(() => randomInt(0, 1000) / 10000)
     );
 
     const userIndex = new Map(users.map((u, i) => [u, i]));

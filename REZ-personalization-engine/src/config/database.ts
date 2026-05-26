@@ -8,7 +8,7 @@
  */
 
 import mongoose, { Connection } from 'mongoose';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 
 /** MongoDB connection options */
 interface MongoDBOptions {
@@ -37,7 +37,7 @@ export const connectDB = async (): Promise<Connection> => {
   try {
     const mongoURI =
       process.env.MONGODB_URI ||
-      'mongodb+srv://work_db_user:ZAFYAYH1zK0C74Ap@rez-intent-graph.a8ilqgi.mongodb.net/rez_personalization';
+      'mongodb://localhost:27017/rez_personalization';
 
     await mongoose.connect(mongoURI, defaultOptions);
 

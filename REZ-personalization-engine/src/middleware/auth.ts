@@ -18,7 +18,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
 import mongoose from 'mongoose';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 
 /**
  * Security middleware - Helmet

@@ -4,6 +4,7 @@
  */
 
 const EventEmitter = require('events');
+const { randomUUID } = require('crypto');
 const logger = require('./logger');
 
 class AIBusClient extends EventEmitter {
@@ -293,7 +294,7 @@ class AIBusClient extends EventEmitter {
    * Generate correlation ID for tracing
    */
   generateCorrelationId() {
-    return `${this.service}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `${this.service}-${Date.now()}-${randomUUID().replace(/-/g, '').substring(0, 9)}`;
   }
 
   /**

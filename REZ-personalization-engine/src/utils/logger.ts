@@ -3,7 +3,7 @@
  * This file re-exports from @rez/shared for backward compatibility.
  *
  * Migration:
- *   Before: import { logger } from './utils/logger';
+ *   Before: import { logger } from './utils/logger.js';
  *   After:  import { logger } from '@rez/shared';
  */
 

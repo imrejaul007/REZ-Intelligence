@@ -3,7 +3,7 @@ const logger = require('../utils/logger');
 
 const connectDB = async () => {
   try {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://work_db_user:ZAFYAYH1zK0C74Ap@rez-intent-graph.a8ilqgi.mongodb.net/rez_personalization';
+    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez_personalization';
 
     const options = {
       maxPoolSize: 10,

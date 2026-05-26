@@ -13,10 +13,16 @@ import cors from 'cors';
 import helmet from 'helmet';
 import mongoose from 'mongoose';
 import axios from 'axios';
+import crypto from 'crypto';
+
+// Crypto-based random number generator for secure randomness
+function secureRandom(): number {
+  return parseInt(crypto.randomBytes(4).toString('hex'), 16) / 0xFFFFFFFF;
+}
 
 const app: Application = express();
 const PORT = parseInt(process.env.PORT || '4009', 10);
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://work_db_user:ZAFYAYH1zK0C74Ap@rez-intent-graph.a8ilqgi.mongodb.net/rez-actions?retryWrites=true&w=majority';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-actions?retryWrites=true&w=majority';
 const FEEDBACK_SERVICE_URL = process.env.FEEDBACK_SERVICE_URL || 'http://localhost:4010';
 
 // Safety thresholds for auto-actions
@@ -475,7 +481,7 @@ function applySafetyCaps(
  * 20% of decisions go to baseline (no learning applied)
  */
 function assignBaselineGroup(): { isBaseline: boolean; group: 'adaptive' | 'baseline' } {
-  const rand = Math.random();
+  const rand = secureRandom();
   const isBaseline = rand < BASELINE_PERCENTAGE;
   return {
     isBaseline,
