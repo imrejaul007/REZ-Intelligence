@@ -12,6 +12,27 @@ export class AppError extends Error {
   }
 }
 
+export class ValidationError extends AppError {
+  constructor(message = 'Validation failed') {
+    super(400, 'VALIDATION_ERROR', message);
+    this.name = 'ValidationError';
+  }
+}
+
+export class NotFoundError extends AppError {
+  constructor(message = 'Resource not found') {
+    super(404, 'NOT_FOUND', message);
+    this.name = 'NotFoundError';
+  }
+}
+
+export class UnauthorizedError extends AppError {
+  constructor(message = 'Unauthorized') {
+    super(401, 'UNAUTHORIZED', message);
+    this.name = 'UnauthorizedError';
+  }
+}
+
 export class ForbiddenError extends AppError {
   constructor(message = 'Forbidden') {
     super(403, 'FORBIDDEN', message);

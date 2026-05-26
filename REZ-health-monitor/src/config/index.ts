@@ -18,35 +18,66 @@ const configSchema = z.object({
   REDIS_KEY_PREFIX: z.string().default('rez:health-monitor:'),
 
   // Health Check Interval
-  HEALTH_CHECK_INTERVAL_MS: z.string().transform(Number).default('30000'),
-  HEALTH_CHECK_TIMEOUT_MS: z.string().transform(Number).default('5000'),
+  HEALTH_CHECK_INTERVAL_MS: z.string().default('30000'),
+  HEALTH_CHECK_TIMEOUT_MS: z.string().default('5000'),
 
   // Circuit Breaker Settings
-  CIRCUIT_BREAKER_FAILURE_THRESHOLD: z.string().transform(Number).default('3'),
-  CIRCUIT_BREAKER_RESET_TIMEOUT_MS: z.string().transform(Number).default('30000'),
-  CIRCUIT_BREAKER_HALF_OPEN_MAX_CALLS: z.string().transform(Number).default('1'),
+  CIRCUIT_BREAKER_FAILURE_THRESHOLD: z.string().default('3'),
+  CIRCUIT_BREAKER_RESET_TIMEOUT_MS: z.string().default('30000'),
+  CIRCUIT_BREAKER_HALF_OPEN_MAX_CALLS: z.string().default('1'),
 
   // Alert Settings
   ALERT_WEBHOOK_URL: z.string().optional(),
-  ALERT_EMAIL_ENABLED: z.string().transform(val => val === 'true').default('false'),
+  ALERT_EMAIL_ENABLED: z.string().default('false'),
   ALERT_EMAIL_TO: z.string().optional(),
-  ALERT_THRESHOLD_MINUTES: z.string().transform(Number).default('5'),
+  ALERT_THRESHOLD_MINUTES: z.string().default('5'),
 
   // Cache TTL
-  CACHE_TTL_MS: z.string().transform(Number).default('30000'),
+  CACHE_TTL_MS: z.string().default('30000'),
 
   // Logging
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
 });
 
-const parseResult = configSchema.safeParse(process.env);
+// Parse environment and transform values
+const rawEnv = {
+  PORT: process.env['PORT'] || '4095',
+  NODE_ENV: process.env['NODE_ENV'] || 'development',
+  REDIS_URL: process.env['REDIS_URL'] || 'redis://localhost:6379',
+  REDIS_KEY_PREFIX: process.env['REDIS_KEY_PREFIX'] || 'rez:health-monitor:',
+  HEALTH_CHECK_INTERVAL_MS: process.env['HEALTH_CHECK_INTERVAL_MS'] || '30000',
+  HEALTH_CHECK_TIMEOUT_MS: process.env['HEALTH_CHECK_TIMEOUT_MS'] || '5000',
+  CIRCUIT_BREAKER_FAILURE_THRESHOLD: process.env['CIRCUIT_BREAKER_FAILURE_THRESHOLD'] || '3',
+  CIRCUIT_BREAKER_RESET_TIMEOUT_MS: process.env['CIRCUIT_BREAKER_RESET_TIMEOUT_MS'] || '30000',
+  CIRCUIT_BREAKER_HALF_OPEN_MAX_CALLS: process.env['CIRCUIT_BREAKER_HALF_OPEN_MAX_CALLS'] || '1',
+  ALERT_WEBHOOK_URL: process.env['ALERT_WEBHOOK_URL'],
+  ALERT_EMAIL_ENABLED: process.env['ALERT_EMAIL_ENABLED'] || 'false',
+  ALERT_EMAIL_TO: process.env['ALERT_EMAIL_TO'],
+  ALERT_THRESHOLD_MINUTES: process.env['ALERT_THRESHOLD_MINUTES'] || '5',
+  CACHE_TTL_MS: process.env['CACHE_TTL_MS'] || '30000',
+  LOG_LEVEL: process.env['LOG_LEVEL'] || 'info',
+};
+
+const parseResult = configSchema.safeParse(rawEnv);
 
 if (!parseResult.success) {
   console.error('Invalid environment variables:', parseResult.error.format());
   process.exit(1);
 }
 
-export const config = parseResult.data;
+export const config = {
+  ...parseResult.data,
+  // Transform string values to numbers
+  HEALTH_CHECK_INTERVAL_MS: parseInt(parseResult.data.HEALTH_CHECK_INTERVAL_MS, 10),
+  HEALTH_CHECK_TIMEOUT_MS: parseInt(parseResult.data.HEALTH_CHECK_TIMEOUT_MS, 10),
+  CIRCUIT_BREAKER_FAILURE_THRESHOLD: parseInt(parseResult.data.CIRCUIT_BREAKER_FAILURE_THRESHOLD, 10),
+  CIRCUIT_BREAKER_RESET_TIMEOUT_MS: parseInt(parseResult.data.CIRCUIT_BREAKER_RESET_TIMEOUT_MS, 10),
+  CIRCUIT_BREAKER_HALF_OPEN_MAX_CALLS: parseInt(parseResult.data.CIRCUIT_BREAKER_HALF_OPEN_MAX_CALLS, 10),
+  ALERT_EMAIL_ENABLED: parseResult.data.ALERT_EMAIL_ENABLED === 'true',
+  ALERT_THRESHOLD_MINUTES: parseInt(parseResult.data.ALERT_THRESHOLD_MINUTES, 10),
+  CACHE_TTL_MS: parseInt(parseResult.data.CACHE_TTL_MS, 10),
+  PORT: parseInt(parseResult.data.PORT, 10),
+};
 
 export interface ServiceConfig {
   name: string;
@@ -87,7 +118,7 @@ export interface HealthMonitorConfig {
 
 export function getHealthMonitorConfig(): HealthMonitorConfig {
   return {
-    port: parseInt(config.PORT, 10),
+    port: config.PORT,
     nodeEnv: config.NODE_ENV,
     redis: {
       url: config.REDIS_URL,

@@ -122,7 +122,7 @@ app.get('/health/all', async (_req: Request, res: Response) => {
  * Get health for specific service
  */
 app.get('/health/:serviceName', async (req: Request, res: Response) => {
-  const { serviceName } = req.params;
+  const serviceName = req.params.serviceName as string;
   const service = servicesToMonitor.find(s => s.name === serviceName);
 
   if (!service) {
@@ -152,7 +152,7 @@ app.get('/health/:serviceName', async (req: Request, res: Response) => {
  * Get detailed health for specific service
  */
 app.get('/health/:serviceName/detailed', async (req: Request, res: Response) => {
-  const { serviceName } = req.params;
+  const serviceName = req.params.serviceName as string;
   const service = servicesToMonitor.find(s => s.name === serviceName);
 
   if (!service) {
@@ -198,7 +198,7 @@ app.get('/circuits', (_req: Request, res: Response) => {
  * Get circuit breaker state for specific service
  */
 app.get('/circuits/:serviceName', (req: Request, res: Response) => {
-  const { serviceName } = req.params;
+  const serviceName = req.params.serviceName as string;
   const circuit = circuitRegistry.getCircuit(serviceName);
 
   res.json({
@@ -211,7 +211,7 @@ app.get('/circuits/:serviceName', (req: Request, res: Response) => {
  * Force reset a circuit breaker
  */
 app.post('/circuits/:serviceName/reset', (req: Request, res: Response) => {
-  const { serviceName } = req.params;
+  const serviceName = req.params.serviceName as string;
   const circuit = circuitRegistry.getCircuit(serviceName);
 
   circuit.reset();
@@ -227,7 +227,7 @@ app.post('/circuits/:serviceName/reset', (req: Request, res: Response) => {
  * Force a specific circuit state
  */
 app.post('/circuits/:serviceName/state', (req: Request, res: Response) => {
-  const { serviceName } = req.params;
+  const serviceName = req.params.serviceName as string;
   const { state } = req.body;
 
   if (!Object.values(CircuitState).includes(state)) {
@@ -271,7 +271,7 @@ app.get('/alerts', (req: Request, res: Response) => {
  * Get alerts for specific service
  */
 app.get('/alerts/:serviceName', (req: Request, res: Response) => {
-  const { serviceName } = req.params;
+  const serviceName = req.params.serviceName as string;
   const alerts = getRecentAlerts(20).filter(a => a.serviceName === serviceName);
 
   res.json({

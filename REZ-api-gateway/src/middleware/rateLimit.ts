@@ -61,3 +61,6 @@ export function createRateLimiter(config: RateLimitConfig = {}) {
     next();
   };
 }
+
+// Default rate limiter middleware
+export const rateLimitMiddleware = createRateLimiter();
