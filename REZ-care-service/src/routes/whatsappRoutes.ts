@@ -264,7 +264,7 @@ const listSchema = z.object({
   to: z.string().min(10),
   header: z.string().max(60),
   body: z.string().min(1).max(1024),
-  footer: z.string().max(72).optional(),
+  footer: z.string().max(72).optional().default(''),
   buttonTitle: z.string().max(20).default('Menu'),
   sections: z.array(z.object({
     title: z.string().max(24),

@@ -360,7 +360,7 @@ const SegmentMembership = mongoose.model<SegmentMembership & { userId: string }>
 
 class CacheService {
   private redis: Redis | null = null;
-  private isConnected: boolean = false;
+  public isConnected: boolean = false;
 
   async connect(): Promise<void> {
     try {
@@ -1023,4 +1023,4 @@ process.on('SIGINT', async () => {
 // Start the server
 startServer();
 
-export { app, aggregateSignals, getRealTimeSignals, evaluateSegments };
+export { app, aggregateSignals, getRealTimeSignals };

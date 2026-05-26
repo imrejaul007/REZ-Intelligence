@@ -3,11 +3,11 @@
  * Connects to AI/ML services
  */
 
-const INTENT_SERVICE_URL = process.env.INTENT_SERVICE_URL || 'https://rez-intent-predictor.onrender.com';
-const PREDICTIVE_SERVICE_URL = process.env.PREDICTIVE_ENGINE_URL || 'https://REZ-predictive-engine.onrender.com';
-const SIGNAL_SERVICE_URL = process.env.SIGNAL_AGGREGATOR_URL || 'https://REZ-signal-aggregator.onrender.com';
-const RECOMMEND_SERVICE_URL = process.env.RECOMMENDATION_ENGINE_URL || 'https://REZ-recommendation-engine.onrender.com';
-const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
+const INTENT_SERVICE_URL = process.env['INTENT_SERVICE_URL'] || 'https://rez-intent-predictor.onrender.com';
+const PREDICTIVE_SERVICE_URL = process.env['PREDICTIVE_ENGINE_URL'] || 'https://REZ-predictive-engine.onrender.com';
+const SIGNAL_SERVICE_URL = process.env['SIGNAL_AGGREGATOR_URL'] || 'https://REZ-signal-aggregator.onrender.com';
+const RECOMMEND_SERVICE_URL = process.env['RECOMMENDATION_ENGINE_URL'] || 'https://REZ-recommendation-engine.onrender.com';
+const INTERNAL_TOKEN = process.env['INTERNAL_SERVICE_TOKEN'] || '';
 
 interface SignalsResponse {
   signals?: unknown[];
@@ -41,7 +41,7 @@ interface SignalFilters {
 // INTERNAL REQUEST
 // ============================================
 
-async function internalRequest(url: string, options: RequestInit = {}): Promise<unknown> {
+async function internalRequest<T = unknown>(url: string, options: RequestInit = {}): Promise<T> {
   const headers = options.headers as Record<string, string> || {};
   const response = await fetch(url, {
     ...options,
@@ -57,7 +57,7 @@ async function internalRequest(url: string, options: RequestInit = {}): Promise<
   }
 
   const data = await response.json();
-  return data as unknown;
+  return data as T;
 }
 
 // ============================================
@@ -145,7 +145,7 @@ export const signalOperations = {
       const res = await internalRequest<SignalsResponse>(`${SIGNAL_SERVICE_URL}/api/signals/${userId}`, {
         method: 'GET',
         body: JSON.stringify(filters),
-      }) as { signals?: unknown[] };
+      });
       return res.signals || [];
     } catch {
       return [];
@@ -163,7 +163,7 @@ export const recommendationOperations = {
       const res = await internalRequest<RecommendationsResponse>(`${RECOMMEND_SERVICE_URL}/api/recommendations/${userId}`, {
         method: 'GET',
         body: JSON.stringify({ slot }),
-      }) as { recommendations?: unknown[] };
+      });
       return res.recommendations || [];
     } catch {
       return [];
