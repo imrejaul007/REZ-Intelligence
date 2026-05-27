@@ -142,7 +142,7 @@ class PublisherService {
             payload,
             source,
             correlationId,
-            priority: payload['priority'] || 'high',
+            priority: payload['priority'] || Event_1.EventPriority.NORMAL,
         });
     }
     /**

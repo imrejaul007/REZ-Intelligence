@@ -19,7 +19,7 @@ import { initPublisherService, getPublisherService } from './services/publisher'
 import { subscriberService } from './services/subscriber';
 import { eventRoutes } from './routes/events.routes';
 import { subscriptionRoutes } from './routes/subscriptions.routes';
-import { AuthenticatedRequest } from './middleware/auth';
+import { AuthenticatedRequest } from './middleware/auth.js';
 
 // Create Express app
 const app = express();

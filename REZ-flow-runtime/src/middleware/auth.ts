@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 export interface AuthConfig {
   apiKeys?: string[];
@@ -8,13 +8,6 @@ export interface AuthConfig {
 }
 
 export function createAuthMiddleware(config: AuthConfig) {
-}
-
-export const authenticateInternal = createAuthMiddleware({
-  apiKeys: [],
-  internalTokens: [process.env.INTERNAL_SERVICE_TOKEN || 'dev-token'],
-  bypassPaths: ['/health', '/ready', '/metrics']
-});
   const { apiKeys = [], internalTokens = [], bypassPaths = ['/health', '/ready'] } = config;
 
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -49,4 +42,29 @@ export const authenticateInternal = createAuthMiddleware({
       message: 'Valid API key or internal token required',
     });
   };
+}
+
+export const authenticateInternal = createAuthMiddleware({
+  apiKeys: [],
+  internalTokens: [process.env['INTERNAL_SERVICE_TOKEN'] || 'dev-token'],
+  bypassPaths: ['/health', '/ready', '/metrics']
+});
+
+export function errorHandler(err: Error, req: Request, res: Response, next: NextFunction): void {
+  logger.error('Unhandled error', { error: err.message, stack: err.stack, path: req.path });
+  res.status(500).json({ error: 'Internal server error' });
+}
+
+export function requestLogger(req: Request, res: Response, next: NextFunction): void {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    logger.info(`${req.method} ${req.path}`, {
+      method: req.method,
+      path: req.path,
+      statusCode: res.statusCode,
+      duration,
+    });
+  });
+  next();
 }

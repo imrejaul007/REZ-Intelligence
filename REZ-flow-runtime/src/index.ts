@@ -15,7 +15,7 @@ import { Execution, Workflow } from './models/Execution';
 import executionRoutes from './routes/execution.routes';
 import workflowRoutes from './routes/workflow.routes';
 import metricsRoutes from './routes/metrics';
-import { authenticateInternal, optionalAuth } from './middleware/auth';
+import { authenticateInternal, optionalAuth } from './middleware/auth.js';
 import { tracingMiddleware } from './middleware/tracing';
 import { metricsTracker } from './middleware/metricsTracker';
 import dlqService from './services/dlqService';
@@ -356,7 +356,7 @@ app.get('/api/stats', authenticateInternal, async (req: Request, res: Response) 
 
 // ==================== WEBHOOK TRIGGER ENDPOINT ====================
 
-import { validateWebhookSignature } from './middleware/auth';
+import { validateWebhookSignature } from './middleware/auth.js';
 import { v4 as uuidv4 } from 'uuid';
 
 app.post('/api/triggers/webhook/:workflowId', validateWebhookSignature, async (req: Request, res: Response) => {

@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import { config, connectMongoDB, connectRedis, disconnectAll } from './config';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 import { initializeQueues, initializeWorkers, shutdownWorkers } from './events/consumer';
 import { schemaRegistry, EventType, getSchemaDocumentation } from './events/schema-registry';
 import { eventEmitter, publish } from './events/emitter';

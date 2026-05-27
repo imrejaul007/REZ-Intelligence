@@ -8,9 +8,10 @@ import winston from 'winston';
 const { combine, timestamp, json, errors, printf } = winston.format;
 
 // Custom format for console output
-const consoleFormat = printf(({ level, message, timestamp, ...meta }: { level: string; message: string; timestamp: string; [key: string]: unknown }) => {
+const consoleFormat = printf((info: winston.Logform.TransformableInfo) => {
+  const { level, message, timestamp: ts, ...meta } = info;
   const metaStr = Object.keys(meta).length ? JSON.stringify(meta) : '';
-  return `${timestamp} [${level.toUpperCase()}]: ${message} ${metaStr}`;
+  return `${ts} [${level.toUpperCase()}]: ${message} ${metaStr}`;
 });
 
 // Create base logger format

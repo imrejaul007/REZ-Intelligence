@@ -8,7 +8,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import mongoose from 'mongoose';
 import axios from 'axios';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 import swaggerUi from 'swagger-ui-express';
 import fs from 'fs/promises';
 import path from 'path';

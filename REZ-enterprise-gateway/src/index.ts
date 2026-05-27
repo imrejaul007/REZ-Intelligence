@@ -142,7 +142,7 @@ app.post('/api/employees', (req: Request, res: Response) => {
 // Set employee benefits
 app.post('/api/employees/:id/benefits', (req: Request, res: Response) => {
   const { benefits } = req.body;
-  const employee = employees.get(req.params.id);
+  const employee = employees.get(req.params.id as string);
 
   if (!employee) {
     return res.status(404).json({ error: 'Employee not found' });

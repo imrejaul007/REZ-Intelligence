@@ -6,7 +6,7 @@
  */
 
 import express from 'express';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 import axios from 'axios';
 
 const router = express.Router();
