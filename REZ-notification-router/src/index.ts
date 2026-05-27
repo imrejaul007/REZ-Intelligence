@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import cors from 'cors';
 import helmet from 'helmet';
 
-import { logInfo, logError, logWarn } from './services/logger.js';
+import { logInfo, logError } from './services/logger.js';
 import { connectDatabase, disconnectDatabase, pingDatabase } from './services/database.js';
 import { requestLoggingMiddleware, errorHandler, notFoundHandler } from './middleware/index.js';
 import { createAuthMiddleware } from '@rez/security-middleware';
@@ -87,7 +87,7 @@ app.post('/api/notify', async (req: Request, res: Response): Promise<void> => {
         error: {
           code: 'VALIDATION_ERROR',
           message: validationResult.error.issues[0]?.message || 'Invalid input',
-          details: validationResult.error.issues,
+          details: validationResult.error.issues.map(issue => ({ path: issue.path, message: issue.message })),
         },
       };
       res.status(400).json(response);

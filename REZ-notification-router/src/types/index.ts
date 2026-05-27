@@ -41,6 +41,14 @@ export const NotificationQuerySchema = z.object({
 
 export type NotificationQuery = z.infer<typeof NotificationQuerySchema>;
 
+export const NotificationIdParamSchema = z.object({
+  notificationId: z.string(),
+});
+
+export const UserIdParamSchema = z.object({
+  userId: z.string(),
+});
+
 // ============================================================================
 // Domain Types
 // ============================================================================
