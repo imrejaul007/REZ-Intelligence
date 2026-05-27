@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger } from './utils/logger';
+import { logger } from '../utils/logger.js';
 
 export interface AuthConfig {
   apiKeys?: string[];
@@ -43,3 +43,9 @@ export function createAuthMiddleware(config: AuthConfig) {
     });
   };
 }
+
+export const authMiddleware = createAuthMiddleware({
+  apiKeys: process.env.API_KEYS?.split(',') || [],
+  internalTokens: process.env.INTERNAL_TOKENS?.split(',') || [process.env.INTERNAL_SERVICE_TOKEN],
+  bypassPaths: ['/health', '/ready']
+});

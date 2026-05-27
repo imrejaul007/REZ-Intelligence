@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { supportRouter } from './routes/support.routes';
 import { logger } from './services/supportAgent';
-import { requireInternalAuth } from './middleware/auth';
+import { requireInternalAuth } from './middleware/auth.js';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3002;

@@ -8,7 +8,7 @@ import winston from 'winston';
 import { widgetRoutes } from './routes/widget.routes';
 import { SocketService } from './services/socketService';
 import { WidgetService } from './services/widgetService';
-import { authMiddleware } from './middleware/auth';
+import { authMiddleware } from './middleware/auth.js';
 
 // Logger configuration
 const logger = winston.createLogger({

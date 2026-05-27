@@ -240,10 +240,11 @@ router.get('/influencers', async (req: Request, res: Response) => {
 // GET /api/social/segments/:segment - Get users by social segment
 router.get('/segments/:segment', async (req: Request, res: Response) => {
   try {
-    const { segment } = req.params;
-    const validSegments = ['influencer', 'referrer', 'community_organizer', 'viral_sharer', 'engaged_user'];
+    const segmentParam = req.params.segment;
+    const validSegments = ['influencer', 'referrer', 'community_organizer', 'viral_sharer', 'engaged_user'] as const;
+    type SegmentType = typeof validSegments[number];
 
-    if (!validSegments.includes(segment)) {
+    if (!validSegments.includes(segmentParam as SegmentType)) {
       return res.status(400).json({
         success: false,
         error: `Invalid segment. Must be one of: ${validSegments.join(', ')}`,
@@ -252,7 +253,7 @@ router.get('/segments/:segment', async (req: Request, res: Response) => {
     }
 
     const limit = parseInt(req.query.limit as string) || 100;
-    const result = await socialSignalsService.getUsersBySegment(segment as unknown, limit);
+    const result = await socialSignalsService.getUsersBySegment(segmentParam as SegmentType, limit);
 
     res.json(result);
   } catch (error) {

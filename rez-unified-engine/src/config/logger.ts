@@ -9,7 +9,8 @@ import { config } from './index';
 const { combine, timestamp, printf, colorize, errors, json } = winston.format;
 
 // Custom log format
-const logFormat = printf(({ level, message, timestamp, ...metadata }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
+const logFormat = printf((info: winston.Logform.TransformableInfo) => {
+  const { level, message, timestamp, ...metadata } = info;
   let log = `${timestamp} [${level}]: ${message}`;
 
   if (Object.keys(metadata).length > 0) {

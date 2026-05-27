@@ -1,5 +1,5 @@
-import express, { Express, Request, Response } import logger from './utils/logger';
-import from 'express';
+import express, { Express, Request, Response } from 'express';
+import { logger } from './utils/logger.js';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -10,10 +10,7 @@ import socialRoutes from './routes/socialRoutes';
 import {
   authMiddleware,
   rateLimitMiddleware,
-  errorHandler,
-  requestLogger,
-  corsMiddleware,
-  securityHeaders
+  errorHandler
 } from './middleware';
 
 // Load environment variables
@@ -30,8 +27,13 @@ app.set('trust proxy', 1);
 
 // Security middleware
 app.use(helmet());
-app.use(corsMiddleware);
-app.use(securityHeaders);
+app.use(cors());
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  next();
+});
 
 // Request parsing
 app.use(express.json());
@@ -43,7 +45,7 @@ app.use(morgan('combined'));
 // Rate limiting
 const RATE_LIMIT_REQUESTS = parseInt(process.env.RATE_LIMIT_REQUESTS || '100');
 const RATE_LIMIT_WINDOW = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000') / 1000 * 1000;
-app.use(rateLimitMiddleware(RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW));
+app.use(rateLimitMiddleware({ windowMs: RATE_LIMIT_WINDOW, max: RATE_LIMIT_REQUESTS }));
 
 // Health check endpoint (no auth required)
 app.get('/health', (req: Request, res: Response) => {

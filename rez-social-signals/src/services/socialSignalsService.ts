@@ -511,7 +511,8 @@ export class SocialSignalsService {
         reachByCategory: profile.socialReach.reachByCategory as Record<string, number>
       },
       referralMetrics: profile.referralMetrics as UserSocialProfile['referralMetrics'],
-      lastUpdated: profile.lastUpdated
+      lastUpdated: profile.lastUpdated,
+      createdAt: (profile as unknown as { createdAt: Date }).createdAt || new Date()
     };
   }
 
@@ -556,7 +557,7 @@ export class SocialSignalsService {
   /**
    * Batch update community role (called from events service)
    */
-  async updateCommunityRole(userId: string, input: CommunityRoleInput): Promise<ApiResponse<IUserSocialProfile>> {
+  async updateCommunityRole(userId: string, input: CommunityRoleInput): Promise<ApiResponse<UserSocialProfile>> {
     try {
       const profile = await this.getOrCreateProfile(userId);
       profile.communityRole = detectCommunityOrganizer(input);
@@ -565,7 +566,7 @@ export class SocialSignalsService {
 
       return {
         success: true,
-        data: this.mapProfileToOutput(profile),
+        data: this.mapProfileToOutput(profile) as UserSocialProfile,
         timestamp: new Date()
       };
     } catch (error) {

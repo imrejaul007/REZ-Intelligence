@@ -1,4 +1,4 @@
-import { InfluenceScore, CommunityRoleData, ShareChannel, IShareEvent, IReferralEvent } from '../types';
+import { InfluenceScore, CommunityRoleData, ShareChannel, ShareEvent, ReferralEvent } from '../types';
 
 /**
  * Influence Calculator Service
@@ -13,7 +13,7 @@ export interface InfluenceCalculationInput {
   revenue: number;
   uniqueRecipients: number;
   avgCTR?: number;
-  recentShares?: IShareEvent[];
+  recentShares?: ShareEvent[];
   timeWindowDays?: number;
 }
 
@@ -112,7 +112,7 @@ function determineInfluenceTier(
 /**
  * Calculate trending score based on recent share velocity
  */
-function calculateTrendingScore(shares: IShareEvent[], timeWindowDays: number): number {
+function calculateTrendingScore(shares: ShareEvent[], timeWindowDays: number): number {
   if (shares.length === 0) return 0;
 
   const now = new Date();
@@ -196,7 +196,7 @@ export function detectCommunityOrganizer(input: CommunityRoleInput): CommunityRo
  * Calculate sharing behavior metrics
  */
 export interface SharingBehaviorInput {
-  shareEvents: IShareEvent[];
+  shareEvents: ShareEvent[];
   totalOffers: number;
   timeWindowDays?: number;
 }
@@ -272,7 +272,7 @@ export function calculateSharingBehavior(input: SharingBehaviorInput): SharingBe
 /**
  * Calculate social reach metrics
  */
-export function calculateSocialReach(shareEvents: IShareEvent[]): {
+export function calculateSocialReach(shareEvents: ShareEvent[]): {
   totalImpressions: number;
   uniqueRecipients: number;
   whatsappReach: number;
@@ -345,7 +345,7 @@ export function calculateSocialReach(shareEvents: IShareEvent[]): {
 /**
  * Calculate referral metrics
  */
-export function calculateReferralMetrics(referralEvents: IReferralEvent[]): {
+export function calculateReferralMetrics(referralEvents: ReferralEvent[]): {
   totalReferrals: number;
   pendingReferrals: number;
   successfulReferrals: number;
