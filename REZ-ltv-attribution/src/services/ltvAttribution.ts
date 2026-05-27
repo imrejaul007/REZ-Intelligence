@@ -11,7 +11,7 @@
  * - Campaign ROI analysis
  */
 
-import { logger } from './utils/logger.js';
+import { logger } from '../../utils/logger.js';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 

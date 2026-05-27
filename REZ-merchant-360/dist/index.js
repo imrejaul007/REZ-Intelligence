@@ -7,7 +7,7 @@ exports.AIMemoryModule = exports.AnalyticsModule = exports.ComplianceModule = ex
 exports.createService = createService;
 exports.getService = getService;
 exports.resetService = resetService;
-const logger_1 = __importDefault(require("./utils/logger"));
+const logger_js_1 = require("./utils/logger.js");
 /**
  * REZ Merchant 360 - Unified Merchant Identity Service
  *
@@ -77,14 +77,14 @@ function resetService() {
 // CLI / STANDALONE MODE
 // ============================================
 async function main() {
-    logger_1.default.info('Starting REZ Merchant 360 Service...');
+    logger_js_1.logger.info('Starting REZ Merchant 360 Service...');
     const service = createService();
     // Initialize
     await service.initialize();
-    logger_1.default.info('Service initialized successfully');
+    logger_js_1.logger.info('Service initialized successfully');
     // Handle graceful shutdown
     const shutdown = async () => {
-        logger_1.default.info('Shutting down...');
+        logger_js_1.logger.info('Shutting down...');
         await service.shutdown();
         process.exit(0);
     };

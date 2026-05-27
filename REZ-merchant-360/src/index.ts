@@ -1,4 +1,4 @@
-import logger from './utils/logger';
+import { logger } from './utils/logger.js';
 
 /**
  * REZ Merchant 360 - Unified Merchant Identity Service

@@ -41,7 +41,7 @@ interface SignalQueryFilters {
 /**
  * Make authenticated internal API request
  */
-async function internalRequest(url: string, options: RequestInit = {}): Promise<IntelligenceApiResponse> {
+async function internalRequest<T = IntelligenceApiResponse>(url: string, options: RequestInit = {}): Promise<T> {
   const headers = (options.headers as Record<string, string>) || {};
   const response = await fetch(url, {
     ...options,
@@ -56,7 +56,7 @@ async function internalRequest(url: string, options: RequestInit = {}): Promise<
     throw new Error(`Intelligence API error: ${response.status}`);
   }
 
-  return response.json() as Promise<IntelligenceApiResponse>;
+  return response.json() as Promise<T>;
 }
 
 // ============================================

@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';

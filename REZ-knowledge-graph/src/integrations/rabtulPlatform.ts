@@ -55,7 +55,7 @@ interface EventFilters {
 /**
  * Make authenticated internal API request
  */
-async function internalRequest(url: string, options: RequestInit = {}): Promise<ApiResponse> {
+async function internalRequest<T = ApiResponse>(url: string, options: RequestInit = {}): Promise<T> {
   const headers = (options.headers as Record<string, string>) || {};
   const response = await fetch(url, {
     ...options,
@@ -70,7 +70,7 @@ async function internalRequest(url: string, options: RequestInit = {}): Promise<
     throw new Error(`Platform API error: ${response.status}`);
   }
 
-  return response.json() as Promise<ApiResponse>;
+  return response.json() as Promise<T>;
 }
 
 // ============================================

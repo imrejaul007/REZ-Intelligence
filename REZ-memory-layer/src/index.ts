@@ -24,7 +24,9 @@ import timelineRoutes from './routes/timeline.routes';
 import eventRoutes from './routes/event.routes';
 
 // Import middleware
-import { authMiddleware, requestLogger, errorHandler } from './middleware/auth';
+import { authMiddleware } from './middleware/auth.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import { requestLogger } from './middleware/rateLimit';
 import { tracingMiddleware } from './middleware/tracing';
 import { metricsTracker } from './middleware/metricsTracker';
 import metricsRoutes from './routes/metrics';
@@ -32,6 +34,10 @@ import metricsRoutes from './routes/metrics';
 // Import services
 import { eventConsumer } from './services/eventConsumer';
 import { cacheService } from './services/cacheService';
+
+// Import for RisaCare endpoints
+import { normalizeEvent, toTimelineEvent } from './utils/eventNormalizer';
+import { TimelineEventModel } from './models/TimelineEvent';
 
 // Types
 import { HealthStatus } from './types/timeline';
@@ -174,6 +180,30 @@ app.use('/metrics', metricsRoutes);
 // Authenticated routes
 app.use('/api/timeline', authMiddleware, timelineRoutes);
 app.use('/api/events', authMiddleware, eventRoutes);
+
+// RisaCare-compatible memory endpoints
+app.use('/api/memory', authMiddleware, timelineRoutes);
+app.post('/api/memory/store', authMiddleware, async (req: Request, res: Response, next) => {
+  try {
+    // Proxy to event routes
+    const { userId, eventType, data } = req.body;
+    const event = {
+      userId,
+      type: eventType,
+      data,
+      timestamp: req.body.timestamp || new Date().toISOString()
+    };
+
+    const normalized = normalizeEvent(event);
+    const timelineEvent = toTimelineEvent(normalized);
+    await TimelineEventModel.create(timelineEvent);
+    await cacheService.invalidateUserCache(userId);
+
+    res.status(201).json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Error handler (must be last)
 app.use(errorHandler);
