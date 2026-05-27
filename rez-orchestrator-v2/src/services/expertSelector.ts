@@ -2,7 +2,7 @@ import { randomBytes } from 'crypto';
 import { ProcessedOrchestrationRequest, AgentCapability } from '../models/OrchestrationRequest';
 import { AgentInfo } from './agentRegistry';
 import { appConfig } from '../config';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 /**
  * Generate a random number between 0 and 1 using crypto

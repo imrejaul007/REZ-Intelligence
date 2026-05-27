@@ -1,4 +1,4 @@
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 
 import { Server } from "@modelcontextprotocol/sdk/server";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio";

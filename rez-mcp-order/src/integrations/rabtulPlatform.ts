@@ -66,7 +66,7 @@ export const analytics = {
 };
 
 export const events = {
-  publish: async (type: string, category: string, data, context: Record<string, unknown> = {}) =>
+  publish: async (type: string, category: string, data: Record<string, unknown>, context: Record<string, unknown> = {}) =>
     request(`${EVENT_BUS_URL}/api/events`, {
       method: 'POST',
       body: JSON.stringify({ type, category, version: '1.0.0', source: 'rez-mcp-order', data, ...context }),

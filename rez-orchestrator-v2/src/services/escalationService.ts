@@ -3,7 +3,7 @@ import axios from 'axios';
 import { ProcessedOrchestrationRequest } from '../models/OrchestrationRequest';
 import { ErrorDetails } from '../models/OrchestrationResponse';
 import { appConfig } from '../config';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export interface EscalationTicket {
   ticketId: string;

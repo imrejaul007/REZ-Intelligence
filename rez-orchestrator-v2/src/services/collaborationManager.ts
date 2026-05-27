@@ -18,7 +18,7 @@ import { AgentInfo } from './agentRegistry';
 import { ProcessingContext } from './messageProcessor';
 import { AgentSwitcher } from './agentSwitcher';
 import { appConfig } from '../config';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export class CollaborationManager {
   private agentRegistry;

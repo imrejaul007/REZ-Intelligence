@@ -3,7 +3,7 @@
  * Unified user/merchant profiles + Voice AI + Autonomous Agents
  */
 
-import express, { Request, Response } import logger from './utils/logger';
+import express, { Request, Response } import logger from './utils/logger.js';
 import from 'express';
 import mongoose from 'mongoose';
 import financeRoutes from './routes/financeRoutes';

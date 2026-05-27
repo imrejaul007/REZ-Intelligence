@@ -69,12 +69,12 @@ export const segments = {
 };
 
 export const signals = {
-  record: async (signal) =>
+  record: async (signal: Record<string, unknown>) =>
     request(`${SIGNAL_URL}/api/signals`, {
       method: 'POST',
       body: JSON.stringify(signal),
     }),
-  query: async (filters) =>
+  query: async (filters: Record<string, unknown>) =>
     request(`${SIGNAL_URL}/api/signals/query`, {
       method: 'POST',
       body: JSON.stringify(filters),

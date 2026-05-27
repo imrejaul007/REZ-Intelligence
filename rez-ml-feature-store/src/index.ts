@@ -3,7 +3,7 @@
  * REST API for serving machine learning features in the ReZ platform
  */
 
-import express, { Application, Request, Response, NextFunction } import logger from './utils/logger';
+import express, { Application, Request, Response, NextFunction } import logger from './utils/logger.js';
 import from 'express';
 import mongoose, { ConnectOptions } from 'mongoose';
 import cors from 'cors';

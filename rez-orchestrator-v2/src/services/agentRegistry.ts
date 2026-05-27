@@ -2,7 +2,7 @@ import Redis from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
 import { appConfig } from '../config';
 import { AgentCapability, AgentStatus } from '../models/OrchestrationRequest';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export interface AgentInfo {
   agentId: string;

@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { OrchestrationRequestSchema, OrchestrationRequest } from '../models/OrchestrationRequest';
 import { MessageProcessor } from '../services/messageProcessor';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { ZodError } from 'zod';
 
 const router = Router();

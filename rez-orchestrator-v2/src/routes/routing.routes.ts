@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { AgentRegistry, AgentInfo } from '../services/agentRegistry';
 import { ExpertSelector } from '../services/expertSelector';
 import { AgentSwitcher } from '../services/agentSwitcher';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 

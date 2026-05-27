@@ -1,4 +1,4 @@
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 import crypto from 'crypto';
 
 // Crypto-based random number generator for secure randomness

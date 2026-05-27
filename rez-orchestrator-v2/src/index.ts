@@ -6,7 +6,7 @@ import morgan from 'morgan';
 import Redis from 'ioredis';
 
 import { appConfig } from './config';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 
 // Services
 import { AgentRegistry, createAgentRegistry } from './services/agentRegistry';

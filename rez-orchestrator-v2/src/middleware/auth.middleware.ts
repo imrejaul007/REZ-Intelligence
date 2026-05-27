@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { appConfig } from '../config';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export interface AuthenticatedRequest extends Request {
   serviceId?: string;

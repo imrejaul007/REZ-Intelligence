@@ -1,4 +1,4 @@
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 
 /**
  * Feature Service - Core Business Logic for ML Feature Store

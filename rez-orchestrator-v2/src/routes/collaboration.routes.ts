@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { CollaborationManager } from '../services/collaborationManager';
 import { OrchestrationRequestSchema } from '../models/OrchestrationRequest';
 import { CollaborationConfigSchema } from '../models/CollaborationDetails';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 

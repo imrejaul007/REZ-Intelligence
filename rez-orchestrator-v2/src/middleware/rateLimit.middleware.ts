@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'crypto';
 import Redis from 'ioredis';
 import { appConfig } from '../config';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 interface RateLimitEntry {
   count: number;

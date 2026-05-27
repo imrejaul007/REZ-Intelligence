@@ -5,7 +5,7 @@ import {
 } from '../models/OrchestrationResponse';
 import { CollaborationResult, SynthesisResult } from '../models/CollaborationDetails';
 import { ProcessingContext } from './messageProcessor';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export interface GeneratedResponse {
   content: string;

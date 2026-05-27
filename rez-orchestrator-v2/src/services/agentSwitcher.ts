@@ -3,7 +3,7 @@ import { AgentInfo } from './agentRegistry';
 import { ProcessedOrchestrationRequest } from '../models/OrchestrationRequest';
 import { ProcessingContext } from './messageProcessor';
 import { appConfig } from '../config';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import {
   CircuitBreaker,
   CircuitBreakerRegistry,

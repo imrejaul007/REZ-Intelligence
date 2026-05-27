@@ -10,7 +10,7 @@
 
 import { EventEmitter } from 'events';
 import { appConfig } from '../config';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export enum CircuitState {
   CLOSED = 'closed',

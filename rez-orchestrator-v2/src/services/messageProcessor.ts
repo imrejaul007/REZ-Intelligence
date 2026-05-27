@@ -16,7 +16,7 @@ import { CollaborationManager } from './collaborationManager';
 import { EscalationService } from './escalationService';
 import { ResponseGenerator } from './responseGenerator';
 import { appConfig } from '../config';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { ErrorDetails } from '../models/OrchestrationResponse';
 
 // Service URLs with environment variable overrides

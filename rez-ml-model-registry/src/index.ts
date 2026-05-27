@@ -1,4 +1,4 @@
-import express, { Application, Request, Response, NextFunction } import logger from './utils/logger';
+import express, { Application, Request, Response, NextFunction } import logger from './utils/logger.js';
 import from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
