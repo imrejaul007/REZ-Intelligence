@@ -1,4 +1,4 @@
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 
 /**
  * Event Bus Integration for REZ Intelligence Services
