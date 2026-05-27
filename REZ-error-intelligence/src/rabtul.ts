@@ -18,7 +18,7 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; erro
     });
     return { valid: res.data.success };
   } catch (error) {
-    return { valid: false, error: error.message };
+    return { valid: false, error: (error as Error).message };
   }
 }
 
@@ -37,7 +37,7 @@ export async function notifyDevTeam(title: string, error: string, severity: stri
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: (error as Error).message };
   }
 }
 

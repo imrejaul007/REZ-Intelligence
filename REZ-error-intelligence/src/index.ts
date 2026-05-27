@@ -11,7 +11,17 @@ import { z } from 'zod';
 import winston from 'winston';
 
 // Shared utilities
-import { sanitize } from '../../../shared';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const sanitize = (obj: any): any => {
+  if (typeof obj !== 'object' || obj === null) return obj;
+  const result: Record<string, unknown> = {};
+  for (const key of Object.keys(obj)) {
+    if (!['password', 'token', 'secret', 'key'].some(s => key.toLowerCase().includes(s))) {
+      result[key] = obj[key];
+    }
+  }
+  return result;
+};
 
 // ============================================
 // LOGGER CONFIGURATION
@@ -33,7 +43,8 @@ const structuredFormat = winston.format.combine(
 const prettyFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.colorize({ all: true }),
-  winston.format.printf(({ timestamp, level, message, ...meta }: { timestamp?: string; level: string; message: string; [key: string]: unknown }) => {
+  winston.format.printf((info: winston.Logform.TransformableInfo) => {
+    const { timestamp, level, message, ...meta } = info;
     const metaStr = Object.keys(meta).length ? JSON.stringify(meta, null, 2) : '';
     return `${timestamp} ${level}: ${message} ${metaStr}`;
   })
@@ -105,7 +116,7 @@ const CreateErrorSchema = z.object({
   message: z.string().min(1).max(1000),
   severity: z.enum(['low', 'medium', 'high', 'critical']),
   service: z.string().min(1).max(100),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   stackTrace: z.string().optional()
 });
 
@@ -179,10 +190,11 @@ export function createApp(): Express {
     try {
       const validation = ErrorQuerySchema.safeParse(req.query);
       if (!validation.success) {
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Validation error',
           details: validation.error.issues
         });
+        return;
       }
 
       const { code, severity, service, limit, offset } = validation.data;
@@ -220,7 +232,8 @@ export function createApp(): Express {
       const error = await ErrorLog.findById(req.params.id);
 
       if (!error) {
-        return res.status(404).json({ error: 'Error not found' });
+        res.status(404).json({ error: 'Error not found' });
+        return;
       }
 
       res.json({ data: error });
@@ -241,7 +254,8 @@ export function createApp(): Express {
         .limit(100);
 
       if (errors.length === 0) {
-        return res.status(404).json({ error: 'No errors found with this code' });
+        res.status(404).json({ error: 'No errors found with this code' });
+        return;
       }
 
       res.json({ data: errors });
@@ -259,10 +273,11 @@ export function createApp(): Express {
     try {
       const validation = CreateErrorSchema.safeParse(req.body);
       if (!validation.success) {
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Validation error',
           details: validation.error.issues
         });
+        return;
       }
 
       const data = validation.data;
@@ -289,10 +304,11 @@ export function createApp(): Express {
           occurrences: existing.occurrences
         }));
 
-        return res.status(200).json({
+        res.status(200).json({
           message: 'Error occurrence updated',
           data: existing
         });
+        return;
       }
 
       // Create new error log
@@ -326,7 +342,8 @@ export function createApp(): Express {
       const error = await ErrorLog.findById(req.params.id);
 
       if (!error) {
-        return res.status(404).json({ error: 'Error not found' });
+        res.status(404).json({ error: 'Error not found' });
+        return;
       }
 
       error.resolved = resolved;
@@ -373,7 +390,7 @@ export function createApp(): Express {
       ]);
 
       if (stats.length === 0) {
-        return res.json({
+        res.json({
           data: {
             totalErrors: 0,
             totalOccurrences: 0,
@@ -383,6 +400,7 @@ export function createApp(): Express {
             byService: {}
           }
         });
+        return;
       }
 
       const result = stats[0]!;
@@ -526,4 +544,4 @@ if (require.main === module) {
   start();
 }
 
-export { app, start, PORT };
+export { start, PORT };
