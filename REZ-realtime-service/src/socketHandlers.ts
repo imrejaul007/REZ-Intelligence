@@ -1,4 +1,4 @@
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 
 import { Server, Socket } from 'socket.io';
 import { LiveActivityStore } from './stores/liveActivityStore.js';

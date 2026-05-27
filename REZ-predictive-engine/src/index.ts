@@ -5,12 +5,12 @@ import helmet from 'helmet';
 import compression from 'compression';
 import dotenv from 'dotenv';
 
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 import predictRoutes from './routes/predict';
 import healthRoutes from './routes/health';
 import mlRoutes from './routes/ml';
-import { authMiddleware, requestIdMiddleware, corsMiddleware } from './middleware/auth';
-import { errorHandler, notFoundHandler, rateLimitMiddleware } from './middleware/errorHandler';
+import { authMiddleware, requestIdMiddleware, corsMiddleware } from './middleware/auth.js';
+import { errorHandler, notFoundHandler, rateLimitMiddleware } from './middleware/errorHandler.js';
 
 // Load environment variables
 dotenv.config();
