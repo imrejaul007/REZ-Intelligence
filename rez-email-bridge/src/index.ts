@@ -7,10 +7,10 @@ import 'dotenv/config';
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 import { emailRoutes } from './routes/email.routes';
 import { errorMiddleware, notFoundMiddleware } from './middleware/error.middleware';
-import { authMiddleware } from './middleware/auth';
+import { authMiddleware } from './middleware/auth.js';
 
 const app: Express = express();
 const PORT = parseInt(process.env.PORT || '4160', 10);

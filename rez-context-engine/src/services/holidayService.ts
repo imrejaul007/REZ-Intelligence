@@ -3,7 +3,7 @@
  * India-specific holiday calendar for demand prediction
  */
 
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 
 export interface Holiday {
   name: string;

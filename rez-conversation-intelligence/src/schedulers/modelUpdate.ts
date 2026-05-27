@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import { randomUUID } from 'crypto';
 import { ModelVersion, ConversationSample, TrainingBatch } from '../models/index.js';
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 import { config } from '../config/index.js';
 
 // Seeded random for deterministic mock metrics

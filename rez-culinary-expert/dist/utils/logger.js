@@ -13,7 +13,8 @@ exports.logAudit = logAudit;
 exports.logPerformance = logPerformance;
 const winston_1 = __importDefault(require("winston"));
 const { combine, timestamp, printf, colorize, errors } = winston_1.default.format;
-const logFormat = printf(({ level, message, timestamp, stack, ...metadata }) => {
+const logFormat = printf((info) => {
+    const { level, message, timestamp, stack, ...metadata } = info;
     let msg = `${timestamp} [${level}]: ${message}`;
     if (Object.keys(metadata).length > 0) {
         msg += ` ${JSON.stringify(metadata)}`;

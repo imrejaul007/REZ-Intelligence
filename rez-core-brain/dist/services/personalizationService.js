@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.personalizationService = exports.PersonalizationService = void 0;
 const GlobalPersonalization_1 = require("../models/GlobalPersonalization");
-const logger_1 = require("../utils/logger");
+const logger_js_1 = require("../utils/logger.js");
 class PersonalizationService {
     /**
      * Get user preferences
@@ -26,7 +26,7 @@ class PersonalizationService {
                 accessibilityNeeds: [],
                 preferredContentTypes: [],
             });
-            logger_1.logger.info(`Created default preferences for user: ${userId}`);
+            logger_js_1.logger.info(`Created default preferences for user: ${userId}`);
         }
         return preferences;
     }
@@ -56,7 +56,7 @@ class PersonalizationService {
             }
         }
         await preferences.save();
-        logger_1.logger.info(`Updated preferences for user: ${userId}`);
+        logger_js_1.logger.info(`Updated preferences for user: ${userId}`);
         return preferences;
     }
     /**
@@ -88,7 +88,7 @@ class PersonalizationService {
                     averageOrderValue: 0,
                 },
             });
-            logger_1.logger.info(`Created default loyalty profile for user: ${userId}`);
+            logger_js_1.logger.info(`Created default loyalty profile for user: ${userId}`);
         }
         return profile;
     }
@@ -141,7 +141,7 @@ class PersonalizationService {
             await profile.calculateLifetimeValue();
         }
         await profile.save();
-        logger_1.logger.info(`Updated loyalty profile for user: ${userId}`);
+        logger_js_1.logger.info(`Updated loyalty profile for user: ${userId}`);
         return profile;
     }
     /**
@@ -150,7 +150,7 @@ class PersonalizationService {
     async addPoints(userId, points) {
         const profile = await this.getOrCreateLoyaltyProfile(userId);
         await profile.addPoints(points);
-        logger_1.logger.info(`Added ${points} points for user: ${userId}`);
+        logger_js_1.logger.info(`Added ${points} points for user: ${userId}`);
         return profile;
     }
     /**
@@ -160,7 +160,7 @@ class PersonalizationService {
         const profile = await this.getOrCreateLoyaltyProfile(userId);
         const success = await profile.deductPoints(points);
         if (success) {
-            logger_1.logger.info(`Redeemed ${points} points for user: ${userId}`);
+            logger_js_1.logger.info(`Redeemed ${points} points for user: ${userId}`);
         }
         return success;
     }
@@ -225,7 +225,7 @@ class PersonalizationService {
                 .map(([cat]) => cat);
         }
         await profile.save();
-        logger_1.logger.info(`Recorded purchase of ${amount} for user: ${userId}, earned ${pointsEarned} points`);
+        logger_js_1.logger.info(`Recorded purchase of ${amount} for user: ${userId}, earned ${pointsEarned} points`);
         return profile;
     }
     /**
@@ -258,7 +258,7 @@ class PersonalizationService {
             return null;
         }
         await preferences.resetToDefaults();
-        logger_1.logger.info(`Reset preferences for user: ${userId}`);
+        logger_js_1.logger.info(`Reset preferences for user: ${userId}`);
         return preferences;
     }
     /**
@@ -305,11 +305,11 @@ class PersonalizationService {
                 updated++;
             }
             catch (error) {
-                logger_1.logger.error(`Failed to update preferences for user: ${userId}`, { error });
+                logger_js_1.logger.error(`Failed to update preferences for user: ${userId}`, { error });
                 failed++;
             }
         }
-        logger_1.logger.info(`Bulk updated preferences: ${updated} updated, ${failed} failed`);
+        logger_js_1.logger.info(`Bulk updated preferences: ${updated} updated, ${failed} failed`);
         return { updated, failed };
     }
 }

@@ -9,7 +9,7 @@ import {
   ExpertType,
   CollaborationRequirement,
 } from '../models/RoutingDecision';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 /**
  * Collaboration trigger rules

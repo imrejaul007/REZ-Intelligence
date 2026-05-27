@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.merchantTypeDetector = exports.MerchantTypeDetector = void 0;
 const EntryContext_1 = require("../models/EntryContext");
-const logger_1 = require("../utils/logger");
+const logger_js_1 = require("../utils/logger.js");
 /**
  * Merchant category detection rules by keyword matching
  */
@@ -160,7 +160,7 @@ class MerchantTypeDetector {
         }
         finally {
             const processingTime = Date.now() - startTime;
-            logger_1.logger.debug('Merchant type detection completed', {
+            logger_js_1.logger.debug('Merchant type detection completed', {
                 sessionId: context.sessionId,
                 processingTimeMs: processingTime,
             });

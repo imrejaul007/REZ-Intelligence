@@ -4,7 +4,7 @@ exports.memoryService = exports.MemoryService = void 0;
 const uuid_1 = require("uuid");
 const UserMemory_1 = require("../models/UserMemory");
 const config_1 = require("../config");
-const logger_1 = require("../utils/logger");
+const logger_js_1 = require("../utils/logger.js");
 class MemoryService {
     /**
      * Create a new memory entry
@@ -41,7 +41,7 @@ class MemoryService {
             expiresAt,
             accessCount: 0,
         });
-        logger_1.logger.info(`Memory created: ${memoryId}`, { userId, type });
+        logger_js_1.logger.info(`Memory created: ${memoryId}`, { userId, type });
         return memory;
     }
     /**
@@ -102,7 +102,7 @@ class MemoryService {
             memory.tags = tags;
         }
         await memory.save();
-        logger_1.logger.info(`Memory updated: ${memoryId}`);
+        logger_js_1.logger.info(`Memory updated: ${memoryId}`);
         return memory;
     }
     /**
@@ -111,7 +111,7 @@ class MemoryService {
     async deleteMemory(memoryId, userId) {
         const result = await UserMemory_1.Memory.deleteOne({ id: memoryId, userId });
         if (result.deletedCount > 0) {
-            logger_1.logger.info(`Memory deleted: ${memoryId}`);
+            logger_js_1.logger.info(`Memory deleted: ${memoryId}`);
             return true;
         }
         return false;
@@ -125,7 +125,7 @@ class MemoryService {
             filter.type = type;
         }
         const result = await UserMemory_1.Memory.deleteMany(filter);
-        logger_1.logger.info(`Deleted ${result.deletedCount} memories for user: ${userId}`);
+        logger_js_1.logger.info(`Deleted ${result.deletedCount} memories for user: ${userId}`);
         return result.deletedCount || 0;
     }
     /**
@@ -148,7 +148,7 @@ class MemoryService {
             await memory.save();
             consolidatedCount++;
         }
-        logger_1.logger.info(`Consolidated ${consolidatedCount} memories for user: ${userId}`);
+        logger_js_1.logger.info(`Consolidated ${consolidatedCount} memories for user: ${userId}`);
         return consolidatedCount;
     }
     /**
@@ -215,7 +215,7 @@ class MemoryService {
         }).sort({ importance: 1, lastAccessed: 1 });
         if (oldest) {
             await oldest.deleteOne();
-            logger_1.logger.info(`Evicted memory: ${oldest.id} due to capacity limit`);
+            logger_js_1.logger.info(`Evicted memory: ${oldest.id} due to capacity limit`);
         }
     }
     /**
@@ -223,7 +223,7 @@ class MemoryService {
      */
     async cleanupExpired() {
         const deletedCount = await UserMemory_1.Memory.deleteExpired();
-        logger_1.logger.info(`Cleaned up ${deletedCount} expired memories`);
+        logger_js_1.logger.info(`Cleaned up ${deletedCount} expired memories`);
         return deletedCount;
     }
     /**
@@ -241,7 +241,7 @@ class MemoryService {
      */
     async batchCreateMemories(memories) {
         const created = await Promise.all(memories.map((m) => this.createMemory(m)));
-        logger_1.logger.info(`Batch created ${created.length} memories`);
+        logger_js_1.logger.info(`Batch created ${created.length} memories`);
         return created;
     }
 }

@@ -6,7 +6,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DietaryService = void 0;
 exports.getDietaryService = getDietaryService;
-const logger_1 = require("./utils/logger");
+const logger_js_1 = require("./utils/logger.js");
 const knowledge_js_1 = require("../config/knowledge.js");
 class DietaryService {
     db = null;
@@ -21,7 +21,7 @@ class DietaryService {
         await this.profilesCollection.createIndex({ userId: 1 }, { unique: true });
         await this.profilesCollection.createIndex({ 'allergies.allergenId': 1 });
         this.initialized = true;
-        logger_1.logger.info('DietaryService initialized');
+        logger_js_1.logger.info('DietaryService initialized');
     }
     /**
      * Create or update user dietary profile

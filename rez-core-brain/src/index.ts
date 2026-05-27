@@ -10,7 +10,7 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 
 import { config, getMongoUri, getCorsOrigins, isProduction } from './config';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 
 // Import routes
 import memoryRoutes from './routes/memory.routes';
@@ -18,7 +18,7 @@ import sessionRoutes from './routes/session.routes';
 import personalizationRoutes from './routes/personalization.routes';
 
 // Import middleware
-import { internalAuth, requestId } from './middleware/auth';
+import { internalAuth, requestId } from './middleware/auth.js';
 
 // Import services
 import { memoryService } from './services/memoryService';

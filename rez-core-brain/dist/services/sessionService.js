@@ -8,7 +8,7 @@ const uuid_1 = require("uuid");
 const ioredis_1 = __importDefault(require("ioredis"));
 const SessionContext_1 = require("../models/SessionContext");
 const config_1 = require("../config");
-const logger_1 = require("../utils/logger");
+const logger_js_1 = require("../utils/logger.js");
 class SessionService {
     redis = null;
     redisKeyPrefix = 'session:';
@@ -25,12 +25,12 @@ class SessionService {
                 maxRetriesPerRequest: 3,
             });
             this.redis.on('error', (err) => {
-                logger_1.logger.error('Redis connection error in SessionService', { error: err.message });
+                logger_js_1.logger.error('Redis connection error in SessionService', { error: err.message });
             });
-            logger_1.logger.info('SessionService Redis initialized');
+            logger_js_1.logger.info('SessionService Redis initialized');
         }
         catch (error) {
-            logger_1.logger.warn('Redis not available, falling back to MongoDB only');
+            logger_js_1.logger.warn('Redis not available, falling back to MongoDB only');
         }
     }
     /**
@@ -46,7 +46,7 @@ class SessionService {
                 .sort({ startTime: 1 });
             if (oldestSession) {
                 await oldestSession.end();
-                logger_1.logger.info(`Ended oldest session ${oldestSession.id} due to limit`);
+                logger_js_1.logger.info(`Ended oldest session ${oldestSession.id} due to limit`);
             }
         }
         const sessionId = `sess_${(0, uuid_1.v4)()}`;
@@ -61,7 +61,7 @@ class SessionService {
         });
         // Cache in Redis if available
         await this.cacheSession(session);
-        logger_1.logger.info(`Session created: ${sessionId}`, { userId, agentId });
+        logger_js_1.logger.info(`Session created: ${sessionId}`, { userId, agentId });
         return session;
     }
     /**
@@ -122,7 +122,7 @@ class SessionService {
         }
         await session.save();
         await this.cacheSession(session);
-        logger_1.logger.info(`Session updated: ${sessionId}`);
+        logger_js_1.logger.info(`Session updated: ${sessionId}`);
         return session;
     }
     /**
@@ -160,11 +160,11 @@ class SessionService {
         try {
             await session.pause();
             await this.invalidateCache(sessionId);
-            logger_1.logger.info(`Session paused: ${sessionId}`);
+            logger_js_1.logger.info(`Session paused: ${sessionId}`);
             return session;
         }
         catch (error) {
-            logger_1.logger.error(`Failed to pause session: ${sessionId}`, { error });
+            logger_js_1.logger.error(`Failed to pause session: ${sessionId}`, { error });
             return null;
         }
     }
@@ -179,11 +179,11 @@ class SessionService {
         try {
             await session.resume();
             await this.cacheSession(session);
-            logger_1.logger.info(`Session resumed: ${sessionId}`);
+            logger_js_1.logger.info(`Session resumed: ${sessionId}`);
             return session;
         }
         catch (error) {
-            logger_1.logger.error(`Failed to resume session: ${sessionId}`, { error });
+            logger_js_1.logger.error(`Failed to resume session: ${sessionId}`, { error });
             return null;
         }
     }
@@ -198,11 +198,11 @@ class SessionService {
         try {
             await session.end();
             await this.invalidateCache(sessionId);
-            logger_1.logger.info(`Session ended: ${sessionId}`);
+            logger_js_1.logger.info(`Session ended: ${sessionId}`);
             return session;
         }
         catch (error) {
-            logger_1.logger.error(`Failed to end session: ${sessionId}`, { error });
+            logger_js_1.logger.error(`Failed to end session: ${sessionId}`, { error });
             return null;
         }
     }
@@ -211,7 +211,7 @@ class SessionService {
      */
     async endAllUserSessions(userId) {
         const count = await SessionContext_1.Session.endAllActive(userId);
-        logger_1.logger.info(`Ended ${count} active sessions for user: ${userId}`);
+        logger_js_1.logger.info(`Ended ${count} active sessions for user: ${userId}`);
         return count;
     }
     /**
@@ -225,7 +225,7 @@ class SessionService {
      */
     async cleanupStaleSessions() {
         const count = await SessionContext_1.Session.cleanupStaleSessions(config_1.config.SESSION_TTL);
-        logger_1.logger.info(`Cleaned up ${count} stale sessions`);
+        logger_js_1.logger.info(`Cleaned up ${count} stale sessions`);
         return count;
     }
     /**
@@ -273,7 +273,7 @@ class SessionService {
             await this.redis.setex(key, config_1.config.SESSION_TTL, data);
         }
         catch (error) {
-            logger_1.logger.warn('Failed to cache session', { error, sessionId: session.id });
+            logger_js_1.logger.warn('Failed to cache session', { error, sessionId: session.id });
         }
     }
     async getCachedSession(sessionId) {
@@ -290,7 +290,7 @@ class SessionService {
             }
         }
         catch (error) {
-            logger_1.logger.warn('Failed to get cached session', { error, sessionId });
+            logger_js_1.logger.warn('Failed to get cached session', { error, sessionId });
         }
         return null;
     }
@@ -302,7 +302,7 @@ class SessionService {
             await this.redis.del(key);
         }
         catch (error) {
-            logger_1.logger.warn('Failed to invalidate session cache', { error, sessionId });
+            logger_js_1.logger.warn('Failed to invalidate session cache', { error, sessionId });
         }
     }
     /**

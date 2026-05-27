@@ -6,7 +6,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { Anthropic } from '@anthropic-ai/sdk';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 import {
   CulinaryIntent,
   classifyIntent,

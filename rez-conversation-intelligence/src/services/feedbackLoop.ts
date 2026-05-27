@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Feedback, ConversationSample } from '../models/index.js';
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 import { NotFoundError } from '../utils/errors.js';
 import { FeedbackCreate } from '../utils/validators.js';
 

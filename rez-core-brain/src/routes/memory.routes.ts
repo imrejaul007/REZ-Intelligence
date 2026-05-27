@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { memoryService } from '../services/memoryService';
 import { authenticate, requestId } from '../middleware/auth';
 import { MemoryType } from '../models/UserMemory';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { CreateMemoryInput } from '../services/memoryService';
 
 const router = Router();

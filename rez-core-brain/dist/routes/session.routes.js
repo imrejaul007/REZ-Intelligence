@@ -5,7 +5,7 @@ const zod_1 = require("zod");
 const sessionService_1 = require("../services/sessionService");
 const contextService_1 = require("../services/contextService");
 const auth_1 = require("../middleware/auth");
-const logger_1 = require("../utils/logger");
+const logger_js_1 = require("../utils/logger.js");
 const router = (0, express_1.Router)();
 // Validation schemas
 const createSessionSchema = zod_1.z.object({
@@ -56,7 +56,7 @@ router.post('/', auth_1.requestId, auth_1.authenticate, async (req, res) => {
         if (validation.data.agentId) {
             await contextService_1.contextService.addActiveAgent(userId, validation.data.agentId);
         }
-        logger_1.logger.info(`Session created: ${session.id}`, { requestId: requestIdVal, userId });
+        logger_js_1.logger.info(`Session created: ${session.id}`, { requestId: requestIdVal, userId });
         res.status(201).json({
             success: true,
             data: session,
@@ -67,7 +67,7 @@ router.post('/', auth_1.requestId, auth_1.authenticate, async (req, res) => {
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to create session', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to create session', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -96,7 +96,7 @@ router.get('/', auth_1.requestId, auth_1.authenticate, async (req, res) => {
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to get/create session', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to get/create session', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -135,7 +135,7 @@ router.get('/:id', auth_1.requestId, auth_1.authenticate, async (req, res) => {
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to get session', { error, sessionId: req.params.id });
+        logger_js_1.logger.error('Failed to get session', { error, sessionId: req.params.id });
         res.status(500).json({
             success: false,
             error: {
@@ -186,7 +186,7 @@ router.get('/list/user', auth_1.requestId, auth_1.authenticate, async (req, res)
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to get user sessions', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to get user sessions', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -227,7 +227,7 @@ router.patch('/:id', auth_1.requestId, auth_1.authenticate, async (req, res) => 
             });
             return;
         }
-        logger_1.logger.info(`Session updated: ${id}`);
+        logger_js_1.logger.info(`Session updated: ${id}`);
         res.json({
             success: true,
             data: session,
@@ -238,7 +238,7 @@ router.patch('/:id', auth_1.requestId, auth_1.authenticate, async (req, res) => 
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to update session', { error, sessionId: req.params.id });
+        logger_js_1.logger.error('Failed to update session', { error, sessionId: req.params.id });
         res.status(500).json({
             success: false,
             error: {
@@ -289,7 +289,7 @@ router.post('/:id/context', auth_1.requestId, auth_1.authenticate, async (req, r
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to add context', { error, sessionId: req.params.id });
+        logger_js_1.logger.error('Failed to add context', { error, sessionId: req.params.id });
         res.status(500).json({
             success: false,
             error: {
@@ -329,7 +329,7 @@ router.delete('/:id/context/:key', auth_1.requestId, auth_1.authenticate, async 
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to remove context', { error, sessionId: req.params.id, key: req.params.key });
+        logger_js_1.logger.error('Failed to remove context', { error, sessionId: req.params.id, key: req.params.key });
         res.status(500).json({
             success: false,
             error: {
@@ -358,7 +358,7 @@ router.post('/:id/pause', auth_1.requestId, auth_1.authenticate, async (req, res
             });
             return;
         }
-        logger_1.logger.info(`Session paused: ${id}`);
+        logger_js_1.logger.info(`Session paused: ${id}`);
         res.json({
             success: true,
             data: session,
@@ -369,7 +369,7 @@ router.post('/:id/pause', auth_1.requestId, auth_1.authenticate, async (req, res
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to pause session', { error, sessionId: req.params.id });
+        logger_js_1.logger.error('Failed to pause session', { error, sessionId: req.params.id });
         res.status(500).json({
             success: false,
             error: {
@@ -398,7 +398,7 @@ router.post('/:id/resume', auth_1.requestId, auth_1.authenticate, async (req, re
             });
             return;
         }
-        logger_1.logger.info(`Session resumed: ${id}`);
+        logger_js_1.logger.info(`Session resumed: ${id}`);
         res.json({
             success: true,
             data: session,
@@ -409,7 +409,7 @@ router.post('/:id/resume', auth_1.requestId, auth_1.authenticate, async (req, re
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to resume session', { error, sessionId: req.params.id });
+        logger_js_1.logger.error('Failed to resume session', { error, sessionId: req.params.id });
         res.status(500).json({
             success: false,
             error: {
@@ -442,7 +442,7 @@ router.post('/:id/end', auth_1.requestId, auth_1.authenticate, async (req, res) 
         if (session.agentId) {
             await contextService_1.contextService.removeActiveAgent(userId, session.agentId);
         }
-        logger_1.logger.info(`Session ended: ${id}`);
+        logger_js_1.logger.info(`Session ended: ${id}`);
         res.json({
             success: true,
             data: session,
@@ -453,7 +453,7 @@ router.post('/:id/end', auth_1.requestId, auth_1.authenticate, async (req, res) 
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to end session', { error, sessionId: req.params.id });
+        logger_js_1.logger.error('Failed to end session', { error, sessionId: req.params.id });
         res.status(500).json({
             success: false,
             error: {
@@ -471,7 +471,7 @@ router.post('/end-all', auth_1.requestId, auth_1.authenticate, async (req, res) 
     try {
         const userId = req.userId;
         const count = await sessionService_1.sessionService.endAllUserSessions(userId);
-        logger_1.logger.info(`Ended ${count} sessions for user: ${userId}`);
+        logger_js_1.logger.info(`Ended ${count} sessions for user: ${userId}`);
         res.json({
             success: true,
             data: { endedCount: count },
@@ -482,7 +482,7 @@ router.post('/end-all', auth_1.requestId, auth_1.authenticate, async (req, res) 
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to end all sessions', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to end all sessions', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -510,7 +510,7 @@ router.get('/stats', auth_1.requestId, auth_1.authenticate, async (req, res) => 
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to get session stats', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to get session stats', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -538,7 +538,7 @@ router.get('/count', auth_1.requestId, auth_1.authenticate, async (req, res) => 
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to get session count', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to get session count', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {

@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ConversationSample, IConversationSample, IMessage } from '../models/index.js';
 import { ConversationCreate, MessageCreate, ConversationUpdate } from '../utils/validators.js';
 import { getRedisClient } from '../utils/database.js';
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 import { NotFoundError, ConflictError } from '../utils/errors.js';
 import { intentExtractor } from './intentExtractor.js';
 import { sentimentAnalyzer } from './sentimentAnalyzer.js';

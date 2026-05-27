@@ -4,7 +4,7 @@ import { sessionService } from '../services/sessionService';
 import { contextService } from '../services/contextService';
 import { authenticate, requestId } from '../middleware/auth';
 import { SessionState } from '../models/SessionContext';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 

@@ -6,7 +6,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MenuService = void 0;
 exports.getMenuService = getMenuService;
-const logger_1 = require("./utils/logger");
+const logger_js_1 = require("./utils/logger.js");
 const knowledge_js_1 = require("../config/knowledge.js");
 class MenuService {
     db = null;
@@ -27,7 +27,7 @@ class MenuService {
         await this.itemsCollection.createIndex({ allergens: 1 });
         await this.itemsCollection.createIndex({ name: 'text', description: 'text' });
         this.initialized = true;
-        logger_1.logger.info('MenuService initialized');
+        logger_js_1.logger.info('MenuService initialized');
     }
     /**
      * Get full menu for a restaurant

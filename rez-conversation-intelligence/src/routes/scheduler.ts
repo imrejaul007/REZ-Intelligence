@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { dailyExportScheduler, modelUpdateScheduler } from '../schedulers/index.js';
 import { extractionPipeline, labelingPipeline } from '../pipelines/index.js';
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 
 const router = Router();
 

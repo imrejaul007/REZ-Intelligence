@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.collaborationDetector = exports.CollaborationDetector = void 0;
 const EntryContext_1 = require("../models/EntryContext");
 const RoutingDecision_1 = require("../models/RoutingDecision");
-const logger_1 = require("../utils/logger");
+const logger_js_1 = require("../utils/logger.js");
 /**
  * Categories that commonly require collaboration
  */
@@ -197,7 +197,7 @@ class CollaborationDetector {
                 confidence: this.calculateCollaborationConfidence(context, decision, triggers),
             };
             const processingTime = Date.now() - startTime;
-            logger_1.logger.debug('Collaboration detection completed', {
+            logger_js_1.logger.debug('Collaboration detection completed', {
                 sessionId: context.sessionId,
                 required,
                 secondaryCount: filteredSecondary.length,
@@ -209,7 +209,7 @@ class CollaborationDetector {
             };
         }
         catch (error) {
-            logger_1.logger.error('Collaboration detection failed', {
+            logger_js_1.logger.error('Collaboration detection failed', {
                 sessionId: context.sessionId,
                 error: error instanceof Error ? error.message : 'Unknown error',
             });
@@ -281,7 +281,7 @@ class CollaborationDetector {
             id: `custom-${Date.now()}`,
         };
         this.triggers.push(newTrigger);
-        logger_1.logger.info('Custom collaboration trigger added', {
+        logger_js_1.logger.info('Custom collaboration trigger added', {
             triggerId: newTrigger.id,
             name: newTrigger.name,
         });
@@ -293,7 +293,7 @@ class CollaborationDetector {
         const index = this.triggers.findIndex((t) => t.id === triggerId);
         if (index !== -1) {
             this.triggers.splice(index, 1);
-            logger_1.logger.info('Collaboration trigger removed', { triggerId });
+            logger_js_1.logger.info('Collaboration trigger removed', { triggerId });
             return true;
         }
         return false;

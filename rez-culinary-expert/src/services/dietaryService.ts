@@ -5,7 +5,7 @@
 
 import { Db, Collection } from 'mongodb';
 import Redis from 'ioredis';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 import {
   DIETARY_TAGS,
   MAJOR_ALLERGENS,

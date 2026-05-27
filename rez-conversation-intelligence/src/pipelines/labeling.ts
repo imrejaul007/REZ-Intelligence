@@ -1,5 +1,5 @@
 import { ConversationSample, Feedback } from '../models/index.js';
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 
 export interface LabelingResult {
   labeledCount: number;

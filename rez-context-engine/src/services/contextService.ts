@@ -6,7 +6,7 @@
 import { weatherService, WeatherData, WeatherMultiplier } from './weatherService.js';
 import { holidayService, HolidayContext, Holiday } from './holidayService.js';
 import { trafficService, TrafficData, TimeSlotMultiplier } from './trafficService.js';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 
 export interface UnifiedContext {
   timestamp: Date;

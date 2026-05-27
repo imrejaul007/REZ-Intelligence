@@ -7,7 +7,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CoreBrainError = exports.CoreBrainClient = void 0;
 exports.getCoreBrainClient = getCoreBrainClient;
 exports.initializeCoreBrainClient = initializeCoreBrainClient;
-const logger_1 = require("./utils/logger");
+const logger_js_1 = require("./utils/logger.js");
 // ============================================
 // CORE BRAIN CLIENT
 // ============================================
@@ -36,7 +36,7 @@ class CoreBrainClient {
             internalTokens = JSON.parse(internalTokensJson);
         }
         catch {
-            logger_1.logger.warn('Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+            logger_js_1.logger.warn('Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
         }
         return new CoreBrainClient({
             baseUrl: process.env.CORE_BRAIN_URL || 'http://localhost:4072',
@@ -325,7 +325,7 @@ class CoreBrainClient {
     async loadRestaurantContext(restaurantId) {
         // This would typically call a restaurant/menu service
         // For now, return null as restaurant context is service-specific
-        logger_1.logger.debug('Restaurant context requested', { restaurantId });
+        logger_js_1.logger.debug('Restaurant context requested', { restaurantId });
         return null;
     }
     /**
@@ -395,7 +395,7 @@ let coreBrainClientInstance = null;
 function getCoreBrainClient() {
     if (!coreBrainClientInstance) {
         coreBrainClientInstance = CoreBrainClient.fromEnv();
-        logger_1.logger.info('Core Brain client initialized for culinary expert', {
+        logger_js_1.logger.info('Core Brain client initialized for culinary expert', {
             baseUrl: process.env.CORE_BRAIN_URL || 'http://localhost:4072',
         });
     }

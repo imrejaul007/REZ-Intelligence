@@ -7,7 +7,7 @@ import { ModelVersion } from '../models/index.js';
 import { ExportRequestSchema } from '../utils/validators.js';
 import { ValidationError, NotFoundError } from '../utils/errors.js';
 import { z } from 'zod';
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 
 const router = Router();
 

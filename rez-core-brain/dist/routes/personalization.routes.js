@@ -9,7 +9,7 @@ const personalizationService_1 = require("../services/personalizationService");
 const contextService_1 = require("../services/contextService");
 const intelligenceService_1 = __importDefault(require("../services/intelligenceService"));
 const auth_1 = require("../middleware/auth");
-const logger_1 = require("../utils/logger");
+const logger_js_1 = require("../utils/logger.js");
 const router = (0, express_1.Router)();
 // Validation schemas
 const updatePreferencesSchema = zod_1.z.object({
@@ -65,7 +65,7 @@ router.get('/preferences', auth_1.requestId, auth_1.authenticate, async (req, re
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to get preferences', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to get preferences', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -105,7 +105,7 @@ router.patch('/preferences', auth_1.requestId, auth_1.authenticate, async (req, 
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to update preferences', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to update preferences', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -133,7 +133,7 @@ router.post('/preferences/reset', auth_1.requestId, auth_1.authenticate, async (
             });
             return;
         }
-        logger_1.logger.info(`Reset preferences for user: ${userId}`);
+        logger_js_1.logger.info(`Reset preferences for user: ${userId}`);
         res.json({
             success: true,
             data: preferences,
@@ -144,7 +144,7 @@ router.post('/preferences/reset', auth_1.requestId, auth_1.authenticate, async (
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to reset preferences', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to reset preferences', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -173,7 +173,7 @@ router.get('/loyalty', auth_1.requestId, auth_1.authenticate, async (req, res) =
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to get loyalty profile', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to get loyalty profile', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -223,7 +223,7 @@ router.patch('/loyalty', auth_1.requestId, auth_1.authenticate, async (req, res)
             });
             return;
         }
-        logger_1.logger.error('Failed to update loyalty profile', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to update loyalty profile', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -261,7 +261,7 @@ router.get('/loyalty/benefits', auth_1.requestId, auth_1.authenticate, async (re
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to get tier benefits', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to get tier benefits', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -291,7 +291,7 @@ router.post('/loyalty/purchase', auth_1.requestId, auth_1.authenticate, async (r
             return;
         }
         const profile = await personalizationService_1.personalizationService.recordPurchase(userId, validation.data.amount, validation.data.categories);
-        logger_1.logger.info(`Recorded purchase of ${validation.data.amount} for user: ${userId}`);
+        logger_js_1.logger.info(`Recorded purchase of ${validation.data.amount} for user: ${userId}`);
         res.json({
             success: true,
             data: profile,
@@ -302,7 +302,7 @@ router.post('/loyalty/purchase', auth_1.requestId, auth_1.authenticate, async (r
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to record purchase', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to record purchase', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -331,7 +331,7 @@ router.get('/context', auth_1.requestId, auth_1.authenticate, async (req, res) =
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to get context', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to get context', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -379,7 +379,7 @@ router.patch('/context', auth_1.requestId, auth_1.authenticate, async (req, res)
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to update context', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to update context', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -426,7 +426,7 @@ router.post('/context/activity', auth_1.requestId, auth_1.authenticate, async (r
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to update activity', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to update activity', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -477,7 +477,7 @@ router.get('/intelligence', auth_1.requestId, auth_1.authenticate, async (req, r
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to get intelligence data', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to get intelligence data', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -527,7 +527,7 @@ router.post('/recommendations', auth_1.requestId, auth_1.authenticate, async (re
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to generate recommendations', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to generate recommendations', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -555,7 +555,7 @@ router.get('/engagement', auth_1.requestId, auth_1.authenticate, async (req, res
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to get engagement score', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to get engagement score', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -583,7 +583,7 @@ router.get('/behavior', auth_1.requestId, auth_1.authenticate, async (req, res) 
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to analyze behavior', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to analyze behavior', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -615,7 +615,7 @@ router.post('/greeting', auth_1.requestId, auth_1.authenticate, async (req, res)
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to get greeting', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to get greeting', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {

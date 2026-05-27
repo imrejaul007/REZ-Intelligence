@@ -1,7 +1,7 @@
 import { ConversationSample } from '../models/index.js';
 import { intentExtractor } from '../services/intentExtractor.js';
 import { sentimentAnalyzer } from '../services/sentimentAnalyzer.js';
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 import { config } from '../config/index.js';
 
 export interface ExtractionResult {

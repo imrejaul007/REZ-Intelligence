@@ -6,7 +6,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrderFlowHandler = exports.OrderStep = exports.OrderStatus = void 0;
 exports.getOrderFlowHandler = getOrderFlowHandler;
-const logger_1 = require("./utils/logger");
+const logger_js_1 = require("./utils/logger.js");
 var OrderStatus;
 (function (OrderStatus) {
     OrderStatus["PENDING"] = "pending";
@@ -50,7 +50,7 @@ class OrderFlowHandler {
         await this.ordersCollection.createIndex({ createdAt: -1 });
         await this.flowStateCollection.createIndex({ userId: 1 }, { unique: true });
         this.initialized = true;
-        logger_1.logger.info('OrderFlowHandler initialized');
+        logger_js_1.logger.info('OrderFlowHandler initialized');
     }
     /**
      * Start a new order flow

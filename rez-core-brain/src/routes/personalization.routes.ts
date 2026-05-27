@@ -4,7 +4,7 @@ import { personalizationService } from '../services/personalizationService';
 import { contextService } from '../services/contextService';
 import intelligenceService from '../services/intelligenceService';
 import { authenticate, requestId } from '../middleware/auth';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { UpdatePreferencesInput, UpdateLoyaltyInput } from '../services/personalizationService';
 
 const router = Router();

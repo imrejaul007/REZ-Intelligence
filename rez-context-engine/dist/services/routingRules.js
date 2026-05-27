@@ -4,7 +4,7 @@ exports.routingRulesEngine = exports.RoutingRulesEngine = void 0;
 const uuid_1 = require("uuid");
 const EntryContext_1 = require("../models/EntryContext");
 const RoutingDecision_1 = require("../models/RoutingDecision");
-const logger_1 = require("../utils/logger");
+const logger_js_1 = require("../utils/logger.js");
 /**
  * Mapping from QR code types to expert types
  */
@@ -313,7 +313,7 @@ class RoutingRulesEngine {
             decision.processingTimeMs = Date.now() - startTime;
             decision.rulesApplied = rulesApplied;
             decision.decidedAt = new Date();
-            logger_1.logger.info('Routing decision made', {
+            logger_js_1.logger.info('Routing decision made', {
                 sessionId: context.sessionId,
                 expert: decision.primaryExpert,
                 confidence: decision.primaryConfidence,
@@ -327,7 +327,7 @@ class RoutingRulesEngine {
             };
         }
         catch (error) {
-            logger_1.logger.error('Routing decision failed', {
+            logger_js_1.logger.error('Routing decision failed', {
                 sessionId: context.sessionId,
                 error: error instanceof Error ? error.message : 'Unknown error',
             });
@@ -378,7 +378,7 @@ class RoutingRulesEngine {
             id: `custom-${(0, uuid_1.v4)()}`,
         };
         this.rules.push(newRule);
-        logger_1.logger.info('Custom routing rule added', { ruleId: newRule.id, name: newRule.name });
+        logger_js_1.logger.info('Custom routing rule added', { ruleId: newRule.id, name: newRule.name });
     }
     /**
      * Remove a routing rule by ID
@@ -387,7 +387,7 @@ class RoutingRulesEngine {
         const index = this.rules.findIndex((r) => r.id === ruleId);
         if (index !== -1) {
             this.rules.splice(index, 1);
-            logger_1.logger.info('Routing rule removed', { ruleId });
+            logger_js_1.logger.info('Routing rule removed', { ruleId });
             return true;
         }
         return false;

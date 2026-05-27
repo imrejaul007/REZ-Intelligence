@@ -7,7 +7,7 @@ import {
   ReZPlatform,
   createDefaultEntryContext,
 } from '../models/EntryContext';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 /**
  * QR code prefix patterns for vertical detection

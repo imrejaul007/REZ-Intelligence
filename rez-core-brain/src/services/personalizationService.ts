@@ -7,7 +7,7 @@ import {
   PrivacyLevel,
   LoyaltyTier,
 } from '../models/GlobalPersonalization';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export interface UpdatePreferencesInput {
   tone?: Tone;

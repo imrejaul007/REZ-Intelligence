@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 import axios from 'axios';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 const ORCHESTRATOR_URL = process.env.ORCHESTRATOR_URL || 'http://localhost:4006';
 

@@ -5,7 +5,7 @@ const GlobalPersonalization_1 = require("../models/GlobalPersonalization");
 const memoryService_1 = require("./memoryService");
 const sessionService_1 = require("./sessionService");
 const personalizationService_1 = require("./personalizationService");
-const logger_1 = require("../utils/logger");
+const logger_js_1 = require("../utils/logger.js");
 class IntelligenceService {
     /**
      * Get comprehensive intelligence data for a user
@@ -253,7 +253,7 @@ class IntelligenceService {
         else {
             await contextualData.addIntent(intent);
         }
-        logger_1.logger.info(`Updated intent for user: ${userId}`, { intent });
+        logger_js_1.logger.info(`Updated intent for user: ${userId}`, { intent });
     }
     /**
      * Analyze user behavior patterns

@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import Redis from 'ioredis';
 import { Session, ISessionDocument, SessionState } from '../models/SessionContext';
 import { config, getRedisConfig } from '../config';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export interface CreateSessionInput {
   userId: string;

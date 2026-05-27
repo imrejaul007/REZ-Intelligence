@@ -4,7 +4,7 @@
  */
 
 import Redis from 'ioredis';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const TRAFFIC_API_KEY = process.env.TRAFFIC_API_KEY || '';

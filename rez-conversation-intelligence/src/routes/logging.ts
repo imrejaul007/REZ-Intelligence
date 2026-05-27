@@ -3,7 +3,7 @@ import { conversationLogger } from '../services/conversationLogger.js';
 import { ConversationCreateSchema, ConversationUpdateSchema, MessageCreateSchema } from '../utils/validators.js';
 import { ValidationError } from '../utils/errors.js';
 import { z } from 'zod';
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 
 const router = Router();
 

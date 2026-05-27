@@ -4,7 +4,7 @@ import {
   IContextualDataDocument,
 } from '../models/GlobalPersonalization';
 import { getRedisConfig } from '../config';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export interface SharedContext {
   userId: string;

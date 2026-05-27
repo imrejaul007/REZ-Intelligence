@@ -1,5 +1,5 @@
 import { MerchantCategory, EntryContext, QRCodeType, ReZPlatform } from '../models/EntryContext';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 /**
  * Merchant category detection rules

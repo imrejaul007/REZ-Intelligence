@@ -5,7 +5,7 @@ exports.authenticate = authenticate;
 exports.internalAuth = internalAuth;
 exports.authenticateAny = authenticateAny;
 exports.createAuthMiddleware = createAuthMiddleware;
-const logger_1 = require("../utils/logger");
+const logger_js_1 = require("../utils/logger.js");
 const uuid_1 = require("uuid");
 /**
  * Request ID middleware - adds unique request ID to each request
@@ -51,7 +51,7 @@ function createAuthMiddleware(config) {
             return next();
         }
         // No valid auth found
-        logger_1.logger.warn('Unauthorized access attempt', {
+        logger_js_1.logger.warn('Unauthorized access attempt', {
             path,
             ip: req.ip,
             userAgent: req.headers['user-agent'],

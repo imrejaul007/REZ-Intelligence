@@ -11,13 +11,13 @@ const cors_1 = __importDefault(require("cors"));
 const compression_1 = __importDefault(require("compression"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const config_1 = require("./config");
-const logger_1 = require("./utils/logger");
+const logger_js_1 = require("./utils/logger.js");
 // Import routes
 const memory_routes_1 = __importDefault(require("./routes/memory.routes"));
 const session_routes_1 = __importDefault(require("./routes/session.routes"));
 const personalization_routes_1 = __importDefault(require("./routes/personalization.routes"));
 // Import middleware
-const auth_1 = require("./middleware/auth");
+const auth_js_1 = require("./middleware/auth.js");
 // Import services
 const memoryService_1 = require("./services/memoryService");
 const sessionService_1 = require("./services/sessionService");
@@ -48,7 +48,7 @@ const limiter = (0, express_rate_limit_1.default)({
 });
 app.use(limiter);
 // Request ID middleware
-app.use(auth_1.requestId);
+app.use(auth_js_1.requestId);
 // Health check endpoint (no auth required)
 app.get('/health', async (req, res) => {
     const mongoStatus = mongoose_1.default.connection.readyState === 1 ? 'connected' : 'disconnected';
@@ -100,9 +100,9 @@ app.use('/api/memory', memory_routes_1.default);
 app.use('/api/session', session_routes_1.default);
 app.use('/api/personalization', personalization_routes_1.default);
 // Internal API routes (for service-to-service communication)
-app.use('/internal/memory', auth_1.internalAuth, memory_routes_1.default);
-app.use('/internal/session', auth_1.internalAuth, session_routes_1.default);
-app.use('/internal/personalization', auth_1.internalAuth, personalization_routes_1.default);
+app.use('/internal/memory', auth_js_1.internalAuth, memory_routes_1.default);
+app.use('/internal/session', auth_js_1.internalAuth, session_routes_1.default);
+app.use('/internal/personalization', auth_js_1.internalAuth, personalization_routes_1.default);
 // 404 handler
 app.use((req, res) => {
     res.status(404).json({
@@ -115,7 +115,7 @@ app.use((req, res) => {
 });
 // Global error handler
 app.use((err, req, res, _next) => {
-    logger_1.logger.error('Unhandled error', {
+    logger_js_1.logger.error('Unhandled error', {
         error: err.message,
         stack: err.stack,
         requestId: req.requestId,
@@ -142,12 +142,12 @@ async function connectToMongoDB() {
             serverSelectionTimeoutMS: 5000,
             socketTimeoutMS: 45000,
         });
-        logger_1.logger.info('Connected to MongoDB', { uri: mongoUri.replace(/\/\/.*@/, '//<credentials>@') });
+        logger_js_1.logger.info('Connected to MongoDB', { uri: mongoUri.replace(/\/\/.*@/, '//<credentials>@') });
         // Create indexes
         await createIndexes();
     }
     catch (error) {
-        logger_1.logger.error('Failed to connect to MongoDB', { error });
+        logger_js_1.logger.error('Failed to connect to MongoDB', { error });
         throw error;
     }
 }
@@ -156,10 +156,10 @@ async function createIndexes() {
     try {
         // MongoDB indexes are defined in the schemas
         // This is a placeholder for any additional index creation
-        logger_1.logger.info('Database indexes ready');
+        logger_js_1.logger.info('Database indexes ready');
     }
     catch (error) {
-        logger_1.logger.error('Failed to create indexes', { error });
+        logger_js_1.logger.error('Failed to create indexes', { error });
     }
 }
 // Start server
@@ -169,7 +169,7 @@ async function startServer() {
         await connectToMongoDB();
         // Start Express server
         const server = app.listen(config_1.config.PORT, () => {
-            logger_1.logger.info(`Server started`, {
+            logger_js_1.logger.info(`Server started`, {
                 port: config_1.config.PORT,
                 env: config_1.config.NODE_ENV,
                 service: config_1.config.SERVICE_NAME,
@@ -177,27 +177,27 @@ async function startServer() {
         });
         // Graceful shutdown
         const shutdown = async (signal) => {
-            logger_1.logger.info(`Received ${signal}, starting graceful shutdown`);
+            logger_js_1.logger.info(`Received ${signal}, starting graceful shutdown`);
             // Stop accepting new connections
             server.close(async () => {
-                logger_1.logger.info('HTTP server closed');
+                logger_js_1.logger.info('HTTP server closed');
                 try {
                     // Close service connections
                     await sessionService_1.sessionService.close();
                     await contextService_1.contextService.close();
                     // Close MongoDB connection
                     await mongoose_1.default.connection.close();
-                    logger_1.logger.info('MongoDB connection closed');
+                    logger_js_1.logger.info('MongoDB connection closed');
                     process.exit(0);
                 }
                 catch (error) {
-                    logger_1.logger.error('Error during shutdown', { error });
+                    logger_js_1.logger.error('Error during shutdown', { error });
                     process.exit(1);
                 }
             });
             // Force shutdown after timeout
             setTimeout(() => {
-                logger_1.logger.error('Forced shutdown after timeout');
+                logger_js_1.logger.error('Forced shutdown after timeout');
                 process.exit(1);
             }, 30000);
         };
@@ -205,16 +205,16 @@ async function startServer() {
         process.on('SIGINT', () => shutdown('SIGINT'));
         // Handle uncaught exceptions
         process.on('uncaughtException', (error) => {
-            logger_1.logger.error('Uncaught exception', { error: error.message, stack: error.stack });
+            logger_js_1.logger.error('Uncaught exception', { error: error.message, stack: error.stack });
             process.exit(1);
         });
         process.on('unhandledRejection', (reason) => {
-            logger_1.logger.error('Unhandled rejection', { reason });
+            logger_js_1.logger.error('Unhandled rejection', { reason });
             process.exit(1);
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to start server', { error });
+        logger_js_1.logger.error('Failed to start server', { error });
         process.exit(1);
     }
 }
@@ -226,7 +226,7 @@ function startScheduledTasks() {
             await memoryService_1.memoryService.cleanupExpired();
         }
         catch (error) {
-            logger_1.logger.error('Failed to cleanup expired memories', { error });
+            logger_js_1.logger.error('Failed to cleanup expired memories', { error });
         }
     }, 60 * 60 * 1000); // 1 hour
     // Clean up stale sessions every 15 minutes
@@ -235,10 +235,10 @@ function startScheduledTasks() {
             await sessionService_1.sessionService.cleanupStaleSessions();
         }
         catch (error) {
-            logger_1.logger.error('Failed to cleanup stale sessions', { error });
+            logger_js_1.logger.error('Failed to cleanup stale sessions', { error });
         }
     }, 15 * 60 * 1000); // 15 minutes
-    logger_1.logger.info('Scheduled tasks started');
+    logger_js_1.logger.info('Scheduled tasks started');
 }
 // Start the server
 if (require.main === module) {

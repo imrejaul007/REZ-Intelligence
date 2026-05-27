@@ -2,7 +2,7 @@ import { SentimentAnalyzer } from 'sentiment';
 import natural from 'natural';
 import compromise from 'compromise';
 import { config } from '../config/index.js';
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 import { Intent } from '../utils/validators.js';
 
 // Core intent patterns for commerce platform

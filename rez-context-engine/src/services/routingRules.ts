@@ -13,7 +13,7 @@ import {
   RoutingReason,
   createDefaultRoutingDecision,
 } from '../models/RoutingDecision';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 /**
  * Routing rule definition

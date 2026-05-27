@@ -1,4 +1,4 @@
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 
 import { beforeAll, afterAll, afterEach } from '@jest/globals';
 import { MongoClient, Db } from 'mongodb';

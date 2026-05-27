@@ -5,7 +5,7 @@
 
 import { Db, Collection } from 'mongodb';
 import Redis from 'ioredis';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 import { PAIRING_GUIDE, matchCuisine, type MenuItem } from './menuService.js';
 import { DietaryService, getDietaryService } from './dietaryService.js';
 

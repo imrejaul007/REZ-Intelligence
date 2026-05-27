@@ -4,7 +4,7 @@ const express_1 = require("express");
 const zod_1 = require("zod");
 const memoryService_1 = require("../services/memoryService");
 const auth_1 = require("../middleware/auth");
-const logger_1 = require("../utils/logger");
+const logger_js_1 = require("../utils/logger.js");
 const router = (0, express_1.Router)();
 // Validation schemas
 const createMemorySchema = zod_1.z.object({
@@ -60,7 +60,7 @@ router.post('/', auth_1.requestId, auth_1.authenticate, async (req, res) => {
             source: validation.data.source,
             ttlSeconds: validation.data.ttlSeconds,
         });
-        logger_1.logger.info(`Memory created: ${memory.id}`, { requestId: requestIdVal, userId });
+        logger_js_1.logger.info(`Memory created: ${memory.id}`, { requestId: requestIdVal, userId });
         res.status(201).json({
             success: true,
             data: memory,
@@ -71,7 +71,7 @@ router.post('/', auth_1.requestId, auth_1.authenticate, async (req, res) => {
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to create memory', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to create memory', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -110,7 +110,7 @@ router.get('/:id', auth_1.requestId, auth_1.authenticate, async (req, res) => {
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to get memory', { error, memoryId: req.params.id });
+        logger_js_1.logger.error('Failed to get memory', { error, memoryId: req.params.id });
         res.status(500).json({
             success: false,
             error: {
@@ -165,7 +165,7 @@ router.get('/', auth_1.requestId, auth_1.authenticate, async (req, res) => {
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to get memories', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to get memories', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -206,7 +206,7 @@ router.patch('/:id', auth_1.requestId, auth_1.authenticate, async (req, res) => 
             });
             return;
         }
-        logger_1.logger.info(`Memory updated: ${id}`);
+        logger_js_1.logger.info(`Memory updated: ${id}`);
         res.json({
             success: true,
             data: memory,
@@ -217,7 +217,7 @@ router.patch('/:id', auth_1.requestId, auth_1.authenticate, async (req, res) => 
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to update memory', { error, memoryId: req.params.id });
+        logger_js_1.logger.error('Failed to update memory', { error, memoryId: req.params.id });
         res.status(500).json({
             success: false,
             error: {
@@ -246,7 +246,7 @@ router.delete('/:id', auth_1.requestId, auth_1.authenticate, async (req, res) =>
             });
             return;
         }
-        logger_1.logger.info(`Memory deleted: ${id}`);
+        logger_js_1.logger.info(`Memory deleted: ${id}`);
         res.json({
             success: true,
             meta: {
@@ -256,7 +256,7 @@ router.delete('/:id', auth_1.requestId, auth_1.authenticate, async (req, res) =>
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to delete memory', { error, memoryId: req.params.id });
+        logger_js_1.logger.error('Failed to delete memory', { error, memoryId: req.params.id });
         res.status(500).json({
             success: false,
             error: {
@@ -275,7 +275,7 @@ router.delete('/', auth_1.requestId, auth_1.authenticate, async (req, res) => {
         const userId = req.userId;
         const type = req.query.type;
         const deletedCount = await memoryService_1.memoryService.deleteAllUserMemories(userId, type);
-        logger_1.logger.info(`Deleted ${deletedCount} memories for user: ${userId}`);
+        logger_js_1.logger.info(`Deleted ${deletedCount} memories for user: ${userId}`);
         res.json({
             success: true,
             data: { deletedCount },
@@ -286,7 +286,7 @@ router.delete('/', auth_1.requestId, auth_1.authenticate, async (req, res) => {
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to delete memories', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to delete memories', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -330,7 +330,7 @@ router.post('/search', auth_1.requestId, auth_1.authenticate, async (req, res) =
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to search memories', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to search memories', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -373,7 +373,7 @@ router.post('/batch', auth_1.requestId, auth_1.authenticate, async (req, res) =>
             ttlSeconds: m.ttlSeconds,
         }));
         const memories = await memoryService_1.memoryService.batchCreateMemories(memoriesWithUserId);
-        logger_1.logger.info(`Batch created ${memories.length} memories`);
+        logger_js_1.logger.info(`Batch created ${memories.length} memories`);
         res.status(201).json({
             success: true,
             data: memories,
@@ -384,7 +384,7 @@ router.post('/batch', auth_1.requestId, auth_1.authenticate, async (req, res) =>
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to batch create memories', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to batch create memories', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -412,7 +412,7 @@ router.get('/stats', auth_1.requestId, auth_1.authenticate, async (req, res) => 
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to get memory stats', { error, userId: req.userId });
+        logger_js_1.logger.error('Failed to get memory stats', { error, userId: req.userId });
         res.status(500).json({
             success: false,
             error: {
@@ -451,7 +451,7 @@ router.post('/:id/access', auth_1.requestId, auth_1.authenticate, async (req, re
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to access memory', { error, memoryId: req.params.id });
+        logger_js_1.logger.error('Failed to access memory', { error, memoryId: req.params.id });
         res.status(500).json({
             success: false,
             error: {

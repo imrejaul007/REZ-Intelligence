@@ -7,7 +7,7 @@ exports.contextService = exports.ContextService = void 0;
 const ioredis_1 = __importDefault(require("ioredis"));
 const GlobalPersonalization_1 = require("../models/GlobalPersonalization");
 const config_1 = require("../config");
-const logger_1 = require("../utils/logger");
+const logger_js_1 = require("../utils/logger.js");
 class ContextService {
     redis = null;
     contextKeyPrefix = 'context:';
@@ -26,12 +26,12 @@ class ContextService {
                 maxRetriesPerRequest: 3,
             });
             this.redis.on('error', (err) => {
-                logger_1.logger.error('Redis connection error in ContextService', { error: err.message });
+                logger_js_1.logger.error('Redis connection error in ContextService', { error: err.message });
             });
-            logger_1.logger.info('ContextService Redis initialized');
+            logger_js_1.logger.info('ContextService Redis initialized');
         }
         catch (error) {
-            logger_1.logger.warn('Redis not available for ContextService');
+            logger_js_1.logger.warn('Redis not available for ContextService');
         }
     }
     /**
@@ -89,7 +89,7 @@ class ContextService {
                     pendingTasks: [],
                 },
             });
-            logger_1.logger.info(`Created contextual data for user: ${userId}`);
+            logger_js_1.logger.info(`Created contextual data for user: ${userId}`);
         }
         return data;
     }
@@ -111,7 +111,7 @@ class ContextService {
         if (update.sessionId)
             data.currentContext.sessionId = update.sessionId;
         await data.save();
-        logger_1.logger.info(`Updated contextual data for user: ${userId}`);
+        logger_js_1.logger.info(`Updated contextual data for user: ${userId}`);
         return data;
     }
     /**
@@ -135,7 +135,7 @@ class ContextService {
     async addActiveAgent(userId, agentId) {
         const data = await this.getOrCreateContextualData(userId);
         await data.addActiveAgent(agentId);
-        logger_1.logger.info(`Added active agent ${agentId} for user: ${userId}`);
+        logger_js_1.logger.info(`Added active agent ${agentId} for user: ${userId}`);
     }
     /**
      * Remove an active agent for a user
@@ -144,7 +144,7 @@ class ContextService {
         const data = await GlobalPersonalization_1.ContextualData.findOne({ userId });
         if (data) {
             await data.removeActiveAgent(agentId);
-            logger_1.logger.info(`Removed active agent ${agentId} for user: ${userId}`);
+            logger_js_1.logger.info(`Removed active agent ${agentId} for user: ${userId}`);
         }
     }
     /**
@@ -174,20 +174,20 @@ class ContextService {
     async setSharedContext(input) {
         const { userId, agentId, sessionId, data, expiresIn } = input;
         if (!this.redis) {
-            logger_1.logger.warn('Redis not available for shared context');
+            logger_js_1.logger.warn('Redis not available for shared context');
             return;
         }
         const key = this.buildSharedKey(userId, sessionId, agentId);
         const ttl = expiresIn || this.defaultTTL;
         await this.redis.setex(key, ttl, JSON.stringify(data));
-        logger_1.logger.info(`Set shared context for ${key}`, { ttl });
+        logger_js_1.logger.info(`Set shared context for ${key}`, { ttl });
     }
     /**
      * Get shared context
      */
     async getSharedContext(userId, sessionId, agentId) {
         if (!this.redis) {
-            logger_1.logger.warn('Redis not available for shared context');
+            logger_js_1.logger.warn('Redis not available for shared context');
             return null;
         }
         const key = this.buildSharedKey(userId, sessionId, agentId);
@@ -202,7 +202,7 @@ class ContextService {
      */
     async updateSharedContext(userId, updates, sessionId, agentId) {
         if (!this.redis) {
-            logger_1.logger.warn('Redis not available for shared context');
+            logger_js_1.logger.warn('Redis not available for shared context');
             return null;
         }
         const key = this.buildSharedKey(userId, sessionId, agentId);
@@ -220,7 +220,7 @@ class ContextService {
             return;
         const key = this.buildSharedKey(userId, sessionId, agentId);
         await this.redis.del(key);
-        logger_1.logger.info(`Deleted shared context: ${key}`);
+        logger_js_1.logger.info(`Deleted shared context: ${key}`);
     }
     /**
      * Get all shared contexts for a user
@@ -244,7 +244,7 @@ class ContextService {
         const key = `${this.contextKeyPrefix}agent_transfer:${userId}:${fromAgentId}:${toAgentId}`;
         if (this.redis) {
             await this.redis.setex(key, 300, JSON.stringify(data)); // 5 min TTL for agent transfers
-            logger_1.logger.info(`Shared context from ${fromAgentId} to ${toAgentId}`);
+            logger_js_1.logger.info(`Shared context from ${fromAgentId} to ${toAgentId}`);
         }
     }
     /**

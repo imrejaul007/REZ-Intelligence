@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Memory, IMemoryDocument, MemoryType } from '../models/UserMemory';
 import { config } from '../config';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export interface CreateMemoryInput {
   userId: string;

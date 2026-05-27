@@ -6,7 +6,7 @@ import {
 import { memoryService } from './memoryService';
 import { sessionService } from './sessionService';
 import { personalizationService } from './personalizationService';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { IIntelligenceMetrics, IContextualData } from '../types';
 
 export interface IntelligenceContext {
