@@ -10,7 +10,7 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import axios from 'axios';
 import { z } from 'zod';
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 
 dotenv.config();
 

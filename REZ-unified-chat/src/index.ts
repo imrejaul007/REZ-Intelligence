@@ -27,7 +27,7 @@ import { IntentRouter } from './intentRouter';
 import AgentOSHandlers from './handlers/agentOSHandlers';
 import SupportHandlers from './handlers/supportHandlers';
 import SessionManager from './sessionManager';
-import { createAuthMiddleware } from './middleware/auth';
+import { createAuthMiddleware } from './middleware/auth.js';
 
 // Logger setup
 const logger = winston.createLogger({

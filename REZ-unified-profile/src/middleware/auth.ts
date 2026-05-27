@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger } from './utils/logger.js';
+import cors from 'cors';
+import { logger } from '../utils/logger.js';
 
 export interface AuthConfig {
   apiKeys?: string[];
@@ -8,16 +9,6 @@ export interface AuthConfig {
 }
 
 export function createAuthMiddleware(config: AuthConfig) {
-}
-
-import cors from 'cors';
-
-export const corsMiddleware = cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'X-Internal-Token', 'Authorization']
-});
   const { apiKeys = [], internalTokens = [], bypassPaths = ['/health', '/ready'] } = config;
 
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -53,3 +44,37 @@ export const corsMiddleware = cors({
     });
   };
 }
+
+export const corsMiddleware = cors({
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'X-Internal-Token', 'Authorization']
+});
+
+export function errorHandler(err: Error, req: Request, res: Response, next: NextFunction): void {
+  logger.error('Unhandled error', { error: err.message, stack: err.stack, path: req.path });
+  res.status(500).json({ error: 'Internal server error' });
+}
+
+export function requestLogger(req: Request, res: Response, next: NextFunction): void {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    logger.info(`${req.method} ${req.path}`, {
+      method: req.method,
+      path: req.path,
+      statusCode: res.statusCode,
+      duration,
+    });
+  });
+  next();
+}
+
+export function rateLimitHeaders(req: Request, res: Response, next: NextFunction): void {
+  res.setHeader('X-RateLimit-Remaining', '100');
+  res.setHeader('X-RateLimit-Reset', Date.now() + 60000);
+  next();
+}
+
+export default createAuthMiddleware;
