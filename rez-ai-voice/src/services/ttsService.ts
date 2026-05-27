@@ -8,7 +8,7 @@ import path from 'path';
 import axios from 'axios';
 import { randomUUID } from 'crypto';
 import { getElevenLabsConfig } from '../config/ai.config';
-import { logger, logAIService, logMetric } from '../utils/logger';
+import { logger, logAIService, logMetric } from '../utils/logger.js';
 import { SynthesisResult } from '../types';
 
 export interface ElevenLabsSynthesisOptions {

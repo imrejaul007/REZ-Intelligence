@@ -9,7 +9,7 @@ import {
   NotFoundError,
 } from '../middleware/errorHandler';
 import { AgentStatus } from '../types';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 
 const router = Router();
 

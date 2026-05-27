@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Anthropic } from '@anthropic-ai/sdk';
 import { getAnthropicClient, getVoiceSettings } from '../config/ai.config';
 import { getTTSService } from './ttsService';
-import { logger, logAIService, logMetric } from '../utils/logger';
+import { logger, logAIService, logMetric } from '../utils/logger.js';
 import {
   ConversationTurn,
   ConversationState,

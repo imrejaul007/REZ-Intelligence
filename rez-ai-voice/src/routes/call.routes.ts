@@ -10,7 +10,7 @@ import { getConversationService } from '../services/conversationService';
 import { getVoiceSalesAgent } from '../agents/voiceSalesAgent';
 import { getVoiceSupportAgent } from '../agents/voiceSupportAgent';
 import { getVoiceInfoAgent } from '../agents/voiceInfoAgent';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { VoiceAgentType, OutboundCallRequest, OutboundCallResponse } from '../types';
 
 const router = Router();

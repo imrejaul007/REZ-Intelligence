@@ -19,7 +19,7 @@ import { getTTSService } from '../services/ttsService';
 import { getVoiceSalesAgent } from '../agents/voiceSalesAgent';
 import { getVoiceSupportAgent } from '../agents/voiceSupportAgent';
 import { getVoiceInfoAgent } from '../agents/voiceInfoAgent';
-import { logger, logCallEvent } from '../utils/logger';
+import { logger, logCallEvent } from '../utils/logger.js';
 import {
   TwilioVoiceWebhookRequest,
   VoiceAgentType,

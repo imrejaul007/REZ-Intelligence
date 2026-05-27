@@ -1,5 +1,5 @@
 import * as admin from 'firebase-admin';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 let firebaseApp: admin.app.App | null = null;
 

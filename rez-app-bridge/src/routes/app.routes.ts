@@ -10,7 +10,7 @@ import {
   validateBody,
   rateLimit,
 } from '../middleware/auth';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 

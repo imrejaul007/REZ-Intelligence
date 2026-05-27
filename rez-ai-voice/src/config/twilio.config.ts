@@ -4,7 +4,7 @@
  */
 
 import twilio, { Twilio } from 'twilio';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export interface TwilioConfig {
   accountSid: string;

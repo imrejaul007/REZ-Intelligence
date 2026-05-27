@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { pushService } from './pushService';
 import { v4 as uuidv4 } from 'uuid';
 

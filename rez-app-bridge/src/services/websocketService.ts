@@ -1,6 +1,6 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { Server as HTTPServer } from 'http';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { v4 as uuidv4 } from 'uuid';
 
 // Event types

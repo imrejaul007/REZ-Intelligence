@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import axios from 'axios';
 import { getOpenAIClient, getOpenAIConfig } from '../config/ai.config';
-import { logger, logAIService, logMetric } from '../utils/logger';
+import { logger, logAIService, logMetric } from '../utils/logger.js';
 import { TranscriptionResult } from '../types';
 
 export interface WhisperTranscriptionOptions {

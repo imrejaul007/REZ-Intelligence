@@ -1,6 +1,6 @@
 import { AgentMetrics } from '../models/AgentMetrics';
 import { IntentMatchResult, AgentCapabilities } from '../types';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 
 /**
  * Intent Matcher Service

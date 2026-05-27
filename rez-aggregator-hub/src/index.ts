@@ -89,8 +89,8 @@ export { MagicpinClient } from './clients/magicpin';
 // Utility Exports
 // ============================================
 
-export { Logger, createLogger } from './utils/logger';
-export type { LoggerConfig, LogLevel, LogEntry } from './utils/logger';
+export { Logger, createLogger } from './utils/logger.js';
+export type { LoggerConfig, LogLevel, LogEntry } from './utils/logger.js';
 
 export {
   OrderNormalizer,

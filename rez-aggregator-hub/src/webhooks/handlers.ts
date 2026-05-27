@@ -10,7 +10,7 @@ import {
   Order,
   OrderStatus,
 } from '../types';
-import { Logger } from '../utils/logger';
+import { Logger } from '../utils/logger.js';
 import { OrderNormalizer } from '../utils/normalizer';
 
 // ============================================

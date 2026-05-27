@@ -4,7 +4,7 @@
  */
 
 import { Order, OrderStatus, OrderItem, OrderAddon } from '../types';
-import { Logger } from '../utils/logger';
+import { Logger } from '../utils/logger.js';
 
 // ============================================
 // Status Mapping Configuration

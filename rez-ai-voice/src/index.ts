@@ -10,7 +10,7 @@ import path from 'path';
 import { handleVoiceWebhook } from './webhooks/twilioVoiceWebhook';
 import callRoutes from './routes/call.routes';
 import usageRoutes from './routes/usage.routes';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 import { HealthCheckResponse } from './types';
 
 // Load environment variables

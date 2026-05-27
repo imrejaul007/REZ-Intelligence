@@ -6,7 +6,7 @@
 
 import { getConversationService } from '../services/conversationService';
 import { getTTSService } from '../services/ttsService';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { VoiceAgentType, VoiceAgentResponse } from '../types';
 
 export interface LocationInfo {

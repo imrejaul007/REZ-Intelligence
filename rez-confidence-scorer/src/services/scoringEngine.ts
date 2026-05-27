@@ -6,7 +6,7 @@ import { contextAnalyzerService } from './contextAnalyzer';
 import { historyTrackerService } from './historyTracker';
 import { loadBalancerService } from './loadBalancer';
 import { redisClient } from '../utils/redis';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 import config from '../config';
 
 /**

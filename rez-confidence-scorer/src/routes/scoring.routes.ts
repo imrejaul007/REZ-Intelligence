@@ -7,7 +7,7 @@ import {
   ValidationError,
 } from '../middleware/errorHandler';
 import { ScoringRequestSchema } from '../types';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 
 const router = Router();
 

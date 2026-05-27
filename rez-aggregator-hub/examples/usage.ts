@@ -211,7 +211,7 @@ async function orderActionsExample(hub: AggregatorHub) {
 async function webhookExample(hub: AggregatorHub) {
   // In an Express.js app:
   /*
-  import express import logger from './utils/logger';
+  import express import logger from './utils/logger.js';
 import from 'express';
   const app = express();
 

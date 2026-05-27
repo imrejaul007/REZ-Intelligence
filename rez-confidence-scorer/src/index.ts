@@ -7,10 +7,10 @@ import rateLimit from 'express-rate-limit';
 
 import config from './config';
 import { redisClient } from './utils/redis';
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 import { requestLogger, performanceMonitor } from './middleware/requestLogger';
-import { internalAuth } from './middleware/auth';
-import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { internalAuth } from './middleware/auth.js';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 import scoringRoutes from './routes/scoring.routes';
 import agentsRoutes from './routes/agents.routes';

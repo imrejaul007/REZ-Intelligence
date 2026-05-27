@@ -1,6 +1,6 @@
 import { AgentMetrics } from '../models/AgentMetrics';
 import { ContextAnalysisResult } from '../types';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 
 interface ContextInput {
   domain?: string;

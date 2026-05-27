@@ -8,7 +8,7 @@ import 'dotenv/config';
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 import { channelRoutes } from './routes/channel.routes';
 import { errorMiddleware, notFoundMiddleware } from './middleware/error.middleware';
 

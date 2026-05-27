@@ -4,7 +4,7 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { logger, logMetric } from '../utils/logger';
+import { logger, logMetric } from '../utils/logger.js';
 import { UsageMetrics, VoiceAgentType } from '../types';
 
 const router = Router();

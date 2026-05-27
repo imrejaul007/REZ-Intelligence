@@ -15,7 +15,7 @@ import {
   SyncWarning,
   HealthCheck,
 } from '../types';
-import { Logger } from '../utils/logger';
+import { Logger } from '../utils/logger.js';
 
 // ============================================
 // Magicpin-specific types

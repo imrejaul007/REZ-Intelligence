@@ -1,6 +1,6 @@
 import * as admin from 'firebase-admin';
 import { getMessaging } from '../config/firebase';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { v4 as uuidv4 } from 'uuid';
 
 interface DeviceToken {

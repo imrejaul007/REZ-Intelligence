@@ -4,11 +4,11 @@ import helmet from 'helmet';
 import compression from 'compression';
 import { createServer, Server as HTTPServer } from 'http';
 import { config } from 'dotenv';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 import { initializeFirebase } from './config/firebase';
 import { webSocketService } from './services/websocketService';
 import appRoutes from './routes/app.routes';
-import { requestLogger } from './middleware/auth';
+import { requestLogger } from './middleware/auth.js';
 
 // Load environment variables
 config();

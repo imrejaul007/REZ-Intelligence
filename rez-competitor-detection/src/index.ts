@@ -5,9 +5,9 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 
 import { connectDatabase } from './database/connection';
-import { initializeServiceTokens } from './middleware/auth';
+import { initializeServiceTokens } from './middleware/auth.js';
 import competitorRoutes from './routes/competitorRoutes';
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 
 // Load environment variables
 dotenv.config();

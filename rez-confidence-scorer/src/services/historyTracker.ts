@@ -1,7 +1,7 @@
 import { ConfidenceScore, ConfidenceScoreDocument } from '../models/ConfidenceScore';
 import { AgentMetrics } from '../models/AgentMetrics';
 import { HistoryAccuracyResult, HistoryEntry } from '../types';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 import config from '../config';
 
 /**

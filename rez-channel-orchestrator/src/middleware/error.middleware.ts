@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export function notFoundMiddleware(req: Request, res: Response): void {
   res.status(404).json({

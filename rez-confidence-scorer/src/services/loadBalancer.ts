@@ -1,6 +1,6 @@
 import { AgentMetrics } from '../models/AgentMetrics';
 import { AgentStatus, LoadFactorResult } from '../types';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 
 /**
  * Load Balancer Service

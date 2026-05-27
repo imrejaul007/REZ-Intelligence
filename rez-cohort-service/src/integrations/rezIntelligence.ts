@@ -29,7 +29,7 @@ export const intent = {
       method: 'POST',
       body: JSON.stringify({ user_id: userId, context }),
     }),
-  captureSignal: async (signal) =>
+  captureSignal: async (signal: Record<string, unknown>) =>
     request(`${INTENT_URL}/api/intent/capture`, {
       method: 'POST',
       body: JSON.stringify(signal),
@@ -65,12 +65,12 @@ export const segments = {
 };
 
 export const signals = {
-  record: async (signal) =>
+  record: async (signal: Record<string, unknown>) =>
     request(`${SIGNAL_URL}/api/signals`, {
       method: 'POST',
       body: JSON.stringify(signal),
     }),
-  query: async (filters) =>
+  query: async (filters: Record<string, unknown>) =>
     request(`${SIGNAL_URL}/api/signals/query`, {
       method: 'POST',
       body: JSON.stringify(filters),

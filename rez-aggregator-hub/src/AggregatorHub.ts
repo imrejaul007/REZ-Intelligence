@@ -15,7 +15,7 @@ import {
   WebhookHandlerResult,
   Aggregator,
 } from './types';
-import { Logger } from './utils/logger';
+import { Logger } from './utils/logger.js';
 import { OrderNormalizer } from './utils/normalizer';
 import { SwiggyClient } from './clients/swiggy';
 import { ZomatoClient } from './clients/zomato';
