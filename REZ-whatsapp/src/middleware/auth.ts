@@ -64,10 +64,16 @@ export function verifyTwilioWebhook(_req: Request): boolean {
   return true;
 }
 
-// Mask PII data
-export function maskPII(data: Record<string, unknown>): Record<string, unknown> {
+// Mask PII data - either a single string or an object
+export function maskPII(data: Record<string, unknown> | string): Record<string, unknown> | string {
+  if (typeof data === 'string') {
+    // For strings (like message IDs), just mask last characters
+    if (data.length <= 4) return '****';
+    return data.substring(0, 4) + '****';
+  }
+
   const masked = { ...data };
-  const piiFields = ['email', 'phone', 'name', 'address'];
+  const piiFields = ['email', 'phone', 'name', 'address', 'from'];
   for (const field of piiFields) {
     if (masked[field] && typeof masked[field] === 'string') {
       const val = masked[field] as string;
@@ -78,7 +84,15 @@ export function maskPII(data: Record<string, unknown>): Record<string, unknown> 
 }
 
 // Validate webhook payload
-export function validateWebhookPayload(_payload: unknown): boolean {
+export interface ValidationResult {
+  valid: boolean;
+  error?: string;
+}
+
+export function validateWebhookPayload(payload: unknown): ValidationResult {
   // Add webhook validation logic here
-  return true;
+  if (!payload || typeof payload !== 'object') {
+    return { valid: false, error: 'Invalid payload' };
+  }
+  return { valid: true };
 }
