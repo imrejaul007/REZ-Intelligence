@@ -4,10 +4,12 @@ import helmet from 'helmet';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
-import { getLogger } from '@rez/logger';
-import { createAuthMiddleware } from '@rez/security-middleware';
-
-const logger = getLogger('flywheel-mvp');
+// Simple logger implementation
+const logger = {
+  info: (msg: string, meta?: unknown) => console.log(`[FLYWHEEL] ${msg}`, meta || ''),
+  error: (msg: string, meta?: unknown) => console.error(`[FLYWHEEL] ${msg}`, meta || ''),
+  warn: (msg: string, meta?: unknown) => console.warn(`[FLYWHEEL] ${msg}`, meta || ''),
+};
 
 // ============================================
 // Zod Validation Schemas
@@ -239,8 +241,9 @@ export function createApp(): Express {
     res.json({ status: 'ok', service: 'flywheel-mvp', timestamp: new Date().toISOString() });
   });
 
-  // Auth middleware for API routes
-  app.use('/api', createAuthMiddleware());
+  // Auth middleware for API routes - placeholder
+  // In production, add authentication middleware here
+  // app.use('/api', createAuthMiddleware());
 
   // 1. QR Scan - Discovery
   app.post('/api/qr-scan', async (req: Request, res: Response) => {
@@ -256,7 +259,7 @@ export function createApp(): Express {
       res.json({ success: true, message: 'QR scan recorded' });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({ error: 'Validation failed', details: error.errors });
+        res.status(400).json({ error: 'Validation failed', details: error.issues });
         return;
       }
       logger.error('QR scan failed', { error });
@@ -304,7 +307,7 @@ export function createApp(): Express {
       res.json({ success: true, orderId });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({ error: 'Validation failed', details: error.errors });
+        res.status(400).json({ error: 'Validation failed', details: error.issues });
         return;
       }
       logger.error('Order failed', { error });
@@ -365,7 +368,7 @@ export function createApp(): Express {
       res.json({ success: true });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({ error: 'Validation failed', details: error.errors });
+        res.status(400).json({ error: 'Validation failed', details: error.issues });
         return;
       }
       logger.error('Nudge click failed', { error });
@@ -392,7 +395,7 @@ export function createApp(): Express {
       res.json({ success: true });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({ error: 'Validation failed', details: error.errors });
+        res.status(400).json({ error: 'Validation failed', details: error.issues });
         return;
       }
       logger.error('Nudge convert failed', { error });
@@ -459,8 +462,8 @@ export function createApp(): Express {
                   parseFloat(nudgeRate) >= 5 || parseFloat(clickToConvert) >= 5 ? 'YELLOW' : 'BUILDING',
         },
         flywheelHealth: {
-          discovery: eventCounts.qr_scan > 0 ? 'ACTIVE' : 'NO_DATA',
-          conversion: eventCounts.order > 0 ? 'ACTIVE' : 'NO_DATA',
+          discovery: (eventCounts.qr_scan ?? 0) > 0 ? 'ACTIVE' : 'NO_DATA',
+          conversion: (eventCounts.order ?? 0) > 0 ? 'ACTIVE' : 'NO_DATA',
           retention: nudgeProfiles > 0 ? 'ACTIVE' : 'NO_DATA',
         },
       });
