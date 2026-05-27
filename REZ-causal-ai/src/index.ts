@@ -24,7 +24,7 @@ app.get('/health', (req, res) => {
 
 app.use('/api', causalRoutes);
 
-app.use((err, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   logger.error('Unhandled error:', err);
   res.status(500).json({ success: false, error: 'Internal server error' });
 });

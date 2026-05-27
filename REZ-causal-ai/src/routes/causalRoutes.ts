@@ -14,7 +14,7 @@ router.post('/analysis', async (req: Request, res: Response) => {
     res.status(201).json({ success: true, data: result });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ success: false, errors: error.errors });
+      res.status(400).json({ success: false, errors: error.issues });
     } else {
       logger.error('Causal analysis error:', error);
       res.status(500).json({ success: false, error: 'Causal analysis failed' });
@@ -30,7 +30,7 @@ router.post('/uplift', async (req: Request, res: Response) => {
     res.status(201).json({ success: true, data: result });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ success: false, errors: error.errors });
+      res.status(400).json({ success: false, errors: error.issues });
     } else {
       logger.error('Uplift modeling error:', error);
       res.status(500).json({ success: false, error: 'Uplift modeling failed' });
@@ -46,7 +46,7 @@ router.post('/counterfactual', async (req: Request, res: Response) => {
     res.status(201).json({ success: true, data: result });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ success: false, errors: error.errors });
+      res.status(400).json({ success: false, errors: error.issues });
     } else {
       logger.error('Counterfactual error:', error);
       res.status(500).json({ success: false, error: 'Counterfactual computation failed' });

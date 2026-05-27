@@ -1,6 +1,6 @@
 import crypto, { randomUUID } from 'crypto';
 import { CausalAnalysisRequest, CausalResult, UpliftModelRequest, UpliftResult, CounterfactualRequest, CounterfactualResult, CausalMethod } from '../types/index.js';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 // Crypto-based random number generator for secure randomness
 function secureRandom(): number {

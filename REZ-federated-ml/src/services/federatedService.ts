@@ -3,23 +3,27 @@ import crypto from 'crypto';
 import mongoose from 'mongoose';
 import {
   ClientNode,
-  ClientNodeSchema,
+  ClientNodeSchema as ClientNodeSchemaType,
   FederatedTrainingConfig,
   ModelUpdate,
   ModelUpdateSchema,
   AggregatedModel,
-  FederatedTrainingRequest,
   FederatedTrainingRequestSchema,
   TrainingStatus,
   FederatedMetrics,
   ClientMetrics,
 } from '../types/index.js';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
+
+// Secure random function
+function secureRandom(): number {
+  return crypto.randomBytes(4).readUInt32BE(0) / 0xFFFFFFFF;
+}
 
 // PRODUCTION: MongoDB Schemas
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-federated-ml';
 
-const ClientNodeSchema = new mongoose.Schema({
+const ClientNodeMongoSchema = new mongoose.Schema({
   clientId: { type: String, required: true, unique: true, index: true },
   nodeType: { type: String, required: true },
   organizationId: String,
@@ -28,7 +32,7 @@ const ClientNodeSchema = new mongoose.Schema({
   metrics: mongoose.Schema.Types.Mixed
 }, { timestamps: true });
 
-const ModelVersionSchema = new mongoose.Schema({
+const ModelVersionMongoSchema = new mongoose.Schema({
   modelId: { type: String, required: true, unique: true, index: true },
   version: { type: String, required: true },
   round: Number,
@@ -37,7 +41,7 @@ const ModelVersionSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-const TrainingSessionSchema = new mongoose.Schema({
+const TrainingSessionMongoSchema = new mongoose.Schema({
   sessionId: { type: String, required: true, unique: true, index: true },
   status: { type: String, enum: ['pending', 'running', 'completed', 'failed'], default: 'pending' },
   round: Number,
@@ -46,9 +50,9 @@ const TrainingSessionSchema = new mongoose.Schema({
   completedAt: Date
 });
 
-const ClientNodeModel = mongoose.models.ClientNode || mongoose.model('ClientNode', ClientNodeSchema);
-const ModelVersionModel = mongoose.models.ModelVersion || mongoose.model('ModelVersion', ModelVersionSchema);
-const TrainingSessionModel = mongoose.models.TrainingSession || mongoose.model('TrainingSession', TrainingSessionSchema);
+const ClientNodeModel = mongoose.models.ClientNode || mongoose.model('ClientNode', ClientNodeMongoSchema);
+const ModelVersionModel = mongoose.models.ModelVersion || mongoose.model('ModelVersion', ModelVersionMongoSchema);
+const TrainingSessionModel = mongoose.models.TrainingSession || mongoose.model('TrainingSession', TrainingSessionMongoSchema);
 
 // In-memory fallback
 const clientNodes = new Map<string, ClientNode>();
@@ -66,11 +70,11 @@ async function connectDB(): Promise<void> {
     // Load existing data
     const clients = await ClientNodeModel.find();
     for (const c of clients) {
-      clientNodes.set(c.clientId, c.toObject());
+      clientNodes.set(c.clientId, c.toObject() as ClientNode);
     }
     const models = await ModelVersionModel.find();
     for (const m of models) {
-      modelVersions.set(m.modelId, m.toObject());
+      modelVersions.set(m.modelId, m.toObject() as AggregatedModel);
     }
     const sessions = await TrainingSessionModel.find();
     for (const s of sessions) {
@@ -86,7 +90,7 @@ export class FederatedMLService {
 
   async registerClient(client: unknown): Promise<ClientNode> {
     await connectDB();
-    const validated = ClientNodeSchema.parse(client);
+    const validated = ClientNodeSchemaType.parse(client);
     const node: ClientNode = {
       ...validated,
       status: 'active',
@@ -94,7 +98,7 @@ export class FederatedMLService {
     };
     try {
       await ClientNodeModel.create(node);
-    } catch (e) { /* MongoDB insert may fail, continue with memory */ }
+    } catch (_e) { /* MongoDB insert may fail, continue with memory */ }
     clientNodes.set(node.clientId, node);
     logger.info(`Client registered: ${node.clientId}`);
     return node;
@@ -108,7 +112,7 @@ export class FederatedMLService {
     const updated: ClientNode = { ...client, status, lastSync: new Date().toISOString() };
     try {
       await ClientNodeModel.updateOne({ clientId }, { status, lastSync: new Date() });
-    } catch (e) { /* MongoDB update may fail */ }
+    } catch (_e) { /* MongoDB update may fail */ }
     clientNodes.set(clientId, updated);
     return updated;
   }
@@ -138,7 +142,7 @@ export class FederatedMLService {
       startedAt: new Date().toISOString(),
     };
 
-    this.trainingSessions.set(trainingId, status);
+    trainingSessions.set(trainingId, status);
     logger.info(`Training started: ${trainingId}, rounds: ${validated.modelConfig.rounds}`);
 
     setTimeout(() => this.simulateTrainingProgress(trainingId, validated.modelConfig), 1000);
@@ -146,13 +150,13 @@ export class FederatedMLService {
   }
 
   private async simulateTrainingProgress(trainingId: string, config: FederatedTrainingConfig): Promise<void> {
-    const status = this.trainingSessions.get(trainingId);
+    const status = trainingSessions.get(trainingId);
     if (!status) return;
 
     for (let round = 1; round <= config.rounds; round++) {
       status.currentRound = round;
       status.participatingClients = this.selectClients(config.minClientsPerRound);
-      
+
       const globalLoss = Math.max(0.1, 2.0 - round * 0.1 + secureRandom() * 0.1);
       const globalAccuracy = Math.min(0.99, 0.5 + round * 0.03 + secureRandom() * 0.02);
 
@@ -173,14 +177,14 @@ export class FederatedMLService {
   }
 
   private selectClients(minClients: number): string[] {
-    const activeClients = Array.from(this.clientNodes.values())
+    const activeClients = Array.from(clientNodes.values())
       .filter((c: ClientNode) => c.status === 'active');
-    
+
     const selected = activeClients
       .sort(() => secureRandom() - 0.5)
       .slice(0, Math.min(minClients, activeClients.length))
       .map((c: ClientNode) => c.clientId);
-    
+
     return selected.length > 0 ? selected : ['client_001', 'client_002', 'client_003'];
   }
 
@@ -204,7 +208,7 @@ export class FederatedMLService {
       createdAt: new Date().toISOString(),
     };
 
-    this.modelVersions.set(modelId, model);
+    modelVersions.set(modelId, model);
     return model;
   }
 
@@ -219,21 +223,21 @@ export class FederatedMLService {
   }
 
   async getTrainingStatus(trainingId: string): Promise<TrainingStatus | null> {
-    return this.trainingSessions.get(trainingId) || null;
+    return trainingSessions.get(trainingId) || null;
   }
 
   async getModel(modelId: string): Promise<AggregatedModel | null> {
-    return this.modelVersions.get(modelId) || null;
+    return modelVersions.get(modelId) || null;
   }
 
   async getLatestModel(): Promise<AggregatedModel | null> {
-    const models = Array.from(this.modelVersions.values());
+    const models = Array.from(modelVersions.values());
     if (models.length === 0) return null;
     return models.sort((a: AggregatedModel, b: AggregatedModel) => b.roundNumber - a.roundNumber)[0];
   }
 
   async getMetrics(trainingId: string): Promise<FederatedMetrics | null> {
-    const status = this.trainingSessions.get(trainingId);
+    const status = trainingSessions.get(trainingId);
     if (!status || !status.aggregatedMetrics) return null;
 
     return {
@@ -241,8 +245,8 @@ export class FederatedMLService {
       globalAccuracy: status.aggregatedMetrics.globalAccuracy || 0,
       globalLoss: status.aggregatedMetrics.globalLoss || 0,
       participatingClients: status.participatingClients.length,
-      totalSamples: status.aggregatedMetrics.clientsPerRound 
-        ? status.aggregatedMetrics.clientsPerRound * 1000 
+      totalSamples: status.aggregatedMetrics.clientsPerRound
+        ? status.aggregatedMetrics.clientsPerRound * 1000
         : 0,
       avgRoundDuration: status.aggregatedMetrics.avgRoundTime || 0,
       modelStaleness: secureRandom() * 0.1,
@@ -250,10 +254,10 @@ export class FederatedMLService {
   }
 
   async getClientMetrics(clientId: string): Promise<ClientMetrics | null> {
-    const client = this.clientNodes.get(clientId);
+    const client = clientNodes.get(clientId);
     if (!client) return null;
 
-    const sessions = Array.from(this.trainingSessions.values())
+    const sessions = Array.from(trainingSessions.values())
       .filter((s: TrainingStatus) => s.participatingClients.includes(clientId));
 
     return {
@@ -267,21 +271,21 @@ export class FederatedMLService {
   }
 
   async listTrainingSessions(): Promise<TrainingStatus[]> {
-    return Array.from(this.trainingSessions.values());
+    return Array.from(trainingSessions.values());
   }
 
   async pauseTraining(trainingId: string): Promise<TrainingStatus | null> {
-    const status = this.trainingSessions.get(trainingId);
+    const status = trainingSessions.get(trainingId);
     if (!status || status.status !== 'in_progress') return null;
-    
+
     status.status = 'paused';
     return status;
   }
 
   async resumeTraining(trainingId: string): Promise<TrainingStatus | null> {
-    const status = this.trainingSessions.get(trainingId);
+    const status = trainingSessions.get(trainingId);
     if (!status || status.status !== 'paused') return null;
-    
+
     status.status = 'in_progress';
     return status;
   }
@@ -307,7 +311,7 @@ interface ServiceHealth {
   };
 }
 
-let serviceStartTime = Date.now();
+const serviceStartTime = Date.now();
 
 /**
  * Get comprehensive health status for Federated ML Service
@@ -372,6 +376,7 @@ async function checkMongoDBHealth(): Promise<{ status: string; error?: string }>
  * Express route handler for health check
  * Usage: app.get('/health', federatedMLHealthHandler);
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function federatedMLHealthHandler(_req: any, res: any): Promise<void> {
   const mongodbHealth = await checkMongoDBHealth();
   const baseHealth = getFederatedMLHealth();

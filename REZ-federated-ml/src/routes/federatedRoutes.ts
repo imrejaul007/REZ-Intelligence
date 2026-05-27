@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { federatedMLService } from '../services/federatedService.js';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 
