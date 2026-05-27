@@ -28,7 +28,7 @@ import type {
   GetLifecycleResponse,
   PredictedTransition,
 } from './types';
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 
 // In-memory stores (would be Redis/MongoDB in production)
 const sequences = new Map<string, Sequence>();

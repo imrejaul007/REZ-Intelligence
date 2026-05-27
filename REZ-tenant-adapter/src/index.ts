@@ -13,7 +13,7 @@ import { ClientType, TenantContext, IntelligenceLevel, TenantConfig } from './ty
 import { tenantService } from './services/tenantService';
 import { knowledgeBaseService } from './services/knowledgeBaseService';
 import { privacyService } from './services/privacyService';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '4210', 10);

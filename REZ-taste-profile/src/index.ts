@@ -36,8 +36,8 @@ import {
 // LOGGING SETUP
 // ============================================
 
-const SERVICE_NAME = process.env.SERVICE_NAME || 'rez-taste-profile';
-const NODE_ENV = process.env.NODE_ENV || 'development';
+const SERVICE_NAME = process.env['SERVICE_NAME'] || 'rez-taste-profile';
+const NODE_ENV = process.env['NODE_ENV'] || 'development';
 
 const structuredFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DDTHH:mm:ss.SSSZ' }),
@@ -48,14 +48,15 @@ const structuredFormat = winston.format.combine(
 const prettyFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.colorize({ all: true }),
-  winston.format.printf(({ timestamp, level, message, ...meta }: { timestamp?: string; level: string; message: string; [key: string]: unknown }) => {
+  winston.format.printf((info: winston.Logform.TransformableInfo) => {
+    const { timestamp, level, message, ...meta } = info;
     const metaStr = Object.keys(meta).length ? JSON.stringify(meta, null, 2) : '';
-    return `${timestamp} ${level} [${SERVICE_NAME}]: ${message} ${metaStr}`;
+    return `${timestamp} ${level} [${process.env['SERVICE_NAME'] || 'rez-taste-profile'}]: ${message} ${metaStr}`;
   })
 );
 
 const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
+  level: process.env['LOG_LEVEL'] || 'info',
   format: NODE_ENV === 'production' ? structuredFormat : prettyFormat,
   defaultMeta: { service: SERVICE_NAME },
   transports: [
@@ -339,7 +340,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   if (publicPaths.some(p => req.path.startsWith(p))) return next();
 
   const token = req.headers['x-internal-token'] as string;
-  if (token !== process.env.INTERNAL_SERVICE_TOKEN) {
+  if (token !== process.env['INTERNAL_SERVICE_TOKEN']) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
   }

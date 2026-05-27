@@ -10,7 +10,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
 import { z } from 'zod';
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 import {
   analyzeSequence,
   detectHabits,
