@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BookingConnector = void 0;
 exports.getBookingConnector = getBookingConnector;
-const logger_1 = __importDefault(require("./utils/logger"));
+const logger_js_1 = __importDefault(require("./utils/logger.js"));
 /**
  * Booking Service Connector
  *
@@ -263,7 +263,7 @@ function getInternalToken() {
         return tokens.orchestrator || tokens.booking || '';
     }
     catch {
-        logger_1.default.warn('[BookingConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+        logger_js_1.default.warn('[BookingConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
         return '';
     }
 }

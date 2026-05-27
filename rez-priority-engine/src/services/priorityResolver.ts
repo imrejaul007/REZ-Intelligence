@@ -14,7 +14,7 @@ import {
   getMatrixEntry,
   calculatePriorityScore,
 } from '../rules/priorityMatrix';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { config } from '../config';
 
 export interface PriorityResolutionRequest {

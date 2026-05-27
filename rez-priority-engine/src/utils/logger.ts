@@ -4,7 +4,8 @@ import { config } from '../config';
 const logFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
   winston.format.errors({ stack: true }),
-  winston.format.printf(({ level, message, timestamp, ...meta }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
+  winston.format.printf((info: winston.Logform.TransformableInfo) => {
+  const { level, message, timestamp: ts, ...meta } = info;
     let metaStr = '';
     if (Object.keys(meta).length > 0) {
       try {
@@ -13,7 +14,7 @@ const logFormat = winston.format.combine(
         metaStr = ' [unserializable metadata]';
       }
     }
-    return `${timestamp} [${level.toUpperCase()}] ${message}${metaStr}`;
+    return `${ts} [${level.toUpperCase()}] ${message}${metaStr}`;
   })
 );
 

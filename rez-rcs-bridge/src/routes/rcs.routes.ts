@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import { RCSService } from '../services/rcsService';
 import { internalAuthMiddleware, webhookSignatureMiddleware } from '../utils/auth';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import {
   RCSCardSchema,
   RCSButtonSchema,

@@ -5,7 +5,7 @@ import rateLimit from 'express-rate-limit';
 import { salesRouter } from './routes/sales.routes';
 import { logger } from './services/salesAgent';
 import { validateEnv } from './services/pricingService';
-import { requireInternalAuth } from './middleware/auth';
+import { requireInternalAuth } from './middleware/auth.js';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3001;

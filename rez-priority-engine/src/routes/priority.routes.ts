@@ -15,7 +15,7 @@ import {
 import { PriorityRule, PriorityTier, PriorityTierNames } from '../models';
 import { RoutingDecision, DecisionStatus } from '../models';
 import { PRIORITY_MATRIX } from '../rules/priorityMatrix';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 

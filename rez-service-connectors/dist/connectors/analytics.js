@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AnalyticsConnector = void 0;
 exports.getAnalyticsConnector = getAnalyticsConnector;
-const logger_1 = __importDefault(require("./utils/logger"));
+const logger_js_1 = __importDefault(require("./utils/logger.js"));
 /**
  * Analytics Service Connector
  *
@@ -308,7 +308,7 @@ function getInternalToken() {
         return tokens.orchestrator || tokens.analytics || '';
     }
     catch {
-        logger_1.default.warn('[AnalyticsConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+        logger_js_1.default.warn('[AnalyticsConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
         return '';
     }
 }

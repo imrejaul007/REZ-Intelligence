@@ -2,7 +2,7 @@ import { PriorityTier } from '../models/PriorityRule';
 import { detectEmergency, EmergencyCondition } from '../rules/emergencyRules';
 import { detectPaymentIssue, PaymentCondition } from '../rules/paymentRules';
 import { detectDomain, DomainExpertise } from '../rules/domainRules';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export interface ClassifiedIntent {
   intent: string;

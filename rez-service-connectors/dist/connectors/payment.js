@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PaymentConnector = void 0;
 exports.getPaymentConnector = getPaymentConnector;
-const logger_1 = __importDefault(require("./utils/logger"));
+const logger_js_1 = __importDefault(require("./utils/logger.js"));
 /**
  * Payment Service Connector
  *
@@ -205,7 +205,7 @@ function getInternalToken() {
         return tokens.orchestrator || tokens.payment || '';
     }
     catch {
-        logger_1.default.warn('[PaymentConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+        logger_js_1.default.warn('[PaymentConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
         return '';
     }
 }

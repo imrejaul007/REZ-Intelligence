@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import mongoose from 'mongoose';
 import { createClient } from 'redis';
 import { config } from './config';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 import { createAuthMiddleware, createRateLimiter, errorHandler, notFoundHandler } from './middleware/index.js';
 import rcsRoutes from './routes/rcs.routes';
 

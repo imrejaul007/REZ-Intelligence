@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationConnector = void 0;
 exports.getNotificationConnector = getNotificationConnector;
-const logger_1 = __importDefault(require("./utils/logger"));
+const logger_js_1 = __importDefault(require("./utils/logger.js"));
 /**
  * Notification Service Connector
  *
@@ -327,7 +327,7 @@ function getInternalToken() {
         return tokens.orchestrator || tokens.notification || '';
     }
     catch {
-        logger_1.default.warn('[NotificationConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+        logger_js_1.default.warn('[NotificationConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
         return '';
     }
 }

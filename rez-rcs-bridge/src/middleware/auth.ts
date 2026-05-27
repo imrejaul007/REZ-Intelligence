@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 
 const API_KEY_HEADER = 'x-api-key';
 const INTERNAL_TOKEN_HEADER = 'x-internal-token';

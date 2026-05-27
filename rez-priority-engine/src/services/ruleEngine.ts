@@ -1,6 +1,6 @@
 import { IPriorityRule, PriorityRule } from '../models/PriorityRule';
 import { ClassifiedIntent } from './intentClassifier';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export interface RuleEvaluationResult {
   rule: IPriorityRule;

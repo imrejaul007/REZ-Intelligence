@@ -4,8 +4,9 @@ import { config } from '../config';
 const logFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.errors({ stack: true }),
-  winston.format.printf(({ level, message, timestamp, ...meta }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
-    let log = `${timestamp} [${level.toUpperCase()}] ${message}`;
+  winston.format.printf((info: winston.Logform.TransformableInfo) => {
+  const { level, message, timestamp: ts, ...meta } = info;
+    let log = `${ts} [${level.toUpperCase()}] ${message}`;
     if (Object.keys(meta).length > 0) {
       log += ` ${JSON.stringify(meta)}`;
     }

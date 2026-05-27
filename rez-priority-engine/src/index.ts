@@ -6,7 +6,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 
 import { config } from './config';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 import { priorityRoutes } from './routes';
 import { priorityResolver } from './services/priorityResolver';
 import { errorHandler, notFoundHandler, requestIdMiddleware, loggingMiddleware } from './middleware';

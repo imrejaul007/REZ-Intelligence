@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrderConnector = void 0;
 exports.getOrderConnector = getOrderConnector;
-const logger_1 = __importDefault(require("./utils/logger"));
+const logger_js_1 = __importDefault(require("./utils/logger.js"));
 /**
  * Order Service Connector
  *
@@ -257,7 +257,7 @@ function getInternalToken() {
         return tokens.orchestrator || tokens.order || '';
     }
     catch {
-        logger_1.default.warn('[OrderConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+        logger_js_1.default.warn('[OrderConnector] Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
         return '';
     }
 }

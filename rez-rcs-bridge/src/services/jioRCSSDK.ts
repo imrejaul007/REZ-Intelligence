@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { createHmac } from 'crypto';
 import { config } from '../config';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import {
   RCSCard,
   RCSButton,
