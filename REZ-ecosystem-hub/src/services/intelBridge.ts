@@ -4,9 +4,9 @@ import logger from './utils/logger.js';
  * REZ Intelligence Bridge
  * Sends data to REZ Intelligence services
  * - Signals Aggregator
- - Identity Graph
- - Predictive Engine
- - Recommendation Engine
+ * - Identity Graph
+ * - Predictive Engine
+ * - Recommendation Engine
  */
 
 import axios from 'axios';
@@ -240,6 +240,3 @@ export async function checkIntelligenceHealth(): Promise<Record<string, boolean>
 
   return results;
 }
-</parameter>
-<message>relevant_documents: ["./REZ-Intelligence/REZ-ecosystem-hub/src/index.ts"]
-</message>

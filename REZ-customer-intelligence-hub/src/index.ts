@@ -121,7 +121,7 @@ async function main(): Promise<void> {
     const app = createApp();
 
     // Start server
-    const server = app.listen(config.port, () => {
+    app.listen(config.port, () => {
       logger.info(`REZ Customer Intelligence Hub started on port ${config.port}`);
       logger.info(`Environment: ${config.nodeEnv}`);
       logger.info(`Health check: http://localhost:${config.port}/api/health`);
@@ -141,8 +141,6 @@ async function main(): Promise<void> {
       logger.error('Uncaught Exception', { error: error.message, stack: error.stack });
       process.exit(1);
     });
-
-    return server;
   } catch (error) {
     logger.error('Failed to start server', { error });
     process.exit(1);

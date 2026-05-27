@@ -26,7 +26,8 @@ interface RequestOptions extends RequestInit {
 /**
  * Make authenticated internal API request
  */
-async function internalRequest(url: string, options: RequestOptions = {}): Promise<unknown> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function internalRequest<T = any>(url: string, options: RequestOptions = {}): Promise<T> {
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -40,7 +41,7 @@ async function internalRequest(url: string, options: RequestOptions = {}): Promi
     throw new Error(`Intelligence API error: ${response.status}`);
   }
 
-  return response.json();
+  return response.json() as Promise<T>;
 }
 
 // ============================================

@@ -44,7 +44,8 @@ interface APIResponse {
 /**
  * Make authenticated internal API request
  */
-async function internalRequest(url: string, options: RequestOptions = {}): Promise<APIResponse> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function internalRequest<T = any>(url: string, options: RequestOptions = {}): Promise<T> {
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -58,7 +59,7 @@ async function internalRequest(url: string, options: RequestOptions = {}): Promi
     throw new Error(`Platform API error: ${response.status}`);
   }
 
-  return response.json() as Promise<APIResponse>;
+  return response.json() as Promise<T>;
 }
 
 // ============================================
@@ -68,11 +69,11 @@ async function internalRequest(url: string, options: RequestOptions = {}): Promi
 export const authOperations = {
   async verify(token: string): Promise<Record<string, unknown> | null> {
     try {
-      const res = await internalRequest<{ success: boolean; user?: unknown }>(`${AUTH_URL}/api/auth/verify`, {
+      const res = await internalRequest<{ success: boolean; user?: Record<string, unknown> }>(`${AUTH_URL}/api/auth/verify`, {
         method: 'POST',
         body: JSON.stringify({ token }),
       });
-      return res.success ? res.user ?? null : null;
+      return res.success && res.user ? res.user : null;
     } catch {
       return null;
     }
