@@ -24,6 +24,15 @@ const INTENT_SERVICE_URL = process.env.INTENT_SERVICE_URL || 'http://localhost:4
 // Types
 // ============================================================================
 
+export interface MerchantProfile {
+  merchantId: string;
+  category?: string;
+  location?: {
+    lat: number;
+    lng: number;
+  };
+}
+
 export interface VisitPrediction {
   userId: string;
   merchantId: string;

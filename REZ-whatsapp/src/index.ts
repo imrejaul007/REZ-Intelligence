@@ -8,7 +8,7 @@ import cors from 'cors';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 import { tracingMiddleware } from './middleware/tracing';
 import { metricsTracker } from './middleware/metricsTracker';
 import metricsRoutes, { updateRequestMetrics } from './routes/metrics';

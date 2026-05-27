@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { merchantService } from '../services/merchantService.js';
 import { aiAssistantService } from '../services/aiAssistantService.js';
 import { whatsAppService } from '../services/whatsappService.js';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 import type {
   MerchantSchema,
   SendMessageRequestSchema,
