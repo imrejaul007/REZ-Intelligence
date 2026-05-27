@@ -6,6 +6,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { locationService, analyticsService } from '../services/index.js';
 import { authMiddleware } from '../middleware/index.js';
+import type { LocationType, FootfallQuery } from '../types/index.js';
 
 const router = Router();
 
@@ -23,13 +24,15 @@ router.get('/footfall', authMiddleware, async (req: Request, res: Response, next
       granularity = 'daily'
     } = req.query;
 
-    const footfall = await locationService.getFootfallAnalytics({
+    const query: FootfallQuery = {
       startDate: startDate ? new Date(startDate as string) : undefined,
       endDate: endDate ? new Date(endDate as string) : undefined,
       zone: zone as string | undefined,
-      locationType: locationType as unknown,
-      granularity: granularity as unknown
-    });
+      locationType: locationType as LocationType | undefined,
+      granularity: granularity as FootfallQuery['granularity']
+    };
+
+    const footfall = await locationService.getFootfallAnalytics(query);
 
     res.json({
       success: true,
@@ -69,7 +72,7 @@ router.get('/footfall/zone/:zoneId', authMiddleware, async (req: Request, res: R
     res.json({
       success: true,
       data: {
-        zone: zone.toObject(),
+        zone: zone,
         analytics
       }
     });
@@ -89,7 +92,7 @@ router.get('/dwell-time', authMiddleware, async (req: Request, res: Response, ne
     const analytics = await locationService.getDwellTimeAnalytics({
       locationId: locationId as string | undefined,
       zone: zone as string | undefined,
-      locationType: locationType as unknown,
+      locationType: locationType as LocationType | undefined,
       limit: parseInt(limit as string)
     });
 
@@ -186,7 +189,7 @@ router.get('/analytics/trends', authMiddleware, async (req: Request, res: Respon
 
     const trends = await analyticsService.getTrendAnalysis(
       zone as string | undefined,
-      metrics ? (metrics as string).split(',') as unknown : undefined
+      metrics ? (metrics as string).split(',') as ('visits' | 'users' | 'dwellTime')[] : undefined
     );
 
     res.json({

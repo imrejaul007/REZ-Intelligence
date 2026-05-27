@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { locationService, analyticsService } from '../services/index.js';
 import { authMiddleware, createApiError } from '../middleware/index.js';
 import { getAllSegments, getSegmentDescription } from '../services/segmentService.js';
+import type { UserSegment, LocationZone } from '../types/index.js';
 
 const router = Router();
 
@@ -64,7 +65,7 @@ router.get('/segments/:segment/users', authMiddleware, async (req: Request, res:
       success: true,
       data: {
         segment,
-        description: getSegmentDescription(segment as unknown),
+        description: getSegmentDescription(segment as UserSegment),
         userCount: userIds.length,
         userIds: userIds.slice(0, 100)
       }
@@ -233,7 +234,7 @@ router.get('/zones/:zoneId/analytics', authMiddleware, async (req: Request, res:
     res.json({
       success: true,
       data: {
-        zone: zone.toObject(),
+        zone: zone,
         analytics
       }
     });

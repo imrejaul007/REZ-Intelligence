@@ -4,7 +4,7 @@
  */
 
 import { LocationVisitModel, UserLocationProfileModel, LocationZoneModel } from '../models/index.js';
-import type { FootfallQuery, FootfallResult, DwellTimeAnalytics } from '../types/index.js';
+import type { FootfallQuery, FootfallResult, DwellTimeAnalytics, UserSegment } from '../types/index.js';
 
 interface ZoneAnalytics {
   zone: string;
@@ -175,7 +175,7 @@ export class AnalyticsService {
     const result: UserSegmentAnalytics[] = [];
 
     for (const [segment, stats] of segmentStats) {
-      const profilesForSegment = profiles.filter(p => p.segments.includes(segment as unknown));
+      const profilesForSegment = profiles.filter(p => p.segments.includes(segment as UserSegment));
       const userIds = profilesForSegment.slice(0, 50).map(p => p.userId);
 
       let primaryLocationType = 'other';

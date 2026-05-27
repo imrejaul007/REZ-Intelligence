@@ -14,9 +14,62 @@ import type {
   FootfallResult,
   DwellTimeAnalytics,
   HeatmapPoint,
-  Coordinates
+  Coordinates,
+  LocationZone,
+  LocationPattern
 } from '../types/index.js';
-import logger from './utils/logger';
+import { logger } from '../utils/logger.js';
+
+// Helper function to convert Mongoose document to plain object
+function toLocationVisit(doc: unknown): LocationVisit {
+  const obj = doc as Record<string, unknown>;
+  return {
+    _id: String(obj._id),
+    userId: String(obj.userId),
+    locationId: String(obj.locationId),
+    locationName: String(obj.locationName),
+    locationType: obj.locationType as LocationVisit['locationType'],
+    zone: String(obj.zone),
+    coordinates: obj.coordinates as Coordinates | undefined,
+    timestamp: new Date(obj.timestamp as string),
+    dwellTimeMinutes: obj.dwellTimeMinutes as number | undefined,
+    source: obj.source as LocationVisit['source'],
+    metadata: obj.metadata as Record<string, unknown> | undefined
+  };
+}
+
+function toUserLocationProfile(doc: unknown): UserLocationProfile {
+  const obj = doc as Record<string, unknown>;
+  return {
+    _id: String(obj._id),
+    userId: String(obj.userId),
+    patterns: (obj.patterns as LocationPattern[]) || [],
+    segments: obj.segments as UserLocationProfile['segments'],
+    totalVisits: Number(obj.totalVisits) || 0,
+    favoriteZones: (obj.favoriteZones as string[]) || [],
+    lastVisit: obj.lastVisit ? new Date(obj.lastVisit as string) : undefined,
+    lastUpdated: new Date(obj.lastUpdated as string),
+    createdAt: new Date(obj.createdAt as string)
+  };
+}
+
+function toLocationZone(doc: unknown): LocationZone {
+  const obj = doc as Record<string, unknown>;
+  return {
+    _id: String(obj._id),
+    zoneId: String(obj.zoneId),
+    name: String(obj.name),
+    type: obj.type as LocationZone['type'],
+    polygon: obj.polygon as LocationZone['polygon'],
+    center: obj.center as Coordinates | undefined,
+    attributes: obj.attributes as LocationZone['attributes'],
+    activeUsers: Number(obj.activeUsers) || 0,
+    dailyFootfall: Number(obj.dailyFootfall) || 0,
+    weeklyFootfall: Number(obj.weeklyFootfall) || 0,
+    monthlyFootfall: Number(obj.monthlyFootfall) || 0,
+    lastUpdated: new Date(obj.lastUpdated as string)
+  };
+}
 
 export class LocationService {
   /**
@@ -34,7 +87,7 @@ export class LocationService {
     // Update user profile
     await this.updateUserProfile(input.userId);
 
-    return visit.toObject();
+    return toLocationVisit(visit.toObject());
   }
 
   /**
@@ -55,7 +108,7 @@ export class LocationService {
       await this.updateUserProfile(userId);
     }
 
-    return result;
+    return result.map(v => toLocationVisit(v.toObject()));
   }
 
   /**
@@ -63,7 +116,7 @@ export class LocationService {
    */
   async getUserProfile(userId: string): Promise<UserLocationProfile | null> {
     const profile = await UserLocationProfileModel.findOne({ userId });
-    return profile ? profile.toObject() : null;
+    return profile ? toUserLocationProfile(profile.toObject()) : null;
   }
 
   /**
@@ -90,7 +143,7 @@ export class LocationService {
       .sort({ timestamp: -1 })
       .limit(options.limit || 100);
 
-    return visits.map(v => v.toObject());
+    return visits.map(v => toLocationVisit(v.toObject()));
   }
 
   /**
@@ -116,8 +169,8 @@ export class LocationService {
       })
       .sort({ timestamp: -1 });
 
-    // Detect patterns
-    const visitObjects = visits.map(v => v.toObject());
+    // Detect patterns - convert Mongoose docs to plain objects
+    const visitObjects = visits.map(v => toLocationVisit(v.toObject()));
     const patterns = detectAllPatterns(visitObjects);
     const primaryPattern = getPrimaryPattern(visitObjects);
 
@@ -126,7 +179,7 @@ export class LocationService {
 
     // Calculate favorite zones
     const zoneCounts = new Map<string, number>();
-    for (const visit of visits) {
+    for (const visit of visitObjects) {
       zoneCounts.set(visit.zone, (zoneCounts.get(visit.zone) || 0) + 1);
     }
     const favoriteZones = Array.from(zoneCounts.entries())
@@ -156,7 +209,7 @@ export class LocationService {
 
     logger.info(`Updated profile for user ${userId}: ${patterns.length} patterns, ${segments.length} segments`);
 
-    return profile.toObject();
+    return toUserLocationProfile(profile!.toObject());
   }
 
   /**
@@ -330,33 +383,36 @@ export class LocationService {
   /**
    * Zone management
    */
-  async createZone(data: Partial<LocationZoneModel>): Promise<LocationZoneModel> {
+  async createZone(data: Partial<LocationZone>): Promise<LocationZone> {
     const zone = new LocationZoneModel({
       ...data,
       lastUpdated: new Date()
     });
     await zone.save();
-    return zone;
+    return toLocationZone(zone.toObject());
   }
 
-  async getZone(zoneId: string): Promise<LocationZoneModel | null> {
-    return LocationZoneModel.findOne({ zoneId });
+  async getZone(zoneId: string): Promise<LocationZone | null> {
+    const zone = await LocationZoneModel.findOne({ zoneId });
+    return zone ? toLocationZone(zone.toObject()) : null;
   }
 
-  async getAllZones(options: { type?: string; premium?: boolean } = {}): Promise<LocationZoneModel[]> {
+  async getAllZones(options: { type?: string; premium?: boolean } = {}): Promise<LocationZone[]> {
     const query: Record<string, unknown> = {};
     if (options.type) query.type = options.type;
     if (options.premium !== undefined) query['attributes.premium'] = options.premium;
 
-    return LocationZoneModel.find(query);
+    const zones = await LocationZoneModel.find(query);
+    return zones.map(z => toLocationZone(z.toObject()));
   }
 
-  async updateZone(zoneId: string, data: Partial<LocationZoneModel>): Promise<LocationZoneModel | null> {
-    return LocationZoneModel.findOneAndUpdate(
+  async updateZone(zoneId: string, data: Partial<LocationZone>): Promise<LocationZone | null> {
+    const zone = await LocationZoneModel.findOneAndUpdate(
       { zoneId },
       { $set: { ...data, lastUpdated: new Date() } },
       { new: true }
     );
+    return zone ? toLocationZone(zone.toObject()) : null;
   }
 
   async updateZoneFootfall(zoneId: string): Promise<void> {

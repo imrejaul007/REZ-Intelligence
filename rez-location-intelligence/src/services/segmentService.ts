@@ -64,10 +64,10 @@ function isOfficeCommuter(visits: LocationVisit[]): boolean {
     return day >= 1 && day <= 5;
   });
 
-  const weekdayRatio = weekdays.length / visits.length;
+  const altWeekdayRatio = weekdays.length / visits.length;
   const officeVisits = visits.filter(v => v.locationType === 'office');
 
-  return weekdayRatio >= SEGMENT_THRESHOLDS.COMMUTER_WEEKDAY_RATIO && officeVisits.length >= 3;
+  return altWeekdayRatio >= SEGMENT_THRESHOLDS.COMMUTER_WEEKDAY_RATIO && officeVisits.length >= 3;
 }
 
 /**
@@ -208,3 +208,20 @@ export function getAllSegments(): UserSegment[] {
     'explorer'
   ];
 }
+
+// Service class for dependency injection
+export class SegmentService {
+  classify(visits: LocationVisit[], patterns?: LocationPattern[]): UserSegment[] {
+    return classifyUserSegments(visits, patterns);
+  }
+
+  getDescription(segment: UserSegment): string {
+    return getSegmentDescription(segment);
+  }
+
+  getAll(): UserSegment[] {
+    return getAllSegments();
+  }
+}
+
+export const segmentService = new SegmentService();

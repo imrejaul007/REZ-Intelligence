@@ -1,15 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger } from './utils/logger';
+import { logger } from '../utils/logger.js';
 
 export class AppError extends Error {
   constructor(
-    public statusCode: number,
-    public code: string,
-    message: string
+    public message: string,
+    public statusCode: number = 500,
+    public code: string = 'INTERNAL_ERROR'
   ) {
     super(message);
     this.name = 'AppError';
   }
+}
+
+// Helper function to create API errors
+export function createApiError(message: string, statusCode: number, code: string): AppError {
+  return new AppError(message, statusCode, code);
 }
 
 export function errorHandler(

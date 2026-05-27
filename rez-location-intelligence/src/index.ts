@@ -6,7 +6,7 @@
 import 'dotenv/config';
 import express, { Express, Request, Response } from 'express';
 import mongoose from 'mongoose';
-import logger from './utils/logger.js';
+import { logger } from './utils/logger.js';
 import { locationRoutes, segmentRoutes, analyticsRoutes } from './routes/index.js';
 import { optionalAuthMiddleware, errorHandler, notFoundHandler } from './middleware/index.js';
 

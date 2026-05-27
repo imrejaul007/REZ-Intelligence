@@ -1,6 +1,6 @@
 export { locationService, LocationService } from './locationService.js';
 export { analyticsService, AnalyticsService } from './analyticsService.js';
-export { segmentService } from './segmentService.js';
+export { segmentService, SegmentService } from './segmentService.js';
 
 export {
   detectAllPatterns,
