@@ -37,7 +37,7 @@ export const CausalAnalysisRequestSchema = z.object({
   outcomeType: OutcomeType,
   method: CausalMethod.default('correlation'),
   covariates: z.array(z.string()),
-  data: z.array(z.record(z.union([z.string(), z.number(), z.boolean()]))).optional(),
+  data: z.array(z.record(z.string(), z.union([z.string(), z.number(), z.boolean()]))).optional(),
   sampleSize: z.number().optional()
 });
 export type CausalAnalysisRequest = z.infer<typeof CausalAnalysisRequestSchema>;
@@ -49,14 +49,14 @@ export const UpliftModelRequestSchema = z.object({
   outcome: z.string().min(1),
   features: z.array(z.string()),
   modelType: z.enum(['t-learner', 's-learner', 'x-learner', 'causal_forest', 'uplift_tree']).default('t-learner'),
-  targetPopulation: z.array(z.record(z.union([z.string(), z.number()]))),
-  controlPopulation: z.array(z.record(z.union([z.string(), z.number()]))).optional()
+  targetPopulation: z.array(z.record(z.string(), z.union([z.string(), z.number()]))),
+  controlPopulation: z.array(z.record(z.string(), z.union([z.string(), z.number()]))).optional()
 });
 export type UpliftModelRequest = z.infer<typeof UpliftModelRequestSchema>;
 
 export const CounterfactualRequestSchema = z.object({
   entityId: z.string(),
-  entityData: z.record(z.union([z.string(), z.number(), z.boolean()])),
+  entityData: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])),
   intervention: z.object({
     variable: z.string(),
     newValue: z.union([z.string(), z.number(), z.boolean()])

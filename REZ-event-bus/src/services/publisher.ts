@@ -4,7 +4,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { IEvent, EventCreatePayload, EventStatus, createEvent } from '../models/Event';
+import { IEvent, EventCreatePayload, EventStatus, EventPriority, createEvent } from '../models/Event';
 import { EventTypeValue, getEventTypeInfo } from './eventSchema';
 import { EventValidator } from './eventValidator';
 import { RedisPubSubService } from './redisPubSub';
@@ -190,7 +190,7 @@ export class PublisherService {
       payload,
       source,
       correlationId,
-      priority: payload['priority' as keyof typeof payload] as unknown || 'high',
+      priority: (payload['priority' as keyof typeof payload] as EventPriority) || EventPriority.NORMAL,
     });
   }
 

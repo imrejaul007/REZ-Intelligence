@@ -63,8 +63,8 @@ export class EventValidator {
         'Invalid event payload',
         result.error.issues.map((issue) => ({
           code: issue.code,
-          expected: String(issue.expected || ''),
-          received: String(issue.received || ''),
+          expected: String((issue as { expected?: unknown }).expected || ''),
+          received: String((issue as { received?: unknown }).received || ''),
           path: issue.path.map(String),
           message: issue.message,
         }))
@@ -107,8 +107,8 @@ export class EventValidator {
         'Invalid event',
         result.error.issues.map((issue) => ({
           code: issue.code,
-          expected: String(issue.expected || ''),
-          received: String(issue.received || ''),
+          expected: String((issue as { expected?: unknown }).expected || ''),
+          received: String((issue as { received?: unknown }).received || ''),
           path: issue.path.map(String),
           message: issue.message,
         }))
@@ -155,8 +155,8 @@ export class EventValidator {
         'Invalid subscription payload',
         result.error.issues.map((issue) => ({
           code: issue.code,
-          expected: String(issue.expected || ''),
-          received: String(issue.received || ''),
+          expected: String((issue as { expected?: unknown }).expected || ''),
+          received: String((issue as { received?: unknown }).received || ''),
           path: issue.path.map(String),
           message: issue.message,
         }))
@@ -263,8 +263,8 @@ export function validateBody<T>(schema: ZodSchema<T>) {
         'Invalid request body',
         result.error.issues.map((issue) => ({
           code: issue.code,
-          expected: String(issue.expected || ''),
-          received: String(issue.received || ''),
+          expected: String((issue as { expected?: unknown }).expected || ''),
+          received: String((issue as { received?: unknown }).received || ''),
           path: issue.path.map(String),
           message: issue.message,
         }))
