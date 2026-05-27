@@ -1,17 +1,15 @@
 import 'dotenv/config';
 import express, { Request, Response } from 'express';
-import { logger } from './utils/logger.js';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import { v4 as uuidv4 } from 'uuid';
-import { requestIdMiddleware } from './logger.js';
+import { logger, requestIdMiddleware } from './logger.js';
 import { errorHandler, asyncHandler } from './errors.js';
 import { engine } from './services/MerchantOSEngine.js';
 import {
   WidgetType,
   SubscriptionPlan,
-  AlertStatus,
   Insight,
   InsightType,
 } from './types.js';
@@ -167,9 +165,13 @@ app.get('/health', (_req: Request, res: Response) => {
 
 app.get('/ready', asyncHandler(async (_req: Request, res: Response) => {
   try {
+    if (!mongoose.connection.db) {
+      res.status(503).json({ status: 'not ready', error: 'Database not connected' });
+      return;
+    }
     await mongoose.connection.db.admin().ping();
     res.json({ status: 'ready' });
-  } catch (err) {
+  } catch (_err) {
     res.status(503).json({ status: 'not ready' });
   }
 }));
@@ -179,10 +181,11 @@ app.get('/api/merchants/:merchantId', asyncHandler(async (req: Request, res: Res
   const { merchantId } = req.params;
 
   const Merchant = getMerchantModel();
-  let merchant = await Merchant.findOne({ merchantId });
+  const merchant = await Merchant.findOne({ merchantId });
 
   if (!merchant) {
-    return res.status(404).json({ error: 'Merchant not found' });
+    res.status(404).json({ error: 'Merchant not found' });
+    return;
   }
 
   // Update last login
@@ -259,7 +262,8 @@ app.patch('/api/merchants/:merchantId/dashboard', asyncHandler(async (req: Reque
   );
 
   if (!dashboard) {
-    return res.status(404).json({ error: 'Dashboard not found' });
+    res.status(404).json({ error: 'Dashboard not found' });
+    return;
   }
 
   res.json({ success: true, dashboard });
@@ -319,7 +323,8 @@ app.patch('/api/merchants/:merchantId/alerts/:alertId', asyncHandler(async (req:
   );
 
   if (!alert) {
-    return res.status(404).json({ error: 'Alert not found' });
+    res.status(404).json({ error: 'Alert not found' });
+    return;
   }
 
   res.json({ success: true, alert });
@@ -355,7 +360,8 @@ app.patch('/api/merchants/:merchantId/notifications/:notificationId/read', async
   );
 
   if (!notification) {
-    return res.status(404).json({ error: 'Notification not found' });
+    res.status(404).json({ error: 'Notification not found' });
+    return;
   }
 
   res.json({ success: true, notification });
@@ -421,7 +427,8 @@ app.get('/api/auth/merchant/:merchantId/token', asyncHandler(async (req: Request
   const merchant = await Merchant.findOne({ merchantId });
 
   if (!merchant) {
-    return res.status(404).json({ error: 'Merchant not found' });
+    res.status(404).json({ error: 'Merchant not found' });
+    return;
   }
 
   // Generate temporary token for SSO

@@ -78,21 +78,21 @@ export class MerchantOSEngine {
   }
 
   // Generate alerts based on data
-  async generateAlerts(merchantId: string): Promise<unknown[]> {
+  async generateAlerts(_merchantId: string): Promise<unknown[]> {
     const alerts: unknown[] = [];
     // This would integrate with other services
     return alerts;
   }
 
   // Get dashboard metrics
-  async getMetrics(merchantId: string, dateRange: string = '7d'): Promise<{
+  async getMetrics(_merchantId: string, dateRange: string = '7d'): Promise<{
     current: Metric;
     previous: { orders: number; revenue: number };
     growth: MetricsGrowth;
     period: string;
   }> {
-    // Calculate date range
-    const days = dateRange === 'today' ? 1 : dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 90;
+    // Calculate date range (for documentation, even if not used)
+    void dateRange;
 
     // Mock metrics - in production, these would come from other services
     // Using crypto.randomInt for secure mock data generation
@@ -126,7 +126,7 @@ export class MerchantOSEngine {
 
   // Get chart data
   async getChartData(
-    merchantId: string,
+    _merchantId: string,
     metric: string,
     groupBy: string = 'day',
     days: number = 7

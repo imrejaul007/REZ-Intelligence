@@ -86,7 +86,7 @@ export const WidgetSchema = z.object({
   id: z.string(),
   type: z.nativeEnum(WidgetType),
   title: z.string(),
-  config: z.record(z.unknown()),
+  config: z.record(z.string(), z.unknown()),
   position: PositionSchema,
   size: z.enum(['small', 'medium', 'large']).default('medium'),
 });
@@ -128,8 +128,8 @@ export const ConnectionsSchema = z.object({
 });
 
 export const PreferencesSchema = z.object({
-  dashboardLayout: z.record(z.unknown()).optional(),
-  notifications: z.record(z.unknown()).optional(),
+  dashboardLayout: z.record(z.string(), z.unknown()).optional(),
+  notifications: z.record(z.string(), z.unknown()).optional(),
   timezone: z.string().default('Asia/Kolkata'),
 });
 
@@ -159,7 +159,7 @@ export const AlertSchema = z.object({
   severity: z.nativeEnum(AlertSeverity),
   title: z.string(),
   message: z.string(),
-  data: z.record(z.unknown()).optional(),
+  data: z.record(z.string(), z.unknown()).optional(),
   action: AlertActionSchema.optional(),
   status: z.nativeEnum(AlertStatus).default(AlertStatus.NEW),
   createdAt: z.date().default(() => new Date()),
@@ -172,7 +172,7 @@ export const NotificationSchema = z.object({
   type: z.nativeEnum(NotificationType),
   title: z.string(),
   body: z.string(),
-  data: z.record(z.unknown()).optional(),
+  data: z.record(z.string(), z.unknown()).optional(),
   read: z.boolean().default(false),
   readAt: z.date().optional(),
   channels: z.array(z.nativeEnum(NotificationChannel)).default([NotificationChannel.IN_APP]),
@@ -284,7 +284,6 @@ export interface IDashboard extends Document {
   widgets: Widget[];
   filters: DashboardFilters;
   isDefault: boolean;
-  updatedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
