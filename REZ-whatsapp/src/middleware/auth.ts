@@ -1,5 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
+
+export interface AuthenticatedRequest extends Request {
+  userId?: string;
+  apiKey?: string;
+  internalToken?: string;
+}
 
 export interface AuthConfig {
   apiKeys?: string[];
@@ -42,4 +48,37 @@ export function createAuthMiddleware(config: AuthConfig) {
       message: 'Valid API key or internal token required',
     });
   };
+}
+
+// Validate internal token
+export async function validateInternalToken(req: Request): Promise<boolean> {
+  const token = req.headers['x-internal-token'] as string | undefined;
+  if (!token) return false;
+  // Add validation logic here
+  return true;
+}
+
+// Verify Twilio webhook signature
+export function verifyTwilioWebhook(_req: Request): boolean {
+  // Add Twilio signature verification logic here
+  return true;
+}
+
+// Mask PII data
+export function maskPII(data: Record<string, unknown>): Record<string, unknown> {
+  const masked = { ...data };
+  const piiFields = ['email', 'phone', 'name', 'address'];
+  for (const field of piiFields) {
+    if (masked[field] && typeof masked[field] === 'string') {
+      const val = masked[field] as string;
+      masked[field] = val.substring(0, 2) + '***';
+    }
+  }
+  return masked;
+}
+
+// Validate webhook payload
+export function validateWebhookPayload(_payload: unknown): boolean {
+  // Add webhook validation logic here
+  return true;
 }
