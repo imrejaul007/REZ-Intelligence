@@ -217,6 +217,13 @@ export interface IInventoryItem extends Document {
   updatedAt: Date;
 }
 
+// Custom sync error type to avoid conflict with mongoose's ValidationError
+export interface SyncLogError {
+  itemId: string;
+  error: string;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface ISyncLog extends Document {
   syncId: string;
   merchantId: string;
@@ -224,7 +231,7 @@ export interface ISyncLog extends Document {
   type?: SyncType;
   status: SyncLogStatus;
   itemsProcessed: number;
-  errors: SyncError[];
+  syncErrors: SyncLogError[];
   startedAt?: Date;
   completedAt?: Date;
   duration?: number;
@@ -282,6 +289,7 @@ export interface StockPrediction {
   stockoutDate?: Date;
   daysOfStockLeft: number | null;
   confidence: number;
+  reorderDate?: Date | null;
 }
 
 export interface SaleRecord {

@@ -1,6 +1,6 @@
 import { createClient, RedisClientType } from 'redis';
 import { v4 as uuidv4 } from 'uuid';
-import { logger } from '../logger';
+import { logger } from '../logger.js';
 import {
   ItemStatus,
   SyncStatus,
@@ -12,7 +12,7 @@ import {
   InventoryItemInput,
   SaleRecord,
   SyncError,
-} from '../types';
+} from '../types.js';
 
 // Redis client type
 let redis: RedisClientType | null = null;
@@ -280,7 +280,9 @@ export class InventorySyncEngine {
     }
   }
 
-  private getInventoryItemModel(): import('mongoose').Model<IInventoryItem> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private getInventoryItemModel(): any {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const mongoose = require('mongoose');
     const inventoryItemSchema = new mongoose.Schema({
       itemId: { type: String, required: true, unique: true, index: true },
@@ -334,10 +336,12 @@ export class InventorySyncEngine {
     inventoryItemSchema.index({ 'stock.available': 1 });
     inventoryItemSchema.index({ 'predictions.stockoutDate': 1 });
 
-    return mongoose.models.InventoryItem || mongoose.model<IInventoryItem>('InventoryItem', inventoryItemSchema);
+    return mongoose.models.InventoryItem || mongoose.model('InventoryItem', inventoryItemSchema);
   }
 
-  private getSyncLogModel(): import('mongoose').Model<ISyncLog> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private getSyncLogModel(): any {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const mongoose = require('mongoose');
     const syncLogSchema = new mongoose.Schema({
       syncId: { type: String, required: true, unique: true, index: true },
@@ -352,7 +356,7 @@ export class InventorySyncEngine {
       duration: Number,
     }, { timestamps: true });
 
-    return mongoose.models.SyncLog || mongoose.model<ISyncLog>('SyncLog', syncLogSchema);
+    return mongoose.models.SyncLog || mongoose.model('SyncLog', syncLogSchema);
   }
 }
 

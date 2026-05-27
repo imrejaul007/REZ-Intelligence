@@ -1,7 +1,17 @@
 import winston from 'winston';
+import { Request, Response, NextFunction } from 'express';
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const SERVICE_NAME = process.env.SERVICE_NAME || 'inventory-sync';
+
+// Extend Express Request to include requestId
+declare global {
+  namespace Express {
+    interface Request {
+      requestId?: string;
+    }
+  }
+}
 
 const structuredFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DDTHH:mm:ss.SSSZ' }),
@@ -16,7 +26,8 @@ const structuredFormat = winston.format.combine(
 const prettyFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.colorize({ all: true }),
-  winston.format.printf(({ timestamp, level, message, service, requestId, ...meta }: { timestamp?: string; level: string; message: string; service?: string; requestId?: string; [key: string]: unknown }) => {
+  winston.format.printf((info: winston.Logform.TransformableInfo) => {
+    const { timestamp, level, message, service, requestId, ...meta } = info;
     const metaStr = Object.keys(meta).length ? JSON.stringify(meta, null, 2) : '';
     const reqIdStr = requestId ? `[${requestId}]` : '';
     return `${timestamp} ${level} ${reqIdStr} [${service}]: ${message} ${metaStr}`;
@@ -51,27 +62,17 @@ export function generateRequestId(): string {
 }
 
 export function requestIdMiddleware(
-  req: import('express').Request,
-  res: import('express').Response,
-  next: import('express').NextFunction
+  req: Request,
+  _res: Response,
+  next: NextFunction
 ): void {
   req.requestId = (req.headers['x-request-id'] as string) || generateRequestId();
-  res.setHeader('x-request-id', req.requestId);
 
   logger.info('Incoming request', {
     requestId: req.requestId,
     method: req.method,
     path: req.path,
     query: req.query,
-  });
-
-  res.on('finish', () => {
-    logger.info('Request completed', {
-      requestId: req.requestId,
-      method: req.method,
-      path: req.path,
-      statusCode: res.statusCode,
-    });
   });
 
   next();

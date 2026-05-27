@@ -14,7 +14,7 @@ import compression from 'compression';
 import { v4 as uuidv4 } from 'uuid';
 import { REZIntelligenceClient, createIntelligenceClient } from './sdk';
 import type { IntelligenceClientConfig } from './types';
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '4151', 10);
