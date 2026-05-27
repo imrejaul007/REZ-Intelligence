@@ -1,8 +1,12 @@
 import winston from 'winston';
 const { combine, timestamp, printf, colorize, errors } = winston.format;
-const logFormat = printf(({ level, message, timestamp, stack }: { level: string; message: string; timestamp: string; stack?: string }) => `${timestamp} [${level}]: ${stack || message}`);
+const logFormat = printf((info: winston.Logform.TransformableInfo & { timestamp?: string; stack?: string }) => {
+  const ts = info.timestamp || new Date().toISOString();
+  const msg = info.stack || info.message;
+  return `${ts} [${info.level}]: ${msg}`;
+});
 export const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
+  level: process.env['LOG_LEVEL'] || 'info',
   format: combine(errors({ stack: true }), timestamp(), logFormat),
   transports: [new winston.transports.Console({ format: combine(colorize(), timestamp({ format: 'HH:mm:ss' }), logFormat) })]
 });

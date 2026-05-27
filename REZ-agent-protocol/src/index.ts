@@ -5,7 +5,7 @@ import agentRoutes from './routes/agentRoutes.js';
 import { logger } from './utils/logger.js';
 
 const app = express();
-const PORT = process.env.PORT || 4201;
+const PORT = process.env['PORT'] || 4201;
 
 app.use(helmet());
 app.use(cors());

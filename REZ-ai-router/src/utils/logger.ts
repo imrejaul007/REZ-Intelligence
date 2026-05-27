@@ -5,9 +5,14 @@ const logsDir = path.join(process.cwd(), 'logs');
 
 const { combine, timestamp, printf, colorize, errors, json } = winston.format;
 
-const logFormat = printf(({ level, message, timestamp, ...rest }: { level: string; message: string; timestamp: string; [key: string]: unknown }) => {
+const logFormat = printf((info: winston.Logform.TransformableInfo & { timestamp?: string }) => {
+  const ts = info.timestamp || new Date().toISOString();
+  const rest = { ...info };
+  delete rest.level;
+  delete rest.message;
+  delete rest.timestamp;
   const meta = Object.keys(rest).length ? JSON.stringify(rest) : '';
-  return `${timestamp} [${level}]: ${message} ${meta}`;
+  return `${ts} [${info.level}]: ${info.message} ${meta}`;
 });
 
 const jsonFormat = combine(
@@ -24,8 +29,8 @@ const simpleFormat = combine(
 );
 
 export const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
-  format: process.env.LOG_FORMAT === 'json' ? jsonFormat : simpleFormat,
+  level: process.env['LOG_LEVEL'] || 'info',
+  format: process.env['LOG_FORMAT'] === 'json' ? jsonFormat : simpleFormat,
   defaultMeta: {
     service: 'rez-ai-router',
     version: '1.0.0',

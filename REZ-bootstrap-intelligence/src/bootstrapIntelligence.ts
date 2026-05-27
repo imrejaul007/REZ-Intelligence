@@ -496,7 +496,7 @@ export class BootstrapIntelligenceService {
     const launchOffers = this.generateLaunchOffers(categoryBaseline, cityPrior);
 
     // Generate category insights
-    const categoryInsights = this.generateCategoryInsights(categoryBaseline, category);
+    const categoryInsights = this.generateCategoryInsights(category, categoryBaseline);
 
     return {
       merchantId,

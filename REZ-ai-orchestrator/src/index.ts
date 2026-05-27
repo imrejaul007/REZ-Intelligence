@@ -5,10 +5,10 @@
 
 import express, { Request, Response } from 'express';
 import { randomUUID } from 'crypto';
-import logger from './utils/logger';
+import { logger } from './utils/logger.js';
 
 const app = express();
-const PORT = parseInt(process.env.PORT || '4101', 10);
+const PORT = parseInt(process.env['PORT'] || '4101', 10);
 
 app.use(express.json());
 
@@ -39,11 +39,11 @@ interface AIRecommendation {
 
 // AI Service endpoints (would connect to actual services in production)
 const AI_SERVICES: Record<string, string> = {
-  predictive: process.env.PREDICTIVE_URL || 'http://localhost:4123',
-  recommendation: process.env.RECOMMENDATION_URL || 'http://localhost:3001',
-  personalization: process.env.PERSONALIZATION_URL || 'http://localhost:3002',
-  identity: process.env.IDENTITY_URL || 'http://localhost:4050',
-  signal: process.env.SIGNAL_URL || 'http://localhost:4121',
+  predictive: process.env['PREDICTIVE_URL'] || 'http://localhost:4123',
+  recommendation: process.env['RECOMMENDATION_URL'] || 'http://localhost:3001',
+  personalization: process.env['PERSONALIZATION_URL'] || 'http://localhost:3002',
+  identity: process.env['IDENTITY_URL'] || 'http://localhost:4050',
+  signal: process.env['SIGNAL_URL'] || 'http://localhost:4121',
 };
 
 // ============================================

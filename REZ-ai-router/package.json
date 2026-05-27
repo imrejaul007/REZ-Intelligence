@@ -12,8 +12,6 @@
     "lint": "eslint src/**/*.ts"
   },
   "dependencies": {
-    "@rez/logger": "^1.0.0",
-    "@rez/security-middleware": "^1.0.0",
     "axios": "^1.6.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -23,7 +21,9 @@
     "redis": "^4.6.0",
     "uuid": "^9.0.0",
     "winston": "^3.11.0",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "@rez/logger": "file:../packages/rez-logger",
+    "@rez/security-middleware": "file:../packages/rez-security-middleware"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -32,7 +32,8 @@
     "@types/uuid": "^9.0.7",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "prom-client": "^15.1.0"
   },
   "engines": {
     "node": ">=18.0.0"

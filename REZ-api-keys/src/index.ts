@@ -1,12 +1,10 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
-import { logger } from './utils/logger.js';
 import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 import crypto from 'crypto';
 import helmet from 'helmet';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
-import { createLogger } from '../../shared';
 
 // ============================================
 // TYPE DEFINITIONS
@@ -15,8 +13,8 @@ import { createLogger } from '../../shared';
 type ApiKeyStatus = 'active' | 'suspended' | 'revoked';
 
 interface IRateLimit {
-  requestsPerMinute: number;
-  requestsPerDay: number;
+  requestsPerMinute?: number;
+  requestsPerDay?: number;
 }
 
 interface IUsage {
@@ -34,7 +32,7 @@ interface IApiKey extends Document {
   permissions: string[];
   status: ApiKeyStatus;
   rateLimit: IRateLimit;
-  metadata?: Types.Mixed;
+  metadata?: Record<string, unknown>;
   lastUsed?: Date;
   lastUsedIp?: string;
   usage: IUsage;
@@ -58,6 +56,33 @@ interface ValidateKeyResult {
   appId?: string;
   permissions?: string[];
 }
+
+// ============================================
+// LOGGER
+// ============================================
+
+const LOG_LEVELS = { error: 0, warn: 1, info: 2, debug: 3 } as const;
+type LogLevel = keyof typeof LOG_LEVELS;
+const currentLevel: LogLevel = (process.env['LOG_LEVEL'] as LogLevel) || 'info';
+function formatMessage(level: LogLevel, message: string, meta?: unknown): string {
+  const timestamp = new Date().toISOString();
+  const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
+  return `[${timestamp}] [${level.toUpperCase()}] ${message}${metaStr}`;
+}
+export const logger = {
+  error(message: string, error?: unknown): void {
+    if (LOG_LEVELS.error <= LOG_LEVELS[currentLevel]) console.error(formatMessage('error', message, error));
+  },
+  warn(message: string, meta?: unknown): void {
+    if (LOG_LEVELS.warn <= LOG_LEVELS[currentLevel]) console.warn(formatMessage('warn', message, meta));
+  },
+  info(message: string, meta?: unknown): void {
+    if (LOG_LEVELS.info <= LOG_LEVELS[currentLevel]) console.log(formatMessage('info', message, meta));
+  },
+  debug(message: string, meta?: unknown): void {
+    if (LOG_LEVELS.debug <= LOG_LEVELS[currentLevel]) console.log(formatMessage('debug', message, meta));
+  },
+};
 
 // ============================================
 // ZOD VALIDATION SCHEMAS
@@ -115,12 +140,6 @@ apiKeySchema.index({ appId: 1, status: 1 });
 apiKeySchema.index({ keyPrefix: 1 });
 
 const ApiKey: Model<IApiKey> = mongoose.model<IApiKey>('ApiKey', apiKeySchema);
-
-// ============================================
-// LOGGER
-// ============================================
-
-const logger = createLogger('api-keys');
 
 // ============================================
 // API KEY SERVICE

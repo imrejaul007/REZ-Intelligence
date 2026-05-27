@@ -6,14 +6,13 @@ import helmet from 'helmet';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 import { asyncHandler, errorMiddleware, notFoundMiddleware } from './utils/errorHandler';
 import {
   GenerateRequestSchema,
   EstimateRequestSchema,
   AnalyticsQuerySchema,
   AIProvider,
-  RouteOptions,
 } from './types';
 import {
   PROVIDERS,
@@ -23,11 +22,11 @@ import {
   PUBLIC_PATHS,
   REQUIRED_ENV,
 } from './constants';
-import { aiRouter, AIRouter } from './services/AIRouter';
+import { aiRouter } from './services/AIRouter';
 
 // Environment validation
 for (const env of REQUIRED_ENV) {
-  if (!process.env[env]) {
+  if (!process.env[env as string]) {
     logger.error(`FATAL: ${env} is required`);
     process.exit(1);
   }
@@ -54,7 +53,7 @@ app.use((req: Request, res: Response, next) => {
   if (publicPaths.some((p) => req.path.startsWith(p))) return next();
 
   const token = req.headers['x-internal-token'];
-  if (token !== process.env.INTERNAL_SERVICE_TOKEN) {
+  if (token !== process.env['INTERNAL_SERVICE_TOKEN']) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   next();
@@ -151,9 +150,7 @@ app.post(
     res.setHeader('Connection', 'keep-alive');
 
     try {
-      const apiKey = aiRouter.getNextKey
-        ? (aiRouter as unknown as { getNextKey: (p: AIProvider) => string | null }).getNextKey(provider)
-        : null;
+      const apiKey = aiRouter.getNextKey(provider);
       const model =
         DEFAULT_MODELS[provider]?.[tier] || DEFAULT_MODELS[PROVIDERS.ANTHROPIC][tier];
 

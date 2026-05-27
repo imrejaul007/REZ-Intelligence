@@ -2,22 +2,26 @@ import { AIProvider, ModelTier, ModelCosts } from '../types';
 
 // AI Providers
 export const PROVIDERS = {
-  ANTHROPIC: 'anthropic' as AIProvider,
-  OPENAI: 'openai' as AIProvider,
-  GOOGLE: 'google' as AIProvider,
-  LOCAL: 'local' as AIProvider,
+  ANTHROPIC: 'anthropic' as const,
+  OPENAI: 'openai' as const,
+  GOOGLE: 'google' as const,
+  LOCAL: 'local' as const,
 };
+
+export type AIProviderType = typeof PROVIDERS[keyof typeof PROVIDERS];
 
 // Model tiers for cost optimization
 export const MODEL_TIERS = {
-  FAST: 'fast' as ModelTier,         // Cheapest, fastest (haiku, gpt-3.5-turbo)
-  BALANCED: 'balanced' as ModelTier, // Mid-tier (sonnet, gpt-4o-mini)
-  POWERFUL: 'powerful' as ModelTier, // Most capable (opus, gpt-4o)
-  MAX: 'max' as ModelTier,           // Most expensive (o1, gpt-4-turbo)
+  FAST: 'fast' as const,
+  BALANCED: 'balanced' as const,
+  POWERFUL: 'powerful' as const,
+  MAX: 'max' as const,
 };
 
+export type ModelTierType = typeof MODEL_TIERS[keyof typeof MODEL_TIERS];
+
 // Default models per provider
-export const DEFAULT_MODELS: Record<AIProvider, Record<ModelTier, string>> = {
+export const DEFAULT_MODELS: Record<string, Record<string, string>> = {
   [PROVIDERS.ANTHROPIC]: {
     [MODEL_TIERS.FAST]: 'claude-3-5-haiku-20241022',
     [MODEL_TIERS.BALANCED]: 'claude-3-5-sonnet-20241022',

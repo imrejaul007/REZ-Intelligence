@@ -11,10 +11,10 @@ import compression from 'compression';
 import { v4 as uuidv4 } from 'uuid';
 import { createTenantRouter } from './routes/tenantRoutes';
 import { tenantMiddleware, ClientType } from './middleware/tenantIsolation';
-import { authMiddleware } from './middleware/auth';
+import { authMiddleware } from './middleware/auth.js';
 import { rateLimitMiddleware } from './middleware/rateLimit';
-import { errorHandler } from './middleware/errorHandler';
-import { logger } from './utils/logger';
+import { errorHandler } from './middleware/errorHandler.js';
+import { logger } from './utils/logger.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '4200', 10);

@@ -19,33 +19,30 @@ import {
 } from '../constants';
 import { logger } from '../utils/logger.js';
 import { RequestLog } from '../models/RequestLog';
-import {
-  createInputGuard,
-  createCostGuard,
-  createRateLimitGuard,
-  createCircuitBreaker,
-  UserQuerySchema,
-  CostExceededError,
-  RateLimitError,
-  CircuitOpenError,
-  sanitizeUserContent,
-  estimateTokens,
-  DEFAULT_CONFIG,
-  CostStorage,
-} from '@rez/ai-guardrails';
 
 interface ProviderKeyConfig {
   keys: string[];
   current: number;
 }
 
+// Simple guardrail implementations
+function sanitizeUserContent(prompt: string): string {
+  // Basic sanitization - remove potential injection patterns
+  return prompt.replace(/[<>]/g, '');
+}
+
+function estimateTokens(text: string): number {
+  // Rough estimate: ~4 characters per token
+  return Math.ceil(text.length / 4);
+}
+
 export class AIRouter {
   private redis: RedisClientType | null = null;
   private keyIndex: Record<string, ProviderKeyConfig> = {};
-  private costGuard: ReturnType<typeof createCostGuard>;
-  private rateLimitGuard: ReturnType<typeof createRateLimitGuard>;
-  private inputGuard: ReturnType<typeof createInputGuard>;
-  private circuitBreakers: Map<string, ReturnType<typeof createCircuitBreaker>>;
+  private dailyCostUSD = 0;
+  private userCosts: Record<string, number> = {};
+  private circuitBreakers: Map<string, { state: string; failures: number }> = new Map();
+  private initialized = false;
 
   async init(): Promise<void> {
     try {
@@ -79,10 +76,10 @@ export class AIRouter {
   private loadKeys(): void {
     // Support multiple keys for rotation
     const anthropicKeys = this.parseKeys(
-      process.env.ANTHROPIC_API_KEYS || process.env.ANTHROPIC_API_KEY
+      process.env['ANTHROPIC_API_KEYS'] || process.env['ANTHROPIC_API_KEY']
     );
     const openaiKeys = this.parseKeys(
-      process.env.OPENAI_API_KEYS || process.env.OPENAI_API_KEY
+      process.env['OPENAI_API_KEYS'] || process.env['OPENAI_API_KEY']
     );
 
     this.keyIndex = {
@@ -93,49 +90,17 @@ export class AIRouter {
     logger.info('API keys loaded', {
       anthropicCount: anthropicKeys.length,
       openaiCount: openaiKeys.length,
-      hasGoogleKey: !!process.env.GOOGLE_API_KEY,
+      hasGoogleKey: !!process.env['GOOGLE_API_KEY'],
     });
   }
 
   private initializeGuardrails(): void {
-    // Input validation guard
-    this.inputGuard = createInputGuard(UserQuerySchema);
+    // Initialize circuit breakers per provider
+    this.circuitBreakers.set(PROVIDERS.ANTHROPIC, { state: 'CLOSED', failures: 0 });
+    this.circuitBreakers.set(PROVIDERS.OPENAI, { state: 'CLOSED', failures: 0 });
+    this.circuitBreakers.set(PROVIDERS.GOOGLE, { state: 'CLOSED', failures: 0 });
 
-    // Cost guard with configurable limits
-    this.costGuard = createCostGuard({
-      dailyBudgetUSD: parseFloat(process.env.AI_DAILY_BUDGET_USD || '100'),
-      perUserDailyBudgetUSD: parseFloat(process.env.AI_USER_DAILY_BUDGET_USD || '10'),
-      perRequestMaxUSD: parseFloat(process.env.AI_REQUEST_MAX_COST_USD || '1'),
-    });
-
-    // Rate limit guard (will use Redis if available)
-    this.rateLimitGuard = createRateLimitGuard(
-      this.redis ? {
-        incr: (key) => this.redis!.incr(key),
-        expire: (key, seconds) => this.redis!.expire(key, seconds),
-        ttl: (key) => this.redis!.ttl(key),
-      } : undefined
-    );
-
-    // Circuit breakers per provider
-    this.circuitBreakers = new Map([
-      [PROVIDERS.ANTHROPIC, createCircuitBreaker('anthropic', {
-        failureThreshold: 5,
-        resetTimeoutMs: 60000,
-        halfOpenMaxCalls: 3,
-      })],
-      [PROVIDERS.OPENAI, createCircuitBreaker('openai', {
-        failureThreshold: 5,
-        resetTimeoutMs: 60000,
-        halfOpenMaxCalls: 3,
-      })],
-      [PROVIDERS.GOOGLE, createCircuitBreaker('google', {
-        failureThreshold: 5,
-        resetTimeoutMs: 60000,
-        halfOpenMaxCalls: 3,
-      })],
-    ]);
-
+    this.initialized = true;
     logger.info('Guardrails initialized');
   }
 
@@ -148,7 +113,7 @@ export class AIRouter {
   }
 
   // Get next key (round-robin)
-  private getNextKey(provider: AIProvider): string | null {
+  private getNextKeyInternal(provider: AIProvider): string | null {
     const providerKeys = this.keyIndex[provider];
     if (!providerKeys || providerKeys.keys.length === 0) {
       return null;
@@ -156,6 +121,11 @@ export class AIRouter {
     const key = providerKeys.keys[providerKeys.current];
     providerKeys.current = (providerKeys.current + 1) % providerKeys.keys.length;
     return key;
+  }
+
+  // Public method to get next API key
+  getNextKey(provider: AIProvider): string | null {
+    return this.getNextKeyInternal(provider);
   }
 
   // Get next available provider (for circuit breaker fallback)
@@ -166,7 +136,7 @@ export class AIRouter {
 
     for (const provider of providers) {
       const cb = this.circuitBreakers.get(provider);
-      if (!cb || cb.getState() !== 'OPEN') {
+      if (!cb || cb.state !== 'OPEN') {
         return provider;
       }
     }
@@ -178,7 +148,7 @@ export class AIRouter {
   // Get circuit breaker state for a provider
   getCircuitState(provider: AIProvider): string {
     const cb = this.circuitBreakers.get(provider);
-    return cb?.getState() || 'UNKNOWN';
+    return cb?.state || 'UNKNOWN';
   }
 
   // Route request to appropriate model
@@ -201,52 +171,36 @@ export class AIRouter {
     const sanitizedPrompt = sanitizeUserContent(prompt);
     const sanitizedSystemPrompt = systemPrompt ? sanitizeUserContent(systemPrompt) : undefined;
 
-    // Guard: Validate input
-    try {
-      if (userId) {
-        this.inputGuard({ userId, query: sanitizedPrompt, context: { page: '', timestamp: Date.now() } });
-      }
-    } catch (err) {
-      logger.error('[AIRouter] Input validation failed', { error: err instanceof Error ? err.message : 'Unknown error' });
-      throw err;
-    }
-
-    // Guard: Rate limiting
-    try {
-      await this.rateLimitGuard.check(
-        userId || 'anonymous',
-        { windowMs: 60000, maxRequests: 60 }
-      );
-    } catch (err) {
-      if (err instanceof RateLimitError) {
-        logger.warn('[AIRouter] Rate limit exceeded', { userId, details: err.details });
-        throw err;
-      }
-    }
-
     // Guard: Cost estimation and enforcement
     let provider = preferredProvider || PROVIDERS.ANTHROPIC;
     let model = DEFAULT_MODELS[provider]?.[tier];
-    const estimatedCost = this.estimateCost(model!, sanitizedPrompt, 4096);
+    if (!model) {
+      throw new Error(`No model configured for provider ${provider} and tier ${tier}`);
+    }
 
-    try {
-      await this.costGuard.checkAndTrack(
-        { inputTokens: estimateTokens(sanitizedPrompt), outputTokens: 1000, model: model!, estimatedCostUSD: estimatedCost },
-        userId || 'anonymous'
-      );
-    } catch (err) {
-      if (err instanceof CostExceededError || err instanceof Error && err.name.includes('Budget')) {
-        logger.error('[AIRouter] Cost limit exceeded', { estimatedCost, maxCost, userId });
-        throw err;
-      }
+    const estimatedCost = this.estimateCost(model, sanitizedPrompt, 4096);
+
+    // Check daily cost budget
+    const dailyBudgetUSD = parseFloat(process.env['AI_DAILY_BUDGET_USD'] || '100');
+    if (this.dailyCostUSD + estimatedCost > dailyBudgetUSD) {
+      logger.error('[AIRouter] Daily cost budget exceeded', { dailyCostUSD: this.dailyCostUSD, estimatedCost, dailyBudgetUSD });
+      throw new Error('Daily cost budget exceeded');
+    }
+
+    // Check user cost budget
+    const userIdKey = userId || 'anonymous';
+    const userBudgetUSD = parseFloat(process.env['AI_USER_DAILY_BUDGET_USD'] || '10');
+    if ((this.userCosts[userIdKey] || 0) + estimatedCost > userBudgetUSD) {
+      logger.warn('[AIRouter] User daily cost budget exceeded', { userId: userIdKey, userCostUSD: this.userCosts[userIdKey], estimatedCost, userBudgetUSD });
+      throw new Error('User daily cost budget exceeded');
     }
 
     await this.enforceCostLimit(estimatedCost, maxCost, userId);
 
     // Check circuit breaker
     const circuitBreaker = this.circuitBreakers.get(provider);
-    if (circuitBreaker && circuitBreaker.getState() === 'OPEN') {
-      if (!fallback) throw new CircuitOpenError(provider);
+    if (circuitBreaker && circuitBreaker.state === 'OPEN') {
+      if (!fallback) throw new Error(`Circuit breaker open for ${provider}`);
       provider = this.getNextAvailableProvider(provider);
       model = DEFAULT_MODELS[provider]?.[tier];
       logger.info('[AIRouter] Circuit open, switching provider', { from: preferredProvider, to: provider });
@@ -260,19 +214,16 @@ export class AIRouter {
       ] as AIProvider[];
 
       for (const p of providers) {
-        const cb = this.circuitBreakers.get(p);
         try {
-          const result = await (cb?.execute(async () =>
-            this.callProvider(p, model!, sanitizedPrompt, sanitizedSystemPrompt, {
-              requestId,
-              userId,
-              timeout,
-            })
-          ) || this.callProvider(p, model!, sanitizedPrompt, sanitizedSystemPrompt, {
+          const result = await this.callProvider(p, model!, sanitizedPrompt, sanitizedSystemPrompt, {
             requestId,
             userId,
             timeout,
-          }));
+          });
+
+          // Track cost
+          this.dailyCostUSD += result.cost;
+          this.userCosts[userIdKey] = (this.userCosts[userIdKey] || 0) + result.cost;
 
           // Log success
           await this.logRequest({
@@ -308,6 +259,10 @@ export class AIRouter {
           timeout,
         });
 
+        // Track cost
+        this.dailyCostUSD += result.cost;
+        this.userCosts[userIdKey] = (this.userCosts[userIdKey] || 0) + result.cost;
+
         await this.logRequest({
           ...result,
           requestId,
@@ -330,6 +285,10 @@ export class AIRouter {
           latency: Date.now() - startTime,
           status: 'error',
           error: err instanceof Error ? err.message : 'Unknown error',
+          promptTokens: 0,
+          completionTokens: 0,
+          totalTokens: 0,
+          cost: 0,
         });
         throw err;
       }

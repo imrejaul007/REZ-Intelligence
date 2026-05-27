@@ -6,8 +6,8 @@ export const AgentCapabilitySchema = z.object({
   name: z.string(),
   description: z.string(),
   category: z.enum(['analysis', 'action', 'retrieval', 'generation', 'coordination', 'monitoring']),
-  inputSchema: z.record(z.unknown()).optional(),
-  outputSchema: z.record(z.unknown()).optional(),
+  inputSchema: z.record(z.string(), z.unknown()).optional(),
+  outputSchema: z.record(z.string(), z.unknown()).optional(),
   costEstimate: z.number().optional(),
   latencyEstimate: z.number().optional()
 });
@@ -20,7 +20,7 @@ export const AgentSchema = z.object({
   capabilities: z.array(AgentCapabilitySchema),
   status: z.enum(['available', 'busy', 'offline', 'error']),
   endpoint: z.string().optional(),
-  metadata: z.record(z.unknown()).optional()
+  metadata: z.record(z.string(), z.unknown()).optional()
 });
 export type Agent = z.infer<typeof AgentSchema>;
 
@@ -29,7 +29,7 @@ export const TaskSchema = z.object({
   type: z.string(),
   fromAgent: z.string(),
   toAgent: z.string(),
-  payload: z.record(z.unknown()),
+  payload: z.record(z.string(), z.unknown()),
   priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
   timeout: z.number().default(30000)
 });
@@ -41,7 +41,7 @@ export const MessageSchema = z.object({
   from: z.string(),
   to: z.string(),
   taskId: z.string(),
-  payload: z.record(z.unknown()),
+  payload: z.record(z.string(), z.unknown()),
   timestamp: z.string()
 });
 export type Message = z.infer<typeof MessageSchema>;

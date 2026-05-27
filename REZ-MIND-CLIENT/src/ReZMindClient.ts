@@ -1,4 +1,4 @@
-import logger from './utils/logger';
+import { logger } from './utils/logger.js';
 
 /**
  * REZ Mind Client - Bidirectional Integration
@@ -42,12 +42,13 @@ interface MindEvent {
   type: string;
   source: string;
   target: string | '*';
-  payload;
+  payload: unknown;
   timestamp: Date;
   metadata?: {
     merchantId?: string;
     userId?: string;
     correlationId?: string;
+    orderId?: string;
   };
 }
 

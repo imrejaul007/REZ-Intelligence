@@ -110,8 +110,8 @@ export interface MetricsConfig {
 
 class Histogram {
   private buckets: Map<number, number> = new Map();
-  private count = 0;
-  private sum = 0;
+  private _count = 0;
+  private _sum = 0;
   private values: number[] = [];
   private maxSamples: number;
 
@@ -122,8 +122,8 @@ class Histogram {
   }
 
   observe(value: number): void {
-    this.count++;
-    this.sum += value;
+    this._count++;
+    this._sum += value;
     this.values.push(value);
 
     // Keep values array bounded
@@ -140,6 +140,9 @@ class Histogram {
     }
   }
 
+  get count(): number { return this._count; }
+  get sum(): number { return this._sum; }
+
   getPercentile(p: number): number {
     if (this.values.length === 0) return 0;
 
@@ -150,7 +153,7 @@ class Histogram {
 
   getStats(): { avg: number; min: number; max: number; p50: number; p95: number; p99: number } {
     return {
-      avg: this.count > 0 ? this.sum / this.count : 0,
+      avg: this._count > 0 ? this._sum / this._count : 0,
       min: this.values.length > 0 ? Math.min(...this.values) : 0,
       max: this.values.length > 0 ? Math.max(...this.values) : 0,
       p50: this.getPercentile(0.5),
@@ -721,18 +724,4 @@ export function createAIRouterMetricsHooks() {
 // EXPORTS
 // ============================================================================
 
-export {
-  MetricsCollector,
-  Histogram,
-};
-
-export type {
-  TokenMetrics,
-  CostMetrics,
-  LatencyMetrics,
-  ErrorMetrics,
-  RateLimitMetrics,
-  CircuitBreakerMetrics,
-  ComprehensiveMetrics,
-  MetricsConfig,
-};
+export { MetricsCollector, Histogram };

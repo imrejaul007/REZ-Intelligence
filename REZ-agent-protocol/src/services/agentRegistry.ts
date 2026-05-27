@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { Agent, AgentCapability, Task, Message } from '../types/index.js';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 export class AgentRegistry {
   private agents: Map<string, Agent> = new Map();
