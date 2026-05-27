@@ -13,7 +13,7 @@ import {
 import { businessAnalysisService, competitorAnalysisService, opportunityService, alertService } from '../services/index.js';
 import { OPPORTUNITY_SYSTEM_PROMPT, OPPORTUNITY_USER_PROMPT } from '../prompts/opportunityPrompt.js';
 import { THRESHOLDS } from '../constants/thresholds.js';
-import logger from './utils/logger.js';
+import logger from '../utils/logger.js';
 
 const log = logger.child({ context: 'OpportunityAgent' });
 

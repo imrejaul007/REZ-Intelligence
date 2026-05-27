@@ -11,7 +11,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
 import routes from './routes';
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '4220', 10);

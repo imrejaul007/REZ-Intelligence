@@ -936,6 +936,80 @@ app.get('/signals/weights', (_req: Request, res: Response) => {
 
 // GET /signals/segments/list - List all available segments
 app.get('/signals/segments/list', (_req: Request, res: Response) => {
+
+// ============================================
+// RisaCare-Compatible Endpoints
+// ============================================
+
+// POST /api/signals/track - Track a user signal
+const trackSignalSchema = z.object({
+  userId: z.string().min(1),
+  signalType: z.string().min(1),
+  properties: z.record(z.unknown()).optional(),
+  timestamp: z.string().optional()
+});
+
+app.post('/api/signals/track', async (req: Request, res: Response) => {
+  try {
+    const { userId, signalType, properties } = trackSignalSchema.parse(req.body);
+
+    // Store signal in MongoDB
+    await UserSignalModel.create({
+      userId,
+      signalType,
+      properties: properties || {},
+      timestamp: new Date(),
+      source: 'risa-care'
+    });
+
+    // Invalidate cache
+    await cacheService.del(`signals:${userId}`);
+
+    res.json({ success: true });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ success: false, error: error.errors });
+      return;
+    }
+    logger.error('Error tracking signal:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// GET /api/signals/user/:userId - Get user signals for RisaCare
+app.get('/api/signals/user/:userId', async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+
+    // Get signals from MongoDB
+    const signals = await UserSignalModel.find({ userId })
+      .sort({ timestamp: -1 })
+      .limit(100);
+
+    // Aggregate by type
+    const aggregatedSignals = signals.reduce((acc, signal) => {
+      const existing = acc.find(s => s.signalType === signal.signalType);
+      if (existing) {
+        existing.count += 1;
+        existing.lastSeen = signal.timestamp.toISOString();
+      } else {
+        acc.push({
+          signalType: signal.signalType,
+          count: 1,
+          lastSeen: signal.timestamp.toISOString()
+        });
+      }
+      return acc;
+    }, [] as Array<{ signalType: string; count: number; lastSeen: string }>);
+
+    res.json(aggregatedSignals);
+  } catch (error) {
+    logger.error('Error fetching user signals:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+app.get('/signals/segments/list', (_req: Request, res: Response) => {
   const segments = [
     { name: 'high-value', threshold: SEGMENT_THRESHOLDS.HIGH_VALUE, description: 'Overall score >= 75' },
     { name: 'medium-value', threshold: SEGMENT_THRESHOLDS.MEDIUM_VALUE, description: 'Overall score >= 50' },

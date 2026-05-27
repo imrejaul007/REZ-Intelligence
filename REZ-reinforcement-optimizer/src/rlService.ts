@@ -6,7 +6,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'crypto';
-import logger from './utils/logger';
+import logger from './utils/logger.js';
 import type {
   RLAgent,
   AgentType,

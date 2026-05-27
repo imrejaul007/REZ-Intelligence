@@ -8,7 +8,7 @@ import {
 } from '../types/index.js';
 import { businessAnalysisService, competitorAnalysisService } from '../services/index.js';
 import { RESEARCH_SYSTEM_PROMPT, RESEARCH_USER_PROMPT } from '../prompts/researchPrompt.js';
-import logger from './utils/logger.js';
+import logger from '../utils/logger.js';
 
 const log = logger.child({ context: 'ResearchAgent' });
 
