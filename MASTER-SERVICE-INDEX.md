@@ -1,5 +1,5 @@
 # REZ-Intelligence Complete Service Index
-**Last Updated: May 25, 2026**
+**Last Updated: May 27, 2026**
 
 This document is the COMPLETE index of all AI/ML services in the REZ ecosystem. It must be referenced for ANY question about REZ-Intelligence to ensure nothing is missed.
 
@@ -160,6 +160,39 @@ Features:
 
 ## AGENT ORCHESTRATION
 
+### REZ-action-engine (4009, 4109, 4209)
+**AI-powered decision execution engine with approval workflows**
+
+Three operation modes for different use cases:
+
+| Mode | Port | Execution | Decision | Use Case |
+|------|------|-----------|----------|----------|
+| **Active** | 4009 | ✅ | ✅ | Production automation |
+| **Observer** | 4009 | ❌ | ✅ | Testing/staging |
+| **Adaptive** | 4109 | ✅ | ✅ | Self-optimizing |
+
+Action Levels with confidence thresholds:
+
+| Level | Confidence | Behavior |
+|-------|------------|----------|
+| **SAFE** | 0.85+ | Auto-execute |
+| **SEMI_SAFE** | 0.70-0.84 | Approval required |
+| **RISKY** | 0.50-0.69 | Manual review |
+| **CRITICAL** | <0.50 | Blocked |
+
+Event Type Mappings:
+- `inventory.low` → `draft_po_suggested` (0.82 confidence)
+- `order.completed` → `loyalty_reward` (0.95 confidence)
+- `payment.success` → `payment_confirmed` (0.99 confidence)
+
+Key Files:
+- `src/index.ts` - Active mode entry
+- `src/index-observer.ts` - Observer mode
+- `src/index-adaptive.ts` - Adaptive mode
+- `src/engine/approval-queue.ts` - Approval workflows
+
+---
+
 ### REZ-ai-orchestrator
 **Multi-agent coordination system**
 
@@ -180,7 +213,7 @@ Features:
 
 ---
 
-### REZ-ai-router
+### REZ-ai-router (4026)
 **Routes requests to appropriate AI services**
 
 Features:
@@ -190,7 +223,7 @@ Features:
 
 ---
 
-### REZ-orchestrator-v2
+### REZ-orchestrator-v2 (4170)
 **Enhanced orchestration with expert selection**
 
 Features:
@@ -474,13 +507,44 @@ Features:
 
 ## LOCATION & GEO
 
-### REZ-geo-intelligence
-**Geospatial intelligence**
+### REZ-geo-intelligence (4140)
+**Unified geo-intelligence platform connecting consumer/merchant/event/zone graphs**
 
-Features:
-- Location analytics
-- Geofencing
-- Heatmaps
+Complete implementation with 5-level Zone Hierarchy:
+
+| Level | Pattern | Example |
+|-------|---------|---------|
+| City | `bangalore` | Bangalore |
+| District | `koramangala` | Koramangala |
+| Neighborhood | `ngb_*` | Koramangala 5th Block |
+| Micro-zone | `mz_*` | Building clusters |
+| Venue Cluster | `vc_*` | Event venues |
+
+Synthetic Demand Index (11 components):
+- Order Velocity (0.12), Ride Frequency (0.15), Event Attendance (0.12)
+- Footfall Count (0.10), Weather Impact (0.05), Time Impact (0.07)
+- Merchant Density (0.10), Consumer Affinity (0.08), Historical Trend (0.08)
+- Competition Index (0.07), Accessibility Score (0.06)
+
+Core Graphs:
+- Consumer Graph - User locations, affinities, visit patterns
+- Merchant Graph - Business locations, categories, ratings
+- Event Graph - Event locations, attendance, promotion signals
+- Zone Graph - Zone hierarchy, demand indices, relationships
+
+Event Bus Subscriptions:
+- `event.booked` → Update consumer affinities
+- `event.checkin` → Update attendance metrics
+- `event.cancelled` → Update event status
+- `user.location_updated` → Update user location
+- `merchant.nearby_event` → Update merchant proximity
+
+Key Files:
+- `src/index.ts` - Main entry point
+- `src/services/graphService.ts` - Graph operations
+- `src/services/demandIndexService.ts` - Demand calculations
+- `src/services/zoneHierarchyService.ts` - Zone management
+- `src/middleware/auth.ts` - Authentication middleware
 
 ---
 
@@ -612,23 +676,31 @@ Features:
 
 ## EVENTS & CAMPAIGNS
 
-### REZ-ab-testing
-**A/B testing framework**
+### REZ-ab-testing (4132)
+**A/B testing framework for multi-variant experimentation**
 
 Features:
-- Experiment management
-- Variant allocation
-- Statistical significance
+- Experiment management (draft, running, paused, concluded, winner)
+- Variant allocation with hash-based deterministic assignment
+- Traffic allocation (control experiment traffic percentage)
+- Statistical significance calculation (z-score, 95% confidence)
+- Winner declaration (auto-declare statistically significant winners)
+- Conversion tracking (conversions / visitors metrics)
+
+Key Files:
+- `src/abTesting.ts` - Core experimentation logic
+- `src/types.ts` - Type definitions
 
 ---
 
-### REZ-ab-testing-service
-**A/B testing service**
+### REZ-ab-testing-service (4132)
+**A/B testing service with feature flags**
 
 Features:
-- Feature flags
-- Gradual rollout
-- Analytics
+- Feature flags with gradual rollout
+- Experiment variants with assignment tracking
+- Analytics dashboard
+- Winner determination
 
 ---
 
@@ -679,6 +751,18 @@ Features:
 - Loyalty attribution
 - Point calculation
 - Reward tracking
+
+Attribution models supported:
+- First Touch - Attribute to first interaction
+- Last Touch - Attribute to last interaction
+- Linear - Equal weight across touchpoints
+- Time Decay - Recent interactions weighted more
+- Position Based - First/last get 40%, middle 20%
+
+Key Endpoints:
+- `POST /api/track` - Track interaction
+- `POST /api/conversion` - Track conversion
+- `POST /api/rewards` - Award rewards
 
 ---
 
@@ -1506,13 +1590,31 @@ Features:
 
 ---
 
-### REZ-audit-logging
-**Audit logging**
+### REZ-audit-logging (4133)
+**Immutable audit trail for compliance and security**
 
 Features:
-- Activity tracking
-- Compliance reports
-- Forensic analysis
+- Immutable logs (append-only MongoDB collection)
+- Activity tracking with 50+ standardized event types
+- User attribution (track who did what)
+- IP tracking (log source IP addresses)
+- Compliance reports (pre-built compliance queries)
+- Search & filter (query audit logs)
+- Data retention (configurable retention policies)
+
+Event Categories:
+- Authentication: login, logout, mfa_enabled
+- Authorization: permission_granted, role_changed
+- Data Access: record_viewed, report_generated
+- Data Modification: record_created, record_updated, record_deleted
+- Financial: payment_processed, refund_issued
+- Admin: user_created, user_suspended
+
+Key Endpoints:
+- `POST /api/logs` - Create log entry
+- `GET /api/logs` - Query logs
+- `GET /api/logs/stats` - Get statistics
+- `GET /api/logs/export` - Export logs
 
 ---
 
@@ -1523,6 +1625,36 @@ Features:
 - Gradual rollouts
 - A/B tests
 - Kill switches
+
+---
+
+### REZ-api-gateway (4000)
+**Central routing, authentication, and rate limiting**
+
+Core Features:
+- Request routing (route to backend services)
+- Authentication (JWT validation)
+- Authorization (role-based access control)
+- Rate limiting (per-user and per-route limits)
+- Request logging (structured request logging)
+- Error handling (typed error responses)
+- CORS management (cross-origin request handling)
+
+Error Classes:
+| Class | Status | Code | Use Case |
+|-------|--------|------|----------|
+| `AppError` | - | - | Base error class |
+| `ValidationError` | 400 | VALIDATION_ERROR | Invalid input |
+| `NotFoundError` | 404 | NOT_FOUND | Resource missing |
+| `UnauthorizedError` | 401 | UNAUTHORIZED | Auth required |
+| `ForbiddenError` | 403 | FORBIDDEN | Access denied |
+
+Middleware Stack:
+```
+Request → Rate Limit → Auth → Validation → Handler → Response
+                ↓           ↓         ↓
+            429 Too Many  401 Auth   400 Validation
+```
 
 ---
 
