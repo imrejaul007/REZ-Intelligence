@@ -82,9 +82,11 @@ app.get('/api/experiments', (req: Request, res: Response) => {
 
 // Get experiment by ID
 app.get('/api/experiments/:id', (req: Request, res: Response) => {
-  const experiment = experiments.get(req.params.id);
+  const id = req.params.id as string;
+  const experiment = experiments.get(id);
   if (!experiment) {
-    return res.status(404).json({ success: false, error: 'Experiment not found' });
+    res.status(404).json({ success: false, error: 'Experiment not found' });
+    return;
   }
   res.json({ success: true, data: experiment });
 });
@@ -94,10 +96,11 @@ app.post('/api/experiments', (req: Request, res: Response) => {
   const { name, description, variants, targetingRules } = req.body;
 
   if (!name || !variants || variants.length < 2) {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       error: 'Name and at least 2 variants are required'
     });
+    return;
   }
 
   const experiment: Experiment = {
@@ -117,35 +120,42 @@ app.post('/api/experiments', (req: Request, res: Response) => {
 
 // Update experiment
 app.put('/api/experiments/:id', (req: Request, res: Response) => {
-  const experiment = experiments.get(req.params.id);
+  const id = req.params.id as string;
+  const experiment = experiments.get(id);
   if (!experiment) {
-    return res.status(404).json({ success: false, error: 'Experiment not found' });
+    res.status(404).json({ success: false, error: 'Experiment not found' });
+    return;
   }
 
   const updated = { ...experiment, ...req.body, updatedAt: new Date() };
-  experiments.set(req.params.id, updated);
+  experiments.set(id, updated);
   res.json({ success: true, data: updated });
 });
 
 // Delete experiment
 app.delete('/api/experiments/:id', (req: Request, res: Response) => {
-  const deleted = experiments.delete(req.params.id);
+  const id = req.params.id as string;
+  const deleted = experiments.delete(id);
   if (!deleted) {
-    return res.status(404).json({ success: false, error: 'Experiment not found' });
+    res.status(404).json({ success: false, error: 'Experiment not found' });
+    return;
   }
   res.json({ success: true, message: 'Experiment deleted' });
 });
 
 // Get variant assignment for user
 app.get('/api/experiments/:id/assign', (req: Request, res: Response) => {
+  const id = req.params.id as string;
   const { userId } = req.query;
   if (!userId) {
-    return res.status(400).json({ success: false, error: 'userId is required' });
+    res.status(400).json({ success: false, error: 'userId is required' });
+    return;
   }
 
-  const experiment = experiments.get(req.params.id);
+  const experiment = experiments.get(id);
   if (!experiment) {
-    return res.status(404).json({ success: false, error: 'Experiment not found' });
+    res.status(404).json({ success: false, error: 'Experiment not found' });
+    return;
   }
 
   if (experiment.status !== 'active') {
@@ -208,7 +218,7 @@ app.get('/api/experiments/:id/results', (req: Request, res: Response) => {
 });
 
 // Error handling
-app.use((err: Error, req: Request, res: Response, next: express.NextFunction) => {
+app.use((err: Error, _req: Request, res: Response, _next: express.NextFunction) => {
   console.error('Error:', err);
   res.status(500).json({ success: false, error: 'Internal server error' });
 });
