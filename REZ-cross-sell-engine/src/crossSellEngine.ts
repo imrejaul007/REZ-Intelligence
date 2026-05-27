@@ -25,6 +25,27 @@ const PROFILE_SERVICE_URL = process.env.PROFILE_SERVICE_URL || 'http://localhost
 // Types
 // ============================================================================
 
+interface MerchantLocation {
+  lat: number;
+  lng: number;
+  radius?: number;
+}
+
+interface MerchantQuery {
+  category: string;
+  lat?: number;
+  lng?: number;
+  radius?: number;
+}
+
+interface HistoryItem {
+  category?: string;
+  merchantCategory?: string;
+  score?: number;
+  merchantId?: string;
+  visits?: number;
+}
+
 export interface CrossSellOpportunity {
   userId: string;
   fromMerchantId: string;
@@ -303,14 +324,14 @@ class CrossSellEngine {
 
   private async findMerchants(
     category: string,
-    location: { lat: number; lng: number } | null
+    location: MerchantLocation | null
   ): Promise<{ id: string; name: string; rating: number }[]> {
     try {
-      const params: unknown = { category };
+      const params: MerchantQuery = { category };
       if (location) {
         params.lat = location.lat;
         params.lng = location.lng;
-        params.radius = 5; // 5km
+        params.radius = location.radius || 5; // 5km
       }
 
       const response = await axios.get(
@@ -318,12 +339,12 @@ class CrossSellEngine {
         { params, timeout: 3000 }
       );
       return response.data || [];
-    } catch (error) {
+    } catch {
       return [];
     }
   }
 
-  private getTopCategories(history: unknown[]): { name: string; score: number }[] {
+  private getTopCategories(history: HistoryItem[]): { name: string; score: number }[] {
     const categoryScores: Record<string, number> = {};
 
     for (const item of history) {
@@ -339,8 +360,8 @@ class CrossSellEngine {
       .slice(0, 5);
   }
 
-  private isAlreadyCustomer(history: unknown[], merchantId: string): boolean {
-    return history.some(h => h.merchantId === merchantId && h.visits > 3);
+  private isAlreadyCustomer(history: HistoryItem[], merchantId: string): boolean {
+    return history.some(h => h.merchantId === merchantId && (h.visits ?? 0) > 3);
   }
 
   private buildOpportunity(

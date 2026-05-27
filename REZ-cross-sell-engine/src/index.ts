@@ -1,4 +1,4 @@
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 
 /**
  * REZ Cross-Sell Engine - Entry Point

@@ -240,7 +240,7 @@ export class ConsumerGraph {
     }
 
     // Aggregate data from all modules
-    const dataSources: string[] = [profile.toJSON().metadata.data_sources];
+    const dataSources: string[] = ['consumer_graph'];
 
     // Get module data
     const [
@@ -282,13 +282,14 @@ export class ConsumerGraph {
     // Update metadata
     const updatedProfile = profile.toJSON();
     updatedProfile.metadata.last_aggregated = new Date().toISOString();
-    updatedProfile.metadata.data_sources = [...new Set(dataSources.flat())];
+    const uniqueSources = [...new Set(dataSources.flat())];
+    updatedProfile.metadata.data_sources = uniqueSources;
 
     return {
       success: true,
       consumer: updatedProfile,
       last_updated: new Date().toISOString(),
-      sources: updatedProfile.metadata.data_sources,
+      sources: uniqueSources,
     };
   }
 
@@ -427,12 +428,11 @@ export class ConsumerGraph {
     }
 
     profile.addDevice({
-      device_id: deviceId,
       type: deviceType,
-      primary: metadata?.primary ?? false,
-      trust_score: metadata?.trust_score ?? 0.5,
-      platform: metadata?.platform,
-      app_version: metadata?.app_version,
+      primary: (metadata?.primary as boolean | undefined) ?? false,
+      trust_score: (metadata?.trust_score as number | undefined) ?? 0.5,
+      platform: metadata?.platform as string | undefined,
+      app_version: metadata?.app_version as string | undefined,
     });
 
     // Update device resolver
@@ -479,11 +479,11 @@ export class ConsumerGraph {
     sharedHousehold: number;
     influence: number;
   }> {
-    const graph = await this.getRelationshipGraph(userId);
+    const graph = await this.getRelationshipGraph(userId) as { relationships?: unknown[] } | null;
     const profile = this.profiles.get(userId);
 
     return {
-      connections: graph?.relationships?.length || 0,
+      connections: (graph?.relationships?.length) || 0,
       sharedDevices: profile?.toJSON().devices.length || 0,
       sharedHousehold: await this.graphEngine.countRelatedByType(userId, 'household'),
       influence: await this.calculateInfluenceScore(userId),

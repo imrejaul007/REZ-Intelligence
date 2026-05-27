@@ -15,7 +15,7 @@ const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 /**
  * Verify token
  */
-export async function verifyToken(token: string): Promise<{ valid: boolean; user?; error?: string }> {
+export async function verifyToken(token: string): Promise<{ valid: boolean; user?: unknown; error?: string }> {
   try {
     const res = await axios.get(`${AUTH_URL}/api/auth/verify`, {
       headers: { 'Authorization': `Bearer ${token}`, 'X-Internal-Token': INTERNAL_TOKEN },
@@ -25,21 +25,23 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; user
     }
     return { valid: false, error: 'Invalid token' };
   } catch (error) {
-    return { valid: false, error: error.message };
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { valid: false, error: message };
   }
 }
 
 /**
  * Get customer profile
  */
-export async function getProfile(userId: string): Promise<{ profile; error?: string }> {
+export async function getProfile(userId: string): Promise<{ profile: unknown; error?: string }> {
   try {
     const res = await axios.get(`${PROFILE_URL}/api/profiles/${userId}`, {
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { profile: res.data };
   } catch (error) {
-    return { profile: null, error: error.message };
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { profile: null, error: message };
   }
 }
 
@@ -53,21 +55,23 @@ export async function updateProfile(userId: string, updates: Record<string, unkn
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: message };
   }
 }
 
 /**
  * Get customer wallet
  */
-export async function getWallet(userId: string): Promise<{ wallet; error?: string }> {
+export async function getWallet(userId: string): Promise<{ wallet: unknown; error?: string }> {
   try {
     const res = await axios.get(`${WALLET_URL}/api/wallet/${userId}/balance`, {
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { wallet: res.data };
   } catch (error) {
-    return { wallet: null, error: error.message };
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { wallet: null, error: message };
   }
 }
 
@@ -81,7 +85,8 @@ export async function notifyCustomer(userId: string, title: string, body: string
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: message };
   }
 }
 
@@ -99,7 +104,8 @@ export async function publishEvent(eventType: string, data: Record<string, unkno
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: message };
   }
 }
 

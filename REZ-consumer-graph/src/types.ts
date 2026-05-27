@@ -206,11 +206,20 @@ export interface FeedbackEntry {
   date: string;
 }
 
+export type ConsentStatus = 'pending' | 'granted' | 'denied' | 'withdrawn';
+
+export interface ConsentPreferences {
+  marketing: boolean;
+  analytics: boolean;
+  personalization: boolean;
+  third_party_sharing: boolean;
+}
+
 export interface ConsumerMetadata {
   data_sources: string[];
   last_aggregated: string;
   verification_status: 'verified' | 'partial' | 'unverified';
-  consent_status: ConsentStatus;
+  consent_status: ConsentPreferences;
   gdpr_compliant: boolean;
   risk_score: number; // 0-1
   segment_tags: string[];

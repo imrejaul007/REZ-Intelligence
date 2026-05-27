@@ -8,7 +8,7 @@ import winston from 'winston';
 import { ProfileManager } from './profiles/profile-manager';
 import { SegmentationEngine } from './segments/segmentation';
 import { IdentityResolver } from './identity/identity-resolution';
-import { ActivityTracker } from './activity/activity-tracker';
+import { ActivityTracker, type ActivityType } from './activity/activity-tracker';
 import { ProfileUnification } from './unification/profile-unification';
 
 // Logger configuration
@@ -222,7 +222,7 @@ app.get('/activities/:profileId', async (req: Request, res: Response) => {
       {
         startDate: startDate as string,
         endDate: endDate as string,
-        type: type as string,
+        type: type as ActivityType,
         limit: parseInt(limit as string, 10)
       }
     );

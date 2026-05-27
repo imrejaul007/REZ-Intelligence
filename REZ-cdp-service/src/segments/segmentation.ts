@@ -543,14 +543,13 @@ export class SegmentationEngine {
     const intersection = new Set<string>(Array.from(profileSets.values())[0] || []);
 
     for (const [segmentId, profileIds] of profileSets) {
-      for (const profileId of profileIds) {
-        union.add(profileId);
+      for (const pid of profileIds) {
+        union.add(pid);
       }
       // Recalculate intersection
-      intersection.delete(profileId);
-      for (const profileId of profileIds) {
-        if (!Array.from(profileSets.values()).every(s => s.has(profileId))) {
-          intersection.delete(profileId);
+      for (const pid of profileIds) {
+        if (!Array.from(profileSets.values()).every(s => s.has(pid))) {
+          intersection.delete(pid);
         }
       }
     }
@@ -559,12 +558,12 @@ export class SegmentationEngine {
     const firstSet = Array.from(profileSets.values())[0];
     if (firstSet) {
       const correctIntersection = new Set<string>();
-      for (const profileId of firstSet) {
-        if (Array.from(profileSets.values()).every(s => s.has(profileId))) {
-          correctIntersection.add(profileId);
+      for (const pid of firstSet) {
+        if (Array.from(profileSets.values()).every(s => s.has(pid))) {
+          correctIntersection.add(pid);
         }
       }
-      intersection.delete(profileId);
+      intersection.clear();
       for (const p of intersection) {
         correctIntersection.delete(p);
       }

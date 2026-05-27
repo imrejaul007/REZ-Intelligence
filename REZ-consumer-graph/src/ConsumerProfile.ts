@@ -21,6 +21,7 @@ import {
   WalletType,
   LoyaltyTier,
   ConsentStatus,
+  ConsentPreferences,
 } from './types';
 
 export class ConsumerProfile {
@@ -161,24 +162,28 @@ export class ConsumerProfile {
   // DEVICE MANAGEMENT
   // ============================================
 
-  addDevice(device: Omit<LinkedDevice, 'device_id' | 'linked_at'>): void {
+  addDevice(device: Record<string, unknown>): void {
+    const deviceId = (device.device_id as string) || `device_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const existing = this.profile.devices.find(
-      (d) => d.device_id === device.device_id
+      (d) => d.device_id === deviceId
     );
 
     if (existing) {
       existing.last_active = new Date().toISOString();
-      Object.assign(existing, device);
+      existing.primary = (device.primary as boolean) ?? existing.primary;
+      existing.trust_score = (device.trust_score as number) ?? existing.trust_score;
+      if (device.platform) existing.platform = device.platform as string;
+      if (device.app_version) existing.app_version = device.app_version as string;
     } else {
       this.profile.devices.push({
-        device_id: device.device_id,
-        type: device.type,
-        platform: device.platform,
-        app_version: device.app_version,
+        device_id: deviceId,
+        type: (device.type as 'ios' | 'android' | 'web' | 'tablet' | 'kiosk') || 'web',
+        platform: device.platform as string | undefined,
+        app_version: device.app_version as string | undefined,
         linked_at: new Date().toISOString(),
         last_active: new Date().toISOString(),
-        primary: device.primary ?? this.profile.devices.length === 0,
-        trust_score: device.trust_score ?? 0.5,
+        primary: (device.primary as boolean) ?? this.profile.devices.length === 0,
+        trust_score: (device.trust_score as number) ?? 0.5,
       });
     }
     this.touch();
@@ -470,7 +475,7 @@ export class ConsumerProfile {
   // AI MEMORY MANAGEMENT
   // ============================================
 
-  setPreference(key: string, value): void {
+  setPreference(key: string, value: unknown): void {
     this.profile.ai_memory.preferences[key] = value;
     this.touch();
   }
@@ -525,10 +530,13 @@ export class ConsumerProfile {
     }
   }
 
-  setConsentStatus(consent: Partial<ConsentStatus>): void {
+  setConsentStatus(consent: Partial<ConsentPreferences>): void {
+    const current = this.profile.metadata.consent_status;
     this.profile.metadata.consent_status = {
-      ...this.profile.metadata.consent_status,
-      ...consent,
+      marketing: consent.marketing ?? current.marketing,
+      analytics: consent.analytics ?? current.analytics,
+      personalization: consent.personalization ?? current.personalization,
+      third_party_sharing: consent.third_party_sharing ?? current.third_party_sharing,
     };
     this.updateGDPRCompliance();
     this.touch();
@@ -559,19 +567,21 @@ export class ConsumerProfile {
 
   merge(data: Partial<Consumer360>): void {
     // Deep merge non-array properties
+    const profileRecord = this.profile as unknown as Record<string, unknown>;
     Object.keys(data).forEach((key) => {
       const value = data[key as keyof Consumer360];
       if (value !== undefined && value !== null) {
         if (Array.isArray(value)) {
-          // For arrays, we could merge or replace depending on strategy
-          (this.profile as unknown)[key] = value;
+          // For arrays, replace instead of merge
+          profileRecord[key] = value;
         } else if (typeof value === 'object') {
-          (this.profile as unknown)[key] = {
-            ...(this.profile as unknown)[key],
-            ...value,
+          const existing = (profileRecord[key] as Record<string, unknown>) || {};
+          profileRecord[key] = {
+            ...existing,
+            ...(value as unknown as Record<string, unknown>),
           };
         } else {
-          (this.profile as unknown)[key] = value;
+          profileRecord[key] = value;
         }
       }
     });

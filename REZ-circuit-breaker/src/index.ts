@@ -17,7 +17,7 @@
  */
 
 import EventEmitter from 'events';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 
 export type CircuitState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
 

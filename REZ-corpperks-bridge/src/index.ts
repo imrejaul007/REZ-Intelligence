@@ -228,7 +228,7 @@ app.post('/api/v1/sync/batch', async (req: Request, res: Response) => {
 
 // Get employee
 app.get('/api/v1/employees/:id', (req: Request, res: Response) => {
-  const employee = employees.get(req.params.id);
+  const employee = employees.get(req.params.id as string);
 
   if (!employee) {
     return res.status(404).json({ error: 'Employee not found' });
@@ -239,7 +239,7 @@ app.get('/api/v1/employees/:id', (req: Request, res: Response) => {
 
 // Get employee events
 app.get('/api/v1/employees/:id/events', (req: Request, res: Response) => {
-  const employeeEvents = events.filter(e => e.employeeId === req.params.id);
+  const employeeEvents = events.filter(e => e.employeeId === req.params.id as string);
 
   res.json({
     employeeId: req.params.id,
@@ -277,7 +277,7 @@ const CROSS_BRAND_REWARDS: CrossBrandReward[] = [
 
 // Get cross-brand reward for employee
 app.get('/api/v1/rewards/:employeeId', async (req: Request, res: Response) => {
-  const employee = employees.get(req.params.employeeId);
+  const employee = employees.get(req.params.employeeId as string);
 
   if (!employee) {
     return res.status(404).json({ error: 'Employee not found' });
@@ -338,7 +338,7 @@ const CORPORATE_OFFERS: CorporateOffer[] = [
 
 // Get offers for employee
 app.get('/api/v1/offers/:employeeId', (req: Request, res: Response) => {
-  const employee = employees.get(req.params.employeeId);
+  const employee = employees.get(req.params.employeeId as string);
 
   if (!employee) {
     return res.status(404).json({ error: 'Employee not found' });
@@ -362,7 +362,7 @@ app.get('/api/v1/offers/:employeeId', (req: Request, res: Response) => {
 
 // Get employee engagement summary
 app.get('/api/v1/analytics/:employeeId', (req: Request, res: Response) => {
-  const employee = employees.get(req.params.employeeId);
+  const employee = employees.get(req.params.employeeId as string);
 
   if (!employee) {
     return res.status(404).json({ error: 'Employee not found' });

@@ -36,7 +36,8 @@ const paymentSchema = z.object({
   transactionId: z.string(),
   amount: z.number(),
   method: z.string(),
-  status: z.string()
+  status: z.string(),
+  timestamp: z.string().optional()
 });
 
 const reviewSchema = z.object({

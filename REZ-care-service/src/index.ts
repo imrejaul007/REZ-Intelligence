@@ -42,7 +42,7 @@ import { WhatsAppSupportService } from './services/whatsappSupportService';
 import { EscalationEngine } from './services/escalationEngine';
 import { ReportsService } from './services/reportsService';
 import { initWebSocketServer, getWebSocketServer } from './services/websocketServer';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 import * as integrations from './services/serviceIntegrations';
 import { checkAllServicesHealth } from './integrations/ecosystemServices';
 import selfServiceRoutes from './routes/selfServiceRoutes';
@@ -59,7 +59,7 @@ import subscriptionRoutes from './routes/subscriptionRoutes';
 import { subscriptionService } from './services/subscriptionService';
 
 // Middleware imports
-import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { rateLimits } from './middleware/rateLimit';
 import { initializeRABTULCircuitBreakers, circuitBreakerRegistry } from './utils/circuitBreaker';
 

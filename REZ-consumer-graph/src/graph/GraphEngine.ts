@@ -369,34 +369,36 @@ export class GraphEngine {
       const relationships: GraphRelationship[] = [];
 
       for (const record of result.records) {
-        const consumer = record.get('c') as unknown;
+        const consumer = record.get('c') as { properties?: Record<string, unknown> };
+        const props = consumer?.properties || {};
         nodes.push({
-          id: consumer.properties.user_id,
+          id: String(props.user_id || ''),
           labels: ['Consumer'],
-          properties: consumer.properties,
-          created_at: consumer.properties.created_at?.toString() || new Date().toISOString(),
-          updated_at: consumer.properties.updated_at?.toString() || new Date().toISOString(),
+          properties: props,
+          created_at: String(props.created_at || new Date().toISOString()),
+          updated_at: String(props.updated_at || new Date().toISOString()),
         });
 
         const connectedNodes = record.get('connectedNodes') || [];
         const rels = record.get('rels') || [];
 
         for (let i = 0; i < connectedNodes.length; i++) {
-          const node = connectedNodes[i] as unknown;
+          const node = connectedNodes[i] as { properties?: Record<string, unknown>; labels?: string[] };
+          const nodeProps = node?.properties || {};
           nodes.push({
-            id: node.properties.device_id || node.properties.user_id || `node_${i}`,
-            labels: node.labels,
-            properties: node.properties,
+            id: String(nodeProps.device_id || nodeProps.user_id || `node_${i}`),
+            labels: node?.labels || [],
+            properties: nodeProps,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           });
 
-          const rel = rels[i] as unknown;
+          const rel = rels[i] as { type?: string; properties?: Record<string, unknown> };
           if (rel) {
             relationships.push({
-              type: rel.type,
-              source: consumer.properties.user_id,
-              target: node.properties.device_id || node.properties.user_id,
+              type: rel.type || 'connected',
+              source: String(props.user_id || ''),
+              target: String(nodeProps.device_id || nodeProps.user_id || ''),
               properties: rel.properties || {},
             });
           }
@@ -566,21 +568,24 @@ export class GraphEngine {
         const graphRels = record.get('relationships') as unknown[];
 
         for (const node of graphNodes) {
+          const n = node as { properties?: Record<string, unknown>; labels?: string[] };
+          const props = n?.properties || {};
           nodes.push({
-            id: node.properties.user_id,
-            labels: node.labels,
-            properties: node.properties,
-            created_at: node.properties.created_at?.toString() || new Date().toISOString(),
-            updated_at: node.properties.updated_at?.toString() || new Date().toISOString(),
+            id: String(props.user_id || ''),
+            labels: n?.labels || [],
+            properties: props,
+            created_at: String(props.created_at || new Date().toISOString()),
+            updated_at: String(props.updated_at || new Date().toISOString()),
           });
         }
 
         for (const rel of graphRels) {
+          const r = rel as { type?: string; start?: { properties?: Record<string, unknown> }; end?: { properties?: Record<string, unknown> }; properties?: Record<string, unknown> };
           edges.push({
-            type: rel.type,
-            source: rel.start?.properties?.user_id || '',
-            target: rel.end?.properties?.user_id || '',
-            properties: rel.properties || {},
+            type: r.type || 'connected',
+            source: String(r.start?.properties?.user_id || ''),
+            target: String(r.end?.properties?.user_id || ''),
+            properties: r.properties || {},
           });
         }
       }
