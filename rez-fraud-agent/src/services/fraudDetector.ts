@@ -5,7 +5,7 @@ import { VelocityCheck } from './velocityCheck';
 import { BlacklistService } from './blacklistService';
 import { FraudCase, generateFraudCaseId, FraudCaseStatus, FraudCaseSeverity } from '../models/FraudCase';
 import { RiskProfile, RiskLevel, IRiskProfile } from '../models/RiskProfile';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { FraudPatternType, getPatternScore, FRAUD_PATTERNS } from '../config/patterns';
 import { getToneForRiskScore, formatMessageWithTone } from '../config/tone';
 

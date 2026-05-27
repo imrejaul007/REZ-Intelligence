@@ -10,7 +10,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 
-import { Logger } from './utils/logger';
+import { Logger } from './utils/logger.js';
 import { ExpertRoutes, ExpertRoutesConfig } from './routes/expert.routes';
 import { ExpertAgentRegistry } from './base/ExpertAgent';
 import {

@@ -1,7 +1,7 @@
 import { TransactionContext } from './fraudDetector';
 import { IRiskProfile } from '../models/RiskProfile';
 import { FRAUD_PATTERNS, FraudPatternType, FraudPattern } from '../config/patterns';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export interface PatternMatch {
   patternType: FraudPatternType;

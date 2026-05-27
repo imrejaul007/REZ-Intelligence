@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { IExpert, IExpertRegistry } from '../interfaces/IExpert';
 import { IIntent, IntentSource, IntentPriority } from '../interfaces/IIntent';
 import { IResponse } from '../interfaces/IResponse';
-import { Logger } from '../utils/logger';
+import { Logger } from '../utils/logger.js';
 
 export interface ExpertRoutesConfig {
   registry: IExpertRegistry;

@@ -8,7 +8,7 @@ const velocityCheck_1 = require("./velocityCheck");
 const blacklistService_1 = require("./blacklistService");
 const FraudCase_1 = require("../models/FraudCase");
 const RiskProfile_1 = require("../models/RiskProfile");
-const logger_1 = require("../utils/logger");
+const logger_js_1 = require("../utils/logger.js");
 const patterns_1 = require("../config/patterns");
 const tone_1 = require("../config/tone");
 class FraudDetector {
@@ -31,7 +31,7 @@ class FraudDetector {
         const metadata = {};
         try {
             // Step 1: Check blacklists
-            logger_1.logger.debug('Checking blacklists...', { transactionId: context.transactionId });
+            logger_js_1.logger.debug('Checking blacklists...', { transactionId: context.transactionId });
             const blacklistResult = await this.checkBlacklists(context);
             if (blacklistResult.isBlacklisted) {
                 metadata.blacklistMatch = blacklistResult.details;
@@ -57,7 +57,7 @@ class FraudDetector {
                 metadata.hasExistingProfile = !!riskProfile;
             }
             // Step 3: Run pattern matching
-            logger_1.logger.debug('Running pattern matching...', { transactionId: context.transactionId });
+            logger_js_1.logger.debug('Running pattern matching...', { transactionId: context.transactionId });
             const patternMatches = await this.patternMatcher.analyze(context, riskProfile);
             for (const match of patternMatches) {
                 const pattern = patterns_1.FRAUD_PATTERNS[match.patternType];
@@ -72,7 +72,7 @@ class FraudDetector {
                 }
             }
             // Step 4: Run velocity checks
-            logger_1.logger.debug('Running velocity checks...', { transactionId: context.transactionId });
+            logger_js_1.logger.debug('Running velocity checks...', { transactionId: context.transactionId });
             const velocityResult = await this.velocityCheck.check(context);
             if (velocityResult.isViolation) {
                 detectedPatterns.push({
@@ -85,14 +85,14 @@ class FraudDetector {
             }
             metadata.velocityCheck = velocityResult;
             // Step 5: Monitor transaction for anomalies
-            logger_1.logger.debug('Monitoring transaction...', { transactionId: context.transactionId });
+            logger_js_1.logger.debug('Monitoring transaction...', { transactionId: context.transactionId });
             const transactionMonitorResult = await this.transactionMonitor.monitor(context);
             if (transactionMonitorResult.anomalies.length > 0) {
                 metadata.transactionAnomalies = transactionMonitorResult.anomalies;
                 riskFactors.push(...transactionMonitorResult.anomalies.map(a => a.description));
             }
             // Step 6: Calculate final risk score
-            logger_1.logger.debug('Calculating risk score...', { transactionId: context.transactionId });
+            logger_js_1.logger.debug('Calculating risk score...', { transactionId: context.transactionId });
             const riskScore = await this.riskScorer.calculateScore({
                 baseScore: detectedPatterns.length > 0
                     ? Math.max(...detectedPatterns.map(p => p.score))
@@ -121,7 +121,7 @@ class FraudDetector {
             const tone = (0, tone_1.getToneForRiskScore)(riskScore);
             const message = this.formatResponseMessage(decision, riskScore, detectedPatterns);
             const processingTimeMs = Date.now() - startTime;
-            logger_1.logger.info('Fraud analysis complete', {
+            logger_js_1.logger.info('Fraud analysis complete', {
                 transactionId: context.transactionId,
                 decision,
                 riskScore,
@@ -143,7 +143,7 @@ class FraudDetector {
             };
         }
         catch (error) {
-            logger_1.logger.error('Fraud detection error', {
+            logger_js_1.logger.error('Fraud detection error', {
                 transactionId: context.transactionId,
                 error: error instanceof Error ? error.message : 'Unknown error',
             });
@@ -270,7 +270,7 @@ class FraudDetector {
                 }],
         });
         await fraudCase.save();
-        logger_1.logger.info('Fraud case created', {
+        logger_js_1.logger.info('Fraud case created', {
             caseId,
             transactionId: context.transactionId,
             riskScore: analysis.riskScore,

@@ -6,7 +6,7 @@ const uuid_1 = require("uuid");
 const fraudDetector_1 = require("../services/fraudDetector");
 const FraudCase_1 = require("../models/FraudCase");
 const Blacklist_1 = require("../models/Blacklist");
-const logger_1 = require("../utils/logger");
+const logger_js_1 = require("../utils/logger.js");
 // Initialize fraud detector
 const fraudDetector = new fraudDetector_1.FraudDetector();
 const router = (0, express_1.Router)();
@@ -82,7 +82,7 @@ const internalAuth = (req, res, next) => {
         return next();
     }
     if (!token || !Object.values(expectedTokens).includes(token)) {
-        (0, logger_1.logSecurity)('Unauthorized access attempt', {
+        (0, logger_js_1.logSecurity)('Unauthorized access attempt', {
             ip: req.ip,
             path: req.path,
             method: req.method,
@@ -132,7 +132,7 @@ router.post('/check', internalAuth, asyncHandler(async (req, res) => {
             twoFactorEnabled: validatedData.twoFactorEnabled,
         };
         const result = await fraudDetector.analyzeTransaction(context);
-        (0, logger_1.logAudit)('Fraud check completed', {
+        (0, logger_js_1.logAudit)('Fraud check completed', {
             requestId,
             transactionId: validatedData.transactionId,
             decision: result.decision,
@@ -140,7 +140,7 @@ router.post('/check', internalAuth, asyncHandler(async (req, res) => {
             processingTimeMs: Date.now() - startTime,
         });
         if (result.decision === 'DENY') {
-            (0, logger_1.logFraudAlert)('Transaction blocked', {
+            (0, logger_js_1.logFraudAlert)('Transaction blocked', {
                 transactionId: validatedData.transactionId,
                 riskScore: result.riskScore,
                 patternsDetected: result.detectedPatterns.length,
@@ -255,7 +255,7 @@ router.post('/blacklist', internalAuth, asyncHandler(async (req, res) => {
         expiresAt: validatedData.expiresAt ? new Date(validatedData.expiresAt) : undefined,
         notes: validatedData.notes,
     });
-    (0, logger_1.logAudit)('Blacklist entry added', {
+    (0, logger_js_1.logAudit)('Blacklist entry added', {
         entryId: entry.entryId,
         type: entry.type,
         value: entry.value.substring(0, 4) + '***',
@@ -291,7 +291,7 @@ router.delete('/blacklist/:entryId', internalAuth, asyncHandler(async (req, res)
         res.status(404).json({ error: 'Blacklist entry not found' });
         return;
     }
-    (0, logger_1.logAudit)('Blacklist entry removed', {
+    (0, logger_js_1.logAudit)('Blacklist entry removed', {
         entryId,
         removedBy,
     });
@@ -439,7 +439,7 @@ router.patch('/cases/:caseId', internalAuth, asyncHandler(async (req, res) => {
         res.status(404).json({ error: 'Fraud case not found' });
         return;
     }
-    (0, logger_1.logAudit)('Fraud case updated', {
+    (0, logger_js_1.logAudit)('Fraud case updated', {
         caseId,
         newStatus: validatedData.status,
         updatedBy,
@@ -472,7 +472,7 @@ router.post('/cases/:caseId/actions', internalAuth, asyncHandler(async (req, res
         res.status(404).json({ error: 'Fraud case not found' });
         return;
     }
-    (0, logger_1.logAudit)('Action added to fraud case', {
+    (0, logger_js_1.logAudit)('Action added to fraud case', {
         caseId,
         action,
         performedBy,
@@ -532,7 +532,7 @@ router.get('/velocity/:userId', internalAuth, asyncHandler(async (req, res) => {
  */
 router.delete('/velocity/:userId', internalAuth, asyncHandler(async (req, res) => {
     const { userId } = req.params;
-    (0, logger_1.logAudit)('Velocity counters reset', { userId });
+    (0, logger_js_1.logAudit)('Velocity counters reset', { userId });
     res.json({ success: true, userId });
 }));
 // ============= HEALTH CHECK =============

@@ -3,7 +3,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { Logger } from '../utils/logger';
+import { Logger } from '../utils/logger.js';
 
 export default function requestLogger(
   req: Request,

@@ -13,9 +13,10 @@ const formats = {
     winston.format.timestamp(),
     winston.format.colorize(),
     winston.format.errors({ stack: true }),
-    winston.format.printf(({ level, message, timestamp, ...meta }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
+    winston.format.printf((info: winston.Logform.TransformableInfo) => {
+  const { level, message, timestamp: ts, ...meta } = info;
       const metaStr = Object.keys(meta).length ? JSON.stringify(meta, null, 2) : '';
-      return `${timestamp} [${level}]: ${message} ${metaStr}`;
+      return `${ts} [${level}]: ${message} ${metaStr}`;
     })
   ),
   detailed: winston.format.combine(
@@ -25,7 +26,7 @@ const formats = {
     winston.format.printf(({ level, message, timestamp, ...meta }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
       const metaStr = Object.keys(meta).length ? `\n${JSON.stringify(meta, null, 2)}` : '';
       const stack = meta.stack ? `\n${meta.stack}` : '';
-      return `${timestamp} [${level}]: ${message}${metaStr}${stack}`;
+      return `${ts} [${level}]: ${message}${metaStr}${stack}`;
     })
   ),
 };

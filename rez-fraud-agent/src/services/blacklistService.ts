@@ -1,5 +1,5 @@
 import { BlacklistEntry, BlacklistType, BlacklistReason, BlacklistSeverity, IBlacklistEntry } from '../models/Blacklist';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export interface BlacklistCheckResult {
   isBlacklisted: boolean;

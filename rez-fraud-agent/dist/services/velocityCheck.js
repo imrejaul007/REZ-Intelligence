@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VelocityCheck = void 0;
-const logger_1 = require("../utils/logger");
+const logger_js_1 = require("../utils/logger.js");
 class VelocityCheck {
     redis = null;
     // Velocity thresholds
@@ -79,7 +79,7 @@ class VelocityCheck {
             return baseResult;
         }
         catch (error) {
-            logger_1.logger.error('Velocity check error', {
+            logger_js_1.logger.error('Velocity check error', {
                 error: error instanceof Error ? error.message : 'Unknown error',
                 userId,
             });
@@ -128,7 +128,7 @@ class VelocityCheck {
             await multi.exec();
         }
         catch (error) {
-            logger_1.logger.error('Failed to record velocity', { error, userId });
+            logger_js_1.logger.error('Failed to record velocity', { error, userId });
         }
     }
     async getVelocityStats(userId) {
@@ -160,7 +160,7 @@ class VelocityCheck {
             ]);
         }
         catch (error) {
-            logger_1.logger.error('Failed to reset velocity', { error, userId });
+            logger_js_1.logger.error('Failed to reset velocity', { error, userId });
         }
     }
     async checkIPVelocity(ipAddress) {

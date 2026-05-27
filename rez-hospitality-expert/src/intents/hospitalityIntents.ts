@@ -16,7 +16,7 @@ import { expertiseService } from '../services/expertise.js';
 import { workflowService } from '../services/workflows.js';
 import { recommendationsService } from '../services/recommendations.js';
 import { selectTone, ToneType } from '../config/tone.js';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 
 // ============================================
 // INTENT HANDLERS

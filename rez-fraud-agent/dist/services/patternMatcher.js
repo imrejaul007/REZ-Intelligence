@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PatternMatcher = void 0;
 const patterns_1 = require("../config/patterns");
-const logger_1 = require("../utils/logger");
+const logger_js_1 = require("../utils/logger.js");
 class PatternMatcher {
     async analyze(context, riskProfile) {
         const matches = [];
@@ -23,7 +23,7 @@ class PatternMatcher {
                 matches.push(result.match);
             }
         }
-        logger_1.logger.debug('Pattern matching complete', {
+        logger_js_1.logger.debug('Pattern matching complete', {
             transactionId: context.transactionId,
             matchesFound: matches.length,
             patterns: matches.map(m => m.patternType),

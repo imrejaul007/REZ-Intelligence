@@ -5,7 +5,7 @@
 
 import { IIntent } from '../interfaces/IIntent';
 import { SuggestedFollowUp } from '../interfaces/IResponse';
-import { Logger } from '../utils/logger';
+import { Logger } from '../utils/logger.js';
 
 export interface RecommendationConfig {
   enabled: boolean;

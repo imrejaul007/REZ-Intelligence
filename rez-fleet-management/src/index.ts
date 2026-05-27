@@ -3,7 +3,7 @@
  */
 
 import express from 'express';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 import { routingService } from './services/RoutingService';
 import { surgePricingService } from './services/SurgePricingService';
 import { incentiveService } from './services/IncentiveService';

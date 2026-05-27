@@ -14,7 +14,7 @@ import {
   ServiceRequest,
   ConversationContext,
 } from '../types/index.js';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 
 // ============================================
 // WORKFLOW DEFINITIONS

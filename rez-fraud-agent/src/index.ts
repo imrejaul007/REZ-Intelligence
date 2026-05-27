@@ -5,7 +5,7 @@ import compression from 'compression';
 import mongoose from 'mongoose';
 import { createClient, RedisClientType } from 'redis';
 
-import { logger, logAudit, logSecurity } from './utils/logger';
+import { logger, logAudit, logSecurity } from './utils/logger.js';
 import fraudRoutes from './routes/fraud.routes';
 import alertRoutes from './routes/alert.routes';
 import { FRAUD_AGENT_SYSTEM_PROMPT } from './config/systemPrompt';

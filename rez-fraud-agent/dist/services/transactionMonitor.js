@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TransactionMonitor = void 0;
-const logger_1 = require("../utils/logger");
+const logger_js_1 = require("../utils/logger.js");
 class TransactionMonitor {
     redis = null;
     KEYS = {
@@ -77,7 +77,7 @@ class TransactionMonitor {
             }
         }
         catch (error) {
-            logger_1.logger.error('Failed to check failed attempts', { error, userId: context.userId });
+            logger_js_1.logger.error('Failed to check failed attempts', { error, userId: context.userId });
         }
         return anomalies;
     }
@@ -129,7 +129,7 @@ class TransactionMonitor {
             }
         }
         catch (error) {
-            logger_1.logger.error('Failed to check amount patterns', { error, userId: context.userId });
+            logger_js_1.logger.error('Failed to check amount patterns', { error, userId: context.userId });
         }
         return anomalies;
     }
@@ -176,7 +176,7 @@ class TransactionMonitor {
             }
         }
         catch (error) {
-            logger_1.logger.error('Failed to check location patterns', { error, userId: context.userId });
+            logger_js_1.logger.error('Failed to check location patterns', { error, userId: context.userId });
         }
         return anomalies;
     }
@@ -212,7 +212,7 @@ class TransactionMonitor {
             await this.redis.expire(key, 86400 * 30); // 30 days
         }
         catch (error) {
-            logger_1.logger.error('Failed to check merchant patterns', { error, userId: context.userId });
+            logger_js_1.logger.error('Failed to check merchant patterns', { error, userId: context.userId });
         }
         return anomalies;
     }
@@ -225,7 +225,7 @@ class TransactionMonitor {
             await this.redis.expire(key, 600); // 10 minutes
         }
         catch (error) {
-            logger_1.logger.error('Failed to record failed attempt', { error, userId });
+            logger_js_1.logger.error('Failed to record failed attempt', { error, userId });
         }
     }
     async clearFailedAttempts(userId) {
@@ -236,7 +236,7 @@ class TransactionMonitor {
             await this.redis.del(key);
         }
         catch (error) {
-            logger_1.logger.error('Failed to clear failed attempts', { error, userId });
+            logger_js_1.logger.error('Failed to clear failed attempts', { error, userId });
         }
     }
 }

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import axios from 'axios';
 import crypto from 'crypto';
 import { FraudCase, FraudCaseSeverity } from '../models/FraudCase';
-import { logger, logFraudAlert } from '../utils/logger';
+import { logger, logFraudAlert } from '../utils/logger.js';
 
 const router = Router();
 

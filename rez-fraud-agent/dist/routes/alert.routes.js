@@ -9,7 +9,7 @@ const zod_1 = require("zod");
 const axios_1 = __importDefault(require("axios"));
 const crypto_1 = __importDefault(require("crypto"));
 const FraudCase_1 = require("../models/FraudCase");
-const logger_1 = require("../utils/logger");
+const logger_js_1 = require("../utils/logger.js");
 const router = (0, express_1.Router)();
 // Alert severity levels
 var AlertSeverity;
@@ -111,7 +111,7 @@ router.post('/', internalAuth, asyncHandler(async (req, res) => {
     // Add to queue
     alertQueue.push(alert);
     // Log the alert
-    (0, logger_1.logFraudAlert)(`Alert created: ${alert.type}`, {
+    (0, logger_js_1.logFraudAlert)(`Alert created: ${alert.type}`, {
         alertId: alert.alertId,
         severity: alert.severity,
         fraudCaseId: alert.data.fraudCaseId,
@@ -164,7 +164,7 @@ router.post('/from-case/:caseId', internalAuth, asyncHandler(async (req, res) =>
     };
     alertQueue.push(alert);
     sendAlert(alert);
-    (0, logger_1.logFraudAlert)(`Alert created from fraud case`, {
+    (0, logger_js_1.logFraudAlert)(`Alert created from fraud case`, {
         alertId: alert.alertId,
         caseId,
         severity: alert.severity,
@@ -199,7 +199,7 @@ async function sendAlert(alert) {
             }
         }
         catch (error) {
-            logger_1.logger.error('Failed to send alert via channel', {
+            logger_js_1.logger.error('Failed to send alert via channel', {
                 alertId: alert.alertId,
                 channel,
                 error: error instanceof Error ? error.message : 'Unknown error',
@@ -218,7 +218,7 @@ async function sendAlert(alert) {
 }
 async function sendWebhookAlert(alert) {
     if (!alertConfig.webhookUrl) {
-        logger_1.logger.warn('Webhook URL not configured');
+        logger_js_1.logger.warn('Webhook URL not configured');
         return;
     }
     const payload = {
@@ -237,11 +237,11 @@ async function sendWebhookAlert(alert) {
         },
         timeout: 10000,
     });
-    logger_1.logger.info('Webhook alert sent', { alertId: alert.alertId });
+    logger_js_1.logger.info('Webhook alert sent', { alertId: alert.alertId });
 }
 async function sendSlackAlert(alert) {
     if (!alertConfig.slackWebhook) {
-        logger_1.logger.warn('Slack webhook not configured');
+        logger_js_1.logger.warn('Slack webhook not configured');
         return;
     }
     const severityEmoji = {
@@ -301,17 +301,17 @@ async function sendSlackAlert(alert) {
     await axios_1.default.post(alertConfig.slackWebhook, payload, {
         timeout: 10000,
     });
-    logger_1.logger.info('Slack alert sent', { alertId: alert.alertId });
+    logger_js_1.logger.info('Slack alert sent', { alertId: alert.alertId });
 }
 async function sendEmailAlert(alert) {
     // Email implementation would go here
     // Use nodemailer or email service like SendGrid
-    logger_1.logger.info('Email alert queued', { alertId: alert.alertId });
+    logger_js_1.logger.info('Email alert queued', { alertId: alert.alertId });
 }
 async function sendSMSAlert(alert) {
     // SMS implementation would go here
     // Use Twilio or similar service
-    logger_1.logger.info('SMS alert queued', { alertId: alert.alertId });
+    logger_js_1.logger.info('SMS alert queued', { alertId: alert.alertId });
 }
 // ============= ALERT RETRIEVAL =============
 /**

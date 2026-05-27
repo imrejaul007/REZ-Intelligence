@@ -10,7 +10,7 @@ const cors_1 = __importDefault(require("cors"));
 const compression_1 = __importDefault(require("compression"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const redis_1 = require("redis");
-const logger_1 = require("./utils/logger");
+const logger_js_1 = require("./utils/logger.js");
 const fraud_routes_1 = __importDefault(require("./routes/fraud.routes"));
 const alert_routes_1 = __importDefault(require("./routes/alert.routes"));
 const systemPrompt_1 = require("./config/systemPrompt");
@@ -58,7 +58,7 @@ app.use((req, res, next) => {
     const start = Date.now();
     res.on('finish', () => {
         const duration = Date.now() - start;
-        logger_1.logger.info('Request completed', {
+        logger_js_1.logger.info('Request completed', {
             method: req.method,
             path: req.path,
             statusCode: res.statusCode,
@@ -141,13 +141,13 @@ app.use((req, res) => {
 });
 // Global error handler
 app.use((err, req, res, next) => {
-    logger_1.logger.error('Unhandled error', {
+    logger_js_1.logger.error('Unhandled error', {
         error: err.message,
         stack: err.stack,
         path: req.path,
         method: req.method,
     });
-    (0, logger_1.logSecurity)('Unhandled error in request', {
+    (0, logger_js_1.logSecurity)('Unhandled error in request', {
         path: req.path,
         method: req.method,
         error: err.message,
@@ -165,22 +165,22 @@ async function connectMongoDB() {
             serverSelectionTimeoutMS: 5000,
             socketTimeoutMS: 45000,
         });
-        logger_1.logger.info('MongoDB connected', {
+        logger_js_1.logger.info('MongoDB connected', {
             host: mongoose_1.default.connection.host,
             database: mongoose_1.default.connection.name,
         });
         mongoose_1.default.connection.on('error', (error) => {
-            logger_1.logger.error('MongoDB connection error', { error: error.message });
+            logger_js_1.logger.error('MongoDB connection error', { error: error.message });
         });
         mongoose_1.default.connection.on('disconnected', () => {
-            logger_1.logger.warn('MongoDB disconnected');
+            logger_js_1.logger.warn('MongoDB disconnected');
         });
         mongoose_1.default.connection.on('reconnected', () => {
-            logger_1.logger.info('MongoDB reconnected');
+            logger_js_1.logger.info('MongoDB reconnected');
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to connect to MongoDB', {
+        logger_js_1.logger.error('Failed to connect to MongoDB', {
             error: error instanceof Error ? error.message : 'Unknown error',
         });
         throw error;
@@ -194,7 +194,7 @@ async function connectRedis() {
             socket: {
                 reconnectStrategy: (retries) => {
                     if (retries > 10) {
-                        logger_1.logger.error('Redis max reconnection attempts reached');
+                        logger_js_1.logger.error('Redis max reconnection attempts reached');
                         return new Error('Redis max reconnection attempts reached');
                     }
                     return Math.min(retries * 100, 3000);
@@ -202,18 +202,18 @@ async function connectRedis() {
             },
         });
         redisClient.on('error', (error) => {
-            logger_1.logger.error('Redis error', { error: error.message });
+            logger_js_1.logger.error('Redis error', { error: error.message });
         });
         redisClient.on('connect', () => {
-            logger_1.logger.info('Redis connected', { url: REDIS_URL });
+            logger_js_1.logger.info('Redis connected', { url: REDIS_URL });
         });
         redisClient.on('reconnecting', () => {
-            logger_1.logger.info('Redis reconnecting');
+            logger_js_1.logger.info('Redis reconnecting');
         });
         await redisClient.connect();
     }
     catch (error) {
-        logger_1.logger.error('Failed to connect to Redis', {
+        logger_js_1.logger.error('Failed to connect to Redis', {
             error: error instanceof Error ? error.message : 'Unknown error',
         });
         // Don't throw - Redis is optional but recommended
@@ -221,20 +221,20 @@ async function connectRedis() {
 }
 // Graceful shutdown
 async function shutdown(signal) {
-    logger_1.logger.info(`Received ${signal}. Starting graceful shutdown...`);
-    (0, logger_1.logAudit)('Service shutdown initiated', { signal });
+    logger_js_1.logger.info(`Received ${signal}. Starting graceful shutdown...`);
+    (0, logger_js_1.logAudit)('Service shutdown initiated', { signal });
     // Stop accepting new connections
     const server = app.listen();
     server.close(async () => {
-        logger_1.logger.info('HTTP server closed');
+        logger_js_1.logger.info('HTTP server closed');
         // Close Redis
         if (redisClient) {
             try {
                 await redisClient.quit();
-                logger_1.logger.info('Redis connection closed');
+                logger_js_1.logger.info('Redis connection closed');
             }
             catch (error) {
-                logger_1.logger.error('Error closing Redis', {
+                logger_js_1.logger.error('Error closing Redis', {
                     error: error instanceof Error ? error.message : 'Unknown error',
                 });
             }
@@ -242,19 +242,19 @@ async function shutdown(signal) {
         // Close MongoDB
         try {
             await mongoose_1.default.connection.close();
-            logger_1.logger.info('MongoDB connection closed');
+            logger_js_1.logger.info('MongoDB connection closed');
         }
         catch (error) {
-            logger_1.logger.error('Error closing MongoDB', {
+            logger_js_1.logger.error('Error closing MongoDB', {
                 error: error instanceof Error ? error.message : 'Unknown error',
             });
         }
-        logger_1.logger.info('Graceful shutdown complete');
+        logger_js_1.logger.info('Graceful shutdown complete');
         process.exit(0);
     });
     // Force exit after timeout
     setTimeout(() => {
-        logger_1.logger.error('Graceful shutdown timed out, forcing exit');
+        logger_js_1.logger.error('Graceful shutdown timed out, forcing exit');
         process.exit(1);
     }, 30000);
 }
@@ -266,12 +266,12 @@ async function startServer() {
         await connectRedis();
         // Start HTTP server
         const server = app.listen(PORT, () => {
-            logger_1.logger.info('REZ Fraud Agent started', {
+            logger_js_1.logger.info('REZ Fraud Agent started', {
                 port: PORT,
                 environment: process.env.NODE_ENV || 'development',
                 nodeVersion: process.version,
             });
-            (0, logger_1.logAudit)('Fraud agent service started', {
+            (0, logger_js_1.logAudit)('Fraud agent service started', {
                 port: PORT,
                 environment: process.env.NODE_ENV,
             });
@@ -279,7 +279,7 @@ async function startServer() {
         // Handle server errors
         server.on('error', (error) => {
             if (error.code === 'EADDRINUSE') {
-                logger_1.logger.error(`Port ${PORT} is already in use`);
+                logger_js_1.logger.error(`Port ${PORT} is already in use`);
                 process.exit(1);
             }
             throw error;
@@ -289,14 +289,14 @@ async function startServer() {
         process.on('SIGINT', () => shutdown('SIGINT'));
         // Unhandled rejection handler
         process.on('unhandledRejection', (reason, promise) => {
-            logger_1.logger.error('Unhandled Rejection', {
+            logger_js_1.logger.error('Unhandled Rejection', {
                 reason: reason instanceof Error ? reason.message : String(reason),
                 promise: String(promise),
             });
         });
         // Uncaught exception handler
         process.on('uncaughtException', (error) => {
-            logger_1.logger.error('Uncaught Exception', {
+            logger_js_1.logger.error('Uncaught Exception', {
                 error: error.message,
                 stack: error.stack,
             });
@@ -304,7 +304,7 @@ async function startServer() {
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to start server', {
+        logger_js_1.logger.error('Failed to start server', {
             error: error instanceof Error ? error.message : 'Unknown error',
         });
         process.exit(1);

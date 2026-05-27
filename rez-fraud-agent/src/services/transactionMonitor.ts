@@ -1,6 +1,6 @@
 import { RedisClientType } from 'redis';
 import { TransactionContext } from './fraudDetector';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 export interface TransactionAnomaly {
   type: string;

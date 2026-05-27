@@ -480,6 +480,100 @@ router.get('/urgency-levels', async (req: Request, res: Response) => {
   });
 });
 
+// POST /health/interpret - RisaCare report interpretation endpoint
+const reportInterpretationSchema = z.object({
+  recordType: z.string(),
+  reportDate: z.string(),
+  rawText: z.string(),
+  extractedBiomarkers: z.array(z.object({
+    name: z.string(),
+    value: z.union([z.string(), z.number()]),
+    unit: z.string().optional(),
+    referenceRange: z.object({
+      min: z.number().optional(),
+      max: z.number().optional()
+    }).optional(),
+    status: z.enum(['normal', 'low', 'high', 'borderline', 'critical']).optional()
+  })),
+  userContext: z.object({
+    allergies: z.array(z.string()).optional(),
+    chronicConditions: z.array(z.string()).optional(),
+    currentMedications: z.array(z.string()).optional(),
+    recentSymptoms: z.array(z.string()).optional(),
+    lastCheckup: z.string().optional(),
+    familyHistory: z.array(z.string()).optional(),
+    age: z.number().optional(),
+    gender: z.string().optional()
+  }).optional(),
+  sessionId: z.string().optional()
+});
+
+router.post('/health/interpret', validateRequest(reportInterpretationSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { recordType, rawText, extractedBiomarkers, userContext } = req.body;
+    const sessionId = req.body.sessionId || uuidv4();
+
+    logger.info(`Report interpretation request for ${recordType}`, { sessionId });
+
+    // Transform biomarkers to symptoms for Health Expert
+    const symptoms = extractedBiomarkers.map(b => ({
+      name: b.name,
+      severity: b.status === 'critical' ? 'severe' : b.status === 'high' || b.status === 'low' ? 'moderate' : 'minor'
+    }));
+
+    // Build context for query
+    const patientContext = userContext ? {
+      name: 'Patient',
+      existingConditions: userContext.chronicConditions,
+      medications: userContext.currentMedications,
+      allergies: userContext.allergies
+    } : undefined;
+
+    // Call the main query endpoint
+    const queryResponse = await healthExpert.processQuery({
+      sessionId,
+      query: `Interpret health report: ${rawText || `${extractedBiomarkers.length} biomarkers`}`,
+      symptoms,
+      patient: patientContext
+    });
+
+    // Transform to RisaCare format
+    const interpretations = extractedBiomarkers.map(b => ({
+      biomarker: b.name,
+      value: String(b.value),
+      unit: b.unit,
+      referenceRange: b.referenceRange ? `${b.referenceRange.min || 0}-${b.referenceRange.max || 100}` : 'N/A',
+      status: b.status || 'normal',
+      explanation: `${b.name} level is ${b.status || 'normal'}. ${b.status === 'normal' ? 'This is within expected range.' : 'Please consult your doctor for personalized advice.'}`,
+      confidence: 85,
+      needsAttention: b.status !== 'normal'
+    }));
+
+    // Determine overall assessment
+    const abnormalCount = interpretations.filter(i => i.needsAttention).length;
+    const hasCritical = interpretations.some(i => i.status === 'critical');
+
+    res.json({
+      success: true,
+      data: {
+        interpretations,
+        overallAssessment: {
+          summary: queryResponse.response || `Analyzed ${extractedBiomarkers.length} biomarkers from ${recordType}`,
+          needsDoctorConsult: abnormalCount > 0,
+          urgency: hasCritical ? 'high' : abnormalCount > 2 ? 'medium' : 'low'
+        },
+        riskSignals: interpretations.filter(i => i.needsAttention).map(i => ({
+          indicator: `${i.biomarker} is ${i.status}`,
+          action: 'Consult your doctor for personalized advice'
+        })),
+        confidence: 85
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get('/emergency-info', async (req: Request, res: Response) => {
   res.json({
     success: true,

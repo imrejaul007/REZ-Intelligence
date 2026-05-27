@@ -10,14 +10,15 @@ const logLevel = process.env.LOG_LEVEL || 'info';
 const logFormat = process.env.LOG_FORMAT || 'simple';
 const formats = {
     json: winston_1.default.format.combine(winston_1.default.format.timestamp(), winston_1.default.format.errors({ stack: true }), winston_1.default.format.json()),
-    simple: winston_1.default.format.combine(winston_1.default.format.timestamp(), winston_1.default.format.colorize(), winston_1.default.format.errors({ stack: true }), winston_1.default.format.printf(({ level, message, timestamp, ...meta }) => {
+    simple: winston_1.default.format.combine(winston_1.default.format.timestamp(), winston_1.default.format.colorize(), winston_1.default.format.errors({ stack: true }), winston_1.default.format.printf((info) => {
+        const { level, message, timestamp: ts, ...meta } = info;
         const metaStr = Object.keys(meta).length ? JSON.stringify(meta, null, 2) : '';
-        return `${timestamp} [${level}]: ${message} ${metaStr}`;
+        return `${ts} [${level}]: ${message} ${metaStr}`;
     })),
     detailed: winston_1.default.format.combine(winston_1.default.format.timestamp(), winston_1.default.format.colorize(), winston_1.default.format.errors({ stack: true }), winston_1.default.format.printf(({ level, message, timestamp, ...meta }) => {
         const metaStr = Object.keys(meta).length ? `\n${JSON.stringify(meta, null, 2)}` : '';
         const stack = meta.stack ? `\n${meta.stack}` : '';
-        return `${timestamp} [${level}]: ${message}${metaStr}${stack}`;
+        return `${ts} [${level}]: ${message}${metaStr}${stack}`;
     })),
 };
 exports.logger = winston_1.default.createLogger({

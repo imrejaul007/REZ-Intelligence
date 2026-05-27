@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BlacklistService = void 0;
 const Blacklist_1 = require("../models/Blacklist");
-const logger_1 = require("../utils/logger");
+const logger_js_1 = require("../utils/logger.js");
 class BlacklistService {
     async check(type, value) {
         try {
@@ -20,7 +20,7 @@ class BlacklistService {
             if (entry) {
                 // Record the match
                 await entry.recordMatch();
-                logger_1.logger.info('Blacklist match found', {
+                logger_js_1.logger.info('Blacklist match found', {
                     entryId: entry.entryId,
                     type,
                     value: normalizedValue.substring(0, 8) + '...',
@@ -36,7 +36,7 @@ class BlacklistService {
             return { isBlacklisted: false };
         }
         catch (error) {
-            logger_1.logger.error('Blacklist check error', {
+            logger_js_1.logger.error('Blacklist check error', {
                 error: error instanceof Error ? error.message : 'Unknown error',
                 type,
                 value: value.substring(0, 8) + '...',
@@ -67,7 +67,7 @@ class BlacklistService {
                     existing.expiresAt = data.expiresAt;
                 }
                 await existing.save();
-                logger_1.logger.info('Blacklist entry updated', {
+                logger_js_1.logger.info('Blacklist entry updated', {
                     entryId: existing.entryId,
                     type: data.type,
                     reason: data.reason,
@@ -86,7 +86,7 @@ class BlacklistService {
                 expiresAt: data.expiresAt,
                 notes: data.notes,
             });
-            logger_1.logger.info('Blacklist entry created', {
+            logger_js_1.logger.info('Blacklist entry created', {
                 entryId: entry.entryId,
                 type: data.type,
                 reason: data.reason,
@@ -94,7 +94,7 @@ class BlacklistService {
             return { success: true, entry };
         }
         catch (error) {
-            logger_1.logger.error('Failed to add blacklist entry', {
+            logger_js_1.logger.error('Failed to add blacklist entry', {
                 error: error instanceof Error ? error.message : 'Unknown error',
                 type: data.type,
                 value: data.value.substring(0, 8) + '...',
@@ -117,7 +117,7 @@ class BlacklistService {
                 notes: `Removed by ${removedBy} at ${new Date().toISOString()}`,
             }, { new: true });
             if (entry) {
-                logger_1.logger.info('Blacklist entry removed', {
+                logger_js_1.logger.info('Blacklist entry removed', {
                     entryId: entry.entryId,
                     type,
                     removedBy,
@@ -127,7 +127,7 @@ class BlacklistService {
             return false;
         }
         catch (error) {
-            logger_1.logger.error('Failed to remove blacklist entry', {
+            logger_js_1.logger.error('Failed to remove blacklist entry', {
                 error: error instanceof Error ? error.message : 'Unknown error',
                 type,
                 value: value.substring(0, 8) + '...',

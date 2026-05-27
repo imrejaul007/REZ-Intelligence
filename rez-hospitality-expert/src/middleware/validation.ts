@@ -5,7 +5,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { z, ZodError, ZodSchema } from 'zod';
-import { logger } from './utils/logger';
+import { logger } from './utils/logger.js';
 
 /**
  * Validate request body, query, or params against a Zod schema

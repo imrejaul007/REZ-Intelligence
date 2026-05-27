@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { FraudDetector } from '../services/fraudDetector';
 import { FraudCase, FraudCaseStatus, FraudCaseSeverity } from '../models/FraudCase';
 import { BlacklistEntry, BlacklistType, BlacklistReason, BlacklistSeverity } from '../models/Blacklist';
-import { logger, logAudit, logSecurity, logFraudAlert } from '../utils/logger';
+import { logger, logAudit, logSecurity, logFraudAlert } from '../utils/logger.js';
 
 // Initialize fraud detector
 const fraudDetector = new FraudDetector();

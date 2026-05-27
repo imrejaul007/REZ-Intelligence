@@ -36,7 +36,7 @@ import { ToneEngine } from './ToneEngine';
 import { KnowledgeBase } from './KnowledgeBase';
 import { WorkflowService } from '../services/workflowService';
 import { RecommendationService } from '../services/recommendationService';
-import { Logger } from '../utils/logger';
+import { Logger } from '../utils/logger.js';
 
 export abstract class ExpertAgent implements IExpert {
   protected readonly expertId: string;

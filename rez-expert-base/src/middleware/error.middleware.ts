@@ -4,7 +4,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
-import { Logger } from '../utils/logger';
+import { Logger } from '../utils/logger.js';
 
 export interface ApiError extends Error {
   statusCode?: number;

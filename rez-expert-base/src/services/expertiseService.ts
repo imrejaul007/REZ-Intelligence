@@ -7,7 +7,7 @@ import { IIntent, IntentClassification } from '../interfaces/IIntent';
 import { IResponse, ResponseConfidence, ResponseAction } from '../interfaces/IResponse';
 import { ResponseContext } from '../interfaces/IResponse';
 import { ExpertCapability, ExpertiseLevel } from '../types/expert.types';
-import { Logger } from '../utils/logger';
+import { Logger } from '../utils/logger.js';
 
 export interface ExpertiseMatch {
   capability: ExpertCapability;

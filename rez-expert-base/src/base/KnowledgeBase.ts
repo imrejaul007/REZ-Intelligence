@@ -6,7 +6,7 @@
 import { randomUUID } from 'crypto';
 import { IResponse } from '../interfaces/IResponse';
 import { KnowledgeBaseConfig } from '../types/expert.types';
-import { Logger } from '../utils/logger';
+import { Logger } from '../utils/logger.js';
 
 export interface KnowledgeEntry {
   id: string;

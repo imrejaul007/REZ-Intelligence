@@ -7,7 +7,7 @@ import { randomUUID } from 'crypto';
 import { IIntent } from '../interfaces/IIntent';
 import { IResponse, ResponseContext } from '../interfaces/IResponse';
 import { WorkflowConfig, WorkflowStep } from '../types/expert.types';
-import { Logger } from '../utils/logger';
+import { Logger } from '../utils/logger.js';
 
 export interface WorkflowExecution {
   workflowId: string;
