@@ -28,7 +28,15 @@ export interface FormattedMenuItem {
 /**
  * Format a menu item for display
  */
-export function formatMenuItem(item: MenuItem, includeAllergens = true): FormattedMenuItem {
+export function formatMenuItem(item: MenuItem, includeAllergens = true): {
+  name: string;
+  description: string;
+  price: string;
+  dietaryTags: string[];
+  allergens: string[];
+  calories?: string;
+  available: boolean;
+} {
   return {
     name: item.name,
     description: item.description,
@@ -241,7 +249,8 @@ export function formatOrderConfirmation(
 
   if (estimatedTime) {
     lines.push('');
-    lines.push(`⏱️ Estimated ${String(estimatedTime).toLowerCase().includes('pickup') ? 'pickup' : 'delivery'}: ${String(estimatedTime).toLocaleTimeString()}`);
+    const time = typeof estimatedTime === 'string' ? estimatedTime : estimatedTime.toLocaleTimeString();
+    lines.push(`⏱️ Estimated ${time.toLowerCase().includes('pickup') ? 'pickup' : 'delivery'}: ${time}`);
   }
 
   return lines.join('\n');
