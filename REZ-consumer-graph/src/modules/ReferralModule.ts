@@ -70,7 +70,7 @@ export class ReferralModule {
    * Generate referral code
    */
   async generateReferralCode(userId: string): Promise<string> {
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) {
       throw new Error('Consumer not found');
     }

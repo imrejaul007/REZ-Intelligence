@@ -10,10 +10,12 @@ import {
 
 export type RelationshipType =
   | 'USES_DEVICE'
+  | 'USED_BY'
   | 'LINKS_TO'
   | 'IN_HOUSEHOLD_WITH'
   | 'REFERRED'
   | 'PURCHASED'
+  | 'PURCHASED_BY'
   | 'VIEWED'
   | 'WISHLISTED'
   | 'REVIEWED'
@@ -24,11 +26,17 @@ export type RelationshipType =
   | 'VISITED_LOCATION'
   | 'PARTICIPATED_IN';
 
+export interface PropertyDefinition {
+  type: string;
+  required?: boolean;
+  default?: unknown;
+}
+
 export interface RelationshipDefinition {
   type: RelationshipType;
   sourceLabel: string;
   targetLabel: string;
-  properties?: Record<string, unknown>;
+  properties?: Record<string, PropertyDefinition>;
   weight?: number;
   bidirectional?: boolean;
 }
@@ -258,10 +266,10 @@ export class RelationshipMapper {
 
     const errors: string[] = [];
     const requiredProps = def.properties
-      ? Object.entries(def.properties).filter(([, schema]) => schema.required)
+      ? Object.entries(def.properties).filter(([, propDef]) => (propDef as PropertyDefinition).required)
       : [];
 
-    for (const [name, schema] of requiredProps) {
+    for (const [name, propDef] of requiredProps) {
       if (properties[name] === undefined || properties[name] === null) {
         errors.push(`Missing required property: ${name}`);
       }
@@ -327,8 +335,9 @@ export class RelationshipMapper {
     let strength = relationship.weight ?? 0.5;
 
     // Adjust by recency
-    const createdAt = relationship.properties.created_at
-      ? new Date(relationship.properties.created_at).getTime()
+    const createdAtStr = relationship.properties.created_at as string | undefined;
+    const createdAt = createdAtStr
+      ? new Date(createdAtStr).getTime()
       : Date.now();
     const daysSinceCreation = (Date.now() - createdAt) / (1000 * 60 * 60 * 24);
 
@@ -338,8 +347,9 @@ export class RelationshipMapper {
     }
 
     // Boost for frequent interactions
-    if (relationship.properties.interaction_count) {
-      strength = Math.min(1, strength + Math.log(relationship.properties.interaction_count) * 0.1);
+    const interactionCount = relationship.properties.interaction_count as number | undefined;
+    if (interactionCount) {
+      strength = Math.min(1, strength + Math.log(interactionCount) * 0.1);
     }
 
     return strength;

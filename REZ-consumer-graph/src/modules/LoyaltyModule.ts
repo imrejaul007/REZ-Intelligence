@@ -174,8 +174,8 @@ export class LoyaltyModule {
     }
   }
 
-  private getLocalLoyaltySummary(userId: string): LoyaltyProfile | null {
-    const profile = this.consumerGraph.getConsumer(userId);
+  private async getLocalLoyaltySummary(userId: string): Promise<LoyaltyProfile | null> {
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) return null;
 
     return profile.toJSON().loyalty;
@@ -191,7 +191,7 @@ export class LoyaltyModule {
     description: string,
     metadata?: Record<string, unknown>
   ): Promise<{ success: boolean; points_earned: number; new_balance: number }> {
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) {
       return { success: false, points_earned: 0, new_balance: 0 };
     }
@@ -261,7 +261,7 @@ export class LoyaltyModule {
     reward_id: string,
     description: string
   ): Promise<{ success: boolean; points_redeemed: number; new_balance: number }> {
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) {
       return { success: false, points_redeemed: 0, new_balance: 0 };
     }
@@ -314,7 +314,7 @@ export class LoyaltyModule {
    * Check and update tier
    */
   async checkTierUpgrade(userId: string): Promise<{ upgraded: boolean; new_tier?: LoyaltyTier }> {
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) {
       return { upgraded: false };
     }

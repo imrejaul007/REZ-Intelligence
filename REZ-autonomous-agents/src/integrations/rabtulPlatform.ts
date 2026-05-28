@@ -20,7 +20,7 @@ const platformConfig: PlatformConfig = {
   token: INTERNAL_TOKEN,
 };
 
-async function internalRequest(path: string, options: RequestInit = {}): Promise<unknown> {
+async function internalRequest<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${platformConfig.baseUrl}${path}`, {
     ...options,
     headers: {
@@ -75,7 +75,7 @@ export const walletOperations = {
    * Get user balance
    */
   async getBalance(userId: string): Promise<number> {
-    const data = await internalRequest(`${WALLET_URL}/api/wallet/balance/${userId}`);
+    const data = await internalRequest<{ coins?: number }>(`${WALLET_URL}/api/wallet/balance/${userId}`);
     return data.coins || 0;
   },
 
@@ -208,7 +208,7 @@ export const profileOperations = {
    * Get user segments
    */
   async getSegments(userId: string): Promise<string[]> {
-    const data = await internalRequest(`${PROFILE_URL}/api/segments/${userId}`);
+    const data = await internalRequest<{ segments?: string[] }>(`${PROFILE_URL}/api/segments/${userId}`);
     return data.segments || [];
   },
 };
@@ -223,7 +223,7 @@ export const authOperations = {
    */
   async verifyToken(token: string): Promise<{ valid: boolean; userId?: string }> {
     try {
-      const data = await internalRequest(`${AUTH_URL}/api/auth/verify`, {
+      const data = await internalRequest<{ userId?: string }>(`${AUTH_URL}/api/auth/verify`, {
         method: 'POST',
         body: JSON.stringify({ token }),
       });

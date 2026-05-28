@@ -10,7 +10,7 @@ jest.mock('express', () => {
     use: jest.fn(),
     get: jest.fn(),
     post: jest.fn(),
-    listen: jest.fn((port, cb) => cb()),
+    listen: jest.fn((_port: number, cb: () => void) => cb()),
   };
   return jest.fn(() => mockApp);
 });

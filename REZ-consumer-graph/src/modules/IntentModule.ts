@@ -155,8 +155,8 @@ export class IntentModule {
     }
   }
 
-  private getLocalIntentProfile(userId: string): IntentProfile | null {
-    const profile = this.consumerGraph.getConsumer(userId);
+  private async getLocalIntentProfile(userId: string): Promise<IntentProfile | null> {
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) return null;
 
     const consumerData = profile.toJSON();
@@ -170,7 +170,7 @@ export class IntentModule {
     userId: string,
     updates: Partial<IntentProfile>
   ): Promise<void> {
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) return;
 
     profile.updateIntentProfile(updates);
@@ -185,7 +185,7 @@ export class IntentModule {
    * Get category affinities
    */
   async getCategoryAffinities(userId: string): Promise<CategoryAffinity[]> {
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) return [];
 
     const consumerData = profile.toJSON();
@@ -199,7 +199,7 @@ export class IntentModule {
     userId: string,
     category: CategoryAffinity
   ): Promise<void> {
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) return;
 
     const consumerData = profile.toJSON();
@@ -224,7 +224,7 @@ export class IntentModule {
    * Get brand affinities
    */
   async getBrandAffinities(userId: string): Promise<BrandAffinity[]> {
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) return [];
 
     const consumerData = profile.toJSON();
@@ -238,7 +238,7 @@ export class IntentModule {
     userId: string,
     brand: BrandAffinity
   ): Promise<void> {
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) return;
 
     const consumerData = profile.toJSON();
@@ -263,7 +263,7 @@ export class IntentModule {
    * Get price range
    */
   async getPriceRange(userId: string): Promise<PriceRange | null> {
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) return null;
 
     const consumerData = profile.toJSON();
@@ -274,7 +274,7 @@ export class IntentModule {
    * Update price range
    */
   async setPriceRange(userId: string, priceRange: PriceRange): Promise<void> {
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) return;
 
     profile.setPriceRange(priceRange.min, priceRange.max, priceRange.currency);
@@ -367,7 +367,7 @@ export class IntentModule {
     userId: string,
     limit: number = 10
   ): Promise<string[]> {
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) return [];
 
     const consumerData = profile.toJSON();
@@ -458,7 +458,7 @@ export class IntentModule {
    * Get category insights
    */
   async getCategoryInsights(userId: string): Promise<CategoryInsights[]> {
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) return [];
 
     const consumerData = profile.toJSON();

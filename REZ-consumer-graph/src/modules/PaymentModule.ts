@@ -67,7 +67,7 @@ export class PaymentModule {
     userId: string,
     input: PaymentMethodInput
   ): Promise<PaymentMethod | null> {
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) {
       this.logger.error('Consumer not found', { userId });
       return null;
@@ -194,7 +194,7 @@ export class PaymentModule {
     }
 
     // Update consumer transactions
-    const profile = this.consumerGraph.getConsumer(transaction.user_id);
+    const profile = await this.consumerGraph.getConsumer(transaction.user_id);
     if (profile) {
       profile.addTransaction(transaction.amount, transaction.payment_method_id);
     }
@@ -220,7 +220,7 @@ export class PaymentModule {
     return userTransactions
       .sort(
         (a, b) =>
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime()
       )
       .slice(offset, offset + limit);
   }
@@ -231,7 +231,7 @@ export class PaymentModule {
   async getPaymentSummary(userId: string): Promise<PaymentSummary> {
     const methods = this.getPaymentMethodsInternal(userId);
     const userTransactions = this.transactions.get(userId) || [];
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     const consumerData = profile?.toJSON();
 
     const defaultMethod = methods.find((m) => m.is_default);
@@ -277,11 +277,12 @@ export class PaymentModule {
     const byPaymentMethod: Record<string, { count: number; total: number }> = {};
 
     for (const transaction of userTransactions) {
-      if (!byPaymentMethod[transaction.payment_method_id]) {
-        byPaymentMethod[transaction.payment_method_id] = { count: 0, total: 0 };
+      const methodKey = transaction.payment_method_id || 'unknown';
+      if (!byPaymentMethod[methodKey]) {
+        byPaymentMethod[methodKey] = { count: 0, total: 0 };
       }
-      byPaymentMethod[transaction.payment_method_id].count++;
-      byPaymentMethod[transaction.payment_method_id].total += transaction.amount;
+      byPaymentMethod[methodKey].count++;
+      byPaymentMethod[methodKey].total += transaction.amount;
     }
 
     return {
@@ -316,24 +317,25 @@ export class PaymentModule {
     > = {};
 
     for (const transaction of userTransactions) {
-      if (!usageMap[transaction.payment_method_id]) {
-        usageMap[transaction.payment_method_id] = {
+      const methodKey = transaction.payment_method_id || 'unknown';
+      if (!usageMap[methodKey]) {
+        usageMap[methodKey] = {
           count: 0,
           total: 0,
-          last_used: transaction.timestamp,
+          last_used: transaction.timestamp || new Date().toISOString(),
         };
       }
-      usageMap[transaction.payment_method_id].count++;
-      usageMap[transaction.payment_method_id].total += transaction.amount;
-      if (transaction.timestamp > usageMap[transaction.payment_method_id].last_used) {
-        usageMap[transaction.payment_method_id].last_used = transaction.timestamp;
+      usageMap[methodKey].count++;
+      usageMap[methodKey].total += transaction.amount;
+      if (transaction.timestamp && transaction.timestamp > usageMap[methodKey].last_used) {
+        usageMap[methodKey].last_used = transaction.timestamp;
       }
     }
 
     return methods.map((method) => ({
       method_id: method.method_id,
       type: method.type,
-      provider: method.provider,
+      provider: method.provider || '',
       usage_count: usageMap[method.method_id]?.count || 0,
       total_amount: usageMap[method.method_id]?.total || 0,
       last_used: usageMap[method.method_id]?.last_used || '',
@@ -364,7 +366,7 @@ export class PaymentModule {
     const amounts = userTransactions.map((t) => t.amount);
     const avgAmount = amounts.reduce((a, b) => a + b, 0) / amounts.length;
     const recentTransactions = userTransactions
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime())
       .slice(0, 5);
 
     for (const transaction of recentTransactions) {
@@ -379,7 +381,7 @@ export class PaymentModule {
     const methods = this.getPaymentMethodsInternal(userId);
     for (const transaction of recentTransactions) {
       const method = methods.find((m) => m.method_id === transaction.payment_method_id);
-      if (method) {
+      if (method && method.added_at) {
         const daysSinceAdded =
           (Date.now() - new Date(method.added_at).getTime()) / (1000 * 60 * 60 * 24);
         if (daysSinceAdded < 1 && transaction.amount > 100) {
@@ -391,11 +393,12 @@ export class PaymentModule {
 
     // Check for multiple transactions in short time
     if (recentTransactions.length >= 3) {
-      const timeDiffs = [];
+      const timeDiffs: number[] = [];
       for (let i = 0; i < recentTransactions.length - 1; i++) {
+        const currTime = recentTransactions[i].timestamp || '0';
+        const nextTime = recentTransactions[i + 1].timestamp || '0';
         timeDiffs.push(
-          new Date(recentTransactions[i].timestamp).getTime() -
-            new Date(recentTransactions[i + 1].timestamp).getTime()
+          new Date(currTime).getTime() - new Date(nextTime).getTime()
         );
       }
       const avgTimeDiff =

@@ -53,7 +53,11 @@ export const intentPrediction = {
     return intelligenceRequest('/api/intent/predict', {
       method: 'POST',
       body: JSON.stringify({ user_id: userId, context }),
-    });
+    }) as Promise<{
+    intents: { intent: string; confidence: number }[];
+    primaryIntent: string;
+    confidence: number;
+  }>;
   },
 
   /**
@@ -114,7 +118,7 @@ export const predictiveEngine = {
     return predictRequest('/api/predict/churn', {
       method: 'POST',
       body: JSON.stringify({ user_id: userId }),
-    });
+    }) as Promise<{ probability: number; risk: 'high' | 'medium' | 'low'; factors: string[] }>;
   },
 
   /**
@@ -124,7 +128,7 @@ export const predictiveEngine = {
     return predictRequest('/api/predict/ltv', {
       method: 'POST',
       body: JSON.stringify({ user_id: userId }),
-    });
+    }) as Promise<{ ltv: number; confidence: number; tier: 'high' | 'medium' | 'low' }>;
   },
 
   /**
@@ -134,7 +138,7 @@ export const predictiveEngine = {
     return predictRequest('/api/predict/revisit', {
       method: 'POST',
       body: JSON.stringify({ user_id: userId }),
-    });
+    }) as Promise<{ probability: number; daysUntilExpected: number }>;
   },
 
   /**
@@ -144,14 +148,14 @@ export const predictiveEngine = {
     return predictRequest('/api/predict/conversion', {
       method: 'POST',
       body: JSON.stringify({ user_id: userId, offer_id: offerId }),
-    });
+    }) as Promise<{ probability: number; recommendation: string }>;
   },
 
   /**
    * Get user risk score
    */
   async getRiskScore(userId: string): Promise<{ score: number; factors: Record<string, number> }> {
-    return predictRequest(`/api/risk/${userId}`);
+    return predictRequest(`/api/risk/${userId}`) as Promise<{ score: number; factors: Record<string, number> }>;
   },
 };
 
@@ -186,21 +190,21 @@ export const realtimeSegments = {
    * Get user segments
    */
   async getUserSegments(userId: string): Promise<{ segments: string[]; scores: Record<string, number> }> {
-    return segmentsRequest(`/api/segments/${userId}`);
+    return segmentsRequest(`/api/segments/${userId}`) as Promise<{ segments: string[]; scores: Record<string, number> }>;
   },
 
   /**
    * Get segment members
    */
   async getSegmentMembers(segmentName: string): Promise<{ users: string[]; count: number }> {
-    return segmentsRequest(`/api/segments/${segmentName}/members`);
+    return segmentsRequest(`/api/segments/${segmentName}/members`) as Promise<{ users: string[]; count: number }>;
   },
 
   /**
    * Get DOOH segments
    */
   async getDOOHSegments(userId: string): Promise<{ segments: string[]; scores: Record<string, number> }> {
-    return segmentsRequest(`/api/dooh/${userId}`);
+    return segmentsRequest(`/api/dooh/${userId}`) as Promise<{ segments: string[]; scores: Record<string, number> }>;
   },
 };
 
@@ -252,7 +256,7 @@ export const signalAggregator = {
   async getUserSignals(userId: string, limit = 50): Promise<unknown[]> {
     return signalRequest(`/api/signals/${userId}`, {
       method: 'GET',
-    });
+    }) as Promise<unknown[]>;
   },
 
   /**
@@ -262,7 +266,7 @@ export const signalAggregator = {
     return signalRequest('/api/signals/query', {
       method: 'POST',
       body: JSON.stringify(filters),
-    });
+    }) as Promise<unknown[]>;
   },
 };
 
@@ -304,7 +308,11 @@ export const identityGraph = {
     return identityRequest('/api/identity/resolve', {
       method: 'POST',
       body: JSON.stringify({ identifier, type }),
-    });
+    }) as Promise<{
+    resolved: boolean;
+    userId?: string;
+    confidence: number;
+  }>;
   },
 
   /**
@@ -321,7 +329,7 @@ export const identityGraph = {
    * Get user devices
    */
   async getUserDevices(userId: string): Promise<{ deviceId: string; type: string; lastSeen: string }[]> {
-    return identityRequest(`/api/identity/${userId}/devices`);
+    return identityRequest(`/api/identity/${userId}/devices`) as Promise<{ deviceId: string; type: string; lastSeen: string }[]>;
   },
 };
 
@@ -337,7 +345,7 @@ export const agentHelpers = {
     const signals = await signalAggregator.querySignals({
       type: { $in: ['purchase', 'add_to_cart', 'view'] },
       timestamp: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-    });
+    }) as Array<{ properties?: { category?: string } }>;
 
     const byCategory: Record<string, number> = {};
     for (const signal of signals) {
@@ -390,11 +398,11 @@ export const agentHelpers = {
     // Query signals for low inventory mentions
     const signals = await signalAggregator.querySignals({
       type: 'low_inventory',
-    });
+    }) as Array<{ properties?: { productId?: string; productName?: string; ratio?: number } }>;
 
     return signals.map((s) => ({
-      productId: s.properties?.productId,
-      name: s.properties?.productName,
+      productId: s.properties?.productId || '',
+      name: s.properties?.productName || '',
       ratio: s.properties?.ratio || 0,
     }));
   },

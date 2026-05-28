@@ -10,10 +10,10 @@ import { BrowsingEvent, BrowsingSummary } from '../types';
 
 export interface ProductView {
   product_id: string;
-  product_name: string;
-  category_id: string;
+  product_name?: string;
+  category_id?: string;
   brand_id?: string;
-  price: number;
+  price?: number;
   view_count: number;
   added_to_cart: boolean;
   added_to_wishlist: boolean;
@@ -74,7 +74,7 @@ export class BrowsingModule {
    * Record a browsing event
    */
   async recordEvent(event: BrowsingEvent): Promise<void> {
-    const profile = this.consumerGraph.getConsumer(event.user_id);
+    const profile = await this.consumerGraph.getConsumer(event.user_id);
     if (!profile) {
       this.logger.warn('Consumer not found for browsing event', { userId: event.user_id });
       return;
@@ -175,8 +175,8 @@ export class BrowsingModule {
     } else {
       views.set(productId, {
         product_id: productId,
-        product_name: '',
-        category_id: event.payload.category_id || '',
+        product_name: undefined,
+        category_id: event.payload.category_id,
         view_count: 1,
         added_to_cart: false,
         added_to_wishlist: false,
@@ -275,8 +275,8 @@ export class BrowsingModule {
     }
   }
 
-  private getLocalBrowsingSummary(userId: string): BrowsingSummary | null {
-    const profile = this.consumerGraph.getConsumer(userId);
+  private async getLocalBrowsingSummary(userId: string): Promise<BrowsingSummary | null> {
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) return null;
 
     const consumerData = profile.toJSON();

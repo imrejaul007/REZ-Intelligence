@@ -297,6 +297,40 @@ export interface QueryResult {
 // MODULE-SPECIFIC TYPES
 // ============================================
 
+export interface PaymentMethod {
+  id?: string;
+  method_id: string;
+  type: 'card' | 'bank_account' | 'digital_wallet' | 'crypto';
+  last_four?: string;
+  bank_name?: string;
+  wallet_type?: string;
+  provider?: string;
+  expiry_date?: string;
+  is_default: boolean;
+  created_at?: string;
+  added_at?: string;
+  last_used?: string;
+  is_verified?: boolean;
+  usage_count?: number;
+  total_amount?: number;
+}
+
+export interface PaymentTransaction {
+  id?: string;
+  transaction_id: string;
+  user_id: string;
+  amount: number;
+  currency?: string;
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  payment_method_id?: string;
+  method_id: string;
+  description: string;
+  merchant_id?: string;
+  created_at?: string;
+  completed_at?: string;
+  timestamp?: string;
+}
+
 export interface WalletTransaction {
   id: string;
   wallet_type: WalletType;
@@ -347,7 +381,7 @@ export interface DOOHEngagement {
 export interface IntentSignal {
   signal_id: string;
   user_id: string;
-  signal_type: 'browse' | 'search' | 'purchase' | 'wishlist' | 'abandon';
+  signal_type: 'browse' | 'search' | 'purchase' | 'wishlist' | 'abandon' | 'cart';
   category: string;
   product_id?: string;
   brand_id?: string;

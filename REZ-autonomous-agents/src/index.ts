@@ -1,12 +1,15 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
-import mongoose, { Schema, Document, Model, Types } from 'mongoose';
+import mongoose, { Schema, Model, Types } from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import cron from 'node-cron';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import { z } from 'zod';
-import { createLogger, requestIdMiddleware, asyncHandler, errorHandler as sharedErrorHandler } from '../../shared';
+import { logger as sharedLogger } from '../../shared';
+import { errorHandler, notFoundHandler } from './middleware/index.js';
+import { requestIdMiddleware } from './utils/requestIdMiddleware.js';
+import { asyncHandler } from './utils/asyncHandler.js';
 
 // ============================================
 // TYPE DEFINITIONS
@@ -75,16 +78,16 @@ type AgentQueryInput = z.infer<typeof AgentQuerySchema>;
 // MONGOOSE SCHEMAS
 // ============================================
 
-interface IAgentRun extends Document {
+interface IAgentRun extends mongoose.Document {
   agentId: string;
   agentType: string;
   status: AgentStatus;
   startedAt?: Date;
   completedAt?: Date;
   duration?: number;
-  input?: Types.Mixed;
-  output?: Types.Mixed;
-  errors: string[];
+  input?: Record<string, unknown>;
+  output?: Record<string, unknown>;
+  errorMessages: string[];
   metrics: {
     recordsProcessed?: number;
     insightsGenerated?: number;
@@ -103,7 +106,7 @@ const agentRunSchema = new Schema<IAgentRun>({
   duration: { type: Number },
   input: { type: Schema.Types.Mixed },
   output: { type: Schema.Types.Mixed },
-  errors: [String],
+  errorMessages: [String],
   metrics: {
     recordsProcessed: { type: Number },
     insightsGenerated: { type: Number },
@@ -115,13 +118,13 @@ agentRunSchema.index({ agentType: 1, createdAt: -1 });
 
 const AgentRun: Model<IAgentRun> = mongoose.model<IAgentRun>('AgentRun', agentRunSchema);
 
-interface IInsight extends Document {
+interface IInsight extends mongoose.Document {
   insightId: string;
   agentType: string;
   type: InsightType;
   title: string;
   description: string;
-  data: Types.Mixed;
+  data: Record<string, unknown>;
   priority: InsightPriority;
   confidence: number;
   sourceRun?: string;
@@ -150,18 +153,18 @@ insightSchema.index({ priority: 1, status: 1 });
 
 const Insight: Model<IInsight> = mongoose.model<IInsight>('Insight', insightSchema);
 
-interface IAction extends Document {
+interface IAction extends mongoose.Document {
   actionId: string;
   agentType: string;
   type: string;
-  target: Types.Mixed;
-  payload: Types.Mixed;
+  target: Record<string, unknown>;
+  payload: Record<string, unknown>;
   status: ActionStatus;
   priority: ActionPriority;
   autoExecute: boolean;
   approvedBy?: string;
   executedAt?: Date;
-  result?: Types.Mixed;
+  result?: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -188,7 +191,7 @@ const Action: Model<IAction> = mongoose.model<IAction>('Action', actionSchema);
 // LOGGER
 // ============================================
 
-const logger = createLogger('autonomous-agents');
+const logger = sharedLogger;
 
 // ============================================
 // SEEDED RANDOM UTILITIES
@@ -276,7 +279,7 @@ abstract class BaseAgent {
       status: AGENT_STATUS.RUNNING,
       startedAt: new Date(),
       input,
-      errors: [],
+      errorMessages: [],
       metrics: {}
     });
 
@@ -287,7 +290,7 @@ abstract class BaseAgent {
       run.status = AGENT_STATUS.COMPLETED;
       run.completedAt = new Date();
       run.duration = Date.now() - startTime;
-      run.output = output as Types.Mixed;
+      run.output = output;
       await run.save();
 
       this.status = AGENT_STATUS.COMPLETED;
@@ -299,7 +302,7 @@ abstract class BaseAgent {
     } catch (err) {
       const error = err as Error;
       run.status = AGENT_STATUS.ERROR;
-      run.errors = [error.message];
+      run.errorMessages = [error.message];
       run.completedAt = new Date();
       run.duration = Date.now() - startTime;
       await run.save();
@@ -326,7 +329,7 @@ abstract class BaseAgent {
       type,
       title,
       description,
-      data: data as Types.Mixed,
+      data: data as unknown as Record<string, unknown>,
       priority,
       confidence: (data.confidence as number) || 0.7
     });
@@ -346,8 +349,8 @@ abstract class BaseAgent {
       actionId: `act_${uuidv4()}`,
       agentType: this.type,
       type,
-      target: target as Types.Mixed,
-      payload: payload as Types.Mixed,
+      target: target as unknown as Record<string, unknown>,
+      payload: payload as unknown as Record<string, unknown>,
       priority: options.priority || 'medium',
       autoExecute: options.autoExecute || false
     });
@@ -394,7 +397,7 @@ class DemandSignalAgent extends BaseAgent {
     };
 
     try {
-      const db = mongoose.connection.db;
+      const db = mongoose.connection.db!;
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
 
       const categoryAggregation = await db.collection('orders').aggregate([
@@ -482,7 +485,7 @@ class ScarcityAgent extends BaseAgent {
     };
 
     try {
-      const db = mongoose.connection.db;
+      const db = mongoose.connection.db!;
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
 
       const lowInventoryProducts = await db.collection('products').find({
@@ -506,7 +509,7 @@ class ScarcityAgent extends BaseAgent {
 
       const alerts: Array<Record<string, unknown>> = [];
       for (const product of lowInventoryProducts) {
-        const demand = demandMap[product._id as string]?.demand || 0;
+        const demand = demandMap[product._id.toString() as string]?.demand || 0;
         const supply = (product.inventory as number) || 0;
         const ratio = supply > 0 ? demand / supply : 999;
 
@@ -585,7 +588,7 @@ class PersonalizationAgent extends BaseAgent {
     };
 
     try {
-      const db = mongoose.connection.db;
+      const db = mongoose.connection.db!;
       const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
       const abTests = await db.collection('experiments').aggregate([
@@ -685,7 +688,7 @@ class AttributionAgent extends BaseAgent {
     };
 
     try {
-      const db = mongoose.connection.db;
+      const db = mongoose.connection.db!;
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
       const channelData = await db.collection('conversion_events').aggregate([
@@ -789,7 +792,7 @@ class AdaptiveScoringAgent extends BaseAgent {
     };
 
     try {
-      const db = mongoose.connection.db;
+      const db = mongoose.connection.db!;
 
       const predictions = await db.collection('ml_predictions').aggregate([
         { $match: {
@@ -889,7 +892,7 @@ class FeedbackLoopAgent extends BaseAgent {
     };
 
     try {
-      const db = mongoose.connection.db;
+      const db = mongoose.connection.db!;
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
       const feedbackLoops = await db.collection('ml_feedback_loops').find({
@@ -975,7 +978,7 @@ class NetworkEffectAgent extends BaseAgent {
     };
 
     try {
-      const db = mongoose.connection.db;
+      const db = mongoose.connection.db!;
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
       const userSegments = await db.collection('user_segments').aggregate([
@@ -1075,7 +1078,7 @@ class RevenueAttributionAgent extends BaseAgent {
     };
 
     try {
-      const db = mongoose.connection.db;
+      const db = mongoose.connection.db!;
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
       const gmvData = await db.collection('orders').aggregate([
@@ -1309,6 +1312,10 @@ app.get('/health', (_req: Request, res: Response) => {
 
 app.get('/ready', async (_req: Request, res: Response) => {
   try {
+    if (!mongoose.connection.db) {
+      res.status(503).json({ status: 'not ready', error: 'Database not connected' });
+      return;
+    }
     await mongoose.connection.db.admin().ping();
     res.json({ status: 'ready' });
   } catch (err) {
@@ -1471,11 +1478,9 @@ app.get('/api/analytics', asyncHandler(async (_req: Request, res: Response) => {
 }));
 
 // Error handler
-function errorHandlerWrapper(err: Error, req: Request, res: Response, next: NextFunction): void {
-  sharedErrorHandler(err, req, res, next);
-}
-
-app.use(errorHandlerWrapper);
+app.use((err: Error, req: Request, res: Response, next: NextFunction): void => {
+  errorHandler(err, req, res, next);
+});
 
 // ============================================
 // STARTUP

@@ -71,7 +71,7 @@ export class DOOHModule {
     code: string,
     locationId: string
   ): Promise<DOOHScanResult> {
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) {
       return { success: false, error: 'Consumer not found' };
     }
@@ -180,7 +180,7 @@ export class DOOHModule {
     offerId: string,
     pointsSpent?: number
   ): Promise<void> {
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) return;
 
     const engagement: DOOHEngagement = {
@@ -207,7 +207,7 @@ export class DOOHModule {
    * Get DOOH summary for consumer
    */
   async getDOOHSummary(userId: string): Promise<DOOHSummary | null> {
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) return null;
 
     const consumerData = profile.toJSON();
@@ -374,7 +374,7 @@ export class DOOHModule {
    * Calculate DOOH influence score
    */
   async getInfluenceScore(userId: string): Promise<number> {
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) return 0;
 
     const consumerData = profile.toJSON();

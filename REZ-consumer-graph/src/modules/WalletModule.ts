@@ -88,8 +88,8 @@ export class WalletModule {
     }
   }
 
-  private getLocalWalletSummary(userId: string): WalletSummary | null {
-    const profile = this.consumerGraph.getConsumer(userId);
+  private async getLocalWalletSummary(userId: string): Promise<WalletSummary | null> {
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) return null;
 
     const consumerData = profile.toJSON();
@@ -125,7 +125,7 @@ export class WalletModule {
     initialBalance: number = 0,
     address?: string
   ): Promise<boolean> {
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) {
       this.logger.error('Consumer not found', { userId });
       return false;
@@ -175,7 +175,7 @@ export class WalletModule {
       return { success: false, error: 'Amount must be positive' };
     }
 
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) {
       return { success: false, error: 'Consumer not found' };
     }
@@ -236,7 +236,7 @@ export class WalletModule {
       return { success: false, error: 'Amount must be positive' };
     }
 
-    const profile = this.consumerGraph.getConsumer(userId);
+    const profile = await this.consumerGraph.getConsumer(userId);
     if (!profile) {
       return { success: false, error: 'Consumer not found' };
     }
