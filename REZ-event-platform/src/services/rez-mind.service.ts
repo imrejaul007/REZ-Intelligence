@@ -3,7 +3,7 @@
  * Handles all AI/ML analysis calls to the ReZ Mind platform
  */
 
-import axios, { AxiosInstance, AxiosError } from 'axios';
+import axios, { AxiosInstance, AxiosError, AxiosRequestConfig } from 'axios';
 import { logger } from '../utils/logger.js';
 
 // ReZ Mind API configuration
@@ -56,7 +56,7 @@ function createRezMindClient(): AxiosInstance {
   client.interceptors.response.use(
     (response) => response,
     async (error: AxiosError) => {
-      const originalRequest = error.config as axios.AxiosRequestConfig & { _retryCount?: number };
+      const originalRequest = error.config as AxiosRequestConfig & { _retryCount?: number };
 
       // Retry logic for specific errors
       if (

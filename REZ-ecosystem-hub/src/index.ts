@@ -115,24 +115,20 @@ async function processSignal(signal: UserSignal): Promise<void> {
     sendToService(`${SERVICES.signal}/api/signals`, signal).catch(() => {}),
 
     // Handle based on source
-    ...handleSignalBySource(signal)
+    handleSignalBySource(signal).catch(() => {})
   ]);
 }
 
-async function handleSignalBySource(signal: UserSignal): Promise<Promise<void>[]> {
-  const actions: Promise<void>[] = [];
-
+async function handleSignalBySource(signal: UserSignal): Promise<void> {
   switch (signal.source) {
     case 'REZ_MEDIA':
       // Media engagement → update karma score
       if (signal.action.includes('karma')) {
-        actions.push(
-          sendToService(`${SERVICES.karma}/api/karma/earn`, {
-            userId: signal.userId,
-            action: signal.action,
-            points: calculateKarmaPoints(signal.action)
-          }).catch(() => {})
-        );
+        sendToService(`${SERVICES.karma}/api/karma/earn`, {
+          userId: signal.userId,
+          action: signal.action,
+          points: calculateKarmaPoints(signal.action)
+        }).catch(() => {});
       }
       break;
 
@@ -140,21 +136,15 @@ async function handleSignalBySource(signal: UserSignal): Promise<Promise<void>[]
       // Commerce action → update loyalty
       if (signal.action === 'purchase') {
         const amount = signal.data.amount as number || 0;
-        actions.push(
-          earnLoyaltyCoins(signal.userId, amount * 0.01).catch(() => {})
-        );
+        earnLoyaltyCoins(signal.userId, amount * 0.01).catch(() => {});
       }
       break;
 
     case 'CORPPERKS':
       // Corporate action → sync with loyalty
-      actions.push(
-        syncCorpPerksToLoyalty(signal.userId, signal.data).catch(() => {})
-      );
+      syncCorpPerksToLoyalty(signal.userId, signal.data).catch(() => {});
       break;
   }
-
-  return actions;
 }
 
 function calculateKarmaPoints(action: string): number {
@@ -214,8 +204,8 @@ async function getOrCreateProfile(userId: string): Promise<UnifiedProfile> {
 async function getLoyaltyProfile(userId: string): Promise<{ tier: string; lifetimeCoins: number } | null> {
   try {
     const response = await fetch(`${SERVICES.loyalty}/api/tier/${userId}`);
-    const data = await response.json();
-    return { tier: data.currentTier, lifetimeCoins: data.lifetimeCoins };
+    const data = await response.json() as { currentTier?: string; lifetimeCoins?: number };
+    return { tier: data.currentTier || 'BRONZE', lifetimeCoins: data.lifetimeCoins || 0 };
   } catch {
     return null;
   }
@@ -224,8 +214,8 @@ async function getLoyaltyProfile(userId: string): Promise<{ tier: string; lifeti
 async function getKarmaProfile(userId: string): Promise<{ score: number } | null> {
   try {
     const response = await fetch(`${SERVICES.karma}/api/karma/user/${userId}`);
-    const data = await response.json();
-    return { score: data.score };
+    const data = await response.json() as { score?: number };
+    return { score: data.score || 0 };
   } catch {
     return null;
   }
@@ -234,7 +224,16 @@ async function getKarmaProfile(userId: string): Promise<{ score: number } | null
 async function getPrediction(userId: string): Promise<UnifiedProfile['predictions'] | null> {
   try {
     const response = await fetch(`${SERVICES.predictive}/api/predict/${userId}`);
-    return await response.json();
+    const data = await response.json() as Partial<UnifiedProfile['predictions']>;
+    if (data && typeof data.churnRisk === 'number') {
+      return {
+        churnRisk: data.churnRisk ?? 0,
+        ltv: data.ltv ?? 0,
+        engagementScore: data.engagementScore ?? 50,
+        preferredCategories: data.preferredCategories ?? []
+      };
+    }
+    return null;
   } catch {
     return null;
   }
@@ -267,7 +266,7 @@ async function syncCorpPerksToLoyalty(userId: string, data: Record<string, unkno
 // SERVICE COMMUNICATION
 // ============================================
 
-async function sendToService(url: string, data: unknown): Promise<Response> {
+async function sendToService(url: string, data: unknown): Promise<globalThis.Response> {
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -333,21 +332,23 @@ app.post('/api/v1/signals/batch', async (req: Request, res: Response) => {
 
 // Get unified profile
 app.get('/api/v1/profile/:userId', async (req: Request, res: Response) => {
-  const profile = await getOrCreateProfile(req.params.userId);
+  const userId = req.params.userId as string;
+  const profile = await getOrCreateProfile(userId);
   res.json({ profile });
 });
 
 // Update identity linking
 app.post('/api/v1/profile/:userId/link', async (req: Request, res: Response) => {
+  const userId = req.params.userId as string;
   const { source, externalId } = req.body;
-  const profile = await getOrCreateProfile(req.params.userId);
+  const profile = await getOrCreateProfile(userId);
 
   if (source === 'rabtul') profile.identities.rabtul = externalId;
   if (source === 'rezMedia') profile.identities.rezMedia = externalId;
   if (source === 'karma') profile.identities.karma = externalId;
   if (source === 'corpperks') profile.identities.corpperks = externalId;
 
-  profiles.set(req.params.userId, profile);
+  profiles.set(userId, profile);
 
   res.json({ success: true, profile });
 });
@@ -358,7 +359,8 @@ app.post('/api/v1/profile/:userId/link', async (req: Request, res: Response) => 
 
 // Get personalized recommendations
 app.get('/api/v1/recommendations/:userId', async (req: Request, res: Response) => {
-  const profile = await getOrCreateProfile(req.params.userId);
+  const userId = req.params.userId as string;
+  const profile = await getOrCreateProfile(userId);
 
   // Get AI recommendations
   const [loyaltyRecs, mediaRecs, merchantRecs] = await Promise.all([
@@ -368,7 +370,7 @@ app.get('/api/v1/recommendations/:userId', async (req: Request, res: Response) =
   ]);
 
   res.json({
-    userId: req.params.userId,
+    userId,
     recommendations: {
       loyalty: loyaltyRecs,
       media: mediaRecs,
@@ -508,7 +510,8 @@ app.post('/api/v1/campaigns/:campaignId/trigger', async (req: Request, res: Resp
 
 // Get user engagement score
 app.get('/api/v1/analytics/engagement/:userId', async (req: Request, res: Response) => {
-  const profile = await getOrCreateProfile(req.params.userId);
+  const userId = req.params.userId as string;
+  const profile = await getOrCreateProfile(userId);
 
   const signalCount = profile.signals.length;
   const lastActive = profile.lastActive;
@@ -523,7 +526,7 @@ app.get('/api/v1/analytics/engagement/:userId', async (req: Request, res: Respon
   );
 
   res.json({
-    userId: req.params.userId,
+    userId,
     engagementScore: Math.round(engagementScore),
     signalCount,
     lastActive,

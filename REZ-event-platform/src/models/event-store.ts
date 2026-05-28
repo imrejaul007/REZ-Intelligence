@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import { logger } from '../utils/logger.js';
+import { Event } from '../events/schema-registry';
 
 export interface IEventStore extends Document {
   eventId: string;
@@ -219,7 +220,7 @@ export async function retryDeadLetterEvent(eventId: string): Promise<boolean> {
     }
 
     const { publish } = await import('../events/emitter');
-    const result = await publish(event.event as unknown);
+    const result = await publish(event.event as Event);
 
     if (result.success) {
       event.status = 'replayed';

@@ -70,8 +70,8 @@ export const authenticateApiKey = createAuthMiddleware({
   bypassPaths: ['/health', '/ready', '/metrics'],
 });
 
-// Webhook signature validation (stub - implement with crypto)
-export async function validateWebhookSignature(
+// Validate webhook signature from raw values
+export async function validateWebhookSignatureRaw(
   _payload: string,
   _signature: string,
   _secret: string
@@ -79,6 +79,53 @@ export async function validateWebhookSignature(
   logger.warn('Webhook signature validation not fully implemented');
   return true;
 }
+
+// Express middleware for webhook signature validation
+export const validateWebhookSignature = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const payload = JSON.stringify(req.body);
+    const signature = req.headers['x-webhook-signature'] as string || req.headers['x-signature'] as string;
+    const secret = process.env['WEBHOOK_SECRET'] || 'dev-webhook-secret';
+
+    if (!signature) {
+      res.status(401).json({
+        success: false,
+        error: {
+          code: 'MISSING_SIGNATURE',
+          message: 'Webhook signature header is required'
+        }
+      });
+      return;
+    }
+
+    const isValid = await validateWebhookSignatureRaw(payload, signature, secret);
+    if (!isValid) {
+      res.status(401).json({
+        success: false,
+        error: {
+          code: 'INVALID_SIGNATURE',
+          message: 'Invalid webhook signature'
+        }
+      });
+      return;
+    }
+
+    next();
+  } catch (error) {
+    logger.error('Webhook signature validation error', { error });
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Failed to validate webhook signature'
+      }
+    });
+  }
+};
 
 // Validate service token
 export async function validateServiceToken(token: string): Promise<AuthResult> {

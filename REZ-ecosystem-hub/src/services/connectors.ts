@@ -460,7 +460,7 @@ export const notifications = {
 
 export async function healthCheck(service: keyof typeof SERVICES): Promise<boolean> {
   try {
-    const response = await request(service, '/health');
+    const response = await request<{ status?: string }>(service, '/health');
     return response.status === 'healthy';
   } catch {
     return false;

@@ -24,7 +24,8 @@ async function loadOpenApiSpec(): Promise<void> {
     openApiSpec = require('js-yaml').load(specContent);
     logger.info('OpenAPI spec loaded successfully', { path: openApiSpecPath });
   } catch (error) {
-    logger.warn('Failed to load OpenAPI spec', { error: error.message });
+    const err = error as Error;
+    logger.warn('Failed to load OpenAPI spec', { error: err.message });
   }
 }
 
@@ -174,7 +175,8 @@ app.post('/events/:type', async (req: Request, res: Response) => {
         decision: aeResponse.data?.decision?.type
       });
     } catch (aeError) {
-      logger.error('[ACTION ENGINE ERROR]', { error: aeError.message });
+      const err = aeError as Error;
+      logger.error('[ACTION ENGINE ERROR]', { error: err.message });
       // Don't fail the event - just log the error
     }
 
@@ -184,8 +186,9 @@ app.post('/events/:type', async (req: Request, res: Response) => {
       correlationId: log.correlationId,
     });
   } catch (error) {
-    logger.error('[EVENT ERROR]', { error: error.message });
-    res.status(500).json({ success: false, error: error.message });
+    const err = error as Error;
+    logger.error('[EVENT ERROR]', { error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -199,7 +202,8 @@ app.get('/stats', async (req: Request, res: Response) => {
 
     res.json({ total, byType });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    const err = error as Error;
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -250,8 +254,9 @@ app.post('/webhook/merchant/inventory', async (req: Request, res: Response) => {
 
     res.json({ success: true, correlation_id, event_id: log._id });
   } catch (error) {
-    logger.error('[MERCHANT EVENT ERROR]', { error: error.message });
-    res.status(500).json({ success: false, error: error.message });
+    const err = error as Error;
+    logger.error('[MERCHANT EVENT ERROR]', { error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -289,8 +294,9 @@ app.post('/webhook/merchant/order', async (req: Request, res: Response) => {
 
     res.json({ success: true, correlation_id, event_id: log._id });
   } catch (error) {
-    logger.error('[MERCHANT ORDER ERROR]', { error: error.message });
-    res.status(500).json({ success: false, error: error.message });
+    const err = error as Error;
+    logger.error('[MERCHANT ORDER ERROR]', { error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -326,8 +332,9 @@ app.post('/webhook/merchant/payment', async (req: Request, res: Response) => {
 
     res.json({ success: true, correlation_id, event_id: log._id });
   } catch (error) {
-    logger.error('[MERCHANT PAYMENT ERROR]', { error: error.message });
-    res.status(500).json({ success: false, error: error.message });
+    const err = error as Error;
+    logger.error('[MERCHANT PAYMENT ERROR]', { error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -368,8 +375,9 @@ app.post('/webhook/consumer/order', async (req: Request, res: Response) => {
 
     res.json({ success: true, correlation_id, event_id: log._id });
   } catch (error) {
-    logger.error('[CONSUMER ORDER ERROR]', { error: error.message });
-    res.status(500).json({ success: false, error: error.message });
+    const err = error as Error;
+    logger.error('[CONSUMER ORDER ERROR]', { error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -405,8 +413,9 @@ app.post('/webhook/consumer/search', async (req: Request, res: Response) => {
 
     res.json({ success: true, correlation_id, event_id: log._id });
   } catch (error) {
-    logger.error('[CONSUMER SEARCH ERROR]', { error: error.message });
-    res.status(500).json({ success: false, error: error.message });
+    const err = error as Error;
+    logger.error('[CONSUMER SEARCH ERROR]', { error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -443,8 +452,9 @@ app.post('/webhook/consumer/view', async (req: Request, res: Response) => {
 
     res.json({ success: true, correlation_id, event_id: log._id });
   } catch (error) {
-    logger.error('[CONSUMER VIEW ERROR]', { error: error.message });
-    res.status(500).json({ success: false, error: error.message });
+    const err = error as Error;
+    logger.error('[CONSUMER VIEW ERROR]', { error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -482,8 +492,9 @@ app.post('/webhook/auth/signup', async (req: Request, res: Response) => {
 
     res.json({ success: true, correlation_id, event_id: log._id });
   } catch (error) {
-    logger.error('[AUTH SIGNUP ERROR]', { error: error.message });
-    res.status(500).json({ success: false, error: error.message });
+    const err = error as Error;
+    logger.error('[AUTH SIGNUP ERROR]', { error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -518,8 +529,9 @@ app.post('/webhook/auth/login', async (req: Request, res: Response) => {
 
     res.json({ success: true, correlation_id, event_id: log._id });
   } catch (error) {
-    logger.error('[AUTH LOGIN ERROR]', { error: error.message });
-    res.status(500).json({ success: false, error: error.message });
+    const err = error as Error;
+    logger.error('[AUTH LOGIN ERROR]', { error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -550,8 +562,9 @@ app.post('/webhook/auth/logout', async (req: Request, res: Response) => {
 
     res.json({ success: true, correlation_id, event_id: log._id });
   } catch (error) {
-    logger.error('[AUTH LOGOUT ERROR]', { error: error.message });
-    res.status(500).json({ success: false, error: error.message });
+    const err = error as Error;
+    logger.error('[AUTH LOGOUT ERROR]', { error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -592,8 +605,9 @@ app.post('/webhook/wallet/topup', async (req: Request, res: Response) => {
 
     res.json({ success: true, correlation_id, event_id: log._id });
   } catch (error) {
-    logger.error('[WALLET TOPUP ERROR]', { error: error.message });
-    res.status(500).json({ success: false, error: error.message });
+    const err = error as Error;
+    logger.error('[WALLET TOPUP ERROR]', { error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -629,8 +643,9 @@ app.post('/webhook/wallet/withdraw', async (req: Request, res: Response) => {
 
     res.json({ success: true, correlation_id, event_id: log._id });
   } catch (error) {
-    logger.error('[WALLET WITHDRAW ERROR]', { error: error.message });
-    res.status(500).json({ success: false, error: error.message });
+    const err = error as Error;
+    logger.error('[WALLET WITHDRAW ERROR]', { error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -671,8 +686,9 @@ app.post('/webhook/catalog/view', async (req: Request, res: Response) => {
 
     res.json({ success: true, correlation_id, event_id: log._id });
   } catch (error) {
-    logger.error('[CATALOG VIEW ERROR]', { error: error.message });
-    res.status(500).json({ success: false, error: error.message });
+    const err = error as Error;
+    logger.error('[CATALOG VIEW ERROR]', { error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -711,8 +727,9 @@ app.post('/webhook/gamification/earn', async (req: Request, res: Response) => {
 
     res.json({ success: true, correlation_id, event_id: log._id });
   } catch (error) {
-    logger.error('[GAMIFICATION EARN ERROR]', { error: error.message });
-    res.status(500).json({ success: false, error: error.message });
+    const err = error as Error;
+    logger.error('[GAMIFICATION EARN ERROR]', { error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -747,8 +764,9 @@ app.post('/webhook/gamification/redeem', async (req: Request, res: Response) => 
 
     res.json({ success: true, correlation_id, event_id: log._id });
   } catch (error) {
-    logger.error('[GAMIFICATION REDEEM ERROR]', { error: error.message });
-    res.status(500).json({ success: false, error: error.message });
+    const err = error as Error;
+    logger.error('[GAMIFICATION REDEEM ERROR]', { error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -788,8 +806,9 @@ app.post('/webhook/support/ticket', async (req: Request, res: Response) => {
 
     res.json({ success: true, correlation_id, event_id: log._id });
   } catch (error) {
-    logger.error('[SUPPORT TICKET ERROR]', { error: error.message });
-    res.status(500).json({ success: false, error: error.message });
+    const err = error as Error;
+    logger.error('[SUPPORT TICKET ERROR]', { error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -831,8 +850,9 @@ app.post('/webhook/chat/message', async (req: Request, res: Response) => {
 
     res.json({ success: true, correlation_id, event_id: log._id });
   } catch (error) {
-    logger.error('[CHAT MESSAGE ERROR]', { error: error.message });
-    res.status(500).json({ success: false, error: error.message });
+    const err = error as Error;
+    logger.error('[CHAT MESSAGE ERROR]', { error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -888,7 +908,7 @@ app.use((req: Request, res: Response) => {
 });
 
 // Error handler
-app.use((err: Error, req: Request, res: Response, next) => {
+app.use((err: Error, req: Request, res: Response, next: () => void) => {
   logger.error('Unhandled error', { error: err.message });
   res.status(500).json({ error: 'Internal server error' });
 });
@@ -911,7 +931,8 @@ async function start() {
       logger.info(`Health: http://localhost:${PORT}/health`);
     });
   } catch (error) {
-    logger.error('Failed to start', { error: error.message });
+    const err = error as Error;
+    logger.error('Failed to start', { error: err.message });
     process.exit(1);
   }
 }

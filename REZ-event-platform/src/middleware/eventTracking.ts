@@ -5,6 +5,12 @@ import { logger } from '../utils/logger.js';
 import { config } from '../config';
 import { randomUUID } from 'crypto';
 
+// Extended request with tracking properties
+interface EventTrackingRequest extends Request {
+  _eventTrackingStartTime?: number;
+  _eventTrackingId?: string;
+}
+
 // ============================================
 // Event Logger Model - Tracks ALL events sent
 // ============================================
@@ -375,15 +381,16 @@ export function trackEventMiddleware() {
     next: NextFunction
   ): Promise<void> => {
     const startTime = Date.now();
+    const trackingReq = req as EventTrackingRequest;
 
     // Store start time on request for later use
-    (req as unknown)._eventTrackingStartTime = startTime;
-    (req as unknown)._eventTrackingId = `${Date.now()}-${randomUUID().replace(/-/g, '').substring(0, 9)}`;
+    trackingReq._eventTrackingStartTime = startTime;
+    trackingReq._eventTrackingId = `${Date.now()}-${randomUUID().replace(/-/g, '').substring(0, 9)}`;
 
     // Hook into response to track completion
     res.on('finish', async () => {
-      const trackingId = (req as unknown)._eventTrackingId;
-      const eventId = res.get('X-Event-Id') || trackingId;
+      const trackingId = trackingReq._eventTrackingId;
+      const eventId = res.get('X-Event-Id') ?? trackingId ?? 'unknown';
 
       try {
         if (res.statusCode >= 200 && res.statusCode < 300) {
