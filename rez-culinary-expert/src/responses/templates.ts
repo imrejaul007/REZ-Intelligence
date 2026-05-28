@@ -7,6 +7,7 @@ import { MenuItem } from '../services/menuService';
 import { Recommendation } from '../services/recommendations';
 import { DietaryCheckResult } from '../services/dietaryService';
 import { generateOpener, TonePreset, getRotatingAdjective } from '../config/tone';
+import { logger } from '../utils/logger';
 
 export interface ResponseTemplate {
   type: 'greeting' | 'recommendation' | 'item_details' | 'dietary_warning' | 'pairing' | 'order_update' | 'help' | 'error';
@@ -240,7 +241,7 @@ export function formatOrderConfirmation(
 
   if (estimatedTime) {
     lines.push('');
-    lines.push(`⏱️ Estimated ${estimatedTime.toLowerCase().includes('pickup') ? 'pickup' : 'delivery'}: ${estimatedTime.toLocaleTimeString()}`);
+    lines.push(`⏱️ Estimated ${String(estimatedTime).toLowerCase().includes('pickup') ? 'pickup' : 'delivery'}: ${String(estimatedTime).toLocaleTimeString()}`);
   }
 
   return lines.join('\n');
@@ -460,4 +461,9 @@ export function buildItemCarousel(items: MenuItem[], maxItems = 5): Array<{
   }));
 }
 
-export type { FormattedMenuItem };
+export interface FormattedMenuItem {
+  title: string;
+  description: string;
+  price: string;
+  tags: string[];
+}
