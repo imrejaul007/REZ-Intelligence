@@ -936,24 +936,6 @@ app.get('/signals/weights', (_req: Request, res: Response) => {
 
 // GET /signals/segments/list - List all available segments
 app.get('/signals/segments/list', (_req: Request, res: Response) => {
-  const segments = [
-    { name: 'high-value', threshold: SEGMENT_THRESHOLDS.HIGH_VALUE, description: 'Overall score >= 75' },
-    { name: 'medium-value', threshold: SEGMENT_THRESHOLDS.MEDIUM_VALUE, description: 'Overall score >= 50' },
-    { name: 'at-risk', threshold: SEGMENT_THRESHOLDS.AT_RISK, description: 'Overall score <= 40' },
-    { name: 'engaged', threshold: SEGMENT_THRESHOLDS.ENGAGED, description: 'Overall score >= 60' },
-    { name: 'casual', threshold: SEGMENT_THRESHOLDS.CASUAL, description: 'Overall score < 30' },
-    { name: 'power-user', threshold: SEGMENT_THRESHOLDS.POWER_USER, description: 'Engagement score >= 80' },
-    { name: 'competitor-conscious', threshold: SEGMENT_THRESHOLDS.COMPETITOR_CONSCIOUS, description: 'Competitor score >= 70' },
-    { name: 'location-sensitive', threshold: SEGMENT_THRESHOLDS.LOCATION_SENSITIVE, description: 'Location score >= 65' },
-    { name: 'social-butterfly', threshold: SEGMENT_THRESHOLDS.SOCIAL_BUTTERFLY, description: 'Social score >= 70' },
-    { name: 'influencer', threshold: SEGMENT_THRESHOLDS.INFLUENCER, description: 'Social >= 75 and Engagement >= 75' },
-  ];
-
-  res.json({
-    success: true,
-    data: segments,
-  });
-});
 
 // ============================================
 // RisaCare-Compatible Endpoints
@@ -1027,6 +1009,26 @@ app.get('/api/signals/user/:userId', async (req: Request, res: Response) => {
   }
 });
 
+app.get('/signals/segments/list', (_req: Request, res: Response) => {
+  const segments = [
+    { name: 'high-value', threshold: SEGMENT_THRESHOLDS.HIGH_VALUE, description: 'Overall score >= 75' },
+    { name: 'medium-value', threshold: SEGMENT_THRESHOLDS.MEDIUM_VALUE, description: 'Overall score >= 50' },
+    { name: 'at-risk', threshold: SEGMENT_THRESHOLDS.AT_RISK, description: 'Overall score <= 40' },
+    { name: 'engaged', threshold: SEGMENT_THRESHOLDS.ENGAGED, description: 'Overall score >= 60' },
+    { name: 'casual', threshold: SEGMENT_THRESHOLDS.CASUAL, description: 'Overall score < 30' },
+    { name: 'power-user', threshold: SEGMENT_THRESHOLDS.POWER_USER, description: 'Engagement score >= 80' },
+    { name: 'competitor-conscious', threshold: SEGMENT_THRESHOLDS.COMPETITOR_CONSCIOUS, description: 'Competitor score >= 70' },
+    { name: 'location-sensitive', threshold: SEGMENT_THRESHOLDS.LOCATION_SENSITIVE, description: 'Location score >= 65' },
+    { name: 'social-butterfly', threshold: SEGMENT_THRESHOLDS.SOCIAL_BUTTERFLY, description: 'Social score >= 70' },
+    { name: 'influencer', threshold: SEGMENT_THRESHOLDS.INFLUENCER, description: 'Social >= 75 and Engagement >= 75' },
+  ];
+
+  res.json({
+    success: true,
+    data: segments,
+  });
+});
+
 // Error handling middleware
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   logger.error('Unhandled error:', err);
@@ -1090,5 +1092,7 @@ process.on('SIGINT', async () => {
   await mongoose.connection.close();
   process.exit(0);
 });
+
 startServer();
+
 export { app, aggregateSignals, getRealTimeSignals };

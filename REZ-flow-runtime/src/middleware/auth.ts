@@ -7,6 +7,12 @@ export interface AuthConfig {
   bypassPaths?: string[];
 }
 
+export interface AuthResult {
+  authenticated: boolean;
+  serviceId?: string;
+  error?: string;
+}
+
 export function createAuthMiddleware(config: AuthConfig) {
   const { apiKeys = [], internalTokens = [], bypassPaths = ['/health', '/ready'] } = config;
 
@@ -49,6 +55,51 @@ export const authenticateInternal = createAuthMiddleware({
   internalTokens: [process.env['INTERNAL_SERVICE_TOKEN'] || 'dev-token'],
   bypassPaths: ['/health', '/ready', '/metrics']
 });
+
+// Optional auth - doesn't fail, just returns auth status
+export const optionalAuth = createAuthMiddleware({
+  apiKeys: [process.env['API_KEY'] || ''],
+  internalTokens: [process.env['INTERNAL_SERVICE_TOKEN'] || 'dev-token'],
+  bypassPaths: ['/health', '/ready', '/metrics', '/'],
+});
+
+// API Key authentication
+export const authenticateApiKey = createAuthMiddleware({
+  apiKeys: [process.env['API_KEY'] || ''],
+  internalTokens: [],
+  bypassPaths: ['/health', '/ready', '/metrics'],
+});
+
+// Webhook signature validation (stub - implement with crypto)
+export async function validateWebhookSignature(
+  _payload: string,
+  _signature: string,
+  _secret: string
+): Promise<boolean> {
+  logger.warn('Webhook signature validation not fully implemented');
+  return true;
+}
+
+// Validate service token
+export async function validateServiceToken(token: string): Promise<AuthResult> {
+  const expectedToken = process.env['INTERNAL_SERVICE_TOKEN'] || 'dev-token';
+  if (token === expectedToken) {
+    return { authenticated: true, serviceId: 'internal' };
+  }
+  return { authenticated: false, error: 'Invalid service token' };
+}
+
+// Extract auth info from request
+export function extractAuthInfo(req: Request): AuthResult {
+  const apiKey = req.headers['x-api-key'] as string | undefined;
+  const internalToken = req.headers['x-internal-token'] as string | undefined;
+
+  if (apiKey || internalToken) {
+    return { authenticated: true };
+  }
+
+  return { authenticated: false, error: 'No auth credentials provided' };
+}
 
 export function errorHandler(err: Error, req: Request, res: Response, next: NextFunction): void {
   logger.error('Unhandled error', { error: err.message, stack: err.stack, path: req.path });

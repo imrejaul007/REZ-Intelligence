@@ -47,12 +47,12 @@ router.get(
       }
 
       if (validationResult.data.startDate || validationResult.data.endDate) {
-        query.createdAt = {};
+        query.createdAt = {} as Record<string, Date>;
         if (validationResult.data.startDate) {
-          query.createdAt.$gte = new Date(validationResult.data.startDate);
+          (query.createdAt as Record<string, Date>).$gte = new Date(validationResult.data.startDate);
         }
         if (validationResult.data.endDate) {
-          query.createdAt.$lte = new Date(validationResult.data.endDate);
+          (query.createdAt as Record<string, Date>).$lte = new Date(validationResult.data.endDate);
         }
       }
 
@@ -181,12 +181,12 @@ router.get(
       const matchStage: Record<string, unknown> = {};
 
       if (req.query.startDate || req.query.endDate) {
-        matchStage.createdAt = {};
+        matchStage.createdAt = {} as Record<string, Date>;
         if (req.query.startDate) {
-          matchStage.createdAt.$gte = new Date(req.query.startDate as string);
+          (matchStage.createdAt as Record<string, Date>).$gte = new Date(req.query.startDate as string);
         }
         if (req.query.endDate) {
-          matchStage.createdAt.$lte = new Date(req.query.endDate as string);
+          (matchStage.createdAt as Record<string, Date>).$lte = new Date(req.query.endDate as string);
         }
       }
 

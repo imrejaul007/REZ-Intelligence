@@ -138,13 +138,18 @@ Key Files:
 
 ---
 
-### REZ-signal-aggregator
+### REZ-signal-aggregator (Port 4142)
 **Aggregates behavioral signals from all touchpoints**
 
 Features:
 - Real-time signal collection
 - Signal scoring and weighting
 - Cross-platform correlation
+- **NEW:** `/api/signals/track` - RisaCare signal tracking
+- **NEW:** `/api/signals/user/:userId` - RisaCare user signals
+
+**Connected Clients:**
+- **RisaCare** - Uses for health engagement tracking
 
 ---
 
@@ -1167,10 +1172,15 @@ Features:
 - Timeline aggregation
 - Cross-platform memory
 - Real-time updates via WebSocket
+- **NEW:** `/api/memory/store` - RisaCare health timeline endpoint
 
 Routes:
 - `/api/timeline` - Customer timeline
 - `/api/events` - Event ingestion
+- `/api/memory/store` - RisaCare health memory storage
+
+**Connected Clients:**
+- **RisaCare** - Uses for health timeline and biomarker history
 
 Key Services:
 - `eventConsumer` - Event Bus subscription
@@ -1535,6 +1545,11 @@ Features:
 - Symptom analysis
 - Provider matching
 - Appointment booking
+- **NEW:** Report interpretation (`/health/interpret`)
+
+**Connected Clients:**
+- **RisaCare** (Healthcare OS) - Uses for medical interpretation, symptom assessment
+  - Integration: `RisaCare/risa-care-ai-service` + `RisaCare/integrations/rez-intelligence`
 
 ---
 
@@ -2222,7 +2237,7 @@ All 8 new services now have assigned ports:
 | 3005 | Salon Expert |
 | 3006 | Education Expert |
 | 3010 | Fitness Expert |
-| 3011 | Health Expert |
+| **3011** | **Health Expert** (→ RisaCare) |
 | 4017 | Recommendation Engine |
 | 4018 | Intent Graph |
 | 4033 | Support Copilot |

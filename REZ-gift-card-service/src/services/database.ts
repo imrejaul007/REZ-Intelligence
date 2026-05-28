@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { logInfo, logError } from './logger.js';
+import { logInfo, logError, logWarn } from './logger.js';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-gift-card-service';
 
