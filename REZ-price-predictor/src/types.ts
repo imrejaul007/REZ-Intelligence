@@ -2,7 +2,7 @@
  * TypeScript type definitions for REZ Price Predictor
  */
 
-import mongoose, { Types } from 'mongoose';
+import { Types } from 'mongoose';
 
 /**
  * Pricing strategy
@@ -89,7 +89,7 @@ export interface PricePredictionResponse {
   factors: {
     timeMultiplier: number;
     elasticity: number | 'unknown';
-    demandLevel: number;
+    demandLevel: number | undefined;
   };
   alternatives: {
     rushHour: PriceOptimization;

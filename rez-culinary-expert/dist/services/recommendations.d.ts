@@ -4,7 +4,7 @@
  */
 import { Db } from 'mongodb';
 import Redis from 'ioredis';
-import { type MenuItem } from './menuService.js';
+import { type MenuItem } from './menuService';
 export interface RecommendationContext {
     userId?: string;
     occasion?: 'casual' | 'date' | 'business' | 'family' | 'celebration' | 'quick';
@@ -67,5 +67,4 @@ export declare class RecommendationsService {
     private generateMealPlanName;
 }
 export declare function getRecommendationsService(): RecommendationsService;
-export type { RecommendationsService };
 //# sourceMappingURL=recommendations.d.ts.map

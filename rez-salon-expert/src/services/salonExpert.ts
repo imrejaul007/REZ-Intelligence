@@ -15,7 +15,7 @@ import {
 
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
-const logFormat = printf(({ level, message, timestamp, ...metadata }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
+const logFormat = printf(({ level, message, timestamp, ...metadata }: any) => {
   let msg = `${timestamp} [${level}]: ${message}`;
   if (Object.keys(metadata).length > 0 && metadata.stack === undefined) {
     msg += ` ${JSON.stringify(metadata)}`;
@@ -218,7 +218,7 @@ export class SalonExpert {
           response = await this.handlePrepGuidance(context, entities);
           break;
         default:
-          response = await this.handleGeneralSalon(context, message);
+          response = await this.handleGeneralSalon(context, entities, message);
       }
 
       response.processingTime = Date.now() - startTime;
@@ -984,8 +984,7 @@ export interface SalonAction {
         'book_facial' | 'show_skin_products' | 'ask_about_concerns' | 'reschedule_appointment' |
         'cancel_appointment' | 'check_service_allergens' | 'show_allergen_free_options' |
         'book_with_allergy_note' | 'find_alternative_service' | 'ask_questions' |
-        'show_popular_services' | 'show_special_offers' | 'show_popular_services' |
-        'show_special_offers';
+        'show_popular_services' | 'show_special_offers' | 'ask_about_allergies';
   data: Record<string, unknown>;
 }
 

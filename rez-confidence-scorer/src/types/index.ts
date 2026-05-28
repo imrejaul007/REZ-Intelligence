@@ -72,6 +72,8 @@ export interface ConfidenceScoreResult {
  * Agent status enumeration
  */
 export enum AgentStatus {
+  ONLINE = 'online',
+  OFFLINE = 'offline',
   ACTIVE = 'active',
   INACTIVE = 'inactive',
   DRAINING = 'draining',

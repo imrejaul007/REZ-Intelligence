@@ -60,7 +60,7 @@ export class DisputeService {
    * Get dispute by ID
    */
   async getDispute(disputeId: string): Promise<Dispute | null> {
-    const row = await queryOne(
+    const row = await queryOne<Record<string, unknown>>(
       'SELECT * FROM disputes WHERE id = $1 OR dispute_id = $1',
       [disputeId]
     );
@@ -130,7 +130,7 @@ export class DisputeService {
       LIMIT $${paramIndex++} OFFSET $${paramIndex}
     `;
 
-    const rows = await query(dataQuery, [...values, limit, offset]);
+    const rows = await query<Record<string, unknown>>(dataQuery, [...values, limit, offset]);
     const data = rows.map(row => this.mapRowToDispute(row));
 
     return {
@@ -230,16 +230,23 @@ export class DisputeService {
       throw new Error(`Dispute not found: ${disputeId}`);
     }
 
-    const rows = await query(
+    const rows = await query<{
+      id: string;
+      type: string;
+      description: string;
+      file_url: string | null;
+      submitted_at: Date;
+      submitted_by: string;
+    }>(
       'SELECT * FROM dispute_evidence WHERE dispute_id = $1 ORDER BY submitted_at DESC',
       [dispute.id]
     );
 
     return rows.map(row => ({
       id: row.id,
-      type: row.type,
+      type: row.type as DisputeEvidence['type'],
       description: row.description,
-      fileUrl: row.file_url,
+      fileUrl: row.file_url ?? undefined,
       submittedAt: new Date(row.submitted_at),
       submittedBy: row.submitted_by,
     }));
@@ -249,7 +256,7 @@ export class DisputeService {
    * Get disputes by transaction ID
    */
   async getDisputesByTransaction(transactionId: string): Promise<Dispute[]> {
-    const rows = await query(
+    const rows = await query<Record<string, unknown>>(
       'SELECT * FROM disputes WHERE transaction_id = $1 ORDER BY filed_at DESC',
       [transactionId]
     );
@@ -280,7 +287,13 @@ export class DisputeService {
       values.push(endDate);
     }
 
-    const rows = await query(
+    const rows = await query<{
+      status: string;
+      type: string;
+      amount: string;
+      filed_at: Date;
+      resolution_at: Date | null;
+    }>(
       `SELECT status, type, amount, filed_at, resolution_at
        FROM disputes ${whereClause}`,
       values
@@ -365,7 +378,18 @@ export class DisputeService {
   // Private helper methods
 
   private async getTransaction(transactionId: string): Promise<Transaction | null> {
-    const row = await queryOne('SELECT * FROM transactions WHERE transaction_id = $1', [transactionId]);
+    const row = await queryOne<{
+      id: string;
+      transaction_id: string;
+      amount: string;
+      currency: string;
+      type: string;
+      status: string;
+      merchant_id: string;
+      customer_id: string;
+      timestamp: Date;
+      metadata: Record<string, unknown>;
+    }>('SELECT * FROM transactions WHERE transaction_id = $1', [transactionId]);
 
     if (!row) return null;
 
@@ -374,8 +398,8 @@ export class DisputeService {
       transactionId: row.transaction_id,
       amount: parseFloat(row.amount),
       currency: row.currency,
-      type: row.type,
-      status: row.status,
+      type: row.type as Transaction['type'],
+      status: row.status as Transaction['status'],
       merchantId: row.merchant_id,
       customerId: row.customer_id,
       timestamp: new Date(row.timestamp),
@@ -384,7 +408,7 @@ export class DisputeService {
   }
 
   private async findOpenDispute(transactionId: string): Promise<Dispute | null> {
-    const row = await queryOne(
+    const row = await queryOne<Record<string, unknown>>(
       `SELECT * FROM disputes
        WHERE transaction_id = $1 AND status NOT IN ('resolved_favor_merchant', 'resolved_favor_customer', 'cancelled')`,
       [transactionId]

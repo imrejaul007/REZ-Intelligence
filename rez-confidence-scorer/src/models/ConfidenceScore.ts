@@ -1,224 +1,94 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
-import { IConfidenceScore } from '../types';
+import mongoose, { Schema, Model } from 'mongoose';
+
+/**
+ * Interface for ConfidenceScore lean documents
+ */
+export interface IConfidenceScoreLean {
+  agentId: string;
+  intent: string;
+  overallScore: number;
+  components: {
+    intentMatch: number;
+    contextRelevance: number;
+    historyAccuracy: number;
+    loadFactor: number;
+  };
+  createdAt: Date;
+}
+
+/**
+ * Interface for ConfidenceScore static methods
+ */
+interface IConfidenceScoreModel extends Model<IConfidenceScoreLean> {
+  getRecentScores(agentId: string, limit?: number): Promise<IConfidenceScoreLean[]>;
+  getScoresByIntent(intent: string, startDate: Date, endDate: Date): Promise<IConfidenceScoreLean[]>;
+  getAgentAverageScore(agentId: string, hours?: number): Promise<number>;
+  getTopAgentsForIntent(intent: string, limit?: number): Promise<Array<{ agentId: string; averageScore: number }>>;
+}
 
 /**
  * Mongoose schema for storing confidence score history
  */
-const ConfidenceScoreSchema = new Schema<IConfidenceScore & Document>(
+const ConfidenceScoreSchema = new Schema(
   {
-    agentId: {
-      type: String,
-      required: true,
-      index: true,
-    },
-    intent: {
-      type: String,
-      required: true,
-      index: true,
-    },
-    overallScore: {
-      type: Number,
-      required: true,
-      min: 0,
-      max: 1,
-    },
+    agentId: { type: String, required: true, index: true },
+    intent: { type: String, required: true, index: true },
+    overallScore: { type: Number, required: true, min: 0, max: 1 },
     components: {
-      intentMatch: {
-        type: Number,
-        required: true,
-        min: 0,
-        max: 1,
-      },
-      contextRelevance: {
-        type: Number,
-        required: true,
-        min: 0,
-        max: 1,
-      },
-      historyAccuracy: {
-        type: Number,
-        required: true,
-        min: 0,
-        max: 1,
-      },
-      loadFactor: {
-        type: Number,
-        required: true,
-        min: 0,
-        max: 1,
-      },
+      intentMatch: { type: Number, required: true, min: 0, max: 1 },
+      contextRelevance: { type: Number, required: true, min: 0, max: 1 },
+      historyAccuracy: { type: Number, required: true, min: 0, max: 1 },
+      loadFactor: { type: Number, required: true, min: 0, max: 1 },
     },
     context: {
       domain: String,
-      urgency: String,
-      userId: String,
-      sessionId: String,
-      metadata: {
-        type: Map,
-        of: Schema.Types.Mixed,
-        default: {},
-      },
+      userTier: Number,
+      timeOfDay: String,
+      previousInteractions: Number,
     },
-    taskComplexity: {
-      type: Number,
-      required: true,
-      min: 0,
-      max: 1,
-      default: 0.5,
-    },
-    requiredCapabilities: [
-      {
-        type: String,
-      },
-    ],
     metadata: {
-      processingTimeMs: {
-        type: Number,
-        required: true,
-      },
-      cacheHit: {
-        type: Boolean,
-        required: true,
-        default: false,
-      },
+      modelVersion: String,
+      features: [String],
     },
   },
-  {
-    timestamps: true,
-    collection: 'confidence_scores',
-  }
+  { timestamps: true }
 );
 
-// Compound indexes for efficient queries
+// Indexes for common queries
 ConfidenceScoreSchema.index({ agentId: 1, intent: 1 });
-ConfidenceScoreSchema.index({ agentId: 1, createdAt: -1 });
-ConfidenceScoreSchema.index({ intent: 1, createdAt: -1 });
-ConfidenceScoreSchema.index({ overallScore: -1, createdAt: -1 });
+ConfidenceScoreSchema.index({ createdAt: -1 });
 
-// TTL index for automatic cleanup of old records
-ConfidenceScoreSchema.index(
-  { createdAt: 1 },
-  { expireAfterSeconds: 30 * 24 * 60 * 60 } // 30 days retention
-);
-
-/**
- * Get recent scores for an agent
- */
-ConfidenceScoreSchema.statics.getRecentScores = async function (
-  agentId: string,
-  limit: number = 100
-): Promise<IConfidenceScore[]> {
-  return this.find({ agentId })
-    .sort({ createdAt: -1 })
-    .limit(limit)
-    .lean()
-    .exec();
+// Static methods
+ConfidenceScoreSchema.statics.getRecentScores = async function (agentId: string, limit = 10) {
+  return this.find({ agentId }).sort({ createdAt: -1 }).limit(limit).lean();
 };
 
-/**
- * Get scores for a specific intent
- */
-ConfidenceScoreSchema.statics.getScoresByIntent = async function (
-  intent: string,
-  startDate: Date,
-  endDate: Date
-): Promise<IConfidenceScore[]> {
-  return this.find({
-    intent,
-    createdAt: { $gte: startDate, $lte: endDate },
-  })
+ConfidenceScoreSchema.statics.getScoresByIntent = async function (intent: string, startDate: Date, endDate: Date) {
+  return this.find({ intent, createdAt: { $gte: startDate, $lte: endDate } })
     .sort({ createdAt: -1 })
-    .lean()
-    .exec();
+    .lean();
 };
 
-/**
- * Calculate average score for an agent
- */
-ConfidenceScoreSchema.statics.getAgentAverageScore = async function (
-  agentId: string,
-  hours: number = 24
-): Promise<number> {
+ConfidenceScoreSchema.statics.getAgentAverageScore = async function (agentId: string, hours = 24) {
   const since = new Date(Date.now() - hours * 60 * 60 * 1000);
   const result = await this.aggregate([
-    {
-      $match: {
-        agentId,
-        createdAt: { $gte: since },
-      },
-    },
-    {
-      $group: {
-        _id: '$agentId',
-        averageScore: { $avg: '$overallScore' },
-      },
-    },
+    { $match: { agentId, createdAt: { $gte: since } } },
+    { $group: { _id: '$agentId', avgScore: { $avg: '$overallScore' } } },
   ]).exec();
-
-  return result.length > 0 ? result[0].averageScore : 0;
+  return result.length > 0 ? result[0].avgScore : 0;
 };
 
-/**
- * Get top performing agents for an intent
- */
-ConfidenceScoreSchema.statics.getTopAgentsForIntent = async function (
-  intent: string,
-  limit: number = 10
-): Promise<Array<{ agentId: string; averageScore: number }>> {
+ConfidenceScoreSchema.statics.getTopAgentsForIntent = async function (intent: string, limit = 5) {
   return this.aggregate([
-    {
-      $match: { intent },
-    },
-    {
-      $group: {
-        _id: '$agentId',
-        averageScore: { $avg: '$overallScore' },
-        totalScores: { $sum: 1 },
-      },
-    },
-    {
-      $sort: { averageScore: -1 },
-    },
-    {
-      $limit: limit,
-    },
-    {
-      $project: {
-        agentId: '$_id',
-        averageScore: 1,
-        _id: 0,
-      },
-    },
+    { $match: { intent } },
+    { $group: { _id: '$agentId', averageScore: { $avg: '$overallScore' } } },
+    { $sort: { averageScore: -1 } },
+    { $limit: limit },
+    { $project: { _id: 0, agentId: '$_id', averageScore: 1 } },
   ]).exec();
 };
 
-/**
- * ConfidenceScore model interface
- */
-export interface ConfidenceScoreDocument extends IConfidenceScore, Document {
-  _id: mongoose.Types.ObjectId;
-}
-
-export interface ConfidenceScoreModel extends Model<ConfidenceScoreDocument> {
-  getRecentScores(agentId: string, limit?: number): Promise<IConfidenceScore[]>;
-  getScoresByIntent(
-    intent: string,
-    startDate: Date,
-    endDate: Date
-  ): Promise<IConfidenceScore[]>;
-  getAgentAverageScore(agentId: string, hours?: number): Promise<number>;
-  getTopAgentsForIntent(
-    intent: string,
-    limit?: number
-  ): Promise<Array<{ agentId: string; averageScore: number }>>;
-}
-
-// Compile model or use existing one (for hot reloading)
-export const ConfidenceScore: ConfidenceScoreModel =
-  mongoose.models.ConfidenceScore ||
-  mongoose.model<ConfidenceScoreDocument, ConfidenceScoreModel>(
-    'ConfidenceScore',
-    ConfidenceScoreSchema
-  );
-
+// Export the model with proper typing
+export const ConfidenceScore = (mongoose.models.ConfidenceScore as IConfidenceScoreModel) ||
+  mongoose.model<IConfidenceScoreLean, IConfidenceScoreModel>('ConfidenceScore', ConfidenceScoreSchema);
 export default ConfidenceScore;

@@ -3,13 +3,12 @@
  * Connects service to RABTUL infrastructure
  */
 
-const AUTH_URL = process.env.AUTH_SERVICE_URL || 'https://rez-auth-service.onrender.com';
-const PAYMENT_URL = process.env.PAYMENT_SERVICE_URL || 'https://rez-payment-service.onrender.com';
-const WALLET_URL = process.env.WALLET_SERVICE_URL || 'https://rez-wallet-service-36vo.onrender.com';
-const NOTIFICATION_URL = process.env.NOTIFICATION_SERVICE_URL || 'https://rez-notifications-service.onrender.com';
-const ANALYTICS_URL = process.env.ANALYTICS_SERVICE_URL || 'https://rez-analytics-service.onrender.com';
-const EVENT_BUS_URL = process.env.EVENT_BUS_URL || 'http://localhost:4025';
-const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
+const AUTH_URL = process.env['AUTH_SERVICE_URL'] || 'https://rez-auth-service.onrender.com';
+const WALLET_URL = process.env['WALLET_SERVICE_URL'] || 'https://rez-wallet-service-36vo.onrender.com';
+const NOTIFICATION_URL = process.env['NOTIFICATION_SERVICE_URL'] || 'https://rez-notifications-service.onrender.com';
+const ANALYTICS_URL = process.env['ANALYTICS_SERVICE_URL'] || 'https://rez-analytics-service.onrender.com';
+const EVENT_BUS_URL = process.env['EVENT_BUS_URL'] || 'http://localhost:4025';
+const INTERNAL_TOKEN = process.env['INTERNAL_SERVICE_TOKEN'] || '';
 
 /**
  * Make authenticated internal API request

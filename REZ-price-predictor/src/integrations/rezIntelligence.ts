@@ -3,11 +3,11 @@
  * Connects to AI/ML services
  */
 
-const INTENT_SERVICE_URL = process.env.INTENT_SERVICE_URL || 'https://rez-intent-predictor.onrender.com';
-const PREDICTIVE_SERVICE_URL = process.env.PREDICTIVE_ENGINE_URL || 'https://REZ-predictive-engine.onrender.com';
-const SIGNAL_SERVICE_URL = process.env.SIGNAL_AGGREGATOR_URL || 'https://REZ-signal-aggregator.onrender.com';
-const RECOMMEND_SERVICE_URL = process.env.RECOMMENDATION_ENGINE_URL || 'https://REZ-recommendation-engine.onrender.com';
-const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
+const INTENT_SERVICE_URL = process.env['INTENT_SERVICE_URL'] || 'https://rez-intent-predictor.onrender.com';
+const PREDICTIVE_SERVICE_URL = process.env['PREDICTIVE_ENGINE_URL'] || 'https://REZ-predictive-engine.onrender.com';
+const SIGNAL_SERVICE_URL = process.env['SIGNAL_AGGREGATOR_URL'] || 'https://REZ-signal-aggregator.onrender.com';
+const RECOMMEND_SERVICE_URL = process.env['RECOMMENDATION_ENGINE_URL'] || 'https://REZ-recommendation-engine.onrender.com';
+const INTERNAL_TOKEN = process.env['INTERNAL_SERVICE_TOKEN'] || '';
 
 interface SignalsResponse {
   signals?: unknown[];

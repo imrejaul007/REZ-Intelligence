@@ -11,7 +11,7 @@
 
 import axios from 'axios';
 import { serviceUrls } from '../config/index.js';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 import { rezServices } from './rezServices.js';
 import type {
   InternalCustomer,
@@ -87,15 +87,15 @@ export class CustomerAggregator {
   async getCustomer(userId: string): Promise<InternalCustomer | null> {
     try {
       // Use rezServices connector for all service calls
-      const data = await rezServices.aggregateCustomerData(userId);
+      const data = await rezServices.aggregateCustomerData(userId) as Record<string, unknown>;
 
       // Merge data from all sources
       return this.mergeCustomerData(userId, {
-        intelligence: data.profile,
-        now: data.rezNow,
-        media: data.engagement,
-        predictions: data.predictions,
-        rfm: data.rfm,
+        intelligence: (data.profile || {}) as Record<string, unknown>,
+        now: (data.rezNow || {}) as Record<string, unknown>,
+        media: (data.engagement || {}) as Record<string, unknown>,
+        predictions: (data.predictions || {}) as Record<string, unknown>,
+        rfm: (data.rfm || {}) as Record<string, unknown>,
       });
     } catch (error) {
       logger.error('Error fetching customer', { userId, error });
@@ -127,11 +127,12 @@ export class CustomerAggregator {
         }
       );
 
+      const res = response as Record<string, unknown>;
       return {
-        customers: (response.data || []).map((d) =>
-          this.mapToCustomer(d)
+        customers: ((res.data || []) as unknown[]).map((d) =>
+          this.mapToCustomer(d as Record<string, unknown>)
         ),
-        total: response.total || 0,
+        total: (res.total as number) || 0,
       };
     } catch (error) {
       logger.error('Error searching customers', { filters, error });
@@ -144,21 +145,21 @@ export class CustomerAggregator {
    */
   async getInternalSegments(userId: string): Promise<InternalSegment[]> {
     try {
-      const response = await this.fetchFromService(
+      const response = (await this.fetchFromService(
         `${serviceUrls.intelligence.unifiedProfile}/api/profile/${userId}/segments`
-      );
+      )) as Record<string, unknown>;
 
-      return (response.segments || []).map((s) => ({
-        id: s.id,
-        name: s.name,
-        type: s.type || 'BEHAVIORAL',
-        description: s.description,
-        rules: s.rules || [],
-        logic: s.logic || 'AND',
-        customerCount: s.customerCount || 0,
+      return ((response.segments || []) as unknown[]).map((s: Record<string, unknown>) => ({
+        id: s.id as string,
+        name: s.name as string,
+        type: ((s.type as string) || 'BEHAVIORAL') as 'BEHAVIORAL' | 'DEMOGRAPHIC' | 'ENGAGEMENT',
+        description: s.description as string,
+        rules: (s.rules as InternalSegment['rules']) || [],
+        logic: ((s.logic as string) || 'AND') as 'AND' | 'OR',
+        customerCount: (s.customerCount as number) || 0,
         isActive: s.isActive !== false,
-        createdAt: new Date(s.createdAt),
-        updatedAt: new Date(s.updatedAt || s.createdAt),
+        createdAt: new Date(s.createdAt as string),
+        updatedAt: new Date((s.updatedAt || s.createdAt) as string),
       }));
     } catch (error) {
       logger.error('Error fetching customer segments', { userId, error });
@@ -291,24 +292,25 @@ export class CustomerAggregator {
     userId: string
   ): Promise<InternalPredictions> {
     try {
-      const response = await this.fetchFromService(
+      const response = (await this.fetchFromService(
         `${serviceUrls.intelligence.predictiveEngine}/api/predictions/${userId}`
-      );
+      )) as Record<string, unknown>;
 
+      const ltvPrediction = response.ltvPrediction as Record<string, unknown> | undefined;
       return {
-        churnRisk: response.churnRisk || 'LOW',
-        churnProbability: response.churnProbability || 0,
-        nextPurchaseLikelihood: response.nextPurchaseLikelihood || 0,
-        ltvPrediction: response.ltvPrediction
+        churnRisk: (response.churnRisk || 'LOW') as InternalPredictions['churnRisk'],
+        churnProbability: (response.churnProbability as number) || 0,
+        nextPurchaseLikelihood: (response.nextPurchaseLikelihood as number) || 0,
+        ltvPrediction: ltvPrediction
           ? {
-              predicted: response.ltvPrediction.predicted,
-              actual: response.ltvPrediction.actual || 0,
-              confidence: response.ltvPrediction.confidence || 0,
-              timeframe: response.ltvPrediction.timeframe || '365d',
+              predicted: (ltvPrediction.predicted as number) || 0,
+              actual: (ltvPrediction.actual as number) || 0,
+              confidence: (ltvPrediction.confidence as number) || 0,
+              timeframe: ((ltvPrediction.timeframe as string) || '365d') as '30d' | '90d' | '365d',
             }
-          : { predicted: 0, actual: 0, confidence: 0, timeframe: '365d' },
-        productAffinity: response.productAffinity || [],
-        preferredChannels: response.preferredChannels || ['APP_PUSH'],
+          : { predicted: 0, actual: 0, confidence: 0, timeframe: '365d' as const },
+        productAffinity: (response.productAffinity as InternalPredictions['productAffinity']) || [],
+        preferredChannels: (response.preferredChannels as string[]) || ['APP_PUSH'],
       };
     } catch (error) {
       logger.warn('Failed to fetch predictions', { userId });
@@ -333,11 +335,11 @@ export class CustomerAggregator {
    */
   async getInternalEngagement(userId: string): Promise<InternalEngagement> {
     try {
-      const response = await this.fetchFromService(
+      const response = (await this.fetchFromService(
         `${serviceUrls.intelligence.unifiedProfile}/api/profile/${userId}/activity`
-      );
+      )) as Record<string, unknown>;
 
-      const score = response.engagementScore || 50;
+      const score = (response.engagementScore as number) || 50;
       let tier: EngagementTier = 'WARM';
 
       if (score >= 80) tier = 'CHAMPION';
@@ -351,11 +353,11 @@ export class CustomerAggregator {
         tier,
         emailOptIn: response.emailOptIn !== false,
         pushOptIn: response.pushOptIn !== false,
-        smsOptIn: response.smsOptIn || false,
+        smsOptIn: (response.smsOptIn as boolean) || false,
         lastEngagement: response.lastEngagement
-          ? new Date(response.lastEngagement)
+          ? new Date(response.lastEngagement as string)
           : undefined,
-        engagementFrequency: response.frequency || 'WEEKLY',
+        engagementFrequency: ((response.frequency as string) || 'WEEKLY') as 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | 'RARELY',
       };
     } catch (error) {
       return {
@@ -382,7 +384,9 @@ export class CustomerAggregator {
     totalOrders: number;
     uniqueMerchants: number;
   } {
-    if (!orders || orders.length === 0) {
+    const typedOrders = (orders || []) as Array<{ total?: number; storeId?: string; createdAt?: string | Date }>;
+
+    if (typedOrders.length === 0) {
       return {
         avgOrderValue: 0,
         storeAvgOrderValue: 0,
@@ -395,15 +399,15 @@ export class CustomerAggregator {
       };
     }
 
-    const totalSpend = orders.reduce((sum: number, o) => sum + (o.total || 0), 0);
-    const avgOrderValue = totalSpend / orders.length;
-    const merchants = new Set(orders.map((o) => o.storeId));
+    const totalSpend = typedOrders.reduce((sum: number, o) => sum + (o.total || 0), 0);
+    const avgOrderValue = totalSpend / typedOrders.length;
+    const merchants = new Set(typedOrders.map((o) => o.storeId));
 
     let weekendVisits = 0;
     let nightOrders = 0;
 
-    for (const order of orders) {
-      const date = new Date(order.createdAt);
+    for (const order of typedOrders) {
+      const date = new Date(order.createdAt as string);
       const day = date.getDay();
       const hour = date.getHours();
 
@@ -432,11 +436,11 @@ export class CustomerAggregator {
   private mergeCustomerData(
     userId: string,
     sources: {
-      intelligence;
-      now;
-      media;
-      predictions?;
-      rfm?;
+      intelligence: Record<string, unknown>;
+      now: Record<string, unknown>;
+      media: Record<string, unknown>;
+      predictions?: Record<string, unknown>;
+      rfm?: Record<string, unknown>;
     }
   ): InternalCustomer {
     const intelligence = sources.intelligence || {};
@@ -445,42 +449,63 @@ export class CustomerAggregator {
     const predictions = sources.predictions || {};
     const rfm = sources.rfm || {};
 
+    // Helper to safely get string values
+    const getStr = (obj: Record<string, unknown>, key: string): string | undefined =>
+      (obj[key] as string) || undefined;
+
+    // Helper to safely get number values
+    const getNum = (obj: Record<string, unknown>, key: string, fallback: number): number => {
+      const val = obj[key];
+      return typeof val === 'number' ? val : fallback;
+    };
+
+    // Helper to safely get Date values
+    const getDate = (obj: Record<string, unknown>, key: string): Date | undefined => {
+      const val = obj[key];
+      if (val instanceof Date) return val;
+      if (typeof val === 'string') return new Date(val);
+      if (typeof val === 'number') return new Date(val);
+      return undefined;
+    };
+
+    // Helper to safely get boolean values
+    const getBool = (obj: Record<string, unknown>, key: string, fallback: boolean): boolean => {
+      const val = obj[key];
+      return typeof val === 'boolean' ? val : fallback;
+    };
+
     // Demographics from any source
     const demographics: InternalDemographics = {
-      age: intelligence.age || now.age,
-      gender: intelligence.gender || now.gender,
-      city: intelligence.city || now.city,
-      state: intelligence.state || now.state,
-      pincode: intelligence.pincode || now.pincode,
-      language: intelligence.language || now.language,
-      occupation: intelligence.occupation || now.occupation,
-      incomeTier: intelligence.incomeTier || now.incomeTier,
+      age: intelligence.age as InternalDemographics['age'],
+      gender: intelligence.gender as InternalDemographics['gender'],
+      city: intelligence.city as InternalDemographics['city'],
+      state: intelligence.state as InternalDemographics['state'],
+      pincode: intelligence.pincode as InternalDemographics['pincode'],
+      language: intelligence.language as InternalDemographics['language'],
+      occupation: intelligence.occupation as InternalDemographics['occupation'],
+      incomeTier: intelligence.incomeTier as InternalDemographics['incomeTier'],
     };
 
     // Lifetime data from orders
-    const orders = now.orders || [];
-    const totalSpend = orders.reduce((sum: number, o) => sum + (o.total || 0), 0);
+    const orders = (now.orders || []) as Array<{ total?: number; createdAt?: Date | string | number }>;
+    const totalSpend = orders.reduce((sum: number, o) => sum + (typeof o.total === 'number' ? o.total : 0), 0);
     const lifetime: InternalLifetime = {
-      tenureDays: now.tenureDays || 0,
+      tenureDays: getNum(now, 'tenureDays', 0),
       totalOrders: orders.length,
       totalSpend,
       averageOrderValue: orders.length > 0 ? totalSpend / orders.length : 0,
-      lastOrderDate: orders[0]?.createdAt
-        ? new Date(orders[0].createdAt)
-        : undefined,
-      firstOrderDate: orders[orders.length - 1]?.createdAt
-        ? new Date(orders[orders.length - 1].createdAt)
-        : undefined,
-      predictedLTV: intelligence.predictedLTV,
-      ltvConfidence: intelligence.ltvConfidence,
+      lastOrderDate: orders[0]?.createdAt ? getDate(now, 'createdAt') : undefined,
+      firstOrderDate: orders.length > 0 ? getDate(now, 'createdAt') : undefined,
+      predictedLTV: getNum(intelligence, 'predictedLTV', 0),
+      ltvConfidence: getNum(intelligence, 'ltvConfidence', 0),
     };
 
     // Activity
     const activity: InternalActivity = {
-      last30Days: now.activity30Days || { orders: 0, spend: 0, visits: 0 },
-      last90Days: now.activity90Days || { orders: 0, spend: 0, visits: 0 },
-      last365Days: now.activity365Days || { orders: 0, spend: 0, visits: 0 },
-      visits: now.visitPattern || {
+      last30Days: (now.activity30Days as InternalActivity['last30Days']) || { orders: 0, spend: 0, visits: 0 },
+      last90Days: (now.activity90Days as InternalActivity['last90Days']) || { orders: 0, spend: 0, visits: 0 },
+      last365Days: (now.activity365Days as InternalActivity['last365Days']) || { orders: 0, spend: 0, visits: 0 },
+      visits: (now.visitPattern as InternalActivity['visits']) || {
         weekday: 50,
         weekend: 50,
         morning: 20,
@@ -492,33 +517,30 @@ export class CustomerAggregator {
 
     // Engagement
     const engagement: InternalEngagement = {
-      score: media.engagementScore || intelligence.engagementScore || 50,
-      tier: media.engagementTier || intelligence.tier || 'WARM',
+      score: getNum(media, 'engagementScore', getNum(intelligence, 'engagementScore', 50)),
+      tier: (media.engagementTier || intelligence.tier || 'WARM') as InternalEngagement['tier'],
       emailOptIn: media.emailOptIn !== false,
       pushOptIn: media.pushOptIn !== false,
-      smsOptIn: media.smsOptIn || false,
-      lastEngagement: media.lastEngagement
-        ? new Date(media.lastEngagement)
-        : undefined,
-      engagementFrequency: media.frequency || 'WEEKLY',
+      smsOptIn: getBool(media, 'smsOptIn', false),
+      lastEngagement: getDate(media, 'lastEngagement'),
+      engagementFrequency: (media.frequency || 'WEEKLY') as InternalEngagement['engagementFrequency'],
     };
 
-    // Predictions from AI (merge with predictions from rezServices if available)
+    // Predictions from AI
     const mergedPredictions: InternalPredictions = {
-      churnRisk: predictions.churnRisk || intelligence.churnRisk || 'LOW',
-      churnProbability: predictions.churnProbability || intelligence.churnProbability || 0.1,
-      nextPurchaseLikelihood: predictions.nextPurchaseLikelihood || intelligence.nextPurchaseLikelihood || 0.5,
-      ltvPrediction: predictions.ltvPrediction || intelligence.ltvPrediction,
-      productAffinity: predictions.productAffinity || intelligence.productAffinity || [],
-      preferredChannels: predictions.preferredChannels || media.preferredChannels || ['APP_PUSH'],
+      churnRisk: (predictions.churnRisk || intelligence.churnRisk || 'LOW') as InternalPredictions['churnRisk'],
+      churnProbability: getNum(predictions, 'churnProbability', getNum(intelligence, 'churnProbability', 0.1)),
+      nextPurchaseLikelihood: getNum(predictions, 'nextPurchaseLikelihood', getNum(intelligence, 'nextPurchaseLikelihood', 0.5)),
+      ltvPrediction: (predictions.ltvPrediction || intelligence.ltvPrediction) as InternalPredictions['ltvPrediction'],
+      productAffinity: (predictions.productAffinity || intelligence.productAffinity || []) as InternalPredictions['productAffinity'],
+      preferredChannels: (predictions.preferredChannels || media.preferredChannels || ['APP_PUSH']) as InternalPredictions['preferredChannels'],
     };
 
     // Segments
-    const segments: InternalSegment[] = [
-      ...(intelligence.segments || []),
-      ...(now.segments || []),
-      ...(media.segments || []),
-    ].map((s, i: number) => ({
+    const intSegs = (intelligence.segments || []) as InternalSegment[];
+    const nowSegs = (now.segments || []) as InternalSegment[];
+    const mediaSegs = (media.segments || []) as InternalSegment[];
+    const segments: InternalSegment[] = [...intSegs, ...nowSegs, ...mediaSegs].map((s, i: number) => ({
       id: s.id || `segment-${i}`,
       name: s.name,
       type: s.type || 'BEHAVIORAL',
@@ -527,8 +549,8 @@ export class CustomerAggregator {
       logic: (s.logic as 'AND' | 'OR') || 'AND',
       customerCount: s.customerCount || 1,
       isActive: s.isActive !== false,
-      createdAt: new Date(s.createdAt || Date.now()),
-      updatedAt: new Date(s.updatedAt || s.createdAt || Date.now()),
+      createdAt: s.createdAt || new Date(),
+      updatedAt: s.updatedAt || s.createdAt || new Date(),
     }));
 
     // Sources
@@ -537,69 +559,96 @@ export class CustomerAggregator {
       sourcesData.push({
         source: 'REZ_NOW',
         externalId: userId,
-        firstSeen: new Date(now.createdAt || Date.now()),
+        firstSeen: getDate(now, 'createdAt') || new Date(),
       });
     }
     if (media.source) {
       sourcesData.push({
         source: 'REZ_MEDIA',
         externalId: userId,
-        firstSeen: new Date(media.createdAt || Date.now()),
+        firstSeen: getDate(media, 'createdAt') || new Date(),
       });
     }
 
     return {
       id: userId,
       userId,
-      email: intelligence.email || now.email || media.email,
-      phone: intelligence.phone || now.phone || media.phone,
-      firstName: intelligence.firstName || now.firstName,
-      lastName: intelligence.lastName || now.lastName,
-      fullName:
-        intelligence.fullName ||
-        `${now.firstName || ''} ${now.lastName || ''}`.trim(),
-      avatar: intelligence.avatar || now.avatar,
+      email: getStr(intelligence, 'email') || getStr(now, 'email') || getStr(media, 'email'),
+      phone: getStr(intelligence, 'phone') || getStr(now, 'phone') || getStr(media, 'phone'),
+      firstName: getStr(intelligence, 'firstName') || getStr(now, 'firstName'),
+      lastName: getStr(intelligence, 'lastName') || getStr(now, 'lastName'),
+      fullName: getStr(intelligence, 'fullName') || `${getStr(now, 'firstName') || ''} ${getStr(now, 'lastName') || ''}`.trim(),
+      avatar: getStr(intelligence, 'avatar') || getStr(now, 'avatar'),
       demographics,
       lifetime,
       activity,
       engagement,
       predictions: mergedPredictions,
       segments,
-      smartTags: [], // Will be populated separately
-      intentSignals: intelligence.intentSignals || {
-        preferredChannels: [],
-        intentScore: 50,
-      },
+      smartTags: [],
+      intentSignals: (intelligence.intentSignals as InternalCustomer['intentSignals']) || {
+        score: 50,
+        primaryIntent: 'unknown',
+        intents: [],
+      } as InternalCustomer['intentSignals'],
       sources: sourcesData,
-      createdAt: new Date(intelligence.createdAt || now.createdAt || Date.now()),
+      createdAt: getDate(intelligence, 'createdAt') || getDate(now, 'createdAt') || new Date(),
       updatedAt: new Date(),
     };
   }
 
-  private mapToCustomer(data): InternalCustomer {
+  private mapToCustomer(data: Record<string, unknown>): InternalCustomer {
+    const d = data as {
+      id?: string;
+      userId?: string;
+      email?: string;
+      phone?: string;
+      firstName?: string;
+      lastName?: string;
+      fullName?: string;
+      avatar?: string;
+      demographics?: InternalDemographics;
+      lifetime?: InternalLifetime;
+      activity?: InternalActivity;
+      engagement?: InternalEngagement;
+      predictions?: InternalPredictions;
+      segments?: InternalSegment[];
+      smartTags?: InternalSmartTag[];
+      intentSignals?: { preferredChannels: string[]; intentScore: number };
+      sources?: CustomerSource[];
+      createdAt?: Date | string | number;
+      updatedAt?: Date | string | number;
+    };
+
+    const toDate = (val: Date | string | number | undefined): Date => {
+      if (!val) return new Date();
+      if (val instanceof Date) return val;
+      return new Date(val);
+    };
+
     return {
-      id: data.userId || data.id,
-      userId: data.userId || data.id,
-      email: data.email,
-      phone: data.phone,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      fullName: data.fullName,
-      avatar: data.avatar,
-      demographics: data.demographics || {},
-      lifetime: data.lifetime || {
+      id: d.userId || d.id || '',
+      userId: d.userId || d.id || '',
+      email: d.email || '',
+      phone: d.phone || '',
+      firstName: d.firstName || '',
+      lastName: d.lastName || '',
+      fullName: d.fullName || '',
+      avatar: d.avatar || '',
+      demographics: d.demographics || {} as InternalDemographics,
+      lifetime: d.lifetime || {
         tenureDays: 0,
         totalOrders: 0,
         totalSpend: 0,
         averageOrderValue: 0,
       },
-      activity: data.activity || {
+      activity: d.activity || {
         last30Days: { orders: 0, spend: 0, visits: 0 },
         last90Days: { orders: 0, spend: 0, visits: 0 },
         last365Days: { orders: 0, spend: 0, visits: 0 },
         visits: { weekday: 0, weekend: 0, morning: 0, afternoon: 0, evening: 0, night: 0 },
       },
-      engagement: data.engagement || {
+      engagement: d.engagement || {
         score: 50,
         tier: 'WARM',
         emailOptIn: true,
@@ -607,7 +656,7 @@ export class CustomerAggregator {
         smsOptIn: false,
         engagementFrequency: 'WEEKLY',
       },
-      predictions: data.predictions || {
+      predictions: d.predictions || {
         churnRisk: 'LOW',
         churnProbability: 0.1,
         nextPurchaseLikelihood: 0.5,
@@ -615,26 +664,26 @@ export class CustomerAggregator {
         productAffinity: [],
         preferredChannels: ['APP_PUSH'],
       },
-      segments: (data.segments || []).map((s) => ({
+      segments: (d.segments || []).map((s: InternalSegment) => ({
         id: s.id,
         name: s.name,
-        type: s.type || 'BEHAVIORAL',
+        type: s.type,
         description: s.description,
         rules: s.rules || [],
-        logic: (s.logic as 'AND' | 'OR') || 'AND',
+        logic: s.logic,
         customerCount: s.customerCount || 0,
         isActive: s.isActive !== false,
-        createdAt: new Date(s.createdAt || Date.now()),
-        updatedAt: new Date(s.updatedAt || s.createdAt || Date.now()),
+        createdAt: s.createdAt || new Date(),
+        updatedAt: s.updatedAt || s.createdAt || new Date(),
       })),
       smartTags: [],
-      intentSignals: data.intentSignals || {
+      intentSignals: d.intentSignals || {
         preferredChannels: [],
         intentScore: 50,
       },
-      sources: data.sources || [],
-      createdAt: new Date(data.createdAt || Date.now()),
-      updatedAt: new Date(data.updatedAt || data.createdAt || Date.now()),
+      sources: d.sources || [],
+      createdAt: toDate(d.createdAt),
+      updatedAt: toDate(d.updatedAt),
     };
   }
 

@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { dataGenerator } from '../services/dataGenerator.js';
 import { DatasetSchema, AnonymizeRequestSchema, SyntheticDataRequestSchema } from '../types/index.js';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 

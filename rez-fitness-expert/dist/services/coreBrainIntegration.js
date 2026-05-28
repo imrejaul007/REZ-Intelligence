@@ -1,12 +1,17 @@
+"use strict";
 /**
  * Core Brain Integration Service for Fitness Expert
  * Provides integration with the central Core Brain service for context, memory, and personalization
  */
-import { logger } from './fitnessExpert.js';
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CoreBrainError = exports.CoreBrainClient = void 0;
+exports.getCoreBrainClient = getCoreBrainClient;
+exports.initializeCoreBrainClient = initializeCoreBrainClient;
+const fitnessExpert_1 = require("./fitnessExpert");
 // ============================================
 // CORE BRAIN CLIENT
 // ============================================
-export class CoreBrainClient {
+class CoreBrainClient {
     config;
     healthCheckCache = {
         status: 'unknown',
@@ -31,7 +36,7 @@ export class CoreBrainClient {
             internalTokens = JSON.parse(internalTokensJson);
         }
         catch {
-            logger.warn('Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
+            fitnessExpert_1.logger.warn('Failed to parse INTERNAL_SERVICE_TOKENS_JSON');
         }
         return new CoreBrainClient({
             baseUrl: process.env.CORE_BRAIN_URL || 'http://localhost:4072',
@@ -281,7 +286,7 @@ export class CoreBrainClient {
         params.append('includeContext', String(options?.includeContext ?? true));
         params.append('includePreferences', String(options?.includePreferences ?? false));
         params.append('includeRecentMemories', String(options?.includeRecentMemories ?? true));
-        return this.request(`/internal/personalization/intelligence?${params.toString()}`);
+        return this.request('GET', `/internal/personalization/intelligence?${params.toString()}`);
     }
     /**
      * Get personalized greeting
@@ -317,20 +322,20 @@ export class CoreBrainClient {
             this.searchMemories(userId, 'workout fitness exercise training', 10).catch(() => []),
         ];
         const [session, preferences, loyalty, memories, contextData, intelligence, workoutHistory] = await Promise.allSettled(promises);
-        if (session.status === 'fulfilled')
+        if (session.status === 'fulfilled' && session.value !== undefined)
             results.session = session.value;
-        if (preferences.status === 'fulfilled')
+        if (preferences.status === 'fulfilled' && preferences.value !== undefined)
             results.preferences = preferences.value;
-        if (loyalty.status === 'fulfilled')
+        if (loyalty.status === 'fulfilled' && loyalty.value !== undefined)
             results.loyalty = loyalty.value;
-        if (memories.status === 'fulfilled')
+        if (memories.status === 'fulfilled' && memories.value !== undefined)
             results.memories = memories.value;
-        if (contextData.status === 'fulfilled')
+        if (contextData.status === 'fulfilled' && contextData.value !== undefined)
             results.context = contextData.value;
         if (intelligence.status === 'fulfilled' && intelligence.value) {
             results.context = { ...results.context, ...intelligence.value };
         }
-        if (workoutHistory.status === 'fulfilled')
+        if (workoutHistory.status === 'fulfilled' && workoutHistory.value !== undefined)
             results.workoutHistory = workoutHistory.value;
         return results;
     }
@@ -387,10 +392,11 @@ export class CoreBrainClient {
         };
     }
 }
+exports.CoreBrainClient = CoreBrainClient;
 // ============================================
 // ERROR CLASS
 // ============================================
-export class CoreBrainError extends Error {
+class CoreBrainError extends Error {
     statusCode;
     error;
     constructor(message, statusCode, error) {
@@ -400,20 +406,21 @@ export class CoreBrainError extends Error {
         this.name = 'CoreBrainError';
     }
 }
+exports.CoreBrainError = CoreBrainError;
 // ============================================
 // SINGLETON INSTANCE
 // ============================================
 let coreBrainClientInstance = null;
-export function getCoreBrainClient() {
+function getCoreBrainClient() {
     if (!coreBrainClientInstance) {
         coreBrainClientInstance = CoreBrainClient.fromEnv();
-        logger.info('Core Brain client initialized for fitness expert', {
+        fitnessExpert_1.logger.info('Core Brain client initialized for fitness expert', {
             baseUrl: process.env.CORE_BRAIN_URL || 'http://localhost:4072',
         });
     }
     return coreBrainClientInstance;
 }
-export function initializeCoreBrainClient(config) {
+function initializeCoreBrainClient(config) {
     coreBrainClientInstance = new CoreBrainClient({
         baseUrl: config?.baseUrl || process.env.CORE_BRAIN_URL || 'http://localhost:4072',
         internalToken: config?.internalToken || '',
@@ -423,5 +430,5 @@ export function initializeCoreBrainClient(config) {
     });
     return coreBrainClientInstance;
 }
-export default CoreBrainClient;
+exports.default = CoreBrainClient;
 //# sourceMappingURL=coreBrainIntegration.js.map

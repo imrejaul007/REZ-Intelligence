@@ -1,5 +1,11 @@
-import { WorkoutType } from '../services/fitnessExpert.js';
-export var FitnessIntent;
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.FITNESS_INTENT_PATTERNS = exports.FitnessIntent = void 0;
+exports.detectFitnessIntent = detectFitnessIntent;
+exports.getResponseForIntent = getResponseForIntent;
+exports.buildContextFromQuery = buildContextFromQuery;
+const fitnessExpert_1 = require("../services/fitnessExpert");
+var FitnessIntent;
 (function (FitnessIntent) {
     FitnessIntent["WORKOUT_PLAN"] = "workout_plan";
     FitnessIntent["EXERCISE_INFO"] = "exercise_info";
@@ -17,8 +23,8 @@ export var FitnessIntent;
     FitnessIntent["PERSONAL_BEST"] = "personal_best";
     FitnessIntent["BEGINNER_QUESTION"] = "beginner_question";
     FitnessIntent["MODIFICATION_REQUEST"] = "modification_request";
-})(FitnessIntent || (FitnessIntent = {}));
-export const FITNESS_INTENT_PATTERNS = [
+})(FitnessIntent || (exports.FitnessIntent = FitnessIntent = {}));
+exports.FITNESS_INTENT_PATTERNS = [
     {
         intent: FitnessIntent.WORKOUT_PLAN,
         patterns: [
@@ -199,9 +205,9 @@ export const FITNESS_INTENT_PATTERNS = [
         requiresContext: false
     }
 ];
-export function detectFitnessIntent(query) {
+function detectFitnessIntent(query) {
     const lowerQuery = query.toLowerCase();
-    for (const pattern of FITNESS_INTENT_PATTERNS) {
+    for (const pattern of exports.FITNESS_INTENT_PATTERNS) {
         for (const keyword of pattern.keywords) {
             if (lowerQuery.includes(keyword)) {
                 return pattern.intent;
@@ -210,7 +216,7 @@ export function detectFitnessIntent(query) {
     }
     return null;
 }
-export function getResponseForIntent(intent, context) {
+function getResponseForIntent(intent, context) {
     switch (intent) {
         case FitnessIntent.WORKOUT_PLAN:
             return 'I would love to create a personalized workout plan for you! To make it perfect, tell me about your fitness level, available equipment, and how many days per week you can train.';
@@ -244,20 +250,20 @@ export function getResponseForIntent(intent, context) {
             return 'I am here to help with all your fitness needs! Ask me about workouts, exercises, form, motivation, or anything fitness-related!';
     }
 }
-export function buildContextFromQuery(query, context) {
+function buildContextFromQuery(query, context) {
     const lowerQuery = query.toLowerCase();
     const workoutTypes = [];
     if (lowerQuery.includes('strength') || lowerQuery.includes('weight')) {
-        workoutTypes.push(WorkoutType.STRENGTH);
+        workoutTypes.push(fitnessExpert_1.WorkoutType.STRENGTH);
     }
     if (lowerQuery.includes('cardio') || lowerQuery.includes('running') || lowerQuery.includes('jogging')) {
-        workoutTypes.push(WorkoutType.CARDIO);
+        workoutTypes.push(fitnessExpert_1.WorkoutType.CARDIO);
     }
     if (lowerQuery.includes('hiit')) {
-        workoutTypes.push(WorkoutType.HIIT);
+        workoutTypes.push(fitnessExpert_1.WorkoutType.HIIT);
     }
     if (lowerQuery.includes('yoga') || lowerQuery.includes('stretch')) {
-        workoutTypes.push(WorkoutType.FLEXIBILITY);
+        workoutTypes.push(fitnessExpert_1.WorkoutType.FLEXIBILITY);
     }
     return {
         ...context,

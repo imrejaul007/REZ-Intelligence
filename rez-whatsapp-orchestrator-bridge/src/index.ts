@@ -158,7 +158,7 @@ function configureMiddleware(): void {
   // Request logging
   app.use(morgan('combined', {
     stream: {
-      write: (message) => logger.info(message.trim()),
+      write: (message: string) => logger.info(message.trim()),
     },
   }));
 
@@ -171,8 +171,9 @@ function configureMiddleware(): void {
 
   // Request ID middleware
   app.use((req: Request, res: Response, next: NextFunction) => {
-    req.requestId = (req.headers['x-request-id'] as string) || uuidv4();
-    res.setHeader('x-request-id', req.requestId);
+    const requestId = (req.headers['x-request-id'] as string) || uuidv4();
+    (req as Request & { requestId: string }).requestId = requestId;
+    res.setHeader('x-request-id', requestId);
     next();
   });
 }
@@ -279,13 +280,14 @@ function configureRoutes(): void {
     });
   });
 
-  app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
+    const reqWithId = req as Request & { requestId?: string };
     logger.error('Unhandled error', {
       error: err.message,
       stack: err.stack,
       path: req.path,
       method: req.method,
-      requestId: req.requestId,
+      requestId: reqWithId.requestId,
     });
 
     res.status(500).json({
@@ -293,7 +295,7 @@ function configureRoutes(): void {
       error: {
         code: 'INTERNAL_ERROR',
         message: 'An unexpected error occurred',
-        requestId: req.requestId,
+        requestId: reqWithId.requestId,
       },
     });
   });

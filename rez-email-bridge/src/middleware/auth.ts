@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
+
+export { createAuthMiddleware as authMiddleware };
 
 export interface AuthConfig {
   apiKeys?: string[];

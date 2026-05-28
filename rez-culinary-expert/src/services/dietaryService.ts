@@ -5,14 +5,14 @@
 
 import { Db, Collection } from 'mongodb';
 import Redis from 'ioredis';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger';
 import {
   DIETARY_TAGS,
   MAJOR_ALLERGENS,
   containsAllergen,
   type DietaryTag,
   type Allergen,
-} from '../config/knowledge.js';
+} from '../config/knowledge';
 
 export interface UserDietaryProfile {
   id: string;
@@ -301,8 +301,8 @@ export class DietaryService {
     return {
       name: allergen.name,
       description: `${allergen.name} allergy`,
-      aliases: allergen.aliases,
-      notes: allergen.notes,
+      aliases: [...allergen.aliases],
+      notes: 'notes' in allergen ? allergen.notes : undefined,
     };
   }
 
@@ -320,7 +320,7 @@ export class DietaryService {
     return {
       name: tag.name,
       description: tag.description,
-      excludes: tag.excludes,
+      excludes: [...tag.excludes],
     };
   }
 
@@ -473,5 +473,3 @@ export function getDietaryService(): DietaryService {
   }
   return dietaryService;
 }
-
-export type { DietaryService };

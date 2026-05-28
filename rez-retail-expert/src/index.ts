@@ -10,16 +10,16 @@ import rateLimit from 'express-rate-limit';
 import compression from 'compression';
 import fs from 'fs';
 import path from 'path';
-import { configSchema } from './config/index.js';
-import { logger } from './services/retailExpert.js';
-import { retailRouter } from './routes/retail.routes.js';
+import { configSchema } from './config/index';
+import { logger } from './services/retailExpert';
+import { retailRouter } from './routes/retail.routes';
 import {
   errorHandler,
   notFoundHandler,
   requestLogger,
   asyncHandler
-} from './middleware/validation.js';
-import { ServiceConfig, ServiceError } from './types/index.js';
+} from './middleware/validation';
+import { ServiceConfig, ServiceError } from './types/index';
 
 // Ensure logs directory exists
 const logsDir = path.join(process.cwd(), 'logs');

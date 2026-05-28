@@ -199,10 +199,11 @@ export class MerchantResolver {
       );
 
       return { success: true, merchant };
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error as Error;
       return {
         success: false,
-        error: error.message || 'Failed to create merchant',
+        error: err.message || 'Failed to create merchant',
       };
     }
   }
@@ -244,10 +245,11 @@ export class MerchantResolver {
       );
 
       return { success: true, merchant: validated };
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error as Error;
       return {
         success: false,
-        error: error.message || 'Failed to update merchant',
+        error: err.message || 'Failed to update merchant',
       };
     }
   }
@@ -266,8 +268,9 @@ export class MerchantResolver {
       // Note: In production, this would also remove from database
       // For now, just clear from in-memory graph
       return { success: true };
-    } catch (error) {
-      return { success: false, error: error.message };
+    } catch (error: unknown) {
+      const err = error as Error;
+      return { success: false, error: err.message };
     }
   }
 
@@ -347,8 +350,9 @@ export class MerchantResolver {
       );
 
       return { success: true, merchant: updated };
-    } catch (error) {
-      return { success: false, error: error.message };
+    } catch (error: unknown) {
+      const err = error as Error;
+      return { success: false, error: err.message };
     }
   }
 

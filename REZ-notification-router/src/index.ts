@@ -21,6 +21,7 @@ import {
   NotificationStatusResponse,
   NotificationChannel,
   ChannelInfo,
+  ChannelStatus,
 } from './types/index.js';
 
 const PORT = parseInt(process.env.PORT || '4093', 10);
@@ -71,7 +72,7 @@ app.get('/ready', async (_req: Request, res: Response) => {
 });
 
 // Apply auth middleware to API routes
-app.use('/api', internalAuth);
+app.use('/api', internalAuth as Parameters<typeof app.use>[1]);
 
 /**
  * POST /api/notify
@@ -87,7 +88,7 @@ app.post('/api/notify', async (req: Request, res: Response): Promise<void> => {
         error: {
           code: 'VALIDATION_ERROR',
           message: validationResult.error.issues[0]?.message || 'Invalid input',
-          details: validationResult.error.issues.map(issue => ({ path: issue.path, message: issue.message })),
+          details: validationResult.error.issues.map(issue => ({ path: issue.path, message: issue.message })) as unknown as Record<string, unknown>,
         },
       };
       res.status(400).json(response);
@@ -112,7 +113,7 @@ app.post('/api/notify', async (req: Request, res: Response): Promise<void> => {
     await notification.save();
 
     // Send to each channel
-    const results: Array<{ channel: NotificationChannel; status: string; id?: string }> = [];
+    const results: Array<{ channel: NotificationChannel; status: ChannelStatus; id?: string }> = [];
 
     for (const channelInfo of notification.channels) {
       const result = await sendToChannel(channelInfo.channel, {

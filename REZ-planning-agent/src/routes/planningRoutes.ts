@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { planningEngine } from '../services/planningEngine.js';
 import { PlanRequestSchema, TaskSchema } from '../types/index.js';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 

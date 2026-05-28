@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { Entity, OntologyClass, Relation, OntologyQuery } from '../types/index.js';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 export class OntologyEngine {
   private entities: Map<string, Entity> = new Map();

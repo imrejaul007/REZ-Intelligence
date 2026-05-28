@@ -178,9 +178,10 @@ class LoyaltyModule {
             return { success: true, transaction: response.data };
         }
         catch (error) {
+            const err = error;
             return {
                 success: false,
-                error: error.response?.data?.message || 'Redemption failed',
+                error: err.response?.data?.message || 'Redemption failed',
             };
         }
     }

@@ -1,29 +1,16 @@
-import { body, param, query, validationResult } from 'express-validator';
-import { Request, Response, NextFunction } from 'express';
+/**
+ * Validation middleware using express-validator
+ * This file provides validation chains for API requests
+ */
 
-export const validateRequest = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({
-      success: false,
-      error: {
-        message: 'Validation failed',
-        details: errors.array().map(err => ({
-          field: (err as unknown).path,
-          message: err.msg
-        }))
-      }
-    });
-  }
-  next();
-};
+import { body, param, query, ValidationChain } from 'express-validator';
+
+// Re-export validators
+export { body, param, query };
+export type { ValidationChain };
 
 // Campaign validation rules
-export const createCampaignValidation = [
+export const createCampaignValidation: ValidationChain[] = [
   body('name')
     .trim()
     .notEmpty()
@@ -76,11 +63,9 @@ export const createCampaignValidation = [
   body('created_by')
     .notEmpty()
     .withMessage('Creator ID is required'),
-
-  validateRequest
 ];
 
-export const updateCampaignValidation = [
+export const updateCampaignValidation: ValidationChain[] = [
   param('id')
     .notEmpty()
     .withMessage('Campaign ID is required'),
@@ -95,19 +80,15 @@ export const updateCampaignValidation = [
     .optional()
     .isIn(['draft', 'active', 'paused', 'completed', 'cancelled'])
     .withMessage('Invalid status value'),
-
-  validateRequest
 ];
 
-export const campaignIdValidation = [
+export const campaignIdValidation: ValidationChain[] = [
   param('id')
     .notEmpty()
     .withMessage('Campaign ID is required'),
-
-  validateRequest
 ];
 
-export const audiencePreviewValidation = [
+export const audiencePreviewValidation: ValidationChain[] = [
   param('id')
     .notEmpty()
     .withMessage('Campaign ID is required'),
@@ -116,11 +97,9 @@ export const audiencePreviewValidation = [
     .optional()
     .isInt({ min: 1, max: 1000 })
     .withMessage('Sample size must be between 1 and 1000'),
-
-  validateRequest
 ];
 
-export const triggerCampaignValidation = [
+export const triggerCampaignValidation: ValidationChain[] = [
   param('id')
     .notEmpty()
     .withMessage('Campaign ID is required'),
@@ -132,12 +111,10 @@ export const triggerCampaignValidation = [
   body('user_contexts.*.user_id')
     .notEmpty()
     .withMessage('Each user context must have a user_id'),
-
-  validateRequest
 ];
 
 // Template validation rules
-export const createTemplateValidation = [
+export const createTemplateValidation: ValidationChain[] = [
   body('name')
     .trim()
     .notEmpty()
@@ -164,19 +141,15 @@ export const createTemplateValidation = [
     .optional()
     .isLength({ max: 30 })
     .withMessage('CTA text must be 30 characters or less'),
-
-  validateRequest
 ];
 
-export const templateIdValidation = [
+export const templateIdValidation: ValidationChain[] = [
   param('id')
     .notEmpty()
     .withMessage('Template ID is required'),
-
-  validateRequest
 ];
 
-export const listQueryValidation = [
+export const listQueryValidation: ValidationChain[] = [
   query('limit')
     .optional()
     .isInt({ min: 1, max: 100 })
@@ -196,6 +169,4 @@ export const listQueryValidation = [
     .optional()
     .isIn(['banner', 'push', 'in_app', 'sms', 'email'])
     .withMessage('Invalid channel filter'),
-
-  validateRequest
 ];

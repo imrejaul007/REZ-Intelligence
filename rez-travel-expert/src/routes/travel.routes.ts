@@ -326,7 +326,7 @@ router.get('/accommodation-types', async (req: Request, res: Response) => {
   });
 });
 
-router.post('/itinerary/generate', async (req: Request, res: Response) => {
+router.post('/itinerary/generate', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { destinationId, days, styles } = req.body;
 
@@ -361,7 +361,7 @@ router.post('/itinerary/generate', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/budget/estimate', async (req: Request, res: Response) => {
+router.post('/budget/estimate', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { destinationId, duration, travelers, budgetLevel } = req.body;
 

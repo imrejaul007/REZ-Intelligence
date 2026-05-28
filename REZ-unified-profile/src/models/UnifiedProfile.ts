@@ -314,13 +314,13 @@ unifiedProfileSchema.index({ 'activity.engagement.engagementIndex': -1 });
 unifiedProfileSchema.index({ 'identity.emails': 1, 'identity.phones': 1, userId: 1 });
 
 // Virtual for full name
-unifiedProfileSchema.virtual('fullName').get(function() {
-  return (this as unknown).demographics?.name || 'Unknown';
+unifiedProfileSchema.virtual('fullName').get(function(this: IUnifiedProfile) {
+  return this.demographics?.name || 'Unknown';
 });
 
 // Method to calculate engagement index
-unifiedProfileSchema.methods.calculateEngagementIndex = function(): number {
-  const eng = (this as unknown).activity?.engagement;
+unifiedProfileSchema.methods.calculateEngagementIndex = function(this: IUnifiedProfile): number {
+  const eng = this.activity?.engagement;
   if (!eng) return 0;
   return Math.round((eng.recencyScore + eng.frequencyScore + eng.monetaryScore) / 3);
 };

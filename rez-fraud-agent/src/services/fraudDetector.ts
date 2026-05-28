@@ -5,6 +5,7 @@ import { VelocityCheck } from './velocityCheck';
 import { BlacklistService } from './blacklistService';
 import { FraudCase, generateFraudCaseId, FraudCaseStatus, FraudCaseSeverity } from '../models/FraudCase';
 import { RiskProfile, RiskLevel, IRiskProfile } from '../models/RiskProfile';
+import { BlacklistType } from '../models/Blacklist';
 import { logger } from '../utils/logger.js';
 import { FraudPatternType, getPatternScore, FRAUD_PATTERNS } from '../config/patterns';
 import { getToneForRiskScore, formatMessageWithTone } from '../config/tone';
@@ -264,7 +265,8 @@ export class FraudDetector {
     }
 
     for (const check of checks) {
-      const result = await this.blacklistService.check(check.type as unknown, check.value);
+      const blacklistType = check.type === 'USER' ? BlacklistType.USER : BlacklistType.ACCOUNT;
+      const result = await this.blacklistService.check(blacklistType, check.value);
       if (result.isBlacklisted) {
         return {
           isBlacklisted: true,
@@ -435,9 +437,10 @@ export class FraudDetector {
   }): FraudDetectionResult {
     const tone = getToneForRiskScore(params.riskScore);
     const processingTimeMs = Date.now() - params.startTime;
+    const decision = params.decision as FraudDetectionResult['decision'];
 
     return {
-      decision: params.decision as unknown,
+      decision,
       riskScore: params.riskScore,
       riskLevel: this.riskScorer.getRiskLevel(params.riskScore),
       detectedPatterns: params.detectedPatterns,
@@ -447,7 +450,7 @@ export class FraudDetector {
         `${params.decision} - Risk Score: ${params.riskScore}`,
         tone
       ),
-      requiresAction: params.decision === 'DENY' || params.decision === 'REVIEW',
+      requiresAction: decision === 'DENY' || decision === 'REVIEW',
       processingTimeMs,
       metadata: params.metadata,
     };

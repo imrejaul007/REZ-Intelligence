@@ -2,6 +2,21 @@ import { AgentMetrics } from '../models/AgentMetrics';
 import { AgentStatus, LoadFactorResult } from '../types';
 import logger from '../utils/logger.js';
 
+interface LeanAgentMetrics {
+  agentId: string;
+  status: 'online' | 'offline' | 'active' | 'inactive' | 'draining' | 'overloaded' | 'maintenance';
+  loadMetrics: {
+    currentLoad: number;
+    maxLoad: number;
+    queueDepth: number;
+    averageResponseTimeMs: number;
+    successRate: number;
+  };
+  capabilities: {
+    maxConcurrentTasks: number;
+  };
+}
+
 /**
  * Load Balancer Service
  *
@@ -20,7 +35,7 @@ export class LoadBalancerService {
   async calculateLoadFactor(agentId: string): Promise<LoadFactorResult> {
     try {
       // Get agent metrics
-      const agent = await AgentMetrics.findOne({ agentId }).lean().exec();
+      const agent = await AgentMetrics.findOne({ agentId }).lean().exec() as LeanAgentMetrics | null;
 
       if (!agent) {
         logger.warn(`Agent not found for load calculation: ${agentId}`);
@@ -271,7 +286,7 @@ export class LoadBalancerService {
         status: AgentStatus.ACTIVE,
       })
         .lean()
-        .exec();
+        .exec() as unknown as LeanAgentMetrics[];
 
       if (agents.length === 0) {
         return null;
@@ -323,7 +338,7 @@ export class LoadBalancerService {
         ? { agentId: { $in: agentIds } }
         : { status: { $ne: AgentStatus.INACTIVE } };
 
-      const agents = await AgentMetrics.find(query).lean().exec();
+      const agents = await AgentMetrics.find(query).lean().exec() as unknown as LeanAgentMetrics[];
 
       const agentLoads = agents.map((agent) => ({
         agentId: agent.agentId,
@@ -370,7 +385,7 @@ export class LoadBalancerService {
    */
   async isAgentAvailable(agentId: string, requiredCapacity: number = 1): Promise<boolean> {
     try {
-      const agent = await AgentMetrics.findOne({ agentId }).lean().exec();
+      const agent = await AgentMetrics.findOne({ agentId }).lean().exec() as LeanAgentMetrics | null;
 
       if (!agent) {
         return false;

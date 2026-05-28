@@ -6,9 +6,9 @@ import {
   RetailContext,
   Product,
   SortOption
-} from '../services/retailExpert.js';
-import { logger } from '../services/retailExpert.js';
-import { CATEGORIES, SIZE_GUIDES } from '../config/knowledge.js';
+} from '../services/retailExpert';
+import { logger } from '../services/retailExpert';
+import { CATEGORIES, SIZE_GUIDES } from '../config/knowledge';
 
 const router = Router();
 

@@ -131,7 +131,7 @@ router.post(
       })
     );
 
-    const matchingSegments = results.filter(r => r.found !== false && (r as unknown).matches);
+    const matchingSegments = results.filter(r => (r as { found?: boolean; matches?: boolean }).found !== false && (r as { found?: boolean; matches?: boolean }).matches);
 
     res.json({
       success: true,

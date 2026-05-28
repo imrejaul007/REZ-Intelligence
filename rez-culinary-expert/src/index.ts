@@ -10,14 +10,14 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { MongoClient } from 'mongodb';
 import Redis from 'ioredis';
-import { logger, logRequest, logAudit } from './utils/logger.js';
-import culinaryRoutes from './routes/culinary.routes.js';
-import { getCulinaryExpertiseService } from './services/expertise.js';
-import { getMenuService } from './services/menuService.js';
-import { getDietaryService } from './services/dietaryService.js';
-import { getRecommendationsService } from './services/recommendations.js';
-import { getOrderFlowHandler } from './intents/orderFlow.js';
-import { getCoreBrainClient, CoreBrainClient } from './services/coreBrainIntegration.js';
+import { logger, logRequest, logAudit } from './utils/logger';
+import culinaryRoutes from './routes/culinary.routes';
+import { getCulinaryExpertiseService } from './services/expertise';
+import { getMenuService } from './services/menuService';
+import { getDietaryService } from './services/dietaryService';
+import { getRecommendationsService } from './services/recommendations';
+import { getOrderFlowHandler } from './intents/orderFlow';
+import { getCoreBrainClient, CoreBrainClient } from './services/coreBrainIntegration';
 
 // ============================================================================
 // CONFIGURATION

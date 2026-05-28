@@ -187,10 +187,11 @@ export class ComplianceModule {
       );
       this.cache.delete(`compliance:${merchantId}`);
       return { success: true, verification_id: response.data.verification_id };
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       return {
         success: false,
-        error: error.response?.data?.message || 'KYC submission failed',
+        error: err.response?.data?.message || 'KYC submission failed',
       };
     }
   }

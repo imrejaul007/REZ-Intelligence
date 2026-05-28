@@ -3,10 +3,10 @@
  * Pre-built response templates for common scenarios
  */
 
-import { MenuItem } from '../services/menuService.js';
-import { Recommendation } from '../services/recommendations.js';
-import { DietaryCheckResult } from '../services/dietaryService.js';
-import { generateOpener, TonePreset, getRotatingAdjective } from '../config/tone.js';
+import { MenuItem } from '../services/menuService';
+import { Recommendation } from '../services/recommendations';
+import { DietaryCheckResult } from '../services/dietaryService';
+import { generateOpener, TonePreset, getRotatingAdjective } from '../config/tone';
 
 export interface ResponseTemplate {
   type: 'greeting' | 'recommendation' | 'item_details' | 'dietary_warning' | 'pairing' | 'order_update' | 'help' | 'error';

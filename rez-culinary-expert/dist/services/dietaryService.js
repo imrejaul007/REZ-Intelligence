@@ -6,8 +6,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DietaryService = void 0;
 exports.getDietaryService = getDietaryService;
-const logger_js_1 = require("./utils/logger.js");
-const knowledge_js_1 = require("../config/knowledge.js");
+const logger_1 = require("../utils/logger");
+const knowledge_1 = require("../config/knowledge");
 class DietaryService {
     db = null;
     redis = null;
@@ -21,7 +21,7 @@ class DietaryService {
         await this.profilesCollection.createIndex({ userId: 1 }, { unique: true });
         await this.profilesCollection.createIndex({ 'allergies.allergenId': 1 });
         this.initialized = true;
-        logger_js_1.logger.info('DietaryService initialized');
+        logger_1.logger.info('DietaryService initialized');
     }
     /**
      * Create or update user dietary profile
@@ -81,7 +81,7 @@ class DietaryService {
         const safeTags = [];
         // Check allergens
         for (const allergy of profile.allergies) {
-            const allergen = knowledge_js_1.MAJOR_ALLERGENS[allergy.allergenId];
+            const allergen = knowledge_1.MAJOR_ALLERGENS[allergy.allergenId];
             if (allergen) {
                 // Check if any allergen aliases appear in the dish
                 const hasAllergen = allergen.aliases.some(alias => dishDescription.toLowerCase().includes(alias.toLowerCase()) ||
@@ -98,7 +98,7 @@ class DietaryService {
         }
         // Check dietary restrictions
         for (const restriction of profile.restrictions) {
-            const dietaryTag = knowledge_js_1.DIETARY_TAGS[restriction];
+            const dietaryTag = knowledge_1.DIETARY_TAGS[restriction];
             if (dietaryTag) {
                 // Check if dish contains any excluded items
                 const hasConflict = dietaryTag.excludes.some(excluded => dishDescription.toLowerCase().includes(excluded.toLowerCase()));
@@ -165,7 +165,7 @@ class DietaryService {
         const excludeIngredients = [...profile.preferences.dislikedIngredients];
         // Add ingredients from dietary restrictions
         for (const restriction of profile.restrictions) {
-            const dietaryTag = knowledge_js_1.DIETARY_TAGS[restriction];
+            const dietaryTag = knowledge_1.DIETARY_TAGS[restriction];
             if (dietaryTag) {
                 excludeIngredients.push(...dietaryTag.excludes);
             }
@@ -180,13 +180,13 @@ class DietaryService {
      * Get allergen info for display
      */
     getAllergenInformation(allergenId) {
-        const allergen = knowledge_js_1.MAJOR_ALLERGENS[allergenId];
+        const allergen = knowledge_1.MAJOR_ALLERGENS[allergenId];
         if (!allergen)
             return null;
         return {
             name: allergen.name,
             description: `${allergen.name} allergy`,
-            aliases: allergen.aliases,
+            aliases: [...allergen.aliases],
             notes: allergen.notes,
         };
     }
@@ -194,20 +194,20 @@ class DietaryService {
      * Get dietary tag info for display
      */
     getDietaryTagInformation(tagId) {
-        const tag = knowledge_js_1.DIETARY_TAGS[tagId];
+        const tag = knowledge_1.DIETARY_TAGS[tagId];
         if (!tag)
             return null;
         return {
             name: tag.name,
             description: tag.description,
-            excludes: tag.excludes,
+            excludes: [...tag.excludes],
         };
     }
     /**
      * Scan text for allergen mentions
      */
     scanForAllergens(text) {
-        return (0, knowledge_js_1.containsAllergen)(text);
+        return (0, knowledge_1.containsAllergen)(text);
     }
     /**
      * Generate allergen warning message
@@ -220,11 +220,11 @@ class DietaryService {
         const mild = allergies.filter(a => a.severity === 'mild');
         let warning = '';
         if (severe.length > 0) {
-            const names = severe.map(a => knowledge_js_1.MAJOR_ALLERGENS[a.allergenId]?.name).filter(Boolean);
+            const names = severe.map(a => knowledge_1.MAJOR_ALLERGENS[a.allergenId]?.name).filter(Boolean);
             warning += `WARNING: This dish contains ${names.join(', ')}. `;
         }
         if (moderate.length > 0) {
-            const names = moderate.map(a => knowledge_js_1.MAJOR_ALLERGENS[a.allergenId]?.name).filter(Boolean);
+            const names = moderate.map(a => knowledge_1.MAJOR_ALLERGENS[a.allergenId]?.name).filter(Boolean);
             warning += `Note: Contains ${names.join(', ')}. `;
         }
         warning += 'Please confirm with restaurant staff about cross-contamination risks.';
@@ -237,14 +237,14 @@ class DietaryService {
         const errors = [];
         if (filter.excludeAllergens) {
             for (const allergen of filter.excludeAllergens) {
-                if (!knowledge_js_1.MAJOR_ALLERGENS[allergen]) {
+                if (!knowledge_1.MAJOR_ALLERGENS[allergen]) {
                     errors.push(`Unknown allergen: ${allergen}`);
                 }
             }
         }
         if (filter.includeTags) {
             for (const tag of filter.includeTags) {
-                if (!knowledge_js_1.DIETARY_TAGS[tag]) {
+                if (!knowledge_1.DIETARY_TAGS[tag]) {
                     errors.push(`Unknown dietary tag: ${tag}`);
                 }
             }

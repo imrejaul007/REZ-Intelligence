@@ -16,15 +16,15 @@ touchpointRouter.get('/', async (req: Request, res: Response) => {
   try {
     const { merchantId, customerId, channel, sessionId, startDate, endDate, limit = 100 } = req.query;
 
-    const query: unknown = {};
+    const query: Record<string, unknown> = {};
     if (merchantId) query.merchantId = merchantId;
     if (customerId) query.customerId = customerId;
     if (channel) query.channel = channel;
     if (sessionId) query.sessionId = sessionId;
     if (startDate || endDate) {
       query.timestamp = {};
-      if (startDate) query.timestamp.$gte = new Date(startDate as string);
-      if (endDate) query.timestamp.$lte = new Date(endDate as string);
+      if (startDate) (query.timestamp as Record<string, unknown>).$gte = new Date(startDate as string);
+      if (endDate) (query.timestamp as Record<string, unknown>).$lte = new Date(endDate as string);
     }
 
     const touchpoints = await Touchpoint.find(query)
@@ -46,12 +46,12 @@ touchpointRouter.get('/stats', async (req: Request, res: Response) => {
   try {
     const { merchantId, startDate, endDate } = req.query;
 
-    const match: unknown = {};
+    const match: Record<string, unknown> = {};
     if (merchantId) match.merchantId = merchantId;
     if (startDate || endDate) {
       match.timestamp = {};
-      if (startDate) match.timestamp.$gte = new Date(startDate as string);
-      if (endDate) match.timestamp.$lte = new Date(endDate as string);
+      if (startDate) (match.timestamp as Record<string, unknown>).$gte = new Date(startDate as string);
+      if (endDate) (match.timestamp as Record<string, unknown>).$lte = new Date(endDate as string);
     }
 
     const stats = await Touchpoint.aggregate([
@@ -77,12 +77,12 @@ touchpointRouter.get('/distribution', async (req: Request, res: Response) => {
   try {
     const { merchantId, startDate, endDate } = req.query;
 
-    const match: unknown = {};
+    const match: Record<string, unknown> = {};
     if (merchantId) match.merchantId = merchantId;
     if (startDate || endDate) {
       match.timestamp = {};
-      if (startDate) match.timestamp.$gte = new Date(startDate as string);
-      if (endDate) match.timestamp.$lte = new Date(endDate as string);
+      if (startDate) (match.timestamp as Record<string, unknown>).$gte = new Date(startDate as string);
+      if (endDate) (match.timestamp as Record<string, unknown>).$lte = new Date(endDate as string);
     }
 
     const distribution = await Touchpoint.aggregate([

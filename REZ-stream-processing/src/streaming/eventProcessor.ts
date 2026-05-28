@@ -5,7 +5,7 @@
 
 import mongoose, { Schema, Document } from 'mongoose';
 import { kafkaService } from '../kafka/kafkaService.js';
-import { logger } from './utils/logger.js';
+import logger from '../utils/logger.js';
 import {
   StreamEvent,
   StreamEventType,
@@ -156,7 +156,7 @@ export class EventProcessor {
       id: (message.eventId || message.id || `evt_${Date.now()}`) as string,
       type: (message.eventType || message.type || 'unknown') as StreamEventType,
       source: (message.source || 'unknown') as string,
-      timestamp: new Date(message.timestamp || Date.now()),
+      timestamp: new Date(message.timestamp as string | number | Date || Date.now()),
       data: (message.data || message) as Record<string, unknown>,
       metadata: message.metadata as Record<string, unknown> | undefined
     };
@@ -246,7 +246,7 @@ export class EventProcessor {
    */
   private async enrichEvent(data: Record<string, unknown>): Promise<Record<string, unknown>> {
     // Add processing timestamp
-    const enriched = {
+    const enriched: Record<string, unknown> = {
       ...data,
       _enriched: true,
       _processedAt: new Date().toISOString(),
@@ -283,17 +283,19 @@ export class EventProcessor {
    * Aggregate event into window
    */
   private async aggregateEvent(event: StreamEvent, windowId: string): Promise<void> {
-    const window = this.aggregationWindows.get(windowId);
-    if (!window) return;
+    const windowConfig = this.aggregationWindows.get(windowId);
+    if (!windowConfig) return;
 
     const windows = this.windowData.get(windowId)!;
     const now = Date.now();
-    const windowStart = this.getWindowStart(now, window);
+    const windowStart = this.getWindowStart(now, windowConfig);
 
-    // Find matching window key
+    // Find matching window key by comparing stored start times
     let windowKey: string | null = null;
-    for (const [key, start] of windows.entries()) {
-      if (Math.abs(start - windowStart) < window.sizeMs) {
+    for (const [key, events] of windows.entries()) {
+      // Extract start time from key (format: "startTime_eventId")
+      const storedStart = parseInt(key.split('_')[0], 10);
+      if (Math.abs(storedStart - windowStart) < windowConfig.sizeMs) {
         windowKey = key;
         break;
       }
@@ -337,10 +339,10 @@ export class EventProcessor {
    * Get aggregation results
    */
   getAggregation(windowId: string, windowKey: string): AggregationResult | null {
-    const window = this.aggregationWindows.get(windowId);
+    const windowConfig = this.aggregationWindows.get(windowId);
     const windows = this.windowData.get(windowId);
 
-    if (!window || !windows) return null;
+    if (!windowConfig || !windows) return null;
 
     const events = windows.get(windowKey);
     if (!events || events.length === 0) return null;
@@ -355,7 +357,7 @@ export class EventProcessor {
     metrics.typeCounts = JSON.stringify(typeCounts);
 
     // Sum values if numeric field present
-    const valueField = 'amount' || 'value';
+    const valueField = 'amount';
     let sum = 0;
     let count = 0;
     for (const event of events) {
@@ -372,7 +374,7 @@ export class EventProcessor {
 
     return {
       windowId,
-      startTime: new Date(parseInt(windowKey.split('_')[0])),
+      startTime: new Date(parseInt(windowKey.split('_')[0], 10)),
       endTime: new Date(),
       metrics,
       count: events.length
@@ -383,14 +385,15 @@ export class EventProcessor {
    * Cleanup old windows
    */
   private cleanupWindows(windowId: string): void {
-    const window = this.aggregationWindows.get(windowId);
+    const windowConfig = this.aggregationWindows.get(windowId);
     const windows = this.windowData.get(windowId);
-    if (!window || !windows) return;
+    if (!windowConfig || !windows) return;
 
-    const cutoff = Date.now() - (window.sizeMs * 3); // Keep 3 windows of data
+    const cutoff = Date.now() - (windowConfig.sizeMs * 3); // Keep 3 windows of data
 
-    for (const [key, start] of windows.entries()) {
-      if (start < cutoff) {
+    for (const [key] of windows.entries()) {
+      const windowStart = parseInt(key.split('_')[0], 10);
+      if (windowStart < cutoff) {
         windows.delete(key);
       }
     }
@@ -456,7 +459,7 @@ export class EventProcessor {
         eventId: message.eventId || message.id,
         eventType: message.eventType || message.type,
         source: message.source,
-        timestamp: new Date(message.timestamp || Date.now()),
+        timestamp: new Date(message.timestamp as string | number | Date || Date.now()),
         data: message.data || message,
         metadata: message.metadata,
         processedAt: new Date()
@@ -478,10 +481,11 @@ export class EventProcessor {
     if (!StreamEventModel) return [];
 
     const query = eventType ? { eventType } : {};
-    return StreamEventModel.find(query)
+    const results = await StreamEventModel.find(query)
       .sort({ timestamp: -1 })
       .limit(limit)
       .lean();
+    return results as unknown as IStreamEventDocument[];
   }
 
   /**

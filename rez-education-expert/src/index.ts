@@ -50,7 +50,7 @@ async function initializeRedis(): Promise<void> {
       url: process.env.REDIS_URL
     });
 
-    redisClient.on('error', (err) => {
+    redisClient.on('error', (err: Error) => {
       logger.error('Redis Client Error:', err);
     });
 

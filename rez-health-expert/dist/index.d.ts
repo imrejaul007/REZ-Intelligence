@@ -3,7 +3,7 @@
  * Main entry point with TypeScript, Zod validation, and proper error handling
  */
 import { Express } from 'express';
-import { ServiceConfig } from './types/index.js';
+import { ServiceConfig } from './types/index';
 declare const config: ServiceConfig;
 declare const app: Express;
 declare function startServer(): void;

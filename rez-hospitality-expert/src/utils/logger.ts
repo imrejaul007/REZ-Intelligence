@@ -4,7 +4,7 @@
  */
 
 import winston from 'winston';
-import { config } from '../config/index.js';
+import { config } from '../config/index';
 
 // Custom format for console output
 const consoleFormat = winston.format.combine(

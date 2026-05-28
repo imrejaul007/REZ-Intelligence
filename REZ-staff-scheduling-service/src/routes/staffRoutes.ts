@@ -3,7 +3,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { Staff, Shift, TimeOff } from '../models/index.js';
 import {
   CreateStaffInputSchema,
-  UpdateStaffInputSchema,
   StaffStatusInputSchema,
   StaffQuerySchema,
   StaffIdParamSchema,

@@ -18,12 +18,12 @@ export class CommandParser {
     const text = `${emailSubject} ${emailBody}`.toUpperCase();
 
     // Check for REZ command prefix
-    if (!text.includes(this.COMMAND_PREFIX)) {
+    if (!text.includes(CommandParser.COMMAND_PREFIX)) {
       return null;
     }
 
     // Extract command
-    for (const cmd of this.COMMANDS) {
+    for (const cmd of CommandParser.COMMANDS) {
       if (text.includes(cmd)) {
         return this.extractCommand(cmd, emailSubject, emailBody);
       }

@@ -19,7 +19,8 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; user
     });
     return { valid: true, userId: res.data.user?.id };
   } catch (error) {
-    return { valid: false, error: error.message };
+    const err = error as Error;
+    return { valid: false, error: err.message };
   }
 }
 
@@ -33,7 +34,8 @@ export async function createPayment(userId: string, amount: number, description:
     });
     return { success: true, paymentId: res.data.paymentId };
   } catch (error) {
-    return { success: false, error: error.message };
+    const err = error as Error;
+    return { success: false, error: err.message };
   }
 }
 
@@ -47,7 +49,8 @@ export async function addCoins(userId: string, amount: number, reason: string): 
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    const err = error as Error;
+    return { success: false, error: err.message };
   }
 }
 
@@ -66,7 +69,8 @@ export async function notifySalesTeam(title: string, body: string, data?: Record
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    const err = error as Error;
+    return { success: false, error: err.message };
   }
 }
 
@@ -80,7 +84,8 @@ export async function notifyLead(userId: string, title: string, body: string): P
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    const err = error as Error;
+    return { success: false, error: err.message };
   }
 }
 
@@ -94,7 +99,8 @@ export async function getBalance(userId: string): Promise<{ balance: number; err
     });
     return { balance: res.data.balance || 0 };
   } catch (error) {
-    return { balance: 0, error: error.message };
+    const err = error as Error;
+    return { balance: 0, error: err.message };
   }
 }
 

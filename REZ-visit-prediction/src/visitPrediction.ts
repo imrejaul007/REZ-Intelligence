@@ -24,6 +24,35 @@ const INTENT_SERVICE_URL = process.env.INTENT_SERVICE_URL || 'http://localhost:4
 // Types
 // ============================================================================
 
+interface UserPatterns {
+  visits?: number;
+  days?: number;
+  lastVisit?: string;
+  preferredDays?: string[];
+  preferredHours?: number[];
+  preferredCategories?: string[];
+  location?: { lat: number; lng: number };
+  wallet?: { expiringCoins?: number };
+}
+
+interface UserProfile {
+  patterns?: UserPatterns;
+}
+
+interface VisitHistoryItem {
+  dayOfWeek?: number;
+  hour?: number;
+  category?: string;
+  spend?: number;
+  date?: string;
+}
+
+interface MerchantHistoryItem {
+  dayOfWeek?: number;
+  hour?: number;
+  spend?: number;
+}
+
 export interface MerchantProfile {
   merchantId: string;
   category?: string;
@@ -91,14 +120,14 @@ class VisitProbabilityCalculator {
   calculate(
     userId: string,
     merchantId: string,
-    userProfile,
-    merchantProfile: unknown
+    userProfile: UserProfile,
+    merchantProfile: Record<string, unknown>
   ): VisitPrediction {
     const factors: { factor: string; contribution: number }[] = [];
     let baseProbability = 0.5;
 
     // Factor 1: Historical visits
-    if (userProfile?.patterns?.visits) {
+    if (userProfile?.patterns?.visits && userProfile.patterns.days) {
       const visitFrequency = userProfile.patterns.visits / userProfile.patterns.days;
       const frequencyContribution = Math.min(visitFrequency * 0.1, 0.2);
       baseProbability += frequencyContribution;
@@ -140,21 +169,20 @@ class VisitProbabilityCalculator {
     }
 
     // Factor 5: Category affinity
-    if (merchantProfile?.category &&
-        userProfile?.patterns?.preferredCategories?.includes(merchantProfile.category)) {
+    const merchantCategory = merchantProfile?.category as string | undefined;
+    if (merchantCategory && userProfile?.patterns?.preferredCategories?.includes(merchantCategory)) {
       baseProbability += 0.12;
       factors.push({
-        factor: `Likes ${merchantProfile.category}`,
+        factor: `Likes ${merchantCategory}`,
         contribution: 0.12
       });
     }
 
     // Factor 6: Distance
-    if (userProfile?.location && merchantProfile?.location) {
-      const distance = this.calculateDistance(
-        userProfile.location,
-        merchantProfile.location
-      );
+    if (userProfile?.patterns?.location && merchantProfile?.location) {
+      const userLoc = userProfile.patterns.location;
+      const merchLoc = merchantProfile.location as { lat: number; lng: number };
+      const distance = this.calculateDistance(userLoc, merchLoc);
       if (distance < 1) {
         baseProbability += 0.1;
         factors.push({
@@ -171,10 +199,11 @@ class VisitProbabilityCalculator {
     }
 
     // Factor 7: Expiring incentives
-    if (userProfile?.wallet?.expiringCoins > 0) {
+    if (userProfile?.patterns?.wallet?.expiringCoins && userProfile.patterns.wallet.expiringCoins > 0) {
+      const expiringCoins = userProfile.patterns.wallet.expiringCoins;
       baseProbability += 0.08;
       factors.push({
-        factor: `${userProfile.wallet.expiringCoins} coins expiring`,
+        factor: `${expiringCoins} coins expiring`,
         contribution: 0.08
       });
     }
@@ -205,7 +234,7 @@ class VisitProbabilityCalculator {
   /**
    * Build visit profile for user
    */
-  buildVisitProfile(userId: string, visitHistory: unknown[]): VisitProfile {
+  buildVisitProfile(userId: string, visitHistory: Array<{ dayOfWeek?: number; hour?: number; category?: string; spend?: number; date?: string }>): VisitProfile {
     if (visitHistory.length === 0) {
       return {
         userId,
@@ -258,7 +287,7 @@ class VisitProbabilityCalculator {
   /**
    * Forecast visits for merchant
    */
-  forecastMerchantVisits(merchantId: string, history: unknown[]): MerchantForecast {
+  forecastMerchantVisits(merchantId: string, history: MerchantHistoryItem[]): MerchantForecast {
     const today = new Date();
     const forecasts = [];
 
@@ -324,11 +353,11 @@ class VisitProbabilityCalculator {
     return R * c;
   }
 
-  private calculateConfidence(profile): number {
+  private calculateConfidence(profile: UserProfile): number {
     let score = 0.5;
-    if (profile?.patterns?.visits > 10) score += 0.2;
+    if (profile?.patterns?.visits && profile.patterns.visits > 10) score += 0.2;
     if (profile?.patterns?.lastVisit) score += 0.15;
-    if (profile?.wallet) score += 0.1;
+    if (profile?.patterns?.wallet) score += 0.1;
     return Math.min(score, 0.95);
   }
 
@@ -339,15 +368,15 @@ class VisitProbabilityCalculator {
     return 'no_action';
   }
 
-  private groupBy(items: unknown[], key: string): Record<string, number> {
+  private groupBy(items: VisitHistoryItem[], key: keyof VisitHistoryItem): Record<string, number> {
     return items.reduce((acc, item) => {
-      const value = item[key];
+      const value = String(item[key] ?? '');
       acc[value] = (acc[value] || 0) + 1;
       return acc;
-    }, {});
+    }, {} as Record<string, number>);
   }
 
-  private calculateSeasonality(history: unknown[]): number {
+  private calculateSeasonality(history: Array<{ dayOfWeek?: number }>): number {
     // Simple seasonality: compare weekday vs weekend visits
     const weekdayVisits = history.filter(v => v.dayOfWeek >= 1 && v.dayOfWeek <= 5).length;
     const weekendVisits = history.filter(v => v.dayOfWeek === 0 || v.dayOfWeek === 6).length;
@@ -356,18 +385,18 @@ class VisitProbabilityCalculator {
     return weekendAvg > weekdayAvg ? 1.2 : 0.9;
   }
 
-  private getAverageVisits(history: unknown[], dayOfWeek: number): number {
+  private getAverageVisits(history: Array<{ dayOfWeek?: number }>, dayOfWeek: number): number {
     const dayHistory = history.filter(v => v.dayOfWeek === dayOfWeek);
     const weekCount = Math.max(1, Math.ceil(history.length / 7));
     return dayHistory.length / weekCount;
   }
 
-  private getAverageSpend(history: unknown[]): number {
+  private getAverageSpend(history: Array<{ spend?: number }>): number {
     if (history.length === 0) return 300;
     return history.reduce((sum, v) => sum + (v.spend || 300), 0) / history.length;
   }
 
-  private getHourlyDistribution(history: unknown[]): { hour: number; visits: number }[] {
+  private getHourlyDistribution(history: Array<{ hour?: number }>): { hour: number; visits: number }[] {
     const hours: Record<number, number> = {};
     for (let i = 0; i < 24; i++) hours[i] = 0;
     history.forEach(v => {
@@ -376,7 +405,7 @@ class VisitProbabilityCalculator {
     return Object.entries(hours).map(([hour, visits]) => ({ hour: Number(hour), visits }));
   }
 
-  private identifyRiskFactors(history: unknown[]): VisitProfile['riskFactors'] {
+  private identifyRiskFactors(history: Array<{ date?: string }>): VisitProfile['riskFactors'] {
     const risks: VisitProfile['riskFactors'] = [];
 
     if (history.length === 0) {
@@ -394,16 +423,16 @@ class VisitProbabilityCalculator {
     return risks;
   }
 
-  private generateRecommendations(forecasts: unknown[], busyHours: number[]): string[] {
-    const recs = [];
+  private generateRecommendations(forecasts: Array<{ date?: string; predictedVisits?: number }>, busyHours: { hour: number; visits: number }[]): string[] {
+    const recs: string[] = [];
 
-    const peakHour = busyHours.find(h => h.visits === Math.max(...busyHours.map(h => h.visits)));
+    const peakHour = busyHours.find(h => h.visits === Math.max(...busyHours.map(bh => bh.visits)));
     if (peakHour && peakHour.hour > 21) {
       recs.push('Consider extending evening hours to capture late-night demand');
     }
 
-    const slowDay = forecasts.reduce((min, f) => f.predictedVisits < min.predictedVisits ? f : min);
-    if (slowDay?.predictedVisits < 5) {
+    const slowDay = forecasts.reduce((min, f) => (f.predictedVisits ?? 0) < (min.predictedVisits ?? 0) ? f : min);
+    if (slowDay && (slowDay.predictedVisits ?? 0) < 5) {
       recs.push(`Consider promotions for ${slowDay.date} (predicted low traffic)`);
     }
 

@@ -6,9 +6,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RecommendationsService = void 0;
 exports.getRecommendationsService = getRecommendationsService;
-const logger_js_1 = require("./utils/logger.js");
-const menuService_js_1 = require("./menuService.js");
-const dietaryService_js_1 = require("./dietaryService.js");
+const logger_1 = require("../utils/logger");
+const knowledge_1 = require("../config/knowledge");
+const dietaryService_1 = require("./dietaryService");
 class RecommendationsService {
     db = null;
     redis = null;
@@ -16,7 +16,7 @@ class RecommendationsService {
     recommendationsCollection = null;
     initialized = false;
     constructor() {
-        this.dietaryService = (0, dietaryService_js_1.getDietaryService)();
+        this.dietaryService = (0, dietaryService_1.getDietaryService)();
     }
     async initialize(db, redis) {
         this.db = db;
@@ -26,7 +26,7 @@ class RecommendationsService {
         await this.recommendationsCollection?.createIndex({ userId: 1, itemId: 1 });
         await this.recommendationsCollection?.createIndex({ userId: 1, score: -1 });
         this.initialized = true;
-        logger_js_1.logger.info('RecommendationsService initialized');
+        logger_1.logger.info('RecommendationsService initialized');
     }
     /**
      * Get personalized recommendations for a user
@@ -47,7 +47,7 @@ class RecommendationsService {
             // Apply scoring based on various factors
             // Cuisine preference matching
             if (context.cuisinePreference && item.cuisine) {
-                const preferredCuisine = (0, menuService_js_1.matchCuisine)(context.cuisinePreference);
+                const preferredCuisine = matchCuisine(context.cuisinePreference);
                 if (preferredCuisine && item.cuisine.toLowerCase().includes(preferredCuisine.name.toLowerCase())) {
                     score += 25;
                     reasons.push(`Matches your ${context.cuisinePreference} preference`);
@@ -133,7 +133,7 @@ class RecommendationsService {
     getPairingSuggestions(item) {
         const pairings = [];
         // Wine pairings
-        const winePairings = menuService_js_1.PAIRING_GUIDE.WINE;
+        const winePairings = knowledge_1.PAIRING_GUIDE.WINE;
         for (const [category, dishes] of Object.entries(winePairings)) {
             if (Array.isArray(dishes)) {
                 const matches = dishes.some(d => item.name.toLowerCase().includes(d.toLowerCase()) ||
@@ -146,7 +146,7 @@ class RecommendationsService {
             }
         }
         // Beer pairings
-        const beerPairings = menuService_js_1.PAIRING_GUIDE.BEER;
+        const beerPairings = knowledge_1.PAIRING_GUIDE.BEER;
         for (const [category, dishes] of Object.entries(beerPairings)) {
             if (Array.isArray(dishes)) {
                 const matches = dishes.some(d => item.name.toLowerCase().includes(d.toLowerCase()) ||

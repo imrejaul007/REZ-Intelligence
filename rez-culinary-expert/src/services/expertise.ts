@@ -5,7 +5,7 @@
 
 import { MongoClient, Db } from 'mongodb';
 import Redis from 'ioredis';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger';
 import {
   CUISINES,
   DIETARY_TAGS,
@@ -20,7 +20,7 @@ import {
   type DietaryTag,
   type Allergen,
   type FlavorProfile,
-} from '../config/knowledge.js';
+} from '../config/knowledge';
 
 export interface FoodExpertise {
   cuisines: string[];
@@ -74,10 +74,10 @@ export class CulinaryExpertiseService {
         id: key as Cuisine,
         name: cuisine.name,
         description: `Traditional ${cuisine.name} cuisine`,
-        keyIngredients: cuisine.keyIngredients,
-        signatureDishes: cuisine.signatureDishes,
-        cookingStyles: cuisine.cookingStyles,
-        commonAllergens: cuisine.commonAllergens,
+        keyIngredients: [...cuisine.keyIngredients],
+        signatureDishes: [...cuisine.signatureDishes],
+        cookingStyles: [...cuisine.cookingStyles],
+        commonAllergens: [...(cuisine.commonAllergens || [])],
       });
     }
   }

@@ -1,4 +1,7 @@
-export var WorkoutType;
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RECOVERY_RECOMMENDATIONS = exports.COOL_DOWN_EXERCISES = exports.WARM_UP_EXERCISES = exports.FITNESS_GLOSSARY = exports.EXERCISE_DATABASE = exports.Equipment = exports.MuscleGroup = exports.FitnessLevel = exports.WorkoutType = void 0;
+var WorkoutType;
 (function (WorkoutType) {
     WorkoutType["STRENGTH"] = "strength";
     WorkoutType["CARDIO"] = "cardio";
@@ -12,14 +15,14 @@ export var WorkoutType;
     WorkoutType["PILATES"] = "pilates";
     WorkoutType["CIRCUIT"] = "circuit";
     WorkoutType["COMPOUND"] = "compound";
-})(WorkoutType || (WorkoutType = {}));
-export var FitnessLevel;
+})(WorkoutType || (exports.WorkoutType = WorkoutType = {}));
+var FitnessLevel;
 (function (FitnessLevel) {
     FitnessLevel["BEGINNER"] = "beginner";
     FitnessLevel["INTERMEDIATE"] = "intermediate";
     FitnessLevel["ADVANCED"] = "advanced";
-})(FitnessLevel || (FitnessLevel = {}));
-export var MuscleGroup;
+})(FitnessLevel || (exports.FitnessLevel = FitnessLevel = {}));
+var MuscleGroup;
 (function (MuscleGroup) {
     MuscleGroup["CHEST"] = "chest";
     MuscleGroup["BACK"] = "back";
@@ -33,8 +36,8 @@ export var MuscleGroup;
     MuscleGroup["GLUTES"] = "glutes";
     MuscleGroup["CALVES"] = "calves";
     MuscleGroup["FULL_BODY"] = "full_body";
-})(MuscleGroup || (MuscleGroup = {}));
-export var Equipment;
+})(MuscleGroup || (exports.MuscleGroup = MuscleGroup = {}));
+var Equipment;
 (function (Equipment) {
     Equipment["NONE"] = "none";
     Equipment["DUMBBELLS"] = "dumbbells";
@@ -48,8 +51,8 @@ export var Equipment;
     Equipment["TREADMILL"] = "treadmill";
     Equipment["BICYCLE"] = "bicycle";
     Equipment["SQUAT_RACK"] = "squat_rack";
-})(Equipment || (Equipment = {}));
-export const EXERCISE_DATABASE = [
+})(Equipment || (exports.Equipment = Equipment = {}));
+exports.EXERCISE_DATABASE = [
     {
         id: 'push-up',
         name: 'Push-Up',
@@ -239,7 +242,7 @@ export const EXERCISE_DATABASE = [
         benefits: ['Warms up the body', 'Improves coordination', 'Increases heart rate']
     }
 ];
-export const FITNESS_GLOSSARY = [
+exports.FITNESS_GLOSSARY = [
     { term: 'Rep (Repetition)', definition: 'One complete movement of an exercise', category: 'basics' },
     { term: 'Set', definition: 'A group of consecutive reps performed without rest', category: 'basics' },
     { term: 'RM (Rep Max)', definition: 'The maximum weight you can lift for one rep', category: 'strength' },
@@ -261,7 +264,7 @@ export const FITNESS_GLOSSARY = [
     { term: 'Warming Up', definition: 'Pre-workout activity to prepare body for exercise', category: 'recovery' },
     { term: 'Muscle Hypertrophy', definition: 'Muscle growth resulting from resistance training', category: 'principles' }
 ];
-export const WARM_UP_EXERCISES = [
+exports.WARM_UP_EXERCISES = [
     { name: 'Light jogging', duration: '3-5 minutes', purpose: 'Increase heart rate and body temperature' },
     { name: 'Jumping jacks', duration: '30 seconds', purpose: 'Full body activation' },
     { name: 'Arm circles', duration: '30 seconds each direction', purpose: 'Shoulder mobility' },
@@ -270,13 +273,13 @@ export const WARM_UP_EXERCISES = [
     { name: 'Hip circles', duration: '30 seconds each direction', purpose: 'Hip mobility' },
     { name: 'Torso twists', duration: '30 seconds', purpose: 'Spinal mobility' }
 ];
-export const COOL_DOWN_EXERCISES = [
+exports.COOL_DOWN_EXERCISES = [
     { name: 'Light walking', duration: '3-5 minutes', purpose: 'Gradually lower heart rate' },
     { name: 'Static stretching', duration: '30-60 seconds per stretch', purpose: 'Improve flexibility and reduce tension' },
     { name: 'Foam rolling', duration: '5-10 minutes', purpose: 'Myofascial release and recovery' },
     { name: 'Deep breathing', duration: '2-3 minutes', purpose: 'Activate parasympathetic nervous system' }
 ];
-export const RECOVERY_RECOMMENDATIONS = [
+exports.RECOVERY_RECOMMENDATIONS = [
     'Adequate sleep (7-9 hours for adults)',
     'Proper hydration (at least 8 glasses of water daily)',
     'Balanced nutrition with sufficient protein',

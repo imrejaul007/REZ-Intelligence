@@ -19,7 +19,7 @@ exports.formatHelpResponse = formatHelpResponse;
 exports.formatErrorResponse = formatErrorResponse;
 exports.formatCuisineInfoResponse = formatCuisineInfoResponse;
 exports.buildItemCarousel = buildItemCarousel;
-const tone_js_1 = require("../config/tone.js");
+const tone_1 = require("../config/tone");
 /**
  * Format a menu item for display
  */
@@ -69,7 +69,7 @@ function formatRecommendationResponse(recommendations, tone = 'default') {
     if (recommendations.length === 0) {
         return "I couldn't find unknown recommendations matching your preferences. Could you tell me more about what you're in the mood for?";
     }
-    const opener = (0, tone_js_1.generateOpener)('recommendation', tone);
+    const opener = (0, tone_1.generateOpener)('recommendation', tone);
     const lines = [opener, ''];
     recommendations.forEach((rec, index) => {
         const { item, score, reasons, pairings } = rec;
@@ -268,7 +268,7 @@ function formatNutritionResponse(itemName, nutrition) {
  * Format greeting response
  */
 function formatGreetingResponse(tone = 'default') {
-    return (0, tone_js_1.generateOpener)('greeting', tone);
+    return (0, tone_1.generateOpener)('greeting', tone);
 }
 /**
  * Format help response

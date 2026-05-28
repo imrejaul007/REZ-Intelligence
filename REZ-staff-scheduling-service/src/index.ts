@@ -31,7 +31,7 @@ app.use(express.json());
 app.use(requestLoggingMiddleware);
 
 // Internal authentication middleware
-const internalAuth = createAuthMiddleware();
+const internalAuth = createAuthMiddleware() as unknown as express.RequestHandler;
 
 // Health check endpoint (public)
 app.get('/api/staff/health', (_req: Request, res: Response) => {

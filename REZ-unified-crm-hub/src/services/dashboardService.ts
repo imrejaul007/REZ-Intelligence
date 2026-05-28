@@ -9,7 +9,7 @@
  */
 
 import { serviceUrls } from '../config/index.js';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 import type {
   DashboardOverview,
   RevenueMetrics,

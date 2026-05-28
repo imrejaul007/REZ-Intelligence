@@ -1,4 +1,4 @@
-import logger from './utils/logger.js';
+import { logger } from '../utils/logger';
 
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -7,10 +7,11 @@ import {
   UserProfile,
   FitnessLevel,
   WorkoutType,
+  Equipment,
   ProgressUpdate,
   FitnessResponse
-} from './fitnessExpert.js';
-import { WARM_UP_EXERCISES, COOL_DOWN_EXERCISES, RECOVERY_RECOMMENDATIONS, EXERCISE_DATABASE } from '../config/knowledge.js';
+} from './fitnessExpert';
+import { WARM_UP_EXERCISES, COOL_DOWN_EXERCISES, RECOVERY_RECOMMENDATIONS, EXERCISE_DATABASE } from '../config/knowledge';
 
 export function validateEnv(): void {
   const required = ['NODE_ENV'];
@@ -58,10 +59,11 @@ function generatePlanName(profile: UserProfile): string {
 }
 
 function generatePlanDescription(profile: UserProfile): string {
+  const hasNoneEquipment = (profile.availableEquipment as unknown[]).includes('none');
   return `A ${profile.daysPerWeek}-day per week workout program designed for ` +
     `${profile.fitnessLevel} fitness levels. This program focuses on ` +
     `${profile.goals.join(', ')} using ` +
-    `${profile.availableEquipment.includes('none' as unknown) ? 'bodyweight' : 'equipment-based'} exercises. ` +
+    `${hasNoneEquipment ? 'bodyweight' : 'equipment-based'} exercises. ` +
     `Each workout is designed to maximize results while maintaining proper form and safety!`;
 }
 

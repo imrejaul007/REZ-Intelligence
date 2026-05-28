@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 export interface AuthConfig {
   apiKeys?: string[];
@@ -8,7 +8,9 @@ export interface AuthConfig {
 }
 
 export function createAuthMiddleware(config: AuthConfig) {
-  const { apiKeys = [], internalTokens = [], bypassPaths = ['/health', '/ready'] } = config;
+  const { bypassPaths = ['/health', '/ready'] } = config;
+  const internalTokens = config.internalTokens || [];
+  const apiKeys = config.apiKeys || [];
 
   return (req: Request, res: Response, next: NextFunction): void => {
     const path = req.path;
@@ -43,3 +45,5 @@ export function createAuthMiddleware(config: AuthConfig) {
     });
   };
 }
+
+export const internalAuth = createAuthMiddleware({});

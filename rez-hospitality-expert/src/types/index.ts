@@ -181,8 +181,9 @@ export interface AmenityInfo {
   hours?: string;
   location?: string;
   contact?: string;
-  price?: number;
-  isAvailable: boolean;
+  price?: { amount: number; currency: string; unit: string } | number;
+  isAvailable?: boolean;
+  bookingRequired?: boolean;
 }
 
 export interface LocalRecommendation {

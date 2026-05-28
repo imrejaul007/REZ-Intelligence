@@ -12,7 +12,8 @@ import {
   ConversationContext,
   ChatResponse,
   SuggestedAction,
-} from '../types/index.js';
+  AmenityCategory,
+} from '../types/index';
 import {
   ROOM_TYPES,
   AMENITIES,
@@ -24,10 +25,9 @@ import {
   getTermDefinition,
   getSpecialOccasion,
   calculateUpgradePrice,
-  AmenityCategory,
-} from '../config/knowledge.js';
-import { selectTone, ToneType } from '../config/tone.js';
-import { generateResponse } from '../responses/templates.js';
+} from '../config/knowledge';
+import { selectTone, ToneType } from '../config/tone';
+import { generateResponse } from '../responses/templates';
 
 // ============================================
 // EXPERTISE AREAS

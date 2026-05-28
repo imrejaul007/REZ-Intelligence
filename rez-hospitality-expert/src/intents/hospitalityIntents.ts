@@ -11,12 +11,12 @@ import {
   ServiceRequest,
   Priority,
   ServiceStatus,
-} from '../types/index.js';
-import { expertiseService } from '../services/expertise.js';
-import { workflowService } from '../services/workflows.js';
-import { recommendationsService } from '../services/recommendations.js';
-import { selectTone, ToneType } from '../config/tone.js';
-import { logger } from './utils/logger.js';
+} from '../types/index';
+import { expertiseService } from '../services/expertise';
+import { workflowService } from '../services/workflows';
+import { recommendationsService } from '../services/recommendations';
+import { selectTone, ToneType } from '../config/tone';
+import { logger } from '../utils/logger';
 
 // ============================================
 // INTENT HANDLERS

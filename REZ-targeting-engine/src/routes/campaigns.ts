@@ -1,18 +1,12 @@
 import { Router, Request, Response } from 'express';
 import { campaignService } from '../services';
+import { asyncHandler, NotFoundError } from '../middleware';
 import {
-  asyncHandler,
-  NotFoundError,
-} from '../middleware';
-import {
-  validateRequest,
   CreateCampaignSchema,
   UpdateCampaignSchema,
-  CampaignSchema,
-  AudiencePreviewSchema,
-  PaginationQuerySchema,
   z
 } from '../schemas';
+import { CampaignRules, UserContext, UserAttributes, ABTestConfig } from '../types';
 
 const router = Router();
 
@@ -47,16 +41,24 @@ const listQuery = z.object({
  */
 router.post(
   '/',
-  validateRequest({ body: CreateCampaignSchema }),
   asyncHandler(async (req: Request, res: Response) => {
+    // Validate input with Zod
+    const parsedBody = CreateCampaignSchema.safeParse(req.body);
+    if (!parsedBody.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid request body', details: parsedBody.error.errors }
+      });
+    }
+
     const campaign = await campaignService.createCampaign({
-      name: req.body.name,
-      description: req.body.description,
-      rules: req.body.rules,
-      ab_test_config: req.body.ab_test_config,
-      start_date: req.body.start_date,
-      end_date: req.body.end_date,
-      created_by: req.body.created_by
+      name: parsedBody.data.name,
+      description: parsedBody.data.description,
+      rules: parsedBody.data.rules as CampaignRules,
+      ab_test_config: parsedBody.data.ab_test_config as ABTestConfig | undefined,
+      start_date: parsedBody.data.start_date,
+      end_date: parsedBody.data.end_date,
+      created_by: parsedBody.data.created_by
     });
 
     res.status(201).json({
@@ -79,15 +81,23 @@ router.post(
  */
 router.get(
   '/',
-  validateRequest({ query: listQuery }),
   asyncHandler(async (req: Request, res: Response) => {
-    const { status, created_by, limit, offset } = req.query;
+    // Parse query params
+    const parsedQuery = listQuery.safeParse(req.query);
+    if (!parsedQuery.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid query parameters', details: parsedQuery.error.errors }
+      });
+    }
+
+    const { status, created_by, limit, offset } = parsedQuery.data;
 
     const result = await campaignService.listCampaigns({
-      status: status as unknown,
-      created_by: created_by as string,
-      limit: limit ? parseInt(limit as string) : undefined,
-      offset: offset ? parseInt(offset as string) : undefined
+      status,
+      created_by,
+      limit,
+      offset
     });
 
     res.json({
@@ -103,8 +113,8 @@ router.get(
         })),
         pagination: {
           total: result.total,
-          limit: limit ? parseInt(limit as string) : 20,
-          offset: offset ? parseInt(offset as string) : 0
+          limit: limit ?? 20,
+          offset: offset ?? 0
         }
       }
     });
@@ -149,9 +159,17 @@ router.get(
  */
 router.get(
   '/:id',
-  validateRequest({ params: campaignIdParams }),
   asyncHandler(async (req: Request, res: Response) => {
-    const campaign = await campaignService.getCampaign(req.params.id);
+    // Validate params
+    const parsedParams = campaignIdParams.safeParse(req.params);
+    if (!parsedParams.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid campaign ID', details: parsedParams.error.errors }
+      });
+    }
+
+    const campaign = await campaignService.getCampaign(parsedParams.data.id);
 
     if (!campaign) {
       throw new NotFoundError('Campaign');
@@ -184,16 +202,43 @@ router.get(
  */
 router.patch(
   '/:id',
-  validateRequest({ params: campaignIdParams, body: UpdateCampaignSchema }),
   asyncHandler(async (req: Request, res: Response) => {
-    const campaign = await campaignService.updateCampaign(req.params.id, {
-      name: req.body.name,
-      description: req.body.description,
-      rules: req.body.rules,
-      status: req.body.status,
-      start_date: req.body.start_date,
-      end_date: req.body.end_date
-    });
+    // Validate params
+    const parsedParams = campaignIdParams.safeParse(req.params);
+    if (!parsedParams.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid campaign ID', details: parsedParams.error.errors }
+      });
+    }
+
+    // Validate body
+    const parsedBody = UpdateCampaignSchema.safeParse(req.body);
+    if (!parsedBody.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid request body', details: parsedBody.error.errors }
+      });
+    }
+
+    // Build update input with proper types
+    const updateInput: {
+      name?: string;
+      description?: string;
+      rules?: CampaignRules;
+      status?: 'draft' | 'active' | 'paused' | 'completed' | 'cancelled';
+      start_date?: string;
+      end_date?: string;
+    } = {};
+
+    if (parsedBody.data.name !== undefined) updateInput.name = parsedBody.data.name;
+    if (parsedBody.data.description !== undefined) updateInput.description = parsedBody.data.description;
+    if (parsedBody.data.rules !== undefined) updateInput.rules = parsedBody.data.rules as CampaignRules;
+    if (parsedBody.data.status !== undefined) updateInput.status = parsedBody.data.status;
+    if (parsedBody.data.start_date !== undefined) updateInput.start_date = parsedBody.data.start_date;
+    if (parsedBody.data.end_date !== undefined) updateInput.end_date = parsedBody.data.end_date;
+
+    const campaign = await campaignService.updateCampaign(parsedParams.data.id, updateInput);
 
     if (!campaign) {
       throw new NotFoundError('Campaign');
@@ -218,9 +263,17 @@ router.patch(
  */
 router.delete(
   '/:id',
-  validateRequest({ params: campaignIdParams }),
   asyncHandler(async (req: Request, res: Response) => {
-    const deleted = await campaignService.deleteCampaign(req.params.id);
+    // Validate params
+    const parsedParams = campaignIdParams.safeParse(req.params);
+    if (!parsedParams.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid campaign ID', details: parsedParams.error.errors }
+      });
+    }
+
+    const deleted = await campaignService.deleteCampaign(parsedParams.data.id);
 
     if (!deleted) {
       throw new NotFoundError('Campaign');
@@ -239,13 +292,28 @@ router.delete(
  */
 router.get(
   '/:id/audience',
-  validateRequest({ params: campaignIdParams, query: audiencePreviewQuery }),
   asyncHandler(async (req: Request, res: Response) => {
-    const sampleSize = req.query.sample_size
-      ? parseInt(req.query.sample_size as string)
-      : 100;
+    // Validate params
+    const parsedParams = campaignIdParams.safeParse(req.params);
+    if (!parsedParams.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid campaign ID', details: parsedParams.error.errors }
+      });
+    }
 
-    const preview = await campaignService.previewAudience(req.params.id, sampleSize);
+    // Parse query params
+    const parsedQuery = audiencePreviewQuery.safeParse(req.query);
+    if (!parsedQuery.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid query parameters', details: parsedQuery.error.errors }
+      });
+    }
+
+    const sampleSize = parsedQuery.data.sample_size ?? 100;
+
+    const preview = await campaignService.previewAudience(parsedParams.data.id, sampleSize);
 
     res.json({
       success: true,
@@ -267,12 +335,40 @@ router.get(
  */
 router.post(
   '/:id/trigger',
-  validateRequest({ params: campaignIdParams, body: triggerCampaignBody }),
   asyncHandler(async (req: Request, res: Response) => {
-    const result = await campaignService.triggerCampaign(
-      req.params.id,
-      req.body.user_contexts
-    );
+    // Validate params
+    const parsedParams = campaignIdParams.safeParse(req.params);
+    if (!parsedParams.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid campaign ID', details: parsedParams.error.errors }
+      });
+    }
+
+    // Validate body
+    const parsedBody = triggerCampaignBody.safeParse(req.body);
+    if (!parsedBody.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid request body', details: parsedBody.error.errors }
+      });
+    }
+
+    // Build user contexts with proper types
+    const userContexts: UserContext[] = parsedBody.data.user_contexts.map(ctx => ({
+      user_id: ctx.user_id,
+      segments: ctx.segments ?? [],
+      attributes: (ctx.attributes ?? {}) as unknown as UserAttributes,
+      preferences: ctx.preferences as unknown as UserContext['preferences'] ?? {
+        timezone: 'UTC',
+        notification_enabled: true,
+        email_enabled: true,
+        sms_enabled: true,
+        push_enabled: true
+      }
+    }));
+
+    const result = await campaignService.triggerCampaign(parsedParams.data.id, userContexts);
 
     res.json({
       success: true,
@@ -288,9 +384,17 @@ router.post(
  */
 router.get(
   '/:id/stats',
-  validateRequest({ params: campaignIdParams }),
   asyncHandler(async (req: Request, res: Response) => {
-    const stats = await campaignService.getCampaignStats(req.params.id);
+    // Validate params
+    const parsedParams = campaignIdParams.safeParse(req.params);
+    if (!parsedParams.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid campaign ID', details: parsedParams.error.errors }
+      });
+    }
+
+    const stats = await campaignService.getCampaignStats(parsedParams.data.id);
 
     res.json({
       success: true,

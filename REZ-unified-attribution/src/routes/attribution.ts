@@ -102,14 +102,14 @@ attributionRouter.get('/track/touchpoints', async (req: Request, res: Response) 
   try {
     const { merchantId, customerId, channel, startDate, endDate, limit = 50 } = req.query;
 
-    const query: unknown = {};
+    const query: Record<string, unknown> = {};
     if (merchantId) query.merchantId = merchantId;
     if (customerId) query.customerId = customerId;
     if (channel) query.channel = channel;
     if (startDate || endDate) {
       query.timestamp = {};
-      if (startDate) query.timestamp.$gte = new Date(startDate as string);
-      if (endDate) query.timestamp.$lte = new Date(endDate as string);
+      if (startDate) (query.timestamp as Record<string, unknown>).$gte = new Date(startDate as string);
+      if (endDate) (query.timestamp as Record<string, unknown>).$lte = new Date(endDate as string);
     }
 
     const touchpoints = await Touchpoint.find(query)
@@ -202,14 +202,14 @@ attributionRouter.get('/track/conversions', async (req: Request, res: Response) 
   try {
     const { merchantId, customerId, status, startDate, endDate, limit = 50 } = req.query;
 
-    const query: unknown = {};
+    const query: Record<string, unknown> = {};
     if (merchantId) query.merchantId = merchantId;
     if (customerId) query.customerId = customerId;
     if (status) query.status = status;
     if (startDate || endDate) {
       query.timestamp = {};
-      if (startDate) query.timestamp.$gte = new Date(startDate as string);
-      if (endDate) query.timestamp.$lte = new Date(endDate as string);
+      if (startDate) (query.timestamp as Record<string, unknown>).$gte = new Date(startDate as string);
+      if (endDate) (query.timestamp as Record<string, unknown>).$lte = new Date(endDate as string);
     }
 
     const conversions = await Conversion.find(query)

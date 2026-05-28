@@ -1,10 +1,7 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CrossPlatformSync = void 0;
-const logger_js_1 = __importDefault(require("./utils/logger.js"));
+const logger_1 = require("../utils/logger");
 /**
  * CrossPlatformSync.ts - Synchronization Across Platform Services
  */
@@ -73,7 +70,7 @@ class CrossPlatformSync {
         if (this.isRunning)
             return;
         this.isRunning = true;
-        logger_js_1.default.info(`Starting cross-platform sync with interval: ${this.config.intervalMs}ms`);
+        logger_1.logger.info(`Starting cross-platform sync with interval: ${this.config.intervalMs}ms`);
         this.intervalHandle = setInterval(() => {
             this.runScheduledSync().catch(error => {
                 console.error('Scheduled sync failed:', error);
@@ -89,14 +86,14 @@ class CrossPlatformSync {
             this.intervalHandle = undefined;
         }
         this.isRunning = false;
-        logger_js_1.default.info('Cross-platform sync stopped');
+        logger_1.logger.info('Cross-platform sync stopped');
     }
     /**
      * Run scheduled sync (for all pending merchants)
      */
     async runScheduledSync() {
         // In production, this would fetch merchants that need syncing
-        logger_js_1.default.info('Running scheduled sync...');
+        logger_1.logger.info('Running scheduled sync...');
     }
     /**
      * Sync a single merchant
@@ -161,20 +158,21 @@ class CrossPlatformSync {
                 });
             }
             catch (error) {
+                const err = error;
                 result.services.push({
                     service: service.name,
                     status: 'failed',
                     duration_ms: Date.now() - serviceStartTime,
-                    error: error.message,
+                    error: err.message,
                 });
-                result.errors.push(`${service.name}: ${error.message}`);
+                result.errors.push(`${service.name}: ${err.message}`);
                 this.emitEvent({
                     type: 'service_failed',
                     sync_id: syncId,
                     merchant_id: merchantId,
                     service: service.name,
                     timestamp: new Date().toISOString(),
-                    data: { error: error.message },
+                    data: { error: err.message },
                 });
             }
         }
@@ -352,7 +350,8 @@ class CrossPlatformSync {
             return { success: true, data };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            const err = error;
+            return { success: false, error: err.message };
         }
     }
     /**

@@ -1,16 +1,18 @@
 import winston from 'winston';
 import { v4 as uuidv4 } from 'uuid';
-import { EXERCISE_DATABASE } from '../config/knowledge.js';
+import { EXERCISE_DATABASE } from '../config/knowledge';
 
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
-const logFormat = printf(({ level, message, timestamp, ...metadata }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const logFormat = printf((info: any) => {
+  const { level, message, timestamp, stack, ...metadata } = info;
   let msg = `${timestamp} [${level}]: ${message}`;
-  if (Object.keys(metadata).length > 0 && metadata.stack === undefined) {
+  if (Object.keys(metadata).length > 0 && stack === undefined) {
     msg += ` ${JSON.stringify(metadata)}`;
   }
-  if (metadata.stack) {
-    msg += `\n${metadata.stack}`;
+  if (stack) {
+    msg += `\n${stack}`;
   }
   return msg;
 });
@@ -250,7 +252,7 @@ class FitnessExpertAgent {
     query: string,
     userProfile: UserProfile
   ): Promise<FitnessResponse> {
-    const { createWorkoutPlan } = await import('./expertise.js');
+    const { createWorkoutPlan } = await import('./expertise');
 
     const workoutPlan = createWorkoutPlan(userProfile);
 
@@ -268,7 +270,7 @@ class FitnessExpertAgent {
     query: string,
     userProfile: UserProfile
   ): Promise<FitnessResponse> {
-    const { getExercisesByType, getExercisesByMuscle } = await import('./expertise.js');
+    const { getExercisesByType, getExercisesByMuscle } = await import('./expertise');
 
     const exercises = this.findExercisesInQuery(query);
 
@@ -292,7 +294,7 @@ class FitnessExpertAgent {
     userProfile: UserProfile,
     sessionId: string
   ): Promise<FitnessResponse> {
-    const { calculateProgress } = await import('./expertise.js');
+    const { calculateProgress } = await import('./expertise');
 
     const progress = calculateProgress(userProfile);
 
@@ -307,7 +309,7 @@ class FitnessExpertAgent {
     query: string,
     userProfile: UserProfile
   ): Promise<FitnessResponse> {
-    const { getRecommendations } = await import('./recommendations.js');
+    const { getRecommendations } = await import('./recommendations');
 
     const recommendations = getRecommendations(userProfile);
 
@@ -319,7 +321,7 @@ class FitnessExpertAgent {
   }
 
   private async handleTerminologyQuery(query: string): Promise<FitnessResponse> {
-    const { getFitnessTerm } = await import('./expertise.js');
+    const { getFitnessTerm } = await import('./expertise');
 
     const terms = this.extractTermsFromQuery(query);
 

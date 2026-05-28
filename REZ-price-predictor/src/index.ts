@@ -390,8 +390,12 @@ app.get('/health', (_req: Request, res: Response) => {
 // Readiness check
 app.get('/ready', async (_req: Request, res: Response) => {
   try {
-    await mongoose.connection.db.admin().ping();
-    res.json({ status: 'ready' });
+    if (mongoose.connection.db) {
+      await mongoose.connection.db.admin().ping();
+      res.json({ status: 'ready' });
+    } else {
+      res.status(503).json({ status: 'not ready' });
+    }
   } catch {
     res.status(503).json({ status: 'not ready' });
   }
@@ -485,7 +489,7 @@ app.get('/api/price/:merchantId/:itemId', asyncHandler(async (req: Request, res:
     confidence: optimization.confidence,
     factors: {
       timeMultiplier: Math.round(timeMultiplier * 100) / 100,
-      elasticity: Math.round(elasticity * 100) / 100 || 'unknown',
+      elasticity: (elasticity !== undefined ? Math.round(elasticity * 100) / 100 : 'unknown') as number | 'unknown',
       demandLevel
     },
     alternatives
@@ -615,7 +619,8 @@ app.get('/api/analytics/:merchantId', asyncHandler(async (req: Request, res: Res
   const merchantPricing = await MerchantPricing.findOne({ merchantId });
 
   if (!merchantPricing) {
-    return res.json({ success: true, analytics: null });
+    res.json({ success: true, analytics: null });
+    return;
   }
 
   const recentPrices = await PricePrediction.find({
@@ -652,11 +657,8 @@ app.get('/api/competition/:merchantId', asyncHandler(async (req: Request, res: R
   const merchantPricing = await MerchantPricing.findOne({ merchantId });
 
   if (!merchantPricing || !merchantPricing.competitorIds?.length) {
-    return res.json({
-      success: true,
-      competitors: [],
-      message: 'No competitors tracked'
-    });
+    res.json({ success: true, competitors: [], avgCompetitorPrice: 0 });
+    return;
   }
 
   const competitorPrices = await PricePrediction.aggregate([
@@ -696,11 +698,11 @@ app.use(errorHandler);
 // SERVER STARTUP
 // ============================================
 
-const PORT = process.env.PORT || 4043;
+const PORT = process.env['PORT'] || 4043;
 
 async function start(): Promise<void> {
   try {
-    await mongoose.connect(process.env.MONGODB_URI!);
+    await mongoose.connect(process.env['MONGODB_URI']!);
     logger.info('Connected to MongoDB');
     app.listen(PORT, () => {
       logger.info(`Price Predictor Service started on port ${PORT}`);

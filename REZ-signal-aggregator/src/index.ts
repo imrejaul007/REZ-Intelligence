@@ -354,6 +354,28 @@ segmentMembershipSchema.index({ segment: 1, active: 1 });
 const UnifiedSignal = mongoose.model<UnifiedSignalScore>('UnifiedSignal', unifiedSignalSchema);
 const SegmentMembership = mongoose.model<SegmentMembership & { userId: string }>('SegmentMembership', segmentMembershipSchema);
 
+// RisaCare Signal Model for tracking user signals
+export interface UserSignalDocument {
+  userId: string;
+  signalType: string;
+  properties: Record<string, unknown>;
+  timestamp: Date;
+  source: string;
+}
+
+const userSignalSchema = new mongoose.Schema<UserSignalDocument>({
+  userId: { type: String, required: true, index: true },
+  signalType: { type: String, required: true, index: true },
+  properties: { type: mongoose.Schema.Types.Mixed, default: {} },
+  timestamp: { type: Date, default: Date.now, index: true },
+  source: { type: String, default: 'risa-care' },
+});
+
+userSignalSchema.index({ userId: 1, signalType: 1 });
+userSignalSchema.index({ userId: 1, timestamp: -1 });
+
+const UserSignalModel = mongoose.model<UserSignalDocument>('UserSignal', userSignalSchema);
+
 // ============================================
 // Redis Client
 // ============================================

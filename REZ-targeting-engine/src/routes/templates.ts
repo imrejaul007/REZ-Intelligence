@@ -1,15 +1,12 @@
 import { Router, Request, Response } from 'express';
 import { adTemplateService } from '../services';
+import { asyncHandler, NotFoundError } from '../middleware';
 import {
-  asyncHandler,
-  NotFoundError,
-} from '../middleware';
-import {
-  validateRequest,
   CreateTemplateSchema,
   UpdateTemplateSchema,
   z
 } from '../schemas';
+import { TemplateContent, TemplateDesign } from '../types';
 
 const router = Router();
 
@@ -43,14 +40,22 @@ const duplicateBody = z.object({
  */
 router.post(
   '/',
-  validateRequest({ body: CreateTemplateSchema }),
   asyncHandler(async (req: Request, res: Response) => {
+    // Validate with Zod
+    const parsedBody = CreateTemplateSchema.safeParse(req.body);
+    if (!parsedBody.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid request body', details: parsedBody.error.errors }
+      });
+    }
+
     const template = await adTemplateService.createTemplate({
-      name: req.body.name,
-      channel: req.body.channel,
-      content: req.body.content,
-      design: req.body.design,
-      targeting: req.body.targeting
+      name: parsedBody.data.name,
+      channel: parsedBody.data.channel,
+      content: parsedBody.data.content as TemplateContent,
+      design: parsedBody.data.design as TemplateDesign | undefined,
+      targeting: parsedBody.data.targeting
     });
 
     res.status(201).json({
@@ -73,15 +78,23 @@ router.post(
  */
 router.get(
   '/',
-  validateRequest({ query: listQuery }),
   asyncHandler(async (req: Request, res: Response) => {
-    const { channel, is_active, limit, offset } = req.query;
+    // Parse query params
+    const parsedQuery = listQuery.safeParse(req.query);
+    if (!parsedQuery.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid query parameters', details: parsedQuery.error.errors }
+      });
+    }
+
+    const { channel, is_active, limit, offset } = parsedQuery.data;
 
     const result = await adTemplateService.listTemplates({
-      channel: channel as unknown,
+      channel,
       is_active: is_active === 'true' ? true : is_active === 'false' ? false : undefined,
-      limit: limit ? parseInt(limit as string) : undefined,
-      offset: offset ? parseInt(offset as string) : undefined
+      limit,
+      offset
     });
 
     res.json({
@@ -99,8 +112,8 @@ router.get(
         })),
         pagination: {
           total: result.total,
-          limit: limit ? parseInt(limit as string) : 20,
-          offset: offset ? parseInt(offset as string) : 0
+          limit: limit ?? 20,
+          offset: offset ?? 0
         }
       }
     });
@@ -119,8 +132,8 @@ router.get(
     res.json({
       success: true,
       data: {
-        channels: Object.entries(templates).map(([channel, channelTemplates]) => ({
-          channel,
+        channels: Object.entries(templates).map(([ch, channelTemplates]) => ({
+          channel: ch,
           templates: channelTemplates.map(t => ({
             template_id: t.template_id,
             name: t.name,
@@ -138,9 +151,17 @@ router.get(
  */
 router.get(
   '/:id',
-  validateRequest({ params: templateIdParams }),
   asyncHandler(async (req: Request, res: Response) => {
-    const template = await adTemplateService.getTemplate(req.params.id);
+    // Validate params
+    const parsedParams = templateIdParams.safeParse(req.params);
+    if (!parsedParams.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid template ID', details: parsedParams.error.errors }
+      });
+    }
+
+    const template = await adTemplateService.getTemplate(parsedParams.data.id);
 
     if (!template) {
       throw new NotFoundError('Template');
@@ -171,15 +192,41 @@ router.get(
  */
 router.patch(
   '/:id',
-  validateRequest({ params: templateIdParams, body: UpdateTemplateSchema }),
   asyncHandler(async (req: Request, res: Response) => {
-    const template = await adTemplateService.updateTemplate(req.params.id, {
-      name: req.body.name,
-      content: req.body.content,
-      design: req.body.design,
-      targeting: req.body.targeting,
-      is_active: req.body.is_active
-    });
+    // Validate params
+    const parsedParams = templateIdParams.safeParse(req.params);
+    if (!parsedParams.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid template ID', details: parsedParams.error.errors }
+      });
+    }
+
+    // Validate body
+    const parsedBody = UpdateTemplateSchema.safeParse(req.body);
+    if (!parsedBody.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid request body', details: parsedBody.error.errors }
+      });
+    }
+
+    // Build update input with proper types
+    const updateInput: {
+      name?: string;
+      content?: TemplateContent;
+      design?: TemplateDesign;
+      targeting?: { min_age?: number; max_age?: number; preferred_segments?: string[] };
+      is_active?: boolean;
+    } = {};
+
+    if (parsedBody.data.name !== undefined) updateInput.name = parsedBody.data.name;
+    if (parsedBody.data.content !== undefined) updateInput.content = parsedBody.data.content as TemplateContent;
+    if (parsedBody.data.design !== undefined) updateInput.design = parsedBody.data.design as TemplateDesign;
+    if (parsedBody.data.targeting !== undefined) updateInput.targeting = parsedBody.data.targeting;
+    if (parsedBody.data.is_active !== undefined) updateInput.is_active = parsedBody.data.is_active;
+
+    const template = await adTemplateService.updateTemplate(parsedParams.data.id, updateInput);
 
     if (!template) {
       throw new NotFoundError('Template');
@@ -204,9 +251,17 @@ router.patch(
  */
 router.delete(
   '/:id',
-  validateRequest({ params: templateIdParams }),
   asyncHandler(async (req: Request, res: Response) => {
-    const deleted = await adTemplateService.deleteTemplate(req.params.id);
+    // Validate params
+    const parsedParams = templateIdParams.safeParse(req.params);
+    if (!parsedParams.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid template ID', details: parsedParams.error.errors }
+      });
+    }
+
+    const deleted = await adTemplateService.deleteTemplate(parsedParams.data.id);
 
     if (!deleted) {
       throw new NotFoundError('Template');
@@ -225,11 +280,28 @@ router.delete(
  */
 router.post(
   '/:id/personalize',
-  validateRequest({ params: templateIdParams, body: personalizeBody }),
   asyncHandler(async (req: Request, res: Response) => {
+    // Validate params
+    const parsedParams = templateIdParams.safeParse(req.params);
+    if (!parsedParams.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid template ID', details: parsedParams.error.errors }
+      });
+    }
+
+    // Validate body
+    const parsedBody = personalizeBody.safeParse(req.body);
+    if (!parsedBody.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid request body', details: parsedBody.error.errors }
+      });
+    }
+
     const personalized = await adTemplateService.personalizeContent(
-      req.params.id,
-      req.body.user_data || {}
+      parsedParams.data.id,
+      parsedBody.data.user_data || {}
     );
 
     if (!personalized) {
@@ -239,7 +311,7 @@ router.post(
     res.json({
       success: true,
       data: {
-        template_id: req.params.id,
+        template_id: parsedParams.data.id,
         content: personalized
       }
     });
@@ -252,17 +324,32 @@ router.post(
  */
 router.post(
   '/:id/render',
-  validateRequest({ params: templateIdParams, body: renderBody }),
   asyncHandler(async (req: Request, res: Response) => {
-    const { channel } = req.body;
+    // Validate params
+    const parsedParams = templateIdParams.safeParse(req.params);
+    if (!parsedParams.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid template ID', details: parsedParams.error.errors }
+      });
+    }
 
-    const result = await adTemplateService.renderForChannel(req.params.id, channel);
+    // Validate body
+    const parsedBody = renderBody.safeParse(req.body);
+    if (!parsedBody.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid request body', details: parsedBody.error.errors }
+      });
+    }
+
+    const result = await adTemplateService.renderForChannel(parsedParams.data.id, parsedBody.data.channel);
 
     res.json({
       success: result.success,
       data: {
-        template_id: req.params.id,
-        channel,
+        template_id: parsedParams.data.id,
+        channel: parsedBody.data.channel,
         rendered: result.rendered,
         ...(result.errors && { errors: result.errors })
       }
@@ -276,11 +363,26 @@ router.post(
  */
 router.post(
   '/:id/duplicate',
-  validateRequest({ params: templateIdParams, body: duplicateBody }),
   asyncHandler(async (req: Request, res: Response) => {
-    const { new_name } = req.body;
+    // Validate params
+    const parsedParams = templateIdParams.safeParse(req.params);
+    if (!parsedParams.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid template ID', details: parsedParams.error.errors }
+      });
+    }
 
-    const template = await adTemplateService.duplicateTemplate(req.params.id, new_name);
+    // Validate body
+    const parsedBody = duplicateBody.safeParse(req.body);
+    if (!parsedBody.success) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid request body', details: parsedBody.error.errors }
+      });
+    }
+
+    const template = await adTemplateService.duplicateTemplate(parsedParams.data.id, parsedBody.data.new_name);
 
     if (!template) {
       throw new NotFoundError('Template');

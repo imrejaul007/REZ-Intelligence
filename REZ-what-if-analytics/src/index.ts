@@ -79,7 +79,7 @@ app.get('/api/templates', (req, res) => {
   res.json({ success: true, data: templates });
 });
 
-app.use((err, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   logger.error('Unhandled error:', err);
   res.status(500).json({ success: false, error: 'Internal server error' });
 });

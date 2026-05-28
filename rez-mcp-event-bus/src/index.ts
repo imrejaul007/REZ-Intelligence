@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import logger from './utils/logger.js';
+import { logger } from './utils/logger.js';
 
 import 'dotenv/config';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -175,17 +175,17 @@ async function handleListEventTypes(): Promise<string> {
   }, null, 2);
 }
 
-async function handleGetEvents(args): Promise<string> {
+async function handleGetEvents(args: Record<string, unknown>): Promise<string> {
   // Try real API first if enabled
   if (USE_REAL_API) {
     const params = new URLSearchParams();
-    if (args.type) params.append('type', args.type);
-    if (args.userId) params.append('userId', args.userId);
-    if (args.merchantId) params.append('merchantId', args.merchantId);
-    if (args.channel) params.append('channel', args.channel);
-    if (args.status) params.append('status', args.status);
-    if (args.from) params.append('from', args.from);
-    if (args.to) params.append('to', args.to);
+    if (args.type) params.append('type', String(args.type));
+    if (args.userId) params.append('userId', String(args.userId));
+    if (args.merchantId) params.append('merchantId', String(args.merchantId));
+    if (args.channel) params.append('channel', String(args.channel));
+    if (args.status) params.append('status', String(args.status));
+    if (args.from) params.append('from', String(args.from));
+    if (args.to) params.append('to', String(args.to));
     params.append('limit', String(args.limit || 50));
 
     const result = await fetchFromEventBus<{ events: Event[]; total: number }>(`/api/events?${params}`);
@@ -203,28 +203,28 @@ async function handleGetEvents(args): Promise<string> {
   let events = [...eventStore];
 
   if (args.type) {
-    events = events.filter(e => e.type.includes(args.type));
+    events = events.filter(e => e.type.includes(String(args.type)));
   }
   if (args.userId) {
-    events = events.filter(e => e.userId === args.userId);
+    events = events.filter(e => e.userId === String(args.userId));
   }
   if (args.merchantId) {
-    events = events.filter(e => e.merchantId === args.merchantId);
+    events = events.filter(e => e.merchantId === String(args.merchantId));
   }
   if (args.channel) {
-    events = events.filter(e => e.channel === args.channel);
+    events = events.filter(e => e.channel === String(args.channel));
   }
   if (args.status) {
-    events = events.filter(e => e.status === args.status);
+    events = events.filter(e => e.status === String(args.status));
   }
   if (args.from) {
-    events = events.filter(e => e.timestamp >= args.from);
+    events = events.filter(e => e.timestamp >= String(args.from));
   }
   if (args.to) {
-    events = events.filter(e => e.timestamp <= args.to);
+    events = events.filter(e => e.timestamp <= String(args.to));
   }
 
-  events = events.slice(0, args.limit || 50);
+  events = events.slice(0, Number(args.limit) || 50);
 
   return JSON.stringify({
     count: events.length,
@@ -233,15 +233,15 @@ async function handleGetEvents(args): Promise<string> {
   }, null, 2);
 }
 
-async function handlePublishEvent(args): Promise<string> {
+async function handlePublishEvent(args: Record<string, unknown>): Promise<string> {
   const event: Event = {
     id: `evt_${crypto.randomUUID()}`,
-    type: args.type,
-    channel: args.channel || 'events',
+    type: typeof args.type === 'string' ? args.type : '',
+    channel: typeof args.channel === 'string' ? args.channel : 'events',
     source: 'mcp-client',
-    userId: args.userId,
-    merchantId: args.merchantId,
-    data: args.data,
+    userId: typeof args.userId === 'string' ? args.userId : undefined,
+    merchantId: typeof args.merchantId === 'string' ? args.merchantId : undefined,
+    data: typeof args.data === 'object' && args.data !== null ? args.data as Record<string, unknown> : {},
     timestamp: new Date().toISOString(),
     status: 'published'
   };
@@ -272,7 +272,7 @@ async function handlePublishEvent(args): Promise<string> {
   }, null, 2);
 }
 
-async function handleGetEventFlow(args): Promise<string> {
+async function handleGetEventFlow(args: Record<string, unknown>): Promise<string> {
   // Try real API first if enabled
   if (USE_REAL_API) {
     const result = await fetchFromEventBus<{ events: Event[] }>(
@@ -297,20 +297,26 @@ async function handleGetEventFlow(args): Promise<string> {
   }
 
   // Fall back to local event store
-  const entityField = args.entityType + 'Id';
+  const entityType = typeof args.entityType === 'string' ? args.entityType : '';
+  const entityId = typeof args.entityId === 'string' ? args.entityId : '';
+  const hours = typeof args.hours === 'number' ? args.hours : 24;
+  const entityField = entityType + 'Id';
   const events = eventStore
-    .filter(e => (e as unknown)[entityField] === args.entityId)
+    .filter(e => {
+      const fieldValue = (e as unknown as Record<string, unknown>)[entityField];
+      return fieldValue === entityId;
+    })
     .filter(e => {
       const eventTime = new Date(e.timestamp).getTime();
-      const hoursAgo = Date.now() - (args.hours * 60 * 60 * 1000);
+      const hoursAgo = Date.now() - (hours * 60 * 60 * 1000);
       return eventTime >= hoursAgo;
     })
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   return JSON.stringify({
-    entityType: args.entityType,
-    entityId: args.entityId,
-    hoursLookback: args.hours,
+    entityType,
+    entityId,
+    hoursLookback: hours,
     count: events.length,
     source: 'local',
     timeline: events.map(e => ({
@@ -331,7 +337,7 @@ function summarizeEvent(event: Event): string {
   }
 }
 
-async function handleGetDLQEvents(args): Promise<string> {
+async function handleGetDLQEvents(args: Record<string, unknown>): Promise<string> {
   // Try real API first if enabled
   if (USE_REAL_API) {
     const result = await fetchFromEventBus<{ events: DLQEvent[] }>(`/api/events/dlq?limit=${args.limit || 50}`);
@@ -345,9 +351,10 @@ async function handleGetDLQEvents(args): Promise<string> {
   }
 
   // Fall back to local event store
+  const limit = Number(args.limit) || 50;
   const failedEvents = eventStore
     .filter(e => e.status === 'failed')
-    .slice(0, args.limit || 50)
+    .slice(0, limit)
     .map(e => ({
       event: e,
       error: 'Processing failed',
@@ -362,7 +369,7 @@ async function handleGetDLQEvents(args): Promise<string> {
   }, null, 2);
 }
 
-async function handleRetryDLQEvent(args): Promise<string> {
+async function handleRetryDLQEvent(args: Record<string, unknown>): Promise<string> {
   // Try real API first if enabled
   if (USE_REAL_API) {
     const result = await fetchFromEventBus<Event>(`/api/events/dlq/${args.eventId}/retry`, {
@@ -395,18 +402,20 @@ async function handleRetryDLQEvent(args): Promise<string> {
   }, null, 2);
 }
 
-async function handleGetEventStats(args): Promise<string> {
+async function handleGetEventStats(args: Record<string, unknown>): Promise<string> {
+  const hours = typeof args.hours === 'number' ? args.hours : 24;
+
   // Try real API first if enabled
   if (USE_REAL_API) {
     const result = await fetchFromEventBus<{ totalEvents: number; byType: Record<string, number>; byStatus: Record<string, number> }>(
-      `/api/events/stats?hours=${args.hours || 24}`
+      `/api/events/stats?hours=${hours}`
     );
 
     if (result) {
       return JSON.stringify({
-        period: `Last ${args.hours} hours`,
+        period: `Last ${hours} hours`,
         totalEvents: result.totalEvents,
-        eventsPerHour: (result.totalEvents / (args.hours || 24)).toFixed(2),
+        eventsPerHour: (result.totalEvents / hours).toFixed(2),
         byType: result.byType,
         byStatus: result.byStatus,
         topTypes: Object.entries(result.byType)
@@ -419,8 +428,8 @@ async function handleGetEventStats(args): Promise<string> {
   }
 
   // Fall back to local event store
-  const hoursAgo = Date.now() - (args.hours * 60 * 60 * 1000);
-  const recentEvents = eventStore.filter(e => new Date(e.timestamp).getTime() >= hoursAgo);
+  const hoursAgoMs = Date.now() - (hours * 60 * 60 * 1000);
+  const recentEvents = eventStore.filter(e => new Date(e.timestamp).getTime() >= hoursAgoMs);
 
   const typeCounts: Record<string, number> = {};
   const statusCounts: Record<string, number> = {};
@@ -431,9 +440,9 @@ async function handleGetEventStats(args): Promise<string> {
   });
 
   return JSON.stringify({
-    period: `Last ${args.hours} hours`,
+    period: `Last ${hours} hours`,
     totalEvents: recentEvents.length,
-    eventsPerHour: (recentEvents.length / args.hours).toFixed(2),
+    eventsPerHour: (recentEvents.length / hours).toFixed(2),
     byType: typeCounts,
     byStatus: statusCounts,
     topTypes: Object.entries(typeCounts)
@@ -462,7 +471,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 });
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const { name, arguments: args } = request.params;
+  const { name, arguments: args = {} } = request.params;
 
   try {
     let result: string;
@@ -472,22 +481,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         result = await handleListEventTypes();
         break;
       case 'get_events':
-        result = await handleGetEvents(args || {});
+        result = await handleGetEvents(args as Record<string, unknown>);
         break;
       case 'publish_event':
-        result = await handlePublishEvent(args);
+        result = await handlePublishEvent(args as Record<string, unknown>);
         break;
       case 'get_event_flow':
-        result = await handleGetEventFlow(args);
+        result = await handleGetEventFlow(args as Record<string, unknown>);
         break;
       case 'get_dlq_events':
-        result = await handleGetDLQEvents(args || {});
+        result = await handleGetDLQEvents(args as Record<string, unknown>);
         break;
       case 'retry_dlq_event':
-        result = await handleRetryDLQEvent(args);
+        result = await handleRetryDLQEvent(args as Record<string, unknown>);
         break;
       case 'get_event_stats':
-        result = await handleGetEventStats(args || {});
+        result = await handleGetEventStats(args as Record<string, unknown>);
         break;
       default:
         return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };

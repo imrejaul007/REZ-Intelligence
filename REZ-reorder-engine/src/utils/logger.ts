@@ -1,6 +1,6 @@
 const LOG_LEVELS = { error: 0, warn: 1, info: 2, debug: 3 } as const;
 type LogLevel = keyof typeof LOG_LEVELS;
-const currentLevel: LogLevel = (process.env.LOG_LEVEL as LogLevel) || 'info';
+const currentLevel: LogLevel = (process.env['LOG_LEVEL'] as LogLevel) || 'info';
 function formatMessage(level: LogLevel, message: string, meta?: unknown): string {
   const timestamp = new Date().toISOString();
   const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';

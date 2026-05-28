@@ -9,7 +9,8 @@ import rateLimit from 'express-rate-limit';
 
 import { connectDatabase } from './config/database';
 import routes from './routes';
-import { errorHandler, requestLogger, logger } from './middleware';
+import { errorHandler, requestLogger } from './middleware';
+import { logger } from './utils/logger.js';
 
 const app = express();
 const PORT = process.env.PORT || 3013;

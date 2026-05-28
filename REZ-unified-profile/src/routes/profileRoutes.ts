@@ -14,10 +14,16 @@ import {
   deleteProfile
 } from '../services/profileService.js';
 import { aggregateSignals } from '../services/signalAggregator.js';
-import { internalAuth } from '../middleware/auth.js';
+import { createAuthMiddleware } from '../middleware/auth.js';
 import type { EnrichmentPayload, ProfileMergeRequest, ProfileSearchQuery } from '../types/index.js';
 
 const router = Router();
+
+// Internal auth middleware - validates internal service tokens
+const internalAuth = createAuthMiddleware({
+  internalTokens: [process.env.INTERNAL_SERVICE_TOKEN || ''],
+  bypassPaths: ['/health', '/ready', '/api/health']
+});
 
 // Validation schemas
 const enrichPayloadSchema = z.object({

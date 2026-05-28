@@ -6,16 +6,16 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const sdk_1 = require("@anthropic-ai/sdk");
-const logger_js_1 = require("./utils/logger.js");
-const culinaryIntents_js_1 = require("../intents/culinaryIntents.js");
-const menuService_js_1 = require("../services/menuService.js");
-const dietaryService_js_1 = require("../services/dietaryService.js");
-const recommendations_js_1 = require("../services/recommendations.js");
-const orderFlow_js_1 = require("../intents/orderFlow.js");
-const expertise_js_1 = require("../services/expertise.js");
-const templates_js_1 = require("../responses/templates.js");
-const systemPrompt_js_1 = require("../config/systemPrompt.js");
-const coreBrainIntegration_js_1 = require("../services/coreBrainIntegration.js");
+const logger_1 = require("../utils/logger");
+const culinaryIntents_1 = require("../intents/culinaryIntents");
+const menuService_1 = require("../services/menuService");
+const dietaryService_1 = require("../services/dietaryService");
+const recommendations_1 = require("../services/recommendations");
+const orderFlow_1 = require("../intents/orderFlow");
+const expertise_1 = require("../services/expertise");
+const templates_1 = require("../responses/templates");
+const systemPrompt_1 = require("../config/systemPrompt");
+const coreBrainIntegration_1 = require("../services/coreBrainIntegration");
 const router = (0, express_1.Router)();
 // ============================================================================
 // VALIDATION MIDDLEWARE
@@ -65,7 +65,7 @@ router.post('/chat', async (req, res) => {
             });
         }
         // Load Core Brain context for personalization
-        const coreBrain = (0, coreBrainIntegration_js_1.getCoreBrainClient)();
+        const coreBrain = (0, coreBrainIntegration_1.getCoreBrainClient)();
         let coreBrainContext = null;
         try {
             const userContext = await coreBrain.loadUserContext(userId, req.body.sessionId || '', restaurantId);
@@ -76,7 +76,7 @@ router.post('/chat', async (req, res) => {
                     memories: userContext.memories,
                     diningHistory: userContext.diningHistory || [],
                 };
-                logger_js_1.logger.info('Core Brain context loaded', {
+                logger_1.logger.info('Core Brain context loaded', {
                     userId,
                     hasPreferences: !!coreBrainContext.preferences,
                     hasLoyalty: !!coreBrainContext.loyalty,
@@ -85,7 +85,7 @@ router.post('/chat', async (req, res) => {
             }
         }
         catch (coreBrainError) {
-            logger_js_1.logger.warn('Failed to load Core Brain context', { error: coreBrainError, userId });
+            logger_1.logger.warn('Failed to load Core Brain context', { error: coreBrainError, userId });
         }
         // Enhance context with Core Brain data
         const enhancedContext = {
@@ -97,13 +97,13 @@ router.post('/chat', async (req, res) => {
             loyaltyPoints: coreBrainContext?.loyalty?.points,
         };
         // Classify intent
-        const classified = (0, culinaryIntents_js_1.classifyIntent)(message, enhancedContext);
-        logger_js_1.logger.info(`Intent classified: ${classified.intent} (${classified.confidence})`);
-        const menuService = (0, menuService_js_1.getMenuService)();
-        const dietaryService = (0, dietaryService_js_1.getDietaryService)();
-        const recommendationsService = (0, recommendations_js_1.getRecommendationsService)();
-        const orderFlowHandler = (0, orderFlow_js_1.getOrderFlowHandler)();
-        const expertiseService = (0, expertise_js_1.getCulinaryExpertiseService)();
+        const classified = (0, culinaryIntents_1.classifyIntent)(message, enhancedContext);
+        logger_1.logger.info(`Intent classified: ${classified.intent} (${classified.confidence})`);
+        const menuService = (0, menuService_1.getMenuService)();
+        const dietaryService = (0, dietaryService_1.getDietaryService)();
+        const recommendationsService = (0, recommendations_1.getRecommendationsService)();
+        const orderFlowHandler = (0, orderFlow_1.getOrderFlowHandler)();
+        const expertiseService = (0, expertise_1.getCulinaryExpertiseService)();
         let response = '';
         let intentData = {};
         // Track if we should record this activity
@@ -114,10 +114,10 @@ router.post('/chat', async (req, res) => {
         };
         // Handle intents
         switch (classified.intent) {
-            case culinaryIntents_js_1.CulinaryIntent.GREETING:
+            case culinaryIntents_1.CulinaryIntent.GREETING:
                 response = "Hello! I'm your culinary expert. I can help you explore our menu, find perfect recommendations, check dietary information, and assist with your order. What would you like today?";
                 break;
-            case culinaryIntents_js_1.CulinaryIntent.VIEW_MENU:
+            case culinaryIntents_1.CulinaryIntent.VIEW_MENU:
                 if (restaurantId) {
                     const menu = await menuService.getRestaurantMenu(restaurantId);
                     if (menu) {
@@ -126,7 +126,7 @@ router.post('/chat', async (req, res) => {
                             itemCount: cat.items.length,
                             items: cat.items,
                         }));
-                        response = (0, templates_js_1.formatMenuBrowseResponse)(categoryData, tone);
+                        response = (0, templates_1.formatMenuBrowseResponse)(categoryData, tone);
                     }
                     else {
                         response = "I couldn't find the menu for this restaurant. Please check the restaurant ID.";
@@ -136,14 +136,14 @@ router.post('/chat', async (req, res) => {
                     response = "I need to know which restaurant you're at to show you the menu. Could you provide the restaurant ID?";
                 }
                 break;
-            case culinaryIntents_js_1.CulinaryIntent.SEARCH_ITEMS:
+            case culinaryIntents_1.CulinaryIntent.SEARCH_ITEMS:
                 if (restaurantId) {
                     const searchResults = await menuService.searchMenuItems(restaurantId, {
                         searchQuery: message,
                     });
                     if (searchResults.items.length > 0) {
                         response = `Found ${searchResults.totalCount} items matching "${message}":\n\n`;
-                        response += searchResults.items.slice(0, 5).map(item => (0, templates_js_1.formatMenuItemText)(item, tone)).join('\n\n');
+                        response += searchResults.items.slice(0, 5).map(item => (0, templates_1.formatMenuItemText)(item, tone)).join('\n\n');
                     }
                     else {
                         response = `I couldn't find unknown items matching "${message}". Try searching for a specific dish or ingredient!`;
@@ -153,7 +153,7 @@ router.post('/chat', async (req, res) => {
                     response = "I need a restaurant ID to search the menu. Which restaurant are you at?";
                 }
                 break;
-            case culinaryIntents_js_1.CulinaryIntent.GET_RECOMMENDATION:
+            case culinaryIntents_1.CulinaryIntent.GET_RECOMMENDATION:
                 if (restaurantId) {
                     const menu = await menuService.getRestaurantMenu(restaurantId);
                     if (menu) {
@@ -162,7 +162,7 @@ router.post('/chat', async (req, res) => {
                             ...classified.entities,
                             ...context,
                         });
-                        response = (0, templates_js_1.formatRecommendationResponse)(recommendations, tone);
+                        response = (0, templates_1.formatRecommendationResponse)(recommendations, tone);
                     }
                     else {
                         response = "I couldn't access the menu. Please try again.";
@@ -172,12 +172,12 @@ router.post('/chat', async (req, res) => {
                     response = "Which restaurant would you like recommendations from?";
                 }
                 break;
-            case culinaryIntents_js_1.CulinaryIntent.GET_PAIRING:
+            case culinaryIntents_1.CulinaryIntent.GET_PAIRING:
                 if (restaurantId && classified.entities.itemId) {
                     const item = await menuService.getMenuItem(restaurantId, classified.entities.itemId);
                     if (item) {
                         const pairings = recommendationsService.getPairingSuggestions(item);
-                        response = (0, templates_js_1.formatPairingResponse)(item.name, pairings, classified.entities.pairingType || 'wine');
+                        response = (0, templates_1.formatPairingResponse)(item.name, pairings, classified.entities.pairingType || 'wine');
                     }
                     else {
                         response = "I couldn't find that item. Could you be more specific?";
@@ -187,8 +187,8 @@ router.post('/chat', async (req, res) => {
                     response = "Which dish would you like pairing suggestions for?";
                 }
                 break;
-            case culinaryIntents_js_1.CulinaryIntent.SET_DIETARY_RESTRICTION:
-            case culinaryIntents_js_1.CulinaryIntent.CHECK_ALLERGENS:
+            case culinaryIntents_1.CulinaryIntent.SET_DIETARY_RESTRICTION:
+            case culinaryIntents_1.CulinaryIntent.CHECK_ALLERGENS:
                 if (classified.entities.restrictions) {
                     const restrictions = classified.entities.restrictions;
                     for (const restriction of restrictions) {
@@ -201,7 +201,7 @@ router.post('/chat', async (req, res) => {
                     for (const allergen of allergens) {
                         await dietaryService.addAllergy(userId, allergen.toLowerCase().replace('-', '_'));
                     }
-                    response = (0, templates_js_1.formatAllergenWarning)(allergens.map(a => ({
+                    response = (0, templates_1.formatAllergenWarning)(allergens.map(a => ({
                         id: a.toLowerCase(),
                         name: a,
                         severity: 'severe',
@@ -212,18 +212,18 @@ router.post('/chat', async (req, res) => {
                     response = "I want to make sure I understand your dietary needs correctly. Could you tell me about unknown allergies or dietary restrictions?";
                 }
                 break;
-            case culinaryIntents_js_1.CulinaryIntent.GET_NUTRITION:
-            case culinaryIntents_js_1.CulinaryIntent.GET_INGREDIENTS:
+            case culinaryIntents_1.CulinaryIntent.GET_NUTRITION:
+            case culinaryIntents_1.CulinaryIntent.GET_INGREDIENTS:
                 if (restaurantId && classified.entities.itemId) {
                     const item = await menuService.getMenuItem(restaurantId, classified.entities.itemId);
                     if (item) {
-                        if (classified.intent === culinaryIntents_js_1.CulinaryIntent.GET_NUTRITION) {
-                            response = (0, templates_js_1.formatNutritionResponse)(item.name, {
+                        if (classified.intent === culinaryIntents_1.CulinaryIntent.GET_NUTRITION) {
+                            response = (0, templates_1.formatNutritionResponse)(item.name, {
                                 calories: item.calories,
                             });
                         }
                         else {
-                            response = (0, templates_js_1.formatIngredientsResponse)(item.name, item.ingredients, item.allergens);
+                            response = (0, templates_1.formatIngredientsResponse)(item.name, item.ingredients, item.allergens);
                         }
                     }
                     else {
@@ -234,11 +234,11 @@ router.post('/chat', async (req, res) => {
                     response = "Which dish would you like to know more about?";
                 }
                 break;
-            case culinaryIntents_js_1.CulinaryIntent.GET_CUISINE_INFO:
+            case culinaryIntents_1.CulinaryIntent.GET_CUISINE_INFO:
                 if (classified.entities.cuisine) {
                     const cuisineInfo = expertiseService.getCuisineInfo(classified.entities.cuisine);
                     if (cuisineInfo) {
-                        response = (0, templates_js_1.formatCuisineInfoResponse)(cuisineInfo.name, cuisineInfo.description, cuisineInfo.signatureDishes, cuisineInfo.keyIngredients);
+                        response = (0, templates_1.formatCuisineInfoResponse)(cuisineInfo.name, cuisineInfo.description, cuisineInfo.signatureDishes, cuisineInfo.keyIngredients);
                     }
                     else {
                         response = `I don't have detailed information about ${classified.entities.cuisine} cuisine. What else can I help you with?`;
@@ -248,7 +248,7 @@ router.post('/chat', async (req, res) => {
                     response = "Which cuisine would you like to learn about?";
                 }
                 break;
-            case culinaryIntents_js_1.CulinaryIntent.ADD_TO_ORDER:
+            case culinaryIntents_1.CulinaryIntent.ADD_TO_ORDER:
                 if (restaurantId && classified.entities.itemId) {
                     const item = await menuService.getMenuItem(restaurantId, classified.entities.itemId);
                     if (item) {
@@ -264,10 +264,10 @@ router.post('/chat', async (req, res) => {
                     response = "Which dish would you like to add to your order?";
                 }
                 break;
-            case culinaryIntents_js_1.CulinaryIntent.HELP:
-                response = (0, templates_js_1.formatHelpResponse)();
+            case culinaryIntents_1.CulinaryIntent.HELP:
+                response = (0, templates_1.formatHelpResponse)();
                 break;
-            case culinaryIntents_js_1.CulinaryIntent.UNKNOWN:
+            case culinaryIntents_1.CulinaryIntent.UNKNOWN:
             default:
                 // Use AI to generate contextual response
                 try {
@@ -278,7 +278,7 @@ router.post('/chat', async (req, res) => {
                     const aiResponse = await client.messages.create({
                         model: 'claude-opus-4-7',
                         max_tokens: 1024,
-                        system: systemPrompt_js_1.CULINARY_EXPERT_SYSTEM_PROMPT,
+                        system: systemPrompt_1.CULINARY_EXPERT_SYSTEM_PROMPT,
                         messages: [
                             {
                                 role: 'user',
@@ -289,14 +289,14 @@ router.post('/chat', async (req, res) => {
                     response = aiResponse.content[0].type === 'text' ? aiResponse.content[0].text : 'I understand you need help. Could you be more specific about what you\'re looking for?';
                 }
                 catch (aiError) {
-                    logger_js_1.logger.error('AI response generation failed:', aiError);
+                    logger_1.logger.error('AI response generation failed:', aiError);
                     response = "I'm here to help you explore our menu, get recommendations, or place an order. What would you like to know?";
                 }
                 break;
         }
         // Record activity in Core Brain (non-blocking)
         coreBrain.recordActivity(userId, activityToRecord).catch((err) => {
-            logger_js_1.logger.warn('Failed to record activity in Core Brain', { error: err });
+            logger_1.logger.warn('Failed to record activity in Core Brain', { error: err });
         });
         res.json({
             success: true,
@@ -316,7 +316,7 @@ router.post('/chat', async (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Chat endpoint error:', error);
+        logger_1.logger.error('Chat endpoint error:', error);
         res.status(500).json({
             success: false,
             error: 'Internal server error',
@@ -362,7 +362,7 @@ function extractFavoriteCuisines(diningHistory) {
 router.get('/menu/:restaurantId', async (req, res) => {
     try {
         const { restaurantId } = req.params;
-        const menuService = (0, menuService_js_1.getMenuService)();
+        const menuService = (0, menuService_1.getMenuService)();
         const menu = await menuService.getRestaurantMenu(restaurantId);
         if (!menu) {
             return res.status(404).json({
@@ -376,7 +376,7 @@ router.get('/menu/:restaurantId', async (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Get menu error:', error);
+        logger_1.logger.error('Get menu error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to fetch menu',
@@ -390,7 +390,7 @@ router.get('/menu/:restaurantId', async (req, res) => {
 router.get('/menu/:restaurantId/items/:itemId', async (req, res) => {
     try {
         const { restaurantId, itemId } = req.params;
-        const menuService = (0, menuService_js_1.getMenuService)();
+        const menuService = (0, menuService_1.getMenuService)();
         const item = await menuService.getMenuItem(restaurantId, itemId);
         if (!item) {
             return res.status(404).json({
@@ -404,7 +404,7 @@ router.get('/menu/:restaurantId/items/:itemId', async (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Get item error:', error);
+        logger_1.logger.error('Get item error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to fetch item',
@@ -415,11 +415,11 @@ router.get('/menu/:restaurantId/items/:itemId', async (req, res) => {
  * POST /api/culinary/menu/:restaurantId/search
  * Search menu items
  */
-router.post('/menu/:restaurantId/search', validateRequest(culinaryIntents_js_1.SearchItemsSchema), async (req, res) => {
+router.post('/menu/:restaurantId/search', validateRequest(culinaryIntents_1.SearchItemsSchema), async (req, res) => {
     try {
         const { restaurantId } = req.params;
         const filters = req.body;
-        const menuService = (0, menuService_js_1.getMenuService)();
+        const menuService = (0, menuService_1.getMenuService)();
         const results = await menuService.searchMenuItems(restaurantId, filters);
         res.json({
             success: true,
@@ -427,7 +427,7 @@ router.post('/menu/:restaurantId/search', validateRequest(culinaryIntents_js_1.S
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Search error:', error);
+        logger_1.logger.error('Search error:', error);
         res.status(500).json({
             success: false,
             error: 'Search failed',
@@ -441,11 +441,11 @@ router.post('/menu/:restaurantId/search', validateRequest(culinaryIntents_js_1.S
  * POST /api/culinary/recommendations
  * Get personalized recommendations
  */
-router.post('/recommendations', validateRequest(culinaryIntents_js_1.GetRecommendationSchema), async (req, res) => {
+router.post('/recommendations', validateRequest(culinaryIntents_1.GetRecommendationSchema), async (req, res) => {
     try {
         const { restaurantId, userId, context, limit } = req.body;
-        const menuService = (0, menuService_js_1.getMenuService)();
-        const recommendationsService = (0, recommendations_js_1.getRecommendationsService)();
+        const menuService = (0, menuService_1.getMenuService)();
+        const recommendationsService = (0, recommendations_1.getRecommendationsService)();
         const menu = await menuService.getRestaurantMenu(restaurantId);
         if (!menu) {
             return res.status(404).json({
@@ -461,7 +461,7 @@ router.post('/recommendations', validateRequest(culinaryIntents_js_1.GetRecommen
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Recommendations error:', error);
+        logger_1.logger.error('Recommendations error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to generate recommendations',
@@ -476,8 +476,8 @@ router.get('/pairings/:restaurantId/:itemId', async (req, res) => {
     try {
         const { restaurantId, itemId } = req.params;
         const { type } = req.query;
-        const menuService = (0, menuService_js_1.getMenuService)();
-        const recommendationsService = (0, recommendations_js_1.getRecommendationsService)();
+        const menuService = (0, menuService_1.getMenuService)();
+        const recommendationsService = (0, recommendations_1.getRecommendationsService)();
         const item = await menuService.getMenuItem(restaurantId, itemId);
         if (!item) {
             return res.status(404).json({
@@ -496,7 +496,7 @@ router.get('/pairings/:restaurantId/:itemId', async (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Pairings error:', error);
+        logger_1.logger.error('Pairings error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to get pairings',
@@ -510,10 +510,10 @@ router.get('/pairings/:restaurantId/:itemId', async (req, res) => {
  * POST /api/culinary/dietary/restrictions
  * Set dietary restrictions
  */
-router.post('/dietary/restrictions', validateRequest(culinaryIntents_js_1.SetDietaryRestrictionSchema), async (req, res) => {
+router.post('/dietary/restrictions', validateRequest(culinaryIntents_1.SetDietaryRestrictionSchema), async (req, res) => {
     try {
         const { userId, restriction, enabled } = req.body;
-        const dietaryService = (0, dietaryService_js_1.getDietaryService)();
+        const dietaryService = (0, dietaryService_1.getDietaryService)();
         if (enabled) {
             await dietaryService.addRestriction(userId, restriction);
         }
@@ -526,7 +526,7 @@ router.post('/dietary/restrictions', validateRequest(culinaryIntents_js_1.SetDie
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Dietary restriction error:', error);
+        logger_1.logger.error('Dietary restriction error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to update dietary restriction',
@@ -537,10 +537,10 @@ router.post('/dietary/restrictions', validateRequest(culinaryIntents_js_1.SetDie
  * POST /api/culinary/dietary/allergies
  * Update allergy profile
  */
-router.post('/dietary/allergies', validateRequest(culinaryIntents_js_1.UpdateAllergyProfileSchema), async (req, res) => {
+router.post('/dietary/allergies', validateRequest(culinaryIntents_1.UpdateAllergyProfileSchema), async (req, res) => {
     try {
         const { userId, allergies } = req.body;
-        const dietaryService = (0, dietaryService_js_1.getDietaryService)();
+        const dietaryService = (0, dietaryService_1.getDietaryService)();
         for (const allergy of allergies) {
             await dietaryService.addAllergy(userId, allergy.allergenId, allergy.severity, allergy.notes);
         }
@@ -550,7 +550,7 @@ router.post('/dietary/allergies', validateRequest(culinaryIntents_js_1.UpdateAll
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Allergy update error:', error);
+        logger_1.logger.error('Allergy update error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to update allergy profile',
@@ -564,7 +564,7 @@ router.post('/dietary/allergies', validateRequest(culinaryIntents_js_1.UpdateAll
 router.get('/dietary/profile/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
-        const dietaryService = (0, dietaryService_js_1.getDietaryService)();
+        const dietaryService = (0, dietaryService_1.getDietaryService)();
         const profile = await dietaryService.getUserProfile(userId);
         res.json({
             success: true,
@@ -572,7 +572,7 @@ router.get('/dietary/profile/:userId', async (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Get dietary profile error:', error);
+        logger_1.logger.error('Get dietary profile error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to get dietary profile',
@@ -583,11 +583,11 @@ router.get('/dietary/profile/:userId', async (req, res) => {
  * POST /api/culinary/dietary/check
  * Check dish compatibility
  */
-router.post('/dietary/check', validateRequest(culinaryIntents_js_1.CheckAllergensSchema), async (req, res) => {
+router.post('/dietary/check', validateRequest(culinaryIntents_1.CheckAllergensSchema), async (req, res) => {
     try {
         const { userId, itemId, description } = req.body;
-        const dietaryService = (0, dietaryService_js_1.getDietaryService)();
-        const menuService = (0, menuService_js_1.getMenuService)();
+        const dietaryService = (0, dietaryService_1.getDietaryService)();
+        const menuService = (0, menuService_1.getMenuService)();
         let dishDescription = description || '';
         let dishAllergens = [];
         let dishDietaryTags = [];
@@ -606,7 +606,7 @@ router.post('/dietary/check', validateRequest(culinaryIntents_js_1.CheckAllergen
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Dietary check error:', error);
+        logger_1.logger.error('Dietary check error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to check dietary compatibility',
@@ -629,7 +629,7 @@ router.post('/orders/start', async (req, res) => {
                 error: 'Missing required fields: userId, restaurantId',
             });
         }
-        const orderFlowHandler = (0, orderFlow_js_1.getOrderFlowHandler)();
+        const orderFlowHandler = (0, orderFlow_1.getOrderFlowHandler)();
         const result = await orderFlowHandler.startOrder(userId, restaurantId);
         res.json({
             success: result.success,
@@ -638,7 +638,7 @@ router.post('/orders/start', async (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Start order error:', error);
+        logger_1.logger.error('Start order error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to start order',
@@ -652,8 +652,8 @@ router.post('/orders/start', async (req, res) => {
 router.post('/orders/add-item', async (req, res) => {
     try {
         const { userId, restaurantId, itemId, quantity, customizations, specialInstructions } = req.body;
-        const menuService = (0, menuService_js_1.getMenuService)();
-        const orderFlowHandler = (0, orderFlow_js_1.getOrderFlowHandler)();
+        const menuService = (0, menuService_1.getMenuService)();
+        const orderFlowHandler = (0, orderFlow_1.getOrderFlowHandler)();
         const item = await menuService.getMenuItem(restaurantId, itemId);
         if (!item) {
             return res.status(404).json({
@@ -669,7 +669,7 @@ router.post('/orders/add-item', async (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Add item error:', error);
+        logger_1.logger.error('Add item error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to add item',
@@ -680,9 +680,9 @@ router.post('/orders/add-item', async (req, res) => {
  * POST /api/culinary/orders/place
  * Place order
  */
-router.post('/orders/place', validateRequest(culinaryIntents_js_1.PlaceOrderSchema), async (req, res) => {
+router.post('/orders/place', validateRequest(culinaryIntents_1.PlaceOrderSchema), async (req, res) => {
     try {
-        const orderFlowHandler = (0, orderFlow_js_1.getOrderFlowHandler)();
+        const orderFlowHandler = (0, orderFlow_1.getOrderFlowHandler)();
         const result = await orderFlowHandler.placeOrder(req.body.userId);
         res.json({
             success: result.success,
@@ -691,7 +691,7 @@ router.post('/orders/place', validateRequest(culinaryIntents_js_1.PlaceOrderSche
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Place order error:', error);
+        logger_1.logger.error('Place order error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to place order',
@@ -705,7 +705,7 @@ router.post('/orders/place', validateRequest(culinaryIntents_js_1.PlaceOrderSche
 router.post('/orders/cancel', async (req, res) => {
     try {
         const { userId, orderId } = req.body;
-        const orderFlowHandler = (0, orderFlow_js_1.getOrderFlowHandler)();
+        const orderFlowHandler = (0, orderFlow_1.getOrderFlowHandler)();
         const result = await orderFlowHandler.cancelOrder(userId, orderId);
         res.json({
             success: result.success,
@@ -714,7 +714,7 @@ router.post('/orders/cancel', async (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Cancel order error:', error);
+        logger_1.logger.error('Cancel order error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to cancel order',
@@ -729,7 +729,7 @@ router.get('/orders/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
         const { orderId } = req.query;
-        const orderFlowHandler = (0, orderFlow_js_1.getOrderFlowHandler)();
+        const orderFlowHandler = (0, orderFlow_1.getOrderFlowHandler)();
         if (orderId) {
             const order = await orderFlowHandler.getOrderStatus(userId, orderId);
             res.json({
@@ -746,7 +746,7 @@ router.get('/orders/:userId', async (req, res) => {
         }
     }
     catch (error) {
-        logger_js_1.logger.error('Get orders error:', error);
+        logger_1.logger.error('Get orders error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to get orders',
@@ -762,7 +762,7 @@ router.get('/orders/:userId', async (req, res) => {
  */
 router.get('/expertise/cuisines', (req, res) => {
     try {
-        const expertiseService = (0, expertise_js_1.getCulinaryExpertiseService)();
+        const expertiseService = (0, expertise_1.getCulinaryExpertiseService)();
         const cuisines = expertiseService.getAllCuisines();
         res.json({
             success: true,
@@ -770,7 +770,7 @@ router.get('/expertise/cuisines', (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Get cuisines error:', error);
+        logger_1.logger.error('Get cuisines error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to get cuisines',
@@ -784,7 +784,7 @@ router.get('/expertise/cuisines', (req, res) => {
 router.get('/expertise/cuisines/:name', (req, res) => {
     try {
         const { name } = req.params;
-        const expertiseService = (0, expertise_js_1.getCulinaryExpertiseService)();
+        const expertiseService = (0, expertise_1.getCulinaryExpertiseService)();
         const cuisine = expertiseService.getCuisineInfo(decodeURIComponent(name));
         if (!cuisine) {
             return res.status(404).json({
@@ -798,7 +798,7 @@ router.get('/expertise/cuisines/:name', (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Get cuisine error:', error);
+        logger_1.logger.error('Get cuisine error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to get cuisine',
@@ -811,7 +811,7 @@ router.get('/expertise/cuisines/:name', (req, res) => {
  */
 router.get('/expertise/dietary', (req, res) => {
     try {
-        const expertiseService = (0, expertise_js_1.getCulinaryExpertiseService)();
+        const expertiseService = (0, expertise_1.getCulinaryExpertiseService)();
         const tags = expertiseService.getAllDietaryTags();
         res.json({
             success: true,
@@ -819,7 +819,7 @@ router.get('/expertise/dietary', (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Get dietary tags error:', error);
+        logger_1.logger.error('Get dietary tags error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to get dietary tags',
@@ -832,7 +832,7 @@ router.get('/expertise/dietary', (req, res) => {
  */
 router.get('/expertise/summary', (req, res) => {
     try {
-        const expertiseService = (0, expertise_js_1.getCulinaryExpertiseService)();
+        const expertiseService = (0, expertise_1.getCulinaryExpertiseService)();
         const summary = expertiseService.getExpertiseSummary();
         res.json({
             success: true,
@@ -840,7 +840,7 @@ router.get('/expertise/summary', (req, res) => {
         });
     }
     catch (error) {
-        logger_js_1.logger.error('Get expertise summary error:', error);
+        logger_1.logger.error('Get expertise summary error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to get expertise summary',

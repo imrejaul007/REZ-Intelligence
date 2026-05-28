@@ -3,7 +3,7 @@ import { ClassifiedIntent } from './intentClassifier';
 import { logger } from '../utils/logger.js';
 
 export interface RuleEvaluationResult {
-  rule: IPriorityRule;
+  rule: IPriorityRule | null;
   matched: boolean;
   score: number;
   matchedConditions: Array<{
@@ -95,12 +95,12 @@ export class RuleEngine {
 
     const rules = await PriorityRule.find(query)
       .sort({ priorityTier: 1, name: 1 })
-      .lean();
+      .lean() as unknown as IPriorityRule[];
 
-    this.rulesCache.set(cacheKey, rules as IPriorityRule[]);
+    this.rulesCache.set(cacheKey, rules);
     this.lastCacheUpdate = now;
 
-    return rules as IPriorityRule[];
+    return rules;
   }
 
   private evaluateRule(

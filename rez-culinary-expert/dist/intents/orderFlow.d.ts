@@ -4,7 +4,7 @@
  */
 import { MongoClient } from 'mongodb';
 import Redis from 'ioredis';
-import { MenuItem } from '../services/menuService.js';
+import { MenuItem } from '../services/menuService';
 export declare enum OrderStatus {
     PENDING = "pending",
     CONFIRMED = "confirmed",
@@ -173,5 +173,4 @@ export declare class OrderFlowHandler {
     canTransition(from: OrderStep, to: OrderStep): boolean;
 }
 export declare function getOrderFlowHandler(): OrderFlowHandler;
-export type { OrderFlowHandler };
 //# sourceMappingURL=orderFlow.d.ts.map

@@ -1,0 +1,118 @@
+# Cosmic OS - Render Blueprint
+# Deploy all Cosmic OS services to Render
+
+services:
+  # ─────────────────────────────────────────────
+  # REZ Emotional Intelligence (Port 4160)
+  # ─────────────────────────────────────────────
+  - name: cosmic-emotional-intelligence
+    env: web
+    region: singapore
+    plan: starter
+    port: 4160
+    healthCheckPath: /health
+    buildCommand: npm ci && npm run build
+    startCommand: node dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4160"
+      - key: MONGODB_URI
+        sync: false
+      - key: LOG_LEVEL
+        value: info
+
+  # ─────────────────────────────────────────────
+  # REZ Life Pattern Engine (Port 4161)
+  # ─────────────────────────────────────────────
+  - name: cosmic-life-pattern-engine
+    env: web
+    region: singapore
+    plan: starter
+    port: 4161
+    healthCheckPath: /health
+    buildCommand: npm ci && npm run build
+    startCommand: node dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4161"
+      - key: MONGODB_URI
+        sync: false
+      - key: LOG_LEVEL
+        value: info
+
+  # ─────────────────────────────────────────────
+  # REZ Human Context Graph (Port 4162)
+  # ─────────────────────────────────────────────
+  - name: cosmic-human-context-graph
+    env: web
+    region: singapore
+    plan: starter
+    port: 4162
+    healthCheckPath: /health
+    buildCommand: npm ci && npm run build
+    startCommand: node dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4162"
+      - key: MONGODB_URI
+        sync: false
+      - key: INTERNAL_SERVICE_TOKEN
+        sync: false
+      - key: EMOTIONAL_SERVICE_URL
+        fromService: cosmic-emotional-intelligence
+        fromEnvVar: RENDER_SERVICE_URL
+        realValue: https://cosmic-emotional-intelligence.onrender.com
+      - key: LIFE_PATTERN_SERVICE_URL
+        fromService: cosmic-life-pattern-engine
+        realValue: https://cosmic-life-pattern-engine.onrender.com
+      - key: SIGNAL_AGGREGATOR_URL
+        sync: false
+      - key: LOG_LEVEL
+        value: info
+
+  # ─────────────────────────────────────────────
+  # Cosmic OS (Port 4163) - Main Service
+  # ─────────────────────────────────────────────
+  - name: cosmic-os
+    env: web
+    region: singapore
+    plan: starter
+    port: 4163
+    healthCheckPath: /health
+    buildCommand: npm ci && npm run build
+    startCommand: node dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4163"
+      - key: MONGODB_URI
+        sync: false
+      - key: INTERNAL_SERVICE_TOKEN
+        sync: false
+      # RABTUL Services
+      - key: RABTUL_AUTH_URL
+        value: https://rez-auth-service.onrender.com
+      - key: RABTUL_WALLET_URL
+        value: https://rez-wallet-service-36vo.onrender.com
+      - key: RABTUL_NOTIFICATION_URL
+        value: https://rez-notifications-service.onrender.com
+      - key: RABTUL_PROFILE_URL
+        value: https://rez-profile-service.onrender.com
+      # Internal Services
+      - key: EMOTIONAL_SERVICE_URL
+        value: https://cosmic-emotional-intelligence.onrender.com
+      - key: LIFE_PATTERN_SERVICE_URL
+        value: https://cosmic-life-pattern-engine.onrender.com
+      - key: HUMAN_CONTEXT_URL
+        value: https://cosmic-human-context-graph.onrender.com
+      - key: SIGNAL_AGGREGATOR_URL
+        value: https://rez-signal-aggregator.onrender.com
+      - key: LOG_LEVEL
+        value: info

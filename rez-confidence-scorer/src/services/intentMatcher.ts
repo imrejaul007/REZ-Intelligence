@@ -2,6 +2,12 @@ import { AgentMetrics } from '../models/AgentMetrics';
 import { IntentMatchResult, AgentCapabilities } from '../types';
 import logger from '../utils/logger.js';
 
+interface LeanAgentMetrics {
+  agentId: string;
+  status: string;
+  capabilities: AgentCapabilities;
+}
+
 /**
  * Intent Matcher Service
  *
@@ -23,7 +29,7 @@ export class IntentMatcherService {
   ): Promise<IntentMatchResult> {
     try {
       // Get agent metrics
-      const agent = await AgentMetrics.findOne({ agentId }).lean().exec();
+      const agent = await AgentMetrics.findOne({ agentId }).lean().exec() as LeanAgentMetrics | null;
 
       if (!agent) {
         logger.warn(`Agent not found for intent matching: ${agentId}`);

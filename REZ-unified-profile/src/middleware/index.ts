@@ -1,3 +1,4 @@
 export * from './auth.js';
 export * from './rateLimit.js';
-export * from './errorHandler.js';
+// Re-export errorHandler and notFoundHandler explicitly to avoid conflicts
+export { errorHandler, notFoundHandler } from './errorHandler.js';

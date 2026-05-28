@@ -6,13 +6,13 @@ import {
   internalServiceAuth,
   validateBody,
   validateQuery,
-  AuthenticatedRequest,
   PriorityRequestSchema,
   CreateRuleSchema,
   UpdateRuleSchema,
   PaginationSchema,
+  AuthenticatedRequest,
 } from '../middleware';
-import { PriorityRule, PriorityTier, PriorityTierNames } from '../models';
+import { PriorityRule, PriorityTier, PriorityTierNames, PriorityTierValue } from '../models';
 import { RoutingDecision, DecisionStatus } from '../models';
 import { PRIORITY_MATRIX } from '../rules/priorityMatrix';
 import { logger } from '../utils/logger.js';
@@ -23,7 +23,7 @@ router.post(
   '/resolve',
   internalServiceAuth,
   validateBody(PriorityRequestSchema),
-  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const startTime = Date.now();
       const result = await priorityResolver.resolve(req.body);
@@ -47,7 +47,7 @@ router.post(
 router.get(
   '/decision/:requestId',
   internalServiceAuth,
-  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { requestId } = req.params;
 
@@ -83,14 +83,15 @@ router.get(
   '/decisions',
   internalServiceAuth,
   validateQuery(PaginationSchema),
-  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { page, limit, sortBy, sortOrder } = req.query as {
+      const query = req.query as unknown as {
         page: number;
         limit: number;
         sortBy?: string;
         sortOrder: 'asc' | 'desc';
       };
+      const { page, limit, sortBy, sortOrder } = query;
 
       const skip = (page - 1) * limit;
       const sort: Record<string, 1 | -1> = { [sortBy || 'createdAt']: sortOrder === 'asc' ? 1 : -1 };
@@ -123,7 +124,7 @@ router.get(
 router.get(
   '/decisions/by-tier/:tier',
   internalServiceAuth,
-  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tier = parseInt(req.params.tier, 10);
 
@@ -135,14 +136,14 @@ router.get(
         return;
       }
 
-      const decisions = await priorityResolver.getDecisionsByTier(tier as PriorityTier);
+      const decisions = await priorityResolver.getDecisionsByTier(tier as PriorityTierValue);
 
       res.status(200).json({
         success: true,
         data: decisions,
         meta: {
           tier,
-          tierName: PriorityTierNames[tier],
+          tierName: PriorityTierNames[tier as PriorityTierValue],
           count: decisions.length,
         },
       });
@@ -156,14 +157,15 @@ router.post(
   '/rules',
   internalServiceAuth,
   validateBody(CreateRuleSchema),
-  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const rule = await ruleEngine.createRule(req.body);
+      const authReq = req as AuthenticatedRequest;
 
       logger.info('Rule created via API', {
         ruleId: rule._id,
         name: rule.name,
-        serviceId: req.serviceId,
+        serviceId: authReq.serviceId,
       });
 
       res.status(201).json({
@@ -180,7 +182,7 @@ router.post(
 router.get(
   '/rules',
   internalServiceAuth,
-  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { domain, enabled, type } = req.query;
 
@@ -209,7 +211,7 @@ router.get(
 router.get(
   '/rules/:id',
   internalServiceAuth,
-  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const rule = await PriorityRule.findById(req.params.id);
 
@@ -235,9 +237,10 @@ router.put(
   '/rules/:id',
   internalServiceAuth,
   validateBody(UpdateRuleSchema),
-  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const rule = await ruleEngine.updateRule(req.params.id, req.body);
+      const authReq = req as AuthenticatedRequest;
 
       if (!rule) {
         res.status(404).json({
@@ -250,7 +253,7 @@ router.put(
       logger.info('Rule updated via API', {
         ruleId: rule._id,
         name: rule.name,
-        serviceId: req.serviceId,
+        serviceId: authReq.serviceId,
       });
 
       res.status(200).json({
@@ -267,9 +270,10 @@ router.put(
 router.delete(
   '/rules/:id',
   internalServiceAuth,
-  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const deleted = await ruleEngine.deleteRule(req.params.id);
+      const authReq = req as AuthenticatedRequest;
 
       if (!deleted) {
         res.status(404).json({
@@ -281,7 +285,7 @@ router.delete(
 
       logger.info('Rule deleted via API', {
         ruleId: req.params.id,
-        serviceId: req.serviceId,
+        serviceId: authReq.serviceId,
       });
 
       res.status(200).json({
@@ -318,7 +322,7 @@ router.get(
 router.get(
   '/classify',
   internalServiceAuth,
-  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { intent, context } = req.query;
 

@@ -16,8 +16,8 @@ import { z } from 'zod';
 import { customerAggregator } from '../services/customerAggregator.js';
 import { dashboardService } from '../services/dashboardService.js';
 import { inboxService } from '../services/inboxService.js';
-import { validateInternalToken } from '../middleware/auth.js';
-import { logger } from './utils/logger.js';
+import { createAuthMiddleware } from '../middleware/auth.js';
+import { logger } from '../utils/logger.js';
 import type {
   InternalCustomer,
   InternalSmartTag,
@@ -25,11 +25,17 @@ import type {
   DashboardOverview,
   InboxMessage,
   InboxChannel,
+  MessageChannel,
+  MessageStatus,
 } from '../types/index.js';
 
 const router = Router();
 
 // Apply internal token validation
+const validateInternalToken = createAuthMiddleware({
+  internalTokens: [process.env.INTERNAL_SERVICE_TOKEN || ''],
+  bypassPaths: ['/health', '/ready', '/api/v1/health']
+});
 router.use(validateInternalToken);
 
 // ============================================
@@ -471,9 +477,9 @@ router.get('/tags', async (req: Request, res: Response) => {
 router.get('/inbox/messages', async (req: Request, res: Response) => {
   try {
     const filters = {
-      channel: req.query.channel as unknown,
-      customerId: req.query.customerId as string,
-      status: req.query.status as unknown,
+      channel: req.query.channel as MessageChannel | undefined,
+      customerId: req.query.customerId as string | undefined,
+      status: req.query.status as MessageStatus | undefined,
       page: parseInt(req.query.page as string) || 1,
       limit: parseInt(req.query.limit as string) || 20,
     };

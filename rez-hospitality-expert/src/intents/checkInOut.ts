@@ -11,9 +11,9 @@ import {
   HospitalityIntent,
   CheckInWorkflow,
   CheckOutWorkflow,
-} from '../types/index.js';
-import { workflowService } from '../services/workflows.js';
-import { logger } from './utils/logger.js';
+} from '../types/index';
+import { workflowService } from '../services/workflows';
+import { logger } from '../utils/logger';
 
 // ============================================
 // CHECK-IN FLOW STATES
@@ -134,7 +134,7 @@ export class CheckInOutService {
 
     // Validate input for current step
     if (currentStep && currentStep.requiredFields.length > 0) {
-      const missingFields = currentStep.requiredFields.filter(f => !input[f]);
+      const missingFields = currentStep.requiredFields.filter((f: string) => !input[f]);
       if (missingFields.length > 0) {
         return {
           session,
@@ -219,7 +219,7 @@ export class CheckInOutService {
 
     // Validate input for current step
     if (currentStep && currentStep.requiredFields.length > 0) {
-      const missingFields = currentStep.requiredFields.filter(f => !input[f]);
+      const missingFields = currentStep.requiredFields.filter((f: string) => !input[f]);
       if (missingFields.length > 0) {
         return {
           session,
@@ -311,7 +311,7 @@ export class CheckInOutService {
   // PRIVATE HELPERS
   // ============================================
 
-  private getStepForState(state: CheckInState): Workflow['steps'][0] | undefined {
+  private getStepForState(state: CheckInState): CheckInWorkflow['steps'][0] | undefined {
     const workflow = workflowService.getCheckInWorkflow();
     const order = this.getStateOrder(state);
     return workflow.steps.find(s => s.order === order);
@@ -465,6 +465,3 @@ export class CheckInOutService {
 // ============================================
 
 export const checkInOutService = new CheckInOutService();
-
-// Re-export types
-export type { CheckInSession, CheckOutSession };

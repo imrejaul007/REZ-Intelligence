@@ -12,13 +12,13 @@ import {
   ConversationContext,
   Guest,
   Reservation,
-} from '../types/index.js';
+} from '../types/index';
 import {
   ROOM_TYPES,
   AMENITIES,
   getRoomTypeInfo,
   getAmenitiesByCategory,
-} from '../config/knowledge.js';
+} from '../config/knowledge';
 
 // ============================================
 // GUEST PREFERENCES
@@ -42,6 +42,7 @@ export interface RecommendationContext {
   specialOccasion?: string;
   season?: string;
   weather?: string;
+  travelPurpose?: string;
   timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'night';
   currentIntent?: string;
 }

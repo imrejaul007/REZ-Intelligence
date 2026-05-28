@@ -316,21 +316,34 @@ export class ReconciliationService {
       LIMIT $${paramIndex++} OFFSET $${paramIndex}
     `;
 
-    const rows = await query(dataQuery, [...values, limit, offset]);
+    const rows = await query<{
+      id: string;
+      type: string;
+      severity: string;
+      description: string;
+      transaction_id: string | null;
+      expected_value: unknown;
+      actual_value: unknown;
+      detected_at: Date;
+      resolved_at: Date | null;
+      resolved_by: string | null;
+      status: string;
+      notes: string | null;
+    }>(dataQuery, [...values, limit, offset]);
 
     const data: Discrepancy[] = rows.map(row => ({
       id: row.id,
-      type: row.type,
-      severity: row.severity,
+      type: row.type as Discrepancy['type'],
+      severity: row.severity as Discrepancy['severity'],
       description: row.description,
-      transactionId: row.transaction_id,
+      transactionId: row.transaction_id ?? undefined,
       expectedValue: row.expected_value,
       actualValue: row.actual_value,
       detectedAt: new Date(row.detected_at),
       resolvedAt: row.resolved_at ? new Date(row.resolved_at) : undefined,
-      resolvedBy: row.resolved_by,
-      status: row.status,
-      notes: row.notes,
+      resolvedBy: row.resolved_by ?? undefined,
+      status: row.status as Discrepancy['status'],
+      notes: row.notes ?? undefined,
     }));
 
     return {
@@ -361,7 +374,20 @@ export class ReconciliationService {
       [resolvedAt, resolvedBy, notes, discrepancyId]
     );
 
-    const resolved = await queryOne<Discrepancy>(
+    const resolved = await queryOne<{
+      id: string;
+      type: string;
+      severity: string;
+      description: string;
+      transaction_id: string | null;
+      expected_value: unknown;
+      actual_value: unknown;
+      detected_at: Date;
+      resolved_at: Date | null;
+      resolved_by: string | null;
+      status: string;
+      notes: string | null;
+    }>(
       'SELECT * FROM discrepancies WHERE id = $1',
       [discrepancyId]
     );
@@ -371,7 +397,20 @@ export class ReconciliationService {
     }
 
     logger.info('Discrepancy resolved', { discrepancyId, resolvedBy });
-    return resolved as Discrepancy;
+    return {
+      id: resolved.id,
+      type: resolved.type as Discrepancy['type'],
+      severity: resolved.severity as Discrepancy['severity'],
+      description: resolved.description,
+      transactionId: resolved.transaction_id ?? undefined,
+      expectedValue: resolved.expected_value,
+      actualValue: resolved.actual_value,
+      detectedAt: new Date(resolved.detected_at),
+      resolvedAt: resolved.resolved_at ? new Date(resolved.resolved_at) : undefined,
+      resolvedBy: resolved.resolved_by ?? undefined,
+      status: resolved.status as Discrepancy['status'],
+      notes: resolved.notes ?? undefined,
+    };
   }
 
   /**
@@ -457,7 +496,19 @@ export class ReconciliationService {
     const countResult = await queryOne<{ count: string }>('SELECT COUNT(*) FROM reconciliation_jobs');
     const total = parseInt(countResult?.count || '0', 10);
 
-    const rows = await query(
+    const rows = await query<{
+      id: string;
+      job_id: string;
+      type: string;
+      status: string;
+      started_at: Date | null;
+      completed_at: Date | null;
+      records_processed: number;
+      discrepancies_found: number;
+      error_message: string | null;
+      triggered_by: string;
+      scheduled: boolean;
+    }>(
       `SELECT * FROM reconciliation_jobs
        ORDER BY ${sortBy === 'startedAt' ? 'started_at' : sortBy} ${sortOrder.toUpperCase()}
        LIMIT $1 OFFSET $2`,
@@ -467,13 +518,13 @@ export class ReconciliationService {
     const data: ReconciliationJob[] = rows.map(row => ({
       id: row.id,
       jobId: row.job_id,
-      type: row.type,
-      status: row.status,
+      type: row.type as ReconciliationJob['type'],
+      status: row.status as ReconciliationJob['status'],
       startedAt: row.started_at ? new Date(row.started_at) : undefined,
       completedAt: row.completed_at ? new Date(row.completed_at) : undefined,
       recordsProcessed: row.records_processed,
       discrepanciesFound: row.discrepancies_found,
-      errorMessage: row.error_message,
+      errorMessage: row.error_message ?? undefined,
       triggeredBy: row.triggered_by,
       scheduled: row.scheduled,
     }));
@@ -492,7 +543,15 @@ export class ReconciliationService {
   // Private helper methods
 
   private async getInternalBalance(accountId: string, startDate: Date, endDate: Date): Promise<BalanceRecord | null> {
-    const row = await queryOne(
+    const row = await queryOne<{
+      id: string;
+      account_id: string;
+      balance: string;
+      currency: string;
+      timestamp: Date;
+      source: string;
+      checksum: string | null;
+    }>(
       `SELECT * FROM balance_records
        WHERE account_id = $1 AND timestamp >= $2 AND timestamp <= $3 AND source = 'internal'
        ORDER BY timestamp DESC LIMIT 1`,
@@ -507,14 +566,22 @@ export class ReconciliationService {
       balance: parseFloat(row.balance),
       currency: row.currency,
       timestamp: new Date(row.timestamp),
-      source: row.source,
-      checksum: row.checksum,
+      source: row.source as 'internal' | 'external',
+      checksum: row.checksum ?? undefined,
     };
   }
 
   private async getExternalBalance(accountId: string, startDate: Date, endDate: Date): Promise<BalanceRecord | null> {
     // Simulated external balance fetch - in production, this would call payment gateway API
-    const row = await queryOne(
+    const row = await queryOne<{
+      id: string;
+      account_id: string;
+      balance: string;
+      currency: string;
+      timestamp: Date;
+      source: string;
+      checksum: string | null;
+    }>(
       `SELECT * FROM balance_records
        WHERE account_id = $1 AND timestamp >= $2 AND timestamp <= $3 AND source = 'external'
        ORDER BY timestamp DESC LIMIT 1`,
@@ -529,13 +596,24 @@ export class ReconciliationService {
       balance: parseFloat(row.balance),
       currency: row.currency,
       timestamp: new Date(row.timestamp),
-      source: row.source,
-      checksum: row.checksum,
+      source: row.source as 'internal' | 'external',
+      checksum: row.checksum ?? undefined,
     };
   }
 
   private async getTransaction(transactionId: string): Promise<Transaction | null> {
-    const row = await queryOne('SELECT * FROM transactions WHERE transaction_id = $1', [transactionId]);
+    const row = await queryOne<{
+      id: string;
+      transaction_id: string;
+      amount: string;
+      currency: string;
+      type: string;
+      status: string;
+      merchant_id: string;
+      customer_id: string;
+      timestamp: Date;
+      metadata: Record<string, unknown>;
+    }>('SELECT * FROM transactions WHERE transaction_id = $1', [transactionId]);
 
     if (!row) return null;
 
@@ -544,8 +622,8 @@ export class ReconciliationService {
       transactionId: row.transaction_id,
       amount: parseFloat(row.amount),
       currency: row.currency,
-      type: row.type,
-      status: row.status,
+      type: row.type as Transaction['type'],
+      status: row.status as Transaction['status'],
       merchantId: row.merchant_id,
       customerId: row.customer_id,
       timestamp: new Date(row.timestamp),
@@ -555,7 +633,18 @@ export class ReconciliationService {
 
   private async getSourceTransaction(transactionId: string): Promise<Transaction | null> {
     // Simulated source transaction - in production, this would verify against source of truth
-    const row = await queryOne('SELECT * FROM source_transactions WHERE transaction_id = $1', [transactionId]);
+    const row = await queryOne<{
+      id: string;
+      transaction_id: string;
+      amount: string;
+      currency: string;
+      type: string;
+      status: string;
+      merchant_id: string;
+      customer_id: string;
+      timestamp: Date;
+      metadata: Record<string, unknown>;
+    }>('SELECT * FROM source_transactions WHERE transaction_id = $1', [transactionId]);
 
     if (!row) return null;
 
@@ -564,8 +653,8 @@ export class ReconciliationService {
       transactionId: row.transaction_id,
       amount: parseFloat(row.amount),
       currency: row.currency,
-      type: row.type,
-      status: row.status,
+      type: row.type as Transaction['type'],
+      status: row.status as Transaction['status'],
       merchantId: row.merchant_id,
       customerId: row.customer_id,
       timestamp: new Date(row.timestamp),
@@ -582,15 +671,26 @@ export class ReconciliationService {
       params.push(accountId);
     }
 
-    const rows = await query(sql, params);
+    const rows = await query<{
+      id: string;
+      transaction_id: string;
+      amount: string;
+      currency: string;
+      type: string;
+      status: string;
+      merchant_id: string;
+      customer_id: string;
+      timestamp: Date;
+      metadata: Record<string, unknown>;
+    }>(sql, params);
 
     return rows.map(row => ({
       id: row.id,
       transactionId: row.transaction_id,
       amount: parseFloat(row.amount),
       currency: row.currency,
-      type: row.type,
-      status: row.status,
+      type: row.type as Transaction['type'],
+      status: row.status as Transaction['status'],
       merchantId: row.merchant_id,
       customerId: row.customer_id,
       timestamp: new Date(row.timestamp),

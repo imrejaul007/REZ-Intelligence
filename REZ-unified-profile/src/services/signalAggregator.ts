@@ -111,12 +111,12 @@ export async function fetchLocationSignals(userId: string): Promise<LocationSign
 
     if (result.success && result.data) {
       // Handle various response formats
-      const data = result.data as unknown;
+      const data = result.data as unknown as Record<string, unknown>;
       return {
-        segments: data.segments || data.location?.segments || [],
-        patterns: data.patterns || data.location?.patterns || [],
-        favoriteZones: data.favoriteZones || data.location?.favoriteZones || [],
-        confidence: data.confidence || data.location?.confidence || 75
+        segments: (data.segments || (data.location as Record<string, unknown>)?.segments || []) as LocationSignals['segments'],
+        patterns: (data.patterns || (data.location as Record<string, unknown>)?.patterns || []) as LocationSignals['patterns'],
+        favoriteZones: (data.favoriteZones || (data.location as Record<string, unknown>)?.favoriteZones || []) as LocationSignals['favoriteZones'],
+        confidence: (data.confidence || (data.location as Record<string, unknown>)?.confidence || 75) as number
       };
     }
 
@@ -136,13 +136,14 @@ export async function fetchBehavioralSignals(userId: string): Promise<Behavioral
     const result = await fetchWithTimeout<ServiceSignalResponse>(url);
 
     if (result.success && result.data) {
-      const data = result.data as unknown;
+      const data = result.data as unknown as Record<string, unknown>;
+      const behavioral = (data.behavioral || {}) as Record<string, unknown>;
       return {
-        buyerType: data.buyerType || data.behavioral?.buyerType || 'standard',
-        cashbackSensitivity: data.cashbackSensitivity || data.behavioral?.cashbackSensitivity || 50,
-        luxuryAffinity: data.luxuryAffinity || data.behavioral?.luxuryAffinity || 50,
-        impulseScore: data.impulseScore || data.behavioral?.impulseScore || 50,
-        confidence: data.confidence || data.behavioral?.confidence || 75
+        buyerType: (data.buyerType || behavioral.buyerType || 'standard') as BehavioralSignals['buyerType'],
+        cashbackSensitivity: (data.cashbackSensitivity || behavioral.cashbackSensitivity || 50) as number,
+        luxuryAffinity: (data.luxuryAffinity || behavioral.luxuryAffinity || 50) as number,
+        impulseScore: (data.impulseScore || behavioral.impulseScore || 50) as number,
+        confidence: (data.confidence || behavioral.confidence || 75) as number
       };
     }
 
@@ -162,12 +163,13 @@ export async function fetchSocialSignals(userId: string): Promise<SocialSignals>
     const result = await fetchWithTimeout<ServiceSignalResponse>(url);
 
     if (result.success && result.data) {
-      const data = result.data as unknown;
+      const data = result.data as unknown as Record<string, unknown>;
+      const social = (data.social || {}) as Record<string, unknown>;
       return {
-        influenceTier: data.influenceTier || data.social?.influenceTier || 'low',
-        referralCount: data.referralCount || data.social?.referralCount || 0,
-        sharingRate: data.sharingRate || data.social?.sharingRate || 0,
-        confidence: data.confidence || data.social?.confidence || 75
+        influenceTier: (data.influenceTier || social.influenceTier || 'low') as SocialSignals['influenceTier'],
+        referralCount: (data.referralCount || social.referralCount || 0) as number,
+        sharingRate: (data.sharingRate || social.sharingRate || 0) as number,
+        confidence: (data.confidence || social.confidence || 75) as number
       };
     }
 
@@ -187,12 +189,13 @@ export async function fetchCompetitorSignals(userId: string): Promise<Competitor
     const result = await fetchWithTimeout<ServiceSignalResponse>(url);
 
     if (result.success && result.data) {
-      const data = result.data as unknown;
+      const data = result.data as unknown as Record<string, unknown>;
+      const competitor = (data.competitor || {}) as Record<string, unknown>;
       return {
-        loyaltyScore: data.loyaltyScore || data.competitor?.loyaltyScore || 50,
-        switchRisk: data.switchRisk || data.competitor?.switchRisk || 'low',
-        winBackPotential: data.winBackPotential || data.competitor?.winBackPotential || 50,
-        confidence: data.confidence || data.competitor?.confidence || 75
+        loyaltyScore: (data.loyaltyScore || competitor.loyaltyScore || 50) as number,
+        switchRisk: (data.switchRisk || competitor.switchRisk || 'low') as CompetitorSignals['switchRisk'],
+        winBackPotential: (data.winBackPotential || competitor.winBackPotential || 50) as number,
+        confidence: (data.confidence || competitor.confidence || 75) as number
       };
     }
 

@@ -170,8 +170,8 @@ RoutingDecisionSchema.virtual('priorityTierName').get(function () {
 RoutingDecisionSchema.set('toJSON', {
   virtuals: true,
   transform: (_doc, ret) => {
-    delete ret.__v;
-    return ret;
+    const { __v, ...rest } = ret;
+    return rest;
   },
 });
 

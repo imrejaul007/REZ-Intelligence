@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger } from './utils/logger.js';
+import { logger } from '../services/logger.js';
 
 export interface AuthConfig {
   apiKeys?: string[];

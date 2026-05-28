@@ -2,13 +2,18 @@ import { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import logger, { addRequestContext, clearRequestContext } from '../utils/logger.js';
 
+// Extended Request type with serviceName
+interface ExtendedRequest extends Request {
+  serviceName?: string;
+}
+
 /**
  * Request logging middleware
  *
  * Adds request ID and logs request/response details
  */
 export function requestLogger(
-  req: Request,
+  req: ExtendedRequest,
   res: Response,
   next: NextFunction
 ): void {
@@ -122,7 +127,7 @@ export function performanceMonitor(
  */
 export function corsMiddleware(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): void {
   // CORS headers are typically set by a library, but this provides custom handling

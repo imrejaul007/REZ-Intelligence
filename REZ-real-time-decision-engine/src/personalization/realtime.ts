@@ -261,7 +261,7 @@ export class RealTimePersonalization {
           },
           {
             elementType: 'cta',
-            modification: { primary: { text: 'Shop Indoor Items', style: 'primary' } },
+            modification: { primary: { text: 'Shop Indoor Items', url: '/indoor', style: 'primary', analyticsLabel: 'weather_cta' } },
             reason: 'Weather-appropriate CTA',
           },
         ],
@@ -294,7 +294,7 @@ export class RealTimePersonalization {
           },
           {
             elementType: 'cta',
-            modification: { primary: { style: 'primary' } },
+            modification: { primary: { text: 'View VIP Offers', url: '/vip-offers', style: 'primary', analyticsLabel: 'vip_cta' } },
             reason: 'Premium styling',
           },
         ],
@@ -314,7 +314,7 @@ export class RealTimePersonalization {
           },
           {
             elementType: 'cta',
-            modification: { primary: { text: 'Complete Your Purchase', analyticsLabel: 'cart_recovery' } },
+            modification: { primary: { text: 'Complete Your Purchase', url: '/checkout', style: 'primary', analyticsLabel: 'cart_recovery' } },
             reason: 'Recovery CTA',
           },
         ],
@@ -332,7 +332,7 @@ export class RealTimePersonalization {
           },
           {
             elementType: 'cta',
-            modification: { primary: { text: 'Finish Order', style: 'primary' }, secondary: { text: 'Need Help?', style: 'ghost' } },
+            modification: { primary: { text: 'Finish Order', url: '/checkout', style: 'primary', analyticsLabel: 'checkout_cta' }, secondary: { text: 'Need Help?', url: '/help', style: 'ghost', analyticsLabel: 'help_cta' } },
             reason: 'Checkout CTAs',
           },
         ],
@@ -343,11 +343,11 @@ export class RealTimePersonalization {
         id: 'region_specific',
         name: 'Regional Content',
         priority: 18,
-        condition: (req, ctx) => req.context.location?.country !== undefined,
+        condition: (req) => req.context.location?.country !== undefined,
         modifications: [
           {
             elementType: 'image',
-            modification: { content: { region: ctx.realTime.location.country } },
+            modification: { content: { region: 'dynamic' } }, // Region set dynamically at runtime
             reason: 'Regional imagery',
           },
         ],
@@ -653,13 +653,14 @@ export class RealTimePersonalization {
   }
 
   private applyModification(content: PersonalizedContent, mod: ContentModification): void {
+    const modAny = mod.modification as Record<string, unknown>;
     switch (mod.elementType) {
       case 'headline':
-        if (mod.modification.headline) {
-          content.copy.headline = mod.modification.headline;
+        if (modAny.headline) {
+          content.copy.headline = modAny.headline as string;
         }
-        if (mod.modification.subheadline) {
-          content.copy.subheadline = mod.modification.subheadline;
+        if (modAny.subheadline) {
+          content.copy.subheadline = modAny.subheadline as string;
         }
         break;
 
@@ -675,8 +676,8 @@ export class RealTimePersonalization {
 
       case 'image':
         const imageElement = content.elements?.find(e => e.type === 'image');
-        if (imageElement) {
-          Object.assign(imageElement.content, mod.modification.content);
+        if (imageElement && modAny.content) {
+          Object.assign(imageElement.content, modAny.content);
         }
         break;
     }

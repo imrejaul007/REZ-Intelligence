@@ -5,7 +5,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { z, ZodError, ZodSchema } from 'zod';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger';
 
 /**
  * Validate request body, query, or params against a Zod schema
@@ -39,7 +39,7 @@ export function validateRequest(schema: ZodSchema) {
  * Async request handler wrapper
  */
 export function asyncHandler(
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<void>
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>
 ) {
   return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);

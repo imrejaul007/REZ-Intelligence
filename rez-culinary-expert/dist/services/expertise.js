@@ -6,8 +6,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CulinaryExpertiseService = void 0;
 exports.getCulinaryExpertiseService = getCulinaryExpertiseService;
-const logger_js_1 = require("./utils/logger.js");
-const knowledge_js_1 = require("../config/knowledge.js");
+const logger_1 = require("../utils/logger");
+const knowledge_1 = require("../config/knowledge");
 class CulinaryExpertiseService {
     db = null;
     redis = null;
@@ -18,18 +18,18 @@ class CulinaryExpertiseService {
         this.redis = redis;
         await this.loadCuisineCache();
         this.initialized = true;
-        logger_js_1.logger.info('CulinaryExpertiseService initialized');
+        logger_1.logger.info('CulinaryExpertiseService initialized');
     }
     async loadCuisineCache() {
-        for (const [key, cuisine] of Object.entries(knowledge_js_1.CUISINES)) {
+        for (const [key, cuisine] of Object.entries(knowledge_1.CUISINES)) {
             this.cuisineCache.set(cuisine.name.toLowerCase(), {
                 id: key,
                 name: cuisine.name,
                 description: `Traditional ${cuisine.name} cuisine`,
-                keyIngredients: cuisine.keyIngredients,
-                signatureDishes: cuisine.signatureDishes,
-                cookingStyles: cuisine.cookingStyles,
-                commonAllergens: cuisine.commonAllergens,
+                keyIngredients: [...cuisine.keyIngredients],
+                signatureDishes: [...cuisine.signatureDishes],
+                cookingStyles: [...cuisine.cookingStyles],
+                commonAllergens: [...(cuisine.commonAllergens || [])],
             });
         }
     }
@@ -66,34 +66,34 @@ class CulinaryExpertiseService {
      * Get dietary tag information
      */
     getDietaryTagInfo(tagId) {
-        const tag = knowledge_js_1.DIETARY_TAGS[tagId];
+        const tag = knowledge_1.DIETARY_TAGS[tagId];
         return tag || null;
     }
     /**
      * Get all dietary tags
      */
     getAllDietaryTags() {
-        return Object.values(knowledge_js_1.DIETARY_TAGS);
+        return Object.values(knowledge_1.DIETARY_TAGS);
     }
     /**
      * Get allergen information
      */
     getAllergenInfo(allergenId) {
-        const allergen = knowledge_js_1.MAJOR_ALLERGENS[allergenId];
+        const allergen = knowledge_1.MAJOR_ALLERGENS[allergenId];
         return allergen || null;
     }
     /**
      * Check text for allergen mentions
      */
     detectAllergens(text) {
-        return (0, knowledge_js_1.containsAllergen)(text);
+        return (0, knowledge_1.containsAllergen)(text);
     }
     /**
      * Get ingredient information
      */
     getIngredientInfo(ingredientName) {
         const normalized = ingredientName.toLowerCase();
-        const allIngredients = Object.entries(knowledge_js_1.INGREDIENT_CATEGORIES).flatMap(([category, subcategories]) => Object.entries(subcategories).map(([subcategory, items]) => items.map(item => ({ item, category, subcategory }))).flat());
+        const allIngredients = Object.entries(knowledge_1.INGREDIENT_CATEGORIES).flatMap(([category, subcategories]) => Object.entries(subcategories).map(([subcategory, items]) => items.map(item => ({ item, category, subcategory }))).flat());
         const found = allIngredients.find(i => i.item.toLowerCase() === normalized);
         if (!found)
             return null;
@@ -126,7 +126,7 @@ class CulinaryExpertiseService {
      * Get food pairings for a dish type
      */
     getPairings(dishType, pairingType) {
-        const category = knowledge_js_1.PAIRING_GUIDE[pairingType];
+        const category = knowledge_1.PAIRING_GUIDE[pairingType];
         const normalizedDish = dishType.toLowerCase();
         for (const [types, dishes] of Object.entries(category)) {
             if (Array.isArray(dishes)) {
@@ -142,7 +142,7 @@ class CulinaryExpertiseService {
      * Get flavor profile information
      */
     getFlavorProfile(profileId) {
-        return knowledge_js_1.FLAVOR_PROFILES[profileId] || null;
+        return knowledge_1.FLAVOR_PROFILES[profileId] || null;
     }
     /**
      * Generate cuisine comparison
@@ -175,10 +175,10 @@ class CulinaryExpertiseService {
      */
     getExpertiseSummary() {
         return {
-            cuisines: Object.values(knowledge_js_1.CUISINES).map(c => c.name),
-            dietarySpecialties: Object.values(knowledge_js_1.DIETARY_TAGS).map(t => t.name),
-            allergenExpertise: Object.values(knowledge_js_1.MAJOR_ALLERGENS).map(a => a.name),
-            flavorProfiles: Object.values(knowledge_js_1.FLAVOR_PROFILES).map(f => f.name),
+            cuisines: Object.values(knowledge_1.CUISINES).map(c => c.name),
+            dietarySpecialties: Object.values(knowledge_1.DIETARY_TAGS).map(t => t.name),
+            allergenExpertise: Object.values(knowledge_1.MAJOR_ALLERGENS).map(a => a.name),
+            flavorProfiles: Object.values(knowledge_1.FLAVOR_PROFILES).map(f => f.name),
         };
     }
     /**
@@ -209,7 +209,7 @@ class CulinaryExpertiseService {
         const compatibleTags = [];
         // Check each dietary restriction
         for (const restriction of userDietaryRestrictions) {
-            const dietaryTag = (0, knowledge_js_1.matchDietaryTag)(restriction);
+            const dietaryTag = (0, knowledge_1.matchDietaryTag)(restriction);
             if (!dietaryTag)
                 continue;
             // Check if any excluded items are in the description

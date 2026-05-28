@@ -27,19 +27,21 @@ export interface WhatsAppMessage {
     language: {
       code: string;
     };
-    components?: Array<{
-      type: string;
-      sub_type?: string;
-      index?: number;
-      parameters?: Array<{
-        type: string;
-        text?: string;
-        image?: { id: string };
-        document?: { id: string };
-      }>;
-    }>;
+    components?: WhatsAppTemplateComponent[];
   };
   recipient_type?: 'individual' | 'group';
+}
+
+export interface WhatsAppTemplateComponent {
+  type: string;
+  sub_type?: string;
+  index?: number;
+  parameters?: Array<{
+    type: string;
+    text?: string;
+    image?: { id: string };
+    document?: { id: string };
+  }>;
 }
 
 export interface OrchestratorRequest {
@@ -134,15 +136,15 @@ export class MessageBridge {
     let sessionId = await this.redis.get(sessionKey);
 
     if (!sessionId) {
-      sessionId = uuidv4();
+      sessionId = uuidv4() as string;
       await this.redis.setex(sessionKey, this.config.sessionTtlSeconds, sessionId);
       logger.info('Created new session', { phoneNumber, sessionId });
-    } else {
-      // Refresh TTL
-      await this.redis.expire(sessionKey, this.config.sessionTtlSeconds);
     }
 
-    return sessionId;
+    // Refresh TTL
+    await this.redis.expire(sessionKey, this.config.sessionTtlSeconds);
+
+    return sessionId as string;
   }
 
   /**
@@ -151,13 +153,15 @@ export class MessageBridge {
   async getUserIdFromPhone(phoneNumber: string): Promise<string> {
     const userKey = `wa:user:${phoneNumber}`;
 
-    let userId = await this.redis.get(userKey);
+    const existingUserId = await this.redis.get(userKey);
 
-    if (!userId) {
-      userId = `wa_${phoneNumber.replace(/[^0-9]/g, '')}`;
-      await this.redis.set(userKey, userId);
-      logger.info('Created new user mapping', { phoneNumber, userId });
+    if (existingUserId) {
+      return existingUserId;
     }
+
+    const userId = `wa_${phoneNumber.replace(/[^0-9]/g, '')}`;
+    await this.redis.set(userKey, userId);
+    logger.info('Created new user mapping', { phoneNumber, userId });
 
     return userId;
   }
@@ -313,19 +317,24 @@ export class MessageBridge {
     to: string,
     templateName: string,
     languageCode: string = 'en',
-    components?: WhatsAppMessage['template']['components']
+    components?: WhatsAppTemplateComponent[]
   ): Promise<string> {
+    const template: WhatsAppMessage['template'] = {
+      name: templateName,
+      language: {
+        code: languageCode,
+      },
+    };
+
+    if (components) {
+      template.components = components;
+    }
+
     const payload: WhatsAppMessage = {
       messaging_product: 'whatsapp',
       to,
       type: 'template',
-      template: {
-        name: templateName,
-        language: {
-          code: languageCode,
-        },
-        components,
-      },
+      template,
     };
 
     try {

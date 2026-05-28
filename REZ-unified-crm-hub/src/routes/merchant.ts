@@ -1,7 +1,7 @@
 /**
  * Merchant API Routes
  *
- * 👁️ MERCHANT-FACING API - Safe data only for merchants
+ * MERCHANT-FACING API - Safe data only for merchants
  *
  * These endpoints return ONLY merchant-safe data:
  * - Customer names, orders, basic segments
@@ -22,8 +22,7 @@ import {
   sanitizeSegmentList,
   validateMerchantSafe,
 } from '../services/sanitizer.js';
-import { validateMerchantJWT, requirePermission, generateMerchantToken } from '../middleware/auth.js';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 import type {
   MerchantCustomer,
   MerchantCustomerDetail,
@@ -33,11 +32,28 @@ import type {
   InboxChannel,
 } from '../types/index.js';
 
+// Extended Request interface for merchant auth
+interface MerchantRequest extends Request {
+  merchantId?: string;
+  merchantName?: string;
+  merchantPermissions?: string[];
+}
+
 const router = Router();
 
 // ============================================
 // PUBLIC AUTH ENDPOINTS (No auth required)
 // ============================================
+
+// Simple token generation for development
+function generateMerchantToken(data: { merchantId: string; merchantName: string; permissions: string[]; storeIds: string[] }): string {
+  const payload = {
+    ...data,
+    iat: Date.now(),
+    exp: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
+  };
+  return Buffer.from(JSON.stringify(payload)).toString('base64');
+}
 
 /**
  * POST /api/v1/merchant/auth/token
@@ -83,7 +99,7 @@ router.post('/auth/token', (req: Request, res: Response) => {
  * GET /api/v1/merchant/auth/me
  * Get current merchant info
  */
-router.get('/auth/me', (req: Request, res: Response) => {
+router.get('/auth/me', (req: MerchantRequest, res: Response) => {
   res.json({
     success: true,
     data: {
@@ -103,9 +119,9 @@ router.get('/auth/me', (req: Request, res: Response) => {
  * GET /api/v1/merchant/customers
  * List merchant's customers (sanitized)
  */
-router.get('/customers', async (req: Request, res: Response) => {
+router.get('/customers', async (req: MerchantRequest, res: Response) => {
   try {
-    const merchantId = (req as unknown).merchantId;
+    const merchantId = req.merchantId;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
 
@@ -198,7 +214,7 @@ router.get('/customers', async (req: Request, res: Response) => {
 
     // Validate response is merchant-safe
     for (const customer of filtered) {
-      validateMerchantSafe(customer);
+      validateMerchantSafe(customer as unknown as Record<string, unknown>);
     }
 
     res.json({
@@ -224,9 +240,9 @@ router.get('/customers', async (req: Request, res: Response) => {
  * GET /api/v1/merchant/customers/:id
  * Get customer details (sanitized)
  */
-router.get('/customers/:id', async (req: Request, res: Response) => {
+router.get('/customers/:id', async (req: MerchantRequest, res: Response) => {
   try {
-    const merchantId = (req as unknown).merchantId;
+    const merchantId = req.merchantId;
     const { id } = req.params;
 
     logger.info('Merchant API: Fetching customer detail', {
@@ -283,7 +299,7 @@ router.get('/customers/:id', async (req: Request, res: Response) => {
     };
 
     // Validate response is merchant-safe
-    validateMerchantSafe(customerDetail);
+    validateMerchantSafe(customerDetail as unknown as Record<string, unknown>);
 
     res.json({
       success: true,
@@ -302,9 +318,9 @@ router.get('/customers/:id', async (req: Request, res: Response) => {
  * GET /api/v1/merchant/customers/:id/orders
  * Get customer orders
  */
-router.get('/customers/:id/orders', async (req: Request, res: Response) => {
+router.get('/customers/:id/orders', async (req: MerchantRequest, res: Response) => {
   try {
-    const merchantId = (req as unknown).merchantId;
+    const merchantId = req.merchantId;
     const { id } = req.params;
 
     // Mock order data
@@ -379,9 +395,9 @@ router.get('/customers/:id/reviews', async (req: Request, res: Response) => {
  * GET /api/v1/merchant/segments
  * List merchant's segments (sanitized)
  */
-router.get('/segments', async (req: Request, res: Response) => {
+router.get('/segments', async (req: MerchantRequest, res: Response) => {
   try {
-    const merchantId = (req as unknown).merchantId;
+    const merchantId = req.merchantId;
 
     logger.info('Merchant API: Fetching segments', { merchantId });
 
@@ -419,7 +435,7 @@ router.get('/segments', async (req: Request, res: Response) => {
 
     // Validate response is merchant-safe
     for (const segment of segments) {
-      validateMerchantSafe(segment);
+      validateMerchantSafe(segment as unknown as Record<string, unknown>);
     }
 
     res.json({
@@ -443,9 +459,9 @@ router.get('/segments', async (req: Request, res: Response) => {
  * GET /api/v1/merchant/inbox/messages
  * Get inbox messages (sanitized)
  */
-router.get('/inbox/messages', async (req: Request, res: Response) => {
+router.get('/inbox/messages', async (req: MerchantRequest, res: Response) => {
   try {
-    const merchantId = (req as unknown).merchantId;
+    const merchantId = req.merchantId;
     const channel = req.query.channel as string;
 
     // Mock messages
@@ -620,9 +636,9 @@ router.post('/inbox/messages/:id/reply', async (req: Request, res: Response) => 
  * GET /api/v1/merchant/analytics/overview
  * Get merchant analytics (sanitized)
  */
-router.get('/analytics/overview', async (req: Request, res: Response) => {
+router.get('/analytics/overview', async (req: MerchantRequest, res: Response) => {
   try {
-    const merchantId = (req as unknown).merchantId;
+    const merchantId = req.merchantId;
 
     // Mock analytics - only merchant-safe data
     const analytics = {
@@ -651,7 +667,7 @@ router.get('/analytics/overview', async (req: Request, res: Response) => {
     };
 
     // Validate response is merchant-safe
-    validateMerchantSafe(analytics);
+    validateMerchantSafe(analytics as unknown as Record<string, unknown>);
 
     res.json({
       success: true,

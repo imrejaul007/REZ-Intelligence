@@ -139,16 +139,17 @@ export async function enrichProfile(
 
     case 'cdp':
       if (payload.data.demographics) {
+        const demo = payload.data.demographics as Record<string, unknown>;
         Object.assign(updateData, {
-          'demographics.name': payload.data.demographics.name,
-          'demographics.age': payload.data.demographics.age,
-          'demographics.gender': payload.data.demographics.gender,
-          'demographics.city': payload.data.demographics.city,
-          'demographics.pincode': payload.data.demographics.pincode
+          'demographics.name': demo.name,
+          'demographics.age': demo.age,
+          'demographics.gender': demo.gender,
+          'demographics.city': demo.city,
+          'demographics.pincode': demo.pincode
         });
       }
       if (payload.data.preferences) {
-        updateData.preferences = payload.data.preferences;
+        updateData.preferences = payload.data.preferences as Record<string, unknown>;
       }
       break;
 
@@ -243,13 +244,13 @@ export async function mergeProfiles(request: ProfileMergeRequest): Promise<IUnif
     const sorted = profiles.sort((a, b) =>
       (b.lastUpdated?.getTime() || 0) - (a.lastUpdated?.getTime() || 0)
     );
-    mergedData.demographics = sorted[0].demographics || {};
+    mergedData.demographics = sorted[0]?.demographics || {};
   } else {
-    mergedData.demographics = (primaryProfile as unknown).demographics || {};
+    mergedData.demographics = (primaryProfile as unknown as IUnifiedProfile).demographics || {};
   }
 
   // Merge signals (max values)
-  const pAny = primaryProfile as unknown;
+  const pProfile = primaryProfile as unknown as IUnifiedProfile;
   mergedData.signals = {
     location: {
       segments: [...new Set(profiles.flatMap((p) => p.signals?.location?.segments || []))],
@@ -258,21 +259,21 @@ export async function mergeProfiles(request: ProfileMergeRequest): Promise<IUnif
       confidence: Math.max(...profiles.map((p) => p.signals?.location?.confidence || 0))
     },
     behavioral: {
-      buyerType: pAny.signals?.behavioral?.buyerType || 'standard',
+      buyerType: pProfile.signals?.behavioral?.buyerType || 'standard',
       cashbackSensitivity: Math.max(...profiles.map((p) => p.signals?.behavioral?.cashbackSensitivity || 0)),
       luxuryAffinity: Math.max(...profiles.map((p) => p.signals?.behavioral?.luxuryAffinity || 0)),
       impulseScore: Math.max(...profiles.map((p) => p.signals?.behavioral?.impulseScore || 0)),
       confidence: Math.max(...profiles.map((p) => p.signals?.behavioral?.confidence || 0))
     },
     social: {
-      influenceTier: pAny.signals?.social?.influenceTier || 'low',
+      influenceTier: pProfile.signals?.social?.influenceTier || 'low',
       referralCount: Math.max(...profiles.map((p) => p.signals?.social?.referralCount || 0)),
       sharingRate: Math.max(...profiles.map((p) => p.signals?.social?.sharingRate || 0)),
       confidence: Math.max(...profiles.map((p) => p.signals?.social?.confidence || 0))
     },
     competitor: {
       loyaltyScore: Math.max(...profiles.map((p) => p.signals?.competitor?.loyaltyScore || 0)),
-      switchRisk: pAny.signals?.competitor?.switchRisk || 'low',
+      switchRisk: pProfile.signals?.competitor?.switchRisk || 'low',
       winBackPotential: Math.max(...profiles.map((p) => p.signals?.competitor?.winBackPotential || 0)),
       confidence: Math.max(...profiles.map((p) => p.signals?.competitor?.confidence || 0))
     },
@@ -298,8 +299,9 @@ export async function mergeProfiles(request: ProfileMergeRequest): Promise<IUnif
   };
 
   // Recalculate avg order value
-  if (mergedData.lifetime.totalOrders > 0) {
-    mergedData.lifetime.avgOrderValue = mergedData.lifetime.totalSpend / mergedData.lifetime.totalOrders;
+  const lifetimeData = mergedData.lifetime as { totalOrders: number; totalSpend: number; avgOrderValue: number };
+  if (lifetimeData.totalOrders > 0) {
+    lifetimeData.avgOrderValue = lifetimeData.totalSpend / lifetimeData.totalOrders;
   }
 
   // Merge activity (sum)
@@ -328,9 +330,9 @@ export async function mergeProfiles(request: ProfileMergeRequest): Promise<IUnif
   mergedData.preferences = {
     categories: [...new Set(profiles.flatMap((p) => p.preferences?.categories || []))],
     brands: [...new Set(profiles.flatMap((p) => p.preferences?.brands || []))],
-    priceRange: pAny.preferences?.priceRange || { min: 0, max: 10000 },
-    notifications: pAny.preferences?.notifications || { email: true, sms: true, push: true },
-    communicationFrequency: pAny.preferences?.communicationFrequency || 'weekly'
+    priceRange: pProfile.preferences?.priceRange || { min: 0, max: 10000 },
+    notifications: pProfile.preferences?.notifications || { email: true, sms: true, push: true },
+    communicationFrequency: pProfile.preferences?.communicationFrequency || 'weekly'
   };
 
   // Update primary profile with merged data
@@ -376,12 +378,13 @@ export async function searchProfiles(query: ProfileSearchQuery): Promise<IUnifie
   }
 
   if (query.minLifetimeValue !== undefined) {
-    filter['lifetime.totalSpend'] = { $gte: query.minLifetimeValue };
+    (filter['lifetime.totalSpend'] as Record<string, number>) = { $gte: query.minLifetimeValue };
   }
 
   if (query.maxLifetimeValue !== undefined) {
+    const existing = (filter['lifetime.totalSpend'] as Record<string, number>) || {};
     filter['lifetime.totalSpend'] = {
-      ...(filter['lifetime.totalSpend'] || {}),
+      ...existing,
       $lte: query.maxLifetimeValue
     };
   }

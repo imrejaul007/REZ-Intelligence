@@ -117,9 +117,10 @@ class MerchantResolver {
             return { success: true, merchant };
         }
         catch (error) {
+            const err = error;
             return {
                 success: false,
-                error: error.message || 'Failed to create merchant',
+                error: err.message || 'Failed to create merchant',
             };
         }
     }
@@ -148,9 +149,10 @@ class MerchantResolver {
             return { success: true, merchant: validated };
         }
         catch (error) {
+            const err = error;
             return {
                 success: false,
-                error: error.message || 'Failed to update merchant',
+                error: err.message || 'Failed to update merchant',
             };
         }
     }
@@ -168,7 +170,8 @@ class MerchantResolver {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            const err = error;
+            return { success: false, error: err.message };
         }
     }
     /**
@@ -219,7 +222,8 @@ class MerchantResolver {
             return { success: true, merchant: updated };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            const err = error;
+            return { success: false, error: err.message };
         }
     }
     /**

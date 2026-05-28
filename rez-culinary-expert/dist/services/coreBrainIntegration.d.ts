@@ -262,8 +262,8 @@ export declare class CoreBrainClient {
 }
 export declare class CoreBrainError extends Error {
     statusCode: number;
-    error?: unknown | undefined;
-    constructor(message: string, statusCode: number, error?: unknown | undefined);
+    error?: unknown;
+    constructor(message: string, statusCode: number, error?: unknown);
 }
 export declare function getCoreBrainClient(): CoreBrainClient;
 export declare function initializeCoreBrainClient(config?: Partial<CoreBrainConfig>): CoreBrainClient;

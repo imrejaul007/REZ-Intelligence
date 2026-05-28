@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { ReasoningRequest, ReasoningResult, ReasoningMethod, ReasoningStep, DeductionResult, ConstraintSatisfactionResult } from '../types/index.js';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 // Crypto-based random number generator for secure randomness
 function secureRandom(): number {

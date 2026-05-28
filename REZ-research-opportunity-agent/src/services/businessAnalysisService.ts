@@ -11,7 +11,7 @@ import {
 } from '../types/index.js';
 import { cacheGet, cacheSet } from '../utils/redis.js';
 import { CACHE_TTL } from '../constants/thresholds.js';
-import logger from './utils/logger.js';
+import logger from '../utils/logger.js';
 
 const log = logger.child({ context: 'BusinessAnalysisService' });
 

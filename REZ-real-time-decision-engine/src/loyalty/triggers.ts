@@ -233,11 +233,11 @@ export class LoyaltyTriggerEngine {
         message: { headline: 'We Miss You!', body: 'Welcome back with bonus points!' },
         cooldown: 0,
       },
-      // Tier upgrade
+      // Tier upgrade - triggered when tier changes (checked via points)
       {
         id: 'tier_upgrade',
         triggerType: 'milestone',
-        condition: (req) => req.context.milestoneType === 'tier',
+        condition: () => true, // Tier upgrade is determined by points, not milestoneType
         pointsAwarded: 1000,
         multiplier: 2,
         actions: [

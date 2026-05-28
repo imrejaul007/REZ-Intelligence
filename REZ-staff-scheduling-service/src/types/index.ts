@@ -1,4 +1,4 @@
-import mongoose, { Document } from 'mongoose';
+import { Document } from 'mongoose';
 import { z } from 'zod';
 
 // ============================================================================
@@ -153,6 +153,61 @@ export const HoursReportQuerySchema = z.object({
 });
 
 export type HoursReportQuery = z.infer<typeof HoursReportQuerySchema>;
+
+// ============================================================================
+// Parameter Schemas
+// ============================================================================
+
+export const StaffIdParamSchema = z.object({
+  staffId: z.string().min(1),
+});
+
+export type StaffIdParam = z.infer<typeof StaffIdParamSchema>;
+
+export const ScheduleIdParamSchema = z.object({
+  scheduleId: z.string().min(1),
+});
+
+export type ScheduleIdParam = z.infer<typeof ScheduleIdParamSchema>;
+
+export const ShiftIdParamSchema = z.object({
+  shiftId: z.string().min(1),
+});
+
+export type ShiftIdParam = z.infer<typeof ShiftIdParamSchema>;
+
+export const TimeOffIdParamSchema = z.object({
+  timeOffId: z.string().min(1),
+});
+
+export type TimeOffIdParam = z.infer<typeof TimeOffIdParamSchema>;
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+/**
+ * Calculate total hours from start time, end time, and break minutes
+ */
+export function calculateTotalHours(
+  startTime: string,
+  endTime: string,
+  breakMinutes: number = 0
+): number {
+  const [startHour, startMin] = startTime.split(':').map(Number);
+  const [endHour, endMin] = endTime.split(':').map(Number);
+
+  const startMinutes = startHour * 60 + startMin;
+  const endMinutes = endHour * 60 + endMin;
+
+  let totalMinutes = endMinutes - startMinutes;
+  if (totalMinutes < 0) {
+    // Handle overnight shifts
+    totalMinutes += 24 * 60;
+  }
+
+  return Math.max(0, (totalMinutes - breakMinutes) / 60);
+}
 
 // ============================================================================
 // API Response Types

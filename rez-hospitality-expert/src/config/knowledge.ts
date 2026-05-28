@@ -3,7 +3,7 @@
  * Comprehensive hotel terminology, room types, amenities, and policies
  */
 
-import { RoomType, AmenityCategory } from '../types/index.js';
+import { RoomType, AmenityCategory } from '../types/index';
 
 // ============================================
 // ROOM TYPES & FEATURES
@@ -408,6 +408,7 @@ export const AMENITIES: AmenityInfo[] = [
     description: 'Luxury vehicle transfers to/from airport',
     location: 'Arranged through concierge',
     contact: 'Dial 0 for Concierge',
+    hours: '24 hours',
     bookingRequired: true,
     price: { amount: 85, currency: 'USD', unit: 'per trip' },
     notes: ['Sedan and SUV options', 'VIP limousine service available', 'Group transfers available'],

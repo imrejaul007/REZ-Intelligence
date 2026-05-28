@@ -1,4 +1,4 @@
-import { PriorityTier, RuleType } from '../models/PriorityRule';
+import { PriorityTier, RuleType, PriorityTierValue } from '../models/PriorityRule';
 import { PriorityRuleInput } from '../models/PriorityRule';
 
 export interface DomainExpertise {
@@ -128,7 +128,7 @@ export function createDomainRules(): PriorityRuleInput[] {
       name: `${domain.domain} - General Inquiry`,
       description: `Route ${domain.domain} inquiries to domain experts`,
       ruleType: RuleType.DOMAIN,
-      priorityTier: domain.targetTier as PriorityTier,
+      priorityTier: domain.targetTier as PriorityTierValue,
       conditions: [
         {
           field: 'intent',

@@ -293,7 +293,7 @@ export class ProgressService {
       totalCoursesStarted: allProgress.filter(p => p.startedAt).length,
       totalCoursesCompleted: allProgress.filter(p => p.status === 'completed').length,
       totalTimeSpentMinutes: totalTimeSpent,
-      currentStreak: this.calculateStreak(allProgress),
+      currentStreak: this.calculateStreak(allProgress as unknown as ProgressData[]),
       longestStreak: 0,
       achievementsUnlocked: achievements.unlocked.length,
       totalAchievements: this.achievements.length,

@@ -1,4 +1,4 @@
-import { PriorityTier } from '../models/PriorityRule';
+import { PriorityTier, PriorityTierValue } from '../models/PriorityRule';
 import { detectEmergency, EmergencyCondition } from '../rules/emergencyRules';
 import { detectPaymentIssue, PaymentCondition } from '../rules/paymentRules';
 import { detectDomain, DomainExpertise } from '../rules/domainRules';
@@ -8,7 +8,7 @@ export interface ClassifiedIntent {
   intent: string;
   primaryType: IntentType;
   confidence: number;
-  priorityTier: PriorityTier;
+  priorityTier: PriorityTierValue;
   priorityScore: number;
   modifiers: IntentModifiers;
   detectedPatterns: DetectedPattern[];
@@ -132,14 +132,14 @@ export class IntentClassifier {
 
     let primaryType: IntentType = 'general';
     let confidence = 0.5;
-    let priorityTier = PriorityTier.ANALYTICS;
+    let priorityTier: PriorityTierValue = PriorityTier.ANALYTICS;
     let priorityScore = 10;
 
     const emergencyMatch = detectEmergency(intent);
     if (emergencyMatch) {
       primaryType = 'emergency';
       confidence = 0.95;
-      priorityTier = emergencyMatch.targetTier as PriorityTier;
+      priorityTier = emergencyMatch.targetTier as PriorityTierValue;
       priorityScore = emergencyMatch.priorityBoost;
       modifiers.urgency = 100;
       modifiers.businessImpact = 100;
@@ -155,7 +155,7 @@ export class IntentClassifier {
       if (paymentMatch) {
         primaryType = paymentMatch.type === 'fraud_suspect' ? 'fraud' : 'payment';
         confidence = 0.85;
-        priorityTier = paymentMatch.targetTier as PriorityTier;
+        priorityTier = paymentMatch.targetTier as PriorityTierValue;
         priorityScore = paymentMatch.priorityBoost;
         modifiers.urgency = 70;
         modifiers.businessImpact = 80;
@@ -170,12 +170,13 @@ export class IntentClassifier {
       }
     }
 
-    if (primaryType === 'general' || primaryType === 'support') {
+    // Domain detection for general/support intents
+    if (primaryType !== 'emergency' && primaryType !== 'payment' && primaryType !== 'fraud') {
       const domainMatch = detectDomain(intent);
       if (domainMatch) {
         primaryType = 'domain';
         confidence = 0.8;
-        priorityTier = domainMatch.targetTier as PriorityTier;
+        priorityTier = domainMatch.targetTier as PriorityTierValue;
         priorityScore = domainMatch.priorityBoost;
         modifiers.domainMatch = domainMatch.domain;
         modifiers.complexity = 40;
@@ -280,8 +281,8 @@ export class IntentClassifier {
     return result;
   }
 
-  private getDefaultTierForType(type: IntentType): PriorityTier {
-    const tierMap: Record<IntentType, PriorityTier> = {
+  private getDefaultTierForType(type: IntentType): PriorityTierValue {
+    const tierMap: Record<IntentType, PriorityTierValue> = {
       emergency: PriorityTier.EMERGENCY,
       payment: PriorityTier.PAYMENT_FRAUD,
       fraud: PriorityTier.PAYMENT_FRAUD,

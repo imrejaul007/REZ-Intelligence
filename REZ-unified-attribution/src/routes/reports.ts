@@ -43,12 +43,12 @@ reportRouter.get('/funnel', async (req: Request, res: Response) => {
   try {
     const { merchantId, startDate, endDate } = req.query;
 
-    const match: unknown = {};
+    const match: Record<string, unknown> = {};
     if (merchantId) match.merchantId = merchantId;
     if (startDate || endDate) {
       match.timestamp = {};
-      if (startDate) match.timestamp.$gte = new Date(startDate as string);
-      if (endDate) match.timestamp.$lte = new Date(endDate as string);
+      if (startDate) (match.timestamp as Record<string, unknown>).$gte = new Date(startDate as string);
+      if (endDate) (match.timestamp as Record<string, unknown>).$lte = new Date(endDate as string);
     }
 
     const funnel = await Conversion.aggregate([
@@ -84,12 +84,12 @@ reportRouter.get('/dashboard', async (req: Request, res: Response) => {
   try {
     const { merchantId, startDate, endDate } = req.query;
 
-    const match: unknown = { status: ConversionStatus.COMPLETED };
+    const match: Record<string, unknown> = { status: ConversionStatus.COMPLETED };
     if (merchantId) match.merchantId = merchantId;
     if (startDate || endDate) {
       match.timestamp = {};
-      if (startDate) match.timestamp.$gte = new Date(startDate as string);
-      if (endDate) match.timestamp.$lte = new Date(endDate as string);
+      if (startDate) (match.timestamp as Record<string, unknown>).$gte = new Date(startDate as string);
+      if (endDate) (match.timestamp as Record<string, unknown>).$lte = new Date(endDate as string);
     }
 
     const [summary, byChannel] = await Promise.all([

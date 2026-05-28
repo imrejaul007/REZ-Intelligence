@@ -4,7 +4,7 @@
  */
 import { Db } from 'mongodb';
 import Redis from 'ioredis';
-import { type DietaryTag, type Allergen } from '../config/knowledge.js';
+import { type DietaryTag, type Allergen } from '../config/knowledge';
 export interface UserDietaryProfile {
     id: string;
     userId: string;
@@ -137,5 +137,4 @@ export declare class DietaryService {
     private createEmptyProfile;
 }
 export declare function getDietaryService(): DietaryService;
-export type { DietaryService };
 //# sourceMappingURL=dietaryService.d.ts.map

@@ -132,9 +132,10 @@ class FinanceModule {
             return { success: true, payout_id: response.data.payout_id };
         }
         catch (error) {
+            const err = error;
             return {
                 success: false,
-                error: error.response?.data?.message || 'Payout request failed',
+                error: err.response?.data?.message || 'Payout request failed',
             };
         }
     }

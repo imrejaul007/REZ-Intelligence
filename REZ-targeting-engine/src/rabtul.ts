@@ -3,24 +3,13 @@
  */
 
 import axios from 'axios';
-import winston from 'winston';
+import { logger } from './utils/logger.js';
 
 const AUTH_URL = process.env.AUTH_SERVICE_URL || 'https://rez-auth-service.onrender.com';
 const EVENT_BUS_URL = process.env.EVENT_BUS_URL || 'https://rez-event-bus.onrender.com';
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 
 const AXIOS_TIMEOUT = 5000;
-
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.Console(),
-  ],
-});
 
 /**
  * Verify token

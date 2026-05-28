@@ -144,7 +144,7 @@ router.get('/courses/trending', async (req: Request, res: Response) => {
 
 router.get('/courses/:courseId', async (req: Request, res: Response) => {
   try {
-    const course = await courseService.getCourseById(req.params.courseId);
+    const course = await courseService.getCourseById(req.params.courseId as string);
 
     if (!course) {
       const response: ApiResponse<null> = {
@@ -352,7 +352,7 @@ router.put('/progress', async (req: Request, res: Response) => {
 
 router.get('/progress/:userId', async (req: Request, res: Response) => {
   try {
-    const progress = await progressService.getUserAllProgress(req.params.userId);
+    const progress = await progressService.getUserAllProgress(req.params.userId as string);
 
     const response: ApiResponse<typeof progress> = {
       success: true,
@@ -382,7 +382,7 @@ router.get('/progress/:userId', async (req: Request, res: Response) => {
 
 router.get('/progress/:userId/stats', async (req: Request, res: Response) => {
   try {
-    const stats = await progressService.getLearningStats(req.params.userId);
+    const stats = await progressService.getLearningStats(req.params.userId as string);
 
     const response: ApiResponse<typeof stats> = {
       success: true,
@@ -413,7 +413,7 @@ router.get('/progress/:userId/stats', async (req: Request, res: Response) => {
 // Achievements
 router.get('/achievements/:userId', async (req: Request, res: Response) => {
   try {
-    const achievements = await progressService.getAchievements(req.params.userId);
+    const achievements = await progressService.getAchievements(req.params.userId as string);
 
     const response: ApiResponse<typeof achievements> = {
       success: true,
@@ -577,7 +577,9 @@ router.post('/chat', async (req: Request, res: Response) => {
 
     const intent = intentParser.parseIntent(params.message);
 
-    let response: unknown = {
+    interface ChatResponseData { intent?: string; confidence?: number; message: string; data?: unknown; }
+
+    const response: ChatResponseData = {
       intent: intent.type,
       confidence: intent.confidence,
       message: ''
@@ -585,35 +587,44 @@ router.post('/chat', async (req: Request, res: Response) => {
 
     switch (intent.type) {
       case IntentType.COURSE_RECOMMENDATION:
-        const recommendations = await recommendationsService.getPersonalizedRecommendations({
-          userId: params.userId,
-          interests: params.context?.interests || intent.entities.skills || [],
-          currentSkills: [],
-          skillLevel: params.context?.skillLevel || 'beginner',
-          goals: params.context?.goals || [],
-          completedCourses: []
-        });
-        response.data = recommendations;
-        response.message = `Based on your interests, here are some courses I recommend.`;
+        {
+          const recommendations = await recommendationsService.getPersonalizedRecommendations({
+            userId: params.userId,
+            interests: params.context?.interests || (intent.entities.skills as string[] || []),
+            currentSkills: [],
+            skillLevel: params.context?.skillLevel || 'beginner',
+            goals: params.context?.goals || [],
+            completedCourses: [],
+            timeCommitment: 'part-time'
+          });
+          response.data = recommendations;
+          response.message = `Based on your interests, here are some courses I recommend.`;
+        }
         break;
 
       case IntentType.LEARNING_PATH:
-        const path = await expertiseService.createLearningPath(
-          intent.entities.skills || params.context?.interests || [],
-          params.context?.skillLevel as unknown || 'beginner',
-          'part-time'
-        );
-        response.data = path;
-        response.message = `Here's a personalized learning path for you.`;
+        {
+          const skillsArray = Array.isArray(intent.entities.skills) ? intent.entities.skills :
+                              Array.isArray(params.context?.interests) ? params.context.interests : [];
+          const path = await expertiseService.createLearningPath(
+            skillsArray,
+            (params.context?.skillLevel as string) || 'beginner',
+            'part-time'
+          );
+          response.data = path;
+          response.message = `Here's a personalized learning path for you.`;
+        }
         break;
 
       case IntentType.COURSE_SEARCH:
-        const searchResult = await courseService.searchCourses({
-          query: params.message,
-          limit: 10
-        });
-        response.data = searchResult;
-        response.message = `I found ${searchResult.total} courses matching your search.`;
+        {
+          const searchResult = await courseService.searchCourses({
+            query: params.message,
+            limit: 10
+          });
+          response.data = searchResult;
+          response.message = `I found ${searchResult.total} courses matching your search.`;
+        }
         break;
 
       case IntentType.CERTIFICATION_INFO:

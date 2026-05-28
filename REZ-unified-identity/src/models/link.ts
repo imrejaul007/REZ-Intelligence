@@ -252,7 +252,7 @@ LinkSchema.index({ 'identifiers.type': 1, 'identifiers.targetValue': 1 });
 LinkSchema.index({ 'companyContext.initiatedBy': 1, status: 1 });
 
 // Pre-save hook to generate linkId if not present
-LinkSchema.pre('save', function (next) {
+LinkSchema.pre('save', function (next: (err?: Error) => void) {
   if (!this.linkId) {
     const { v4: uuidv4 } = require('uuid');
     this.linkId = `LNK-${uuidv4()}`;
@@ -261,12 +261,43 @@ LinkSchema.pre('save', function (next) {
 });
 
 // Methods
-LinkSchema.methods.addEvidence = function (evidence: ILinkEvidence): void {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(LinkSchema.methods as any).addEvidence = function (this: ILink, evidence: ILinkEvidence): void {
   this.evidence.push(evidence);
-  this.recalculateConfidence();
+  // Recalculate confidence inline
+  const evidenceScores: Record<string, number> = {
+    manual_verification: 100,
+    transaction: 90,
+    same_device: 80,
+    social: 70,
+    same_location: 50,
+    same_ip: 40,
+  };
+
+  let totalScore = 0;
+  let totalWeight = 0;
+
+  for (const ev of this.evidence) {
+    const score = evidenceScores[ev.type] || 50;
+    const recency = Math.max(0, 1 - (Date.now() - ev.timestamp.getTime()) / (365 * 24 * 60 * 60 * 1000));
+    const weight = recency * this.evidence.length;
+    totalScore += score * weight;
+    totalWeight += weight;
+  }
+
+  this.confidenceScore = totalWeight > 0 ? Math.round(totalScore / totalWeight) : 0;
+
+  if (this.confidenceScore >= 80) {
+    this.confidenceLevel = 'high';
+  } else if (this.confidenceScore >= 50) {
+    this.confidenceLevel = 'medium';
+  } else {
+    this.confidenceLevel = 'low';
+  }
 };
 
-LinkSchema.methods.recalculateConfidence = function (): void {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(LinkSchema.methods as any).recalculateConfidence = function (this: ILink): void {
   // Base scores by evidence type
   const evidenceScores: Record<string, number> = {
     manual_verification: 100,
@@ -302,7 +333,9 @@ LinkSchema.methods.recalculateConfidence = function (): void {
   }
 };
 
-LinkSchema.methods.confirm = function (
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(LinkSchema.methods as any).confirm = function (
+  this: ILink,
   resolvedBy: 'system' | 'manual',
   resolvedByUserId?: string,
   notes?: string
@@ -317,7 +350,9 @@ LinkSchema.methods.confirm = function (
   };
 };
 
-LinkSchema.methods.reject = function (
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(LinkSchema.methods as any).reject = function (
+  this: ILink,
   resolvedBy: 'system' | 'manual',
   resolvedByUserId?: string,
   notes?: string
@@ -332,7 +367,8 @@ LinkSchema.methods.reject = function (
   };
 };
 
-LinkSchema.methods.expire = function (): void {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(LinkSchema.methods as any).expire = function (this: ILink): void {
   this.status = 'expired';
 };
 

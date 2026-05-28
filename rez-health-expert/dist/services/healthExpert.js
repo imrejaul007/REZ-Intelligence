@@ -1,38 +1,46 @@
-import winston from 'winston';
-import { v4 as uuidv4 } from 'uuid';
-import { SYMPTOM_DATABASE, WELLNESS_TIPS, HEALTH_GLOSSARY } from '../config/knowledge.js';
-const { combine, timestamp, printf, colorize, errors } = winston.format;
-const logFormat = printf(({ level, message, timestamp, ...metadata }) => {
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.healthExpert = exports.SpecialtyType = exports.AppointmentType = exports.UrgencyLevel = exports.SeverityLevel = exports.SymptomCategory = exports.logger = void 0;
+const winston_1 = __importDefault(require("winston"));
+const uuid_1 = require("uuid");
+const knowledge_1 = require("../config/knowledge");
+const { combine, timestamp, printf, colorize, errors } = winston_1.default.format;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const logFormat = printf((info) => {
+    const { level, message, timestamp, stack, ...metadata } = info;
     let msg = `${timestamp} [${level}]: ${message}`;
-    if (Object.keys(metadata).length > 0 && metadata.stack === undefined) {
+    if (Object.keys(metadata).length > 0 && stack === undefined) {
         msg += ` ${JSON.stringify(metadata)}`;
     }
-    if (metadata.stack) {
-        msg += `\n${metadata.stack}`;
+    if (stack) {
+        msg += `\n${stack}`;
     }
     return msg;
 });
-export const logger = winston.createLogger({
+exports.logger = winston_1.default.createLogger({
     level: process.env.LOG_LEVEL || 'info',
     format: combine(errors({ stack: true }), timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), logFormat),
     transports: [
-        new winston.transports.Console({
+        new winston_1.default.transports.Console({
             format: combine(colorize(), timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), logFormat)
         }),
-        new winston.transports.File({
+        new winston_1.default.transports.File({
             filename: 'logs/health-expert-error.log',
             level: 'error',
             maxsize: 5242880,
             maxFiles: 5
         }),
-        new winston.transports.File({
+        new winston_1.default.transports.File({
             filename: 'logs/health-expert.log',
             maxsize: 5242880,
             maxFiles: 5
         })
     ]
 });
-export var SymptomCategory;
+var SymptomCategory;
 (function (SymptomCategory) {
     SymptomCategory["RESPIRATORY"] = "respiratory";
     SymptomCategory["DIGESTIVE"] = "digestive";
@@ -44,23 +52,23 @@ export var SymptomCategory;
     SymptomCategory["PAIN"] = "pain";
     SymptomCategory["FATIGUE"] = "fatigue";
     SymptomCategory["GENERAL"] = "general";
-})(SymptomCategory || (SymptomCategory = {}));
-export var SeverityLevel;
+})(SymptomCategory || (exports.SymptomCategory = SymptomCategory = {}));
+var SeverityLevel;
 (function (SeverityLevel) {
     SeverityLevel["MINOR"] = "minor";
     SeverityLevel["MODERATE"] = "moderate";
     SeverityLevel["SEVERE"] = "severe";
     SeverityLevel["URGENT"] = "urgent";
-})(SeverityLevel || (SeverityLevel = {}));
-export var UrgencyLevel;
+})(SeverityLevel || (exports.SeverityLevel = SeverityLevel = {}));
+var UrgencyLevel;
 (function (UrgencyLevel) {
     UrgencyLevel["SELF_CARE"] = "self_care";
     UrgencyLevel["SCHEDULE_VISIT"] = "schedule_visit";
     UrgencyLevel["SAME_DAY_APPOINTMENT"] = "same_day_appointment";
     UrgencyLevel["URGENT_CARE"] = "urgent_care";
     UrgencyLevel["EMERGENCY"] = "emergency";
-})(UrgencyLevel || (UrgencyLevel = {}));
-export var AppointmentType;
+})(UrgencyLevel || (exports.UrgencyLevel = UrgencyLevel = {}));
+var AppointmentType;
 (function (AppointmentType) {
     AppointmentType["PRIMARY_CARE"] = "primary_care";
     AppointmentType["SPECIALIST"] = "specialist";
@@ -69,8 +77,8 @@ export var AppointmentType;
     AppointmentType["TELEMEDICINE"] = "telemedicine";
     AppointmentType["WELLNESS_CHECK"] = "wellness_check";
     AppointmentType["FOLLOW_UP"] = "follow_up";
-})(AppointmentType || (AppointmentType = {}));
-export var SpecialtyType;
+})(AppointmentType || (exports.AppointmentType = AppointmentType = {}));
+var SpecialtyType;
 (function (SpecialtyType) {
     SpecialtyType["GENERAL_MEDICINE"] = "general_medicine";
     SpecialtyType["INTERNAL_MEDICINE"] = "internal_medicine";
@@ -88,22 +96,22 @@ export var SpecialtyType;
     SpecialtyType["ENDOCRINOLOGY"] = "endocrinology";
     SpecialtyType["RHEUMATOLOGY"] = "rheumatology";
     SpecialtyType["ALLERGY_IMMUNOLOGY"] = "allergy_immunology";
-})(SpecialtyType || (SpecialtyType = {}));
+})(SpecialtyType || (exports.SpecialtyType = SpecialtyType = {}));
 class HealthExpertAgent {
     agentId;
     agentName;
     sessionHistory;
     appointments;
     constructor(agentId, agentName) {
-        this.agentId = agentId || uuidv4();
+        this.agentId = agentId || (0, uuid_1.v4)();
         this.agentName = agentName || 'Health Expert';
         this.sessionHistory = new Map();
         this.appointments = new Map();
-        logger.info('Health Expert Agent initialized', { agentId: this.agentId, agentName: this.agentName });
+        exports.logger.info('Health Expert Agent initialized', { agentId: this.agentId, agentName: this.agentName });
     }
     async processQuery(query, sessionId, context) {
         const startTime = Date.now();
-        logger.info('Processing health query', { sessionId, queryLength: query.length });
+        exports.logger.info('Processing health query', { sessionId, queryLength: query.length });
         try {
             const intent = this.identifyIntent(query);
             let response;
@@ -131,7 +139,7 @@ class HealthExpertAgent {
             return response;
         }
         catch (error) {
-            logger.error('Error processing health query', { error, sessionId });
+            exports.logger.error('Error processing health query', { error, sessionId });
             throw error;
         }
     }
@@ -181,7 +189,7 @@ class HealthExpertAgent {
     }
     findMatchingSymptom(query) {
         const lowerQuery = query.toLowerCase();
-        for (const symptom of SYMPTOM_DATABASE) {
+        for (const symptom of knowledge_1.SYMPTOM_DATABASE) {
             if (lowerQuery.includes(symptom.name.toLowerCase())) {
                 return symptom;
             }
@@ -314,7 +322,7 @@ class HealthExpertAgent {
             };
         }
         const appointment = {
-            id: uuidv4(),
+            id: (0, uuid_1.v4)(),
             patientId: request.patient.id,
             appointmentType: request.appointmentType,
             specialty: request.specialty,
@@ -355,7 +363,7 @@ class HealthExpertAgent {
     }
     async handleWellnessRequest(query) {
         const lowerQuery = query.toLowerCase();
-        let matchingTips = [...WELLNESS_TIPS];
+        let matchingTips = [...knowledge_1.WELLNESS_TIPS];
         if (lowerQuery.includes('sleep')) {
             matchingTips = matchingTips.filter((t) => t.category.toLowerCase() === 'sleep');
         }
@@ -369,7 +377,7 @@ class HealthExpertAgent {
             matchingTips = matchingTips.filter((t) => t.category.toLowerCase() === 'physical activity');
         }
         if (matchingTips.length === 0) {
-            matchingTips = [...WELLNESS_TIPS];
+            matchingTips = [...knowledge_1.WELLNESS_TIPS];
         }
         let message = `Here are some wellness tips for you!\n\n`;
         matchingTips.forEach((tip) => {
@@ -390,7 +398,7 @@ class HealthExpertAgent {
     }
     async handleHealthInformation(query) {
         const lowerQuery = query.toLowerCase();
-        const matchingTerms = HEALTH_GLOSSARY.filter((term) => {
+        const matchingTerms = knowledge_1.HEALTH_GLOSSARY.filter((term) => {
             return lowerQuery.includes(term.term.toLowerCase());
         });
         if (matchingTerms.length > 0) {
@@ -478,5 +486,5 @@ class HealthExpertAgent {
         return false;
     }
 }
-export const healthExpert = new HealthExpertAgent();
+exports.healthExpert = new HealthExpertAgent();
 //# sourceMappingURL=healthExpert.js.map

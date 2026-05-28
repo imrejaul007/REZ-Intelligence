@@ -5,7 +5,7 @@
 
 import dotenv from 'dotenv';
 import { z } from 'zod';
-import { HospitalityExpertConfig } from '../types/index.js';
+import { HospitalityExpertConfig } from '../types/index';
 
 // Load environment variables
 dotenv.config();

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 export interface AuthConfig {
   apiKeys?: string[];
@@ -43,3 +43,5 @@ export function createAuthMiddleware(config: AuthConfig) {
     });
   };
 }
+
+export const requireInternalAuth = createAuthMiddleware({});

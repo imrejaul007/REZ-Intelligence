@@ -360,6 +360,10 @@ app.get('/health', (_req: Request, res: Response) => {
 // Readiness check
 app.get('/ready', async (_req: Request, res: Response) => {
   try {
+    if (!mongoose.connection.db) {
+      res.status(503).json({ status: 'not ready', error: 'No database connection' });
+      return;
+    }
     await mongoose.connection.db.admin().ping();
     res.json({ status: 'ready' });
   } catch (err) {
@@ -399,7 +403,7 @@ app.post('/api/taste/interaction', asyncHandler(async (req: Request, res: Respon
   // Update preferences
   updatePreference(profile, 'categories', category);
   if (subcategory) updatePreference(profile, 'subcategories', subcategory);
-  if (value > 0) {
+  if (value && value > 0) {
     const priceTier = value > 1000 ? 'luxury' : value > 500 ? 'premium' : value > 200 ? 'moderate' : 'budget';
     updatePreference(profile, 'priceTiers', priceTier);
   }
@@ -485,7 +489,7 @@ app.post('/api/taste/order', asyncHandler(async (req: Request, res: Response) =>
 
   // Process each item
   for (const item of items || []) {
-    updatePreference(profile, 'categories', category);
+    if (category) updatePreference(profile, 'categories', category);
     if (item.category) updatePreference(profile, 'categories', item.category);
     if (item.subcategory) updatePreference(profile, 'subcategories', item.subcategory);
     if (item.brand) updatePreference(profile, 'brands', item.brand);
@@ -548,7 +552,8 @@ app.get('/api/taste/:userId', asyncHandler(async (req: Request, res: Response) =
   const profile = await TasteProfile.findOne({ userId });
 
   if (!profile) {
-    return res.json({ success: true, profile: null, isNewUser: true });
+    res.json({ success: true, profile: null, isNewUser: true });
+    return;
   }
 
   const response: ProfileResponse = {
@@ -579,7 +584,7 @@ app.get('/api/taste/:userId/context', asyncHandler(async (req: Request, res: Res
   const profile = await TasteProfile.findOne({ userId });
 
   if (!profile) {
-    return res.json({
+    res.json({
       success: true,
       context: {
         isNewUser: true,
@@ -587,6 +592,7 @@ app.get('/api/taste/:userId/context', asyncHandler(async (req: Request, res: Res
         behaviors: {}
       } as PersonalizationContext
     });
+    return;
   }
 
   const context: PersonalizationContext = {
@@ -649,7 +655,8 @@ app.get('/api/taste/aggregate', asyncHandler(async (req: Request, res: Response)
   const profiles = await TasteProfile.find(match).limit(1000).lean();
 
   if (profiles.length === 0) {
-    return res.json({ success: true, aggregate: null });
+    res.json({ success: true, aggregate: null });
+    return;
   }
 
   // Aggregate preferences
@@ -658,15 +665,17 @@ app.get('/api/taste/aggregate', asyncHandler(async (req: Request, res: Response)
   const behaviorAvgs = { adventurousness: 0, brandLoyalty: 0, valueConsciousness: 0 };
 
   for (const p of profiles) {
-    for (const c of p.preferences.categories || []) {
+    for (const c of p.preferences?.categories || []) {
       categoryScores[c.key] = (categoryScores[c.key] || 0) + c.score;
     }
-    for (const pt of p.preferences.priceTiers || []) {
+    for (const pt of p.preferences?.priceTiers || []) {
       priceTierScores[pt.key] = (priceTierScores[pt.key] || 0) + pt.score;
     }
-    behaviorAvgs.adventurousness += p.behaviors.adventurousness;
-    behaviorAvgs.brandLoyalty += p.behaviors.brandLoyalty;
-    behaviorAvgs.valueConsciousness += p.behaviors.valueConsciousness;
+    if (p.behaviors) {
+      behaviorAvgs.adventurousness += p.behaviors.adventurousness;
+      behaviorAvgs.brandLoyalty += p.behaviors.brandLoyalty;
+      behaviorAvgs.valueConsciousness += p.behaviors.valueConsciousness;
+    }
   }
 
   const n = profiles.length;
@@ -697,11 +706,15 @@ app.use(errorHandler);
 // SERVER STARTUP
 // ============================================
 
-const PORT = parseInt(process.env.PORT || '4157', 10);
+const PORT = parseInt(process.env['PORT'] || '4157', 10);
 
 async function start(): Promise<void> {
   try {
-    await mongoose.connect(process.env.MONGODB_URI!);
+    const mongoUri = process.env['MONGODB_URI'];
+    if (!mongoUri) {
+      throw new Error('MONGODB_URI environment variable is required');
+    }
+    await mongoose.connect(mongoUri);
     logger.info('Connected to MongoDB');
     app.listen(PORT, () => {
       logger.info(`Taste Profile Service started on port ${PORT}`);

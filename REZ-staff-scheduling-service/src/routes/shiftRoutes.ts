@@ -3,7 +3,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { Shift, TimeOff } from '../models/index.js';
 import {
   CreateShiftInputSchema,
-  UpdateShiftInputSchema,
   ShiftStatusInputSchema,
   ShiftQuerySchema,
   ShiftIdParamSchema,

@@ -35,7 +35,7 @@ const validateRequest = (schema: z.ZodSchema) => {
           error: {
             code: 'VALIDATION_ERROR',
             message: 'Invalid request data',
-            details: error.errors.map(e => ({
+            details: error.issues.map((e: z.ZodIssue) => ({
               field: e.path.join('.'),
               message: e.message
             }))
@@ -193,15 +193,21 @@ router.get('/faqs/popular', async (req: Request, res: Response, next: NextFuncti
 
 router.get('/faqs/category/:category', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { category } = req.params;
-    const categoryEnum = category.toUpperCase() as InfoCategory;
+    const categoryParam = req.params.category;
+    if (!categoryParam || Array.isArray(categoryParam)) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_CATEGORY', message: 'Invalid category parameter' }
+      });
+    }
+    const categoryEnum = categoryParam.toUpperCase() as InfoCategory;
 
     if (!Object.values(InfoCategory).includes(categoryEnum)) {
       return res.status(400).json({
         success: false,
         error: {
           code: 'INVALID_CATEGORY',
-          message: `Invalid category: ${category}`
+          message: `Invalid category: ${categoryParam}`
         }
       });
     }
@@ -223,20 +229,23 @@ router.get('/faqs/category/:category', async (req: Request, res: Response, next:
 });
 
 router.get('/faqs/:faqId', async (req: Request, res: Response) => {
-  const { faqId } = req.params;
-  const faq = getFaqById(faqId);
+  const faqIdParam = req.params.faqId;
+  if (!faqIdParam || Array.isArray(faqIdParam)) {
+    return res.status(400).json({ success: false, error: { code: 'INVALID_ID', message: 'Invalid FAQ ID' } });
+  }
+  const faq = getFaqById(faqIdParam);
 
   if (!faq) {
     return res.status(404).json({
       success: false,
       error: {
         code: 'NOT_FOUND',
-        message: `FAQ with ID ${faqId} not found`
+        message: `FAQ with ID ${faqIdParam} not found`
       }
     });
   }
 
-  infoAgent.trackFaqView(faqId);
+  infoAgent.trackFaqView(faqIdParam);
 
   res.json({
     success: true,
@@ -245,20 +254,23 @@ router.get('/faqs/:faqId', async (req: Request, res: Response) => {
 });
 
 router.post('/faqs/:faqId/helpful', async (req: Request, res: Response) => {
-  const { faqId } = req.params;
-  const faq = getFaqById(faqId);
+  const faqIdParam = req.params.faqId;
+  if (!faqIdParam || Array.isArray(faqIdParam)) {
+    return res.status(400).json({ success: false, error: { code: 'INVALID_ID', message: 'Invalid FAQ ID' } });
+  }
+  const faq = getFaqById(faqIdParam);
 
   if (!faq) {
     return res.status(404).json({
       success: false,
       error: {
         code: 'NOT_FOUND',
-        message: `FAQ with ID ${faqId} not found`
+        message: `FAQ with ID ${faqIdParam} not found`
       }
     });
   }
 
-  await infoAgent.markFaqHelpful(faqId);
+  await infoAgent.markFaqHelpful(faqIdParam);
 
   res.json({
     success: true,
@@ -296,15 +308,21 @@ router.post('/policies', validateRequest(searchSchema), async (req: Request, res
 
 router.get('/policies/category/:category', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { category } = req.params;
-    const categoryEnum = category.toUpperCase() as InfoCategory;
+    const categoryParam = req.params.category;
+    if (!categoryParam || Array.isArray(categoryParam)) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_CATEGORY', message: 'Invalid category parameter' }
+      });
+    }
+    const categoryEnum = categoryParam.toUpperCase() as InfoCategory;
 
     if (!Object.values(InfoCategory).includes(categoryEnum)) {
       return res.status(400).json({
         success: false,
         error: {
           code: 'INVALID_CATEGORY',
-          message: `Invalid category: ${category}`
+          message: `Invalid category: ${categoryParam}`
         }
       });
     }
@@ -326,15 +344,18 @@ router.get('/policies/category/:category', async (req: Request, res: Response, n
 });
 
 router.get('/policies/:policyId', async (req: Request, res: Response) => {
-  const { policyId } = req.params;
-  const policy = getPolicyById(policyId);
+  const policyIdParam = req.params.policyId;
+  if (!policyIdParam || Array.isArray(policyIdParam)) {
+    return res.status(400).json({ success: false, error: { code: 'INVALID_ID', message: 'Invalid Policy ID' } });
+  }
+  const policy = getPolicyById(policyIdParam);
 
   if (!policy) {
     return res.status(404).json({
       success: false,
       error: {
         code: 'NOT_FOUND',
-        message: `Policy with ID ${policyId} not found`
+        message: `Policy with ID ${policyIdParam} not found`
       }
     });
   }
@@ -394,15 +415,18 @@ router.get('/articles/popular', async (req: Request, res: Response, next: NextFu
 });
 
 router.get('/articles/:articleId', async (req: Request, res: Response) => {
-  const { articleId } = req.params;
-  const article = getArticleById(articleId);
+  const articleIdParam = req.params.articleId;
+  if (!articleIdParam || Array.isArray(articleIdParam)) {
+    return res.status(400).json({ success: false, error: { code: 'INVALID_ID', message: 'Invalid Article ID' } });
+  }
+  const article = getArticleById(articleIdParam);
 
   if (!article) {
     return res.status(404).json({
       success: false,
       error: {
         code: 'NOT_FOUND',
-        message: `Article with ID ${articleId} not found`
+        message: `Article with ID ${articleIdParam} not found`
       }
     });
   }
@@ -444,15 +468,18 @@ router.post('/guides', validateRequest(searchSchema), async (req: Request, res: 
 });
 
 router.get('/guides/:guideId', async (req: Request, res: Response) => {
-  const { guideId } = req.params;
-  const guide = getGuideById(guideId);
+  const guideIdParam = req.params.guideId;
+  if (!guideIdParam || Array.isArray(guideIdParam)) {
+    return res.status(400).json({ success: false, error: { code: 'INVALID_ID', message: 'Invalid Guide ID' } });
+  }
+  const guide = getGuideById(guideIdParam);
 
   if (!guide) {
     return res.status(404).json({
       success: false,
       error: {
         code: 'NOT_FOUND',
-        message: `Guide with ID ${guideId} not found`
+        message: `Guide with ID ${guideIdParam} not found`
       }
     });
   }

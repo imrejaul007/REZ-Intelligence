@@ -126,7 +126,7 @@ export const checkOfferEligibility = async (
         eligible: false,
         offerId: body.offerId,
         score: 0,
-        reasons: [`Blocked by fraud system: ${fraudResult.reason}`],
+        reasons: [`Blocked by fraud system: ${fraudResult.reasons.join(', ')}`],
         modifiers: [],
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       };
@@ -267,7 +267,7 @@ async function fetchUserProfile(userId: string): Promise<UserProfile> {
   };
 }
 
-async function fetchOfferConfig(offerId: string): Promise<unknown> {
+async function fetchOfferConfig(offerId: string): Promise<{ type: string; category: string; validityDays: number; baseValue: number; offerId: string }> {
   // In production, this would call Offer Service
   return {
     offerId,
@@ -280,7 +280,7 @@ async function fetchOfferConfig(offerId: string): Promise<unknown> {
 
 async function findAlternativeOffer(
   request: EligibilityCheckRequest,
-  originalOffer: unknown
+  _originalOffer: { type: string; category: string; validityDays: number; baseValue: number; offerId: string }
 ): Promise<AlternativeOffer | undefined> {
   // Find a suitable alternative offer
   // In production, this would query the Offer Service

@@ -129,7 +129,7 @@ export interface ApiResponse<T> {
   error?: {
     code: string;
     message: string;
-    details?;
+    details?: Record<string, unknown>;
   };
   meta?: {
     timestamp: string;

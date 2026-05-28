@@ -10,6 +10,15 @@ interface ContextInput {
   metadata?: Record<string, unknown>;
 }
 
+interface LeanAgentMetrics {
+  agentId: string;
+  status: string;
+  capabilities: {
+    domains: string[];
+    specializations: string[];
+  };
+}
+
 /**
  * Context Analyzer Service
  *
@@ -30,7 +39,7 @@ export class ContextAnalyzerService {
   ): Promise<ContextAnalysisResult> {
     try {
       // Get agent metrics
-      const agent = await AgentMetrics.findOne({ agentId }).lean().exec();
+      const agent = await AgentMetrics.findOne({ agentId }).lean().exec() as LeanAgentMetrics | null;
 
       if (!agent) {
         logger.warn(`Agent not found for context analysis: ${agentId}`);

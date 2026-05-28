@@ -3,10 +3,10 @@
  * MongoDB and Redis connection management
  */
 
-import { MongoClient, Db, Collection } from 'mongodb';
+import { MongoClient, Db, Collection, Document } from 'mongodb';
 import Redis from 'ioredis';
-import { config } from '../config/index.js';
-import { logger } from './logger.js';
+import { config } from '../config/index';
+import { logger } from './logger';
 
 // ============================================
 // MONGODB
@@ -54,7 +54,7 @@ export async function closeMongoDB(): Promise<void> {
   }
 }
 
-export function getCollection<T = Document>(name: string): Collection<T> {
+export function getCollection<T extends Document = Document>(name: string): Collection<T> {
   if (!mongoDb) {
     throw new Error('MongoDB not connected');
   }

@@ -19,7 +19,8 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; user
     });
     return { valid: true, userId: res.data.user?.id };
   } catch (error) {
-    return { valid: false, error: error.message };
+    const err = error as Error;
+    return { valid: false, error: err.message };
   }
 }
 
@@ -33,7 +34,8 @@ export async function deductCoins(userId: string, amount: number, reason: string
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    const err = error as Error;
+    return { success: false, error: err.message };
   }
 }
 
@@ -47,7 +49,8 @@ export async function rewardContributor(userId: string, amount: number, reason: 
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    const err = error as Error;
+    return { success: false, error: err.message };
   }
 }
 
@@ -61,7 +64,8 @@ export async function getBalance(userId: string): Promise<{ balance: number; err
     });
     return { balance: res.data.balance || 0 };
   } catch (error) {
-    return { balance: 0, error: error.message };
+    const err = error as Error;
+    return { balance: 0, error: err.message };
   }
 }
 
@@ -75,7 +79,8 @@ export async function sendNotification(userId: string, title: string, body: stri
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    const err = error as Error;
+    return { success: false, error: err.message };
   }
 }
 

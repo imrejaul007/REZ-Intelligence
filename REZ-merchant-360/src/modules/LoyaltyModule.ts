@@ -313,10 +313,11 @@ export class LoyaltyModule {
       );
       this.cache.delete(`loyalty:${merchantId}`);
       return { success: true, transaction: response.data };
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       return {
         success: false,
-        error: error.response?.data?.message || 'Redemption failed',
+        error: err.response?.data?.message || 'Redemption failed',
       };
     }
   }

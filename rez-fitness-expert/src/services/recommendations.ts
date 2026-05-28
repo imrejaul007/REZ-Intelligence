@@ -1,4 +1,4 @@
-import { UserProfile, Recommendation, FitnessLevel, WorkoutType } from './fitnessExpert.js';
+import { UserProfile, Recommendation, FitnessLevel, WorkoutType } from './fitnessExpert';
 import { randomInt } from 'crypto';
 
 export function getRecommendations(profile: UserProfile): Recommendation[] {

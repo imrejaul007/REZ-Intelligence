@@ -9,7 +9,7 @@ const router = Router();
  */
 router.get(
   '/',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (_req: Request, res: Response) => {
     res.json({
       success: true,
       data: {
@@ -29,7 +29,7 @@ router.get(
  */
 router.get(
   '/ready',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (_req: Request, res: Response) => {
     // Add database connection check here if needed
     const checks = {
       database: true, // Would check mongoose connection

@@ -119,9 +119,10 @@ class InventoryModule {
             return { success: true, reserved_ids: response.data.reserved_ids };
         }
         catch (error) {
+            const err = error;
             return {
                 success: false,
-                error: error.response?.data?.message || 'Reservation failed',
+                error: err.response?.data?.message || 'Reservation failed',
             };
         }
     }

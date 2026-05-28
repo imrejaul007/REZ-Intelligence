@@ -4,7 +4,7 @@ import { DESTINATIONS, ACCOMMODATION_TYPES, TRANSPORT_MODES, SEASONAL_TIPS, Dest
 
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
-const logFormat = printf(({ level, message, timestamp, ...metadata }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
+const logFormat = printf(({ level, message, timestamp, ...metadata }: any) => {
   let msg = `${timestamp} [${level}]: ${message}`;
   if (Object.keys(metadata).length > 0 && metadata.stack === undefined) {
     msg += ` ${JSON.stringify(metadata)}`;
@@ -186,10 +186,10 @@ export class TravelExpert {
           response = await this.handleSeasonalAdvice(context, entities);
           break;
         case 'packing_tips':
-          response = await this.handlePackingTips(context);
+          response = await this.handlePackingTips(context, entities);
           break;
         default:
-          response = await this.handleGeneralTravel(context, message);
+          response = await this.handleGeneralTravel(context, entities, message);
       }
 
       response.processingTime = Date.now() - startTime;
@@ -468,6 +468,14 @@ export class TravelExpert {
     const destination = entities.destination as string;
     const dest = destination ? DESTINATIONS.find(d => d.id === destination) : DESTINATIONS[0];
 
+    if (!dest) {
+      return {
+        success: false,
+        message: "Destination not found. Please specify a valid destination.",
+        actions: [{ type: 'select_destination', data: {} }]
+      };
+    }
+
     let responseMessage = `Here's everything you need to know about ${dest.name}:\n\n`;
     responseMessage += `**Overview**\n${dest.description}\n\n`;
     responseMessage += `**Quick Facts**\n`;
@@ -512,11 +520,14 @@ export class TravelExpert {
     }
 
     const dailyBudget = this.calculateDailyBudget(dest.budgetLevel, travelers);
-    const totalBudget = dailyBudget * duration * travelers;
+    const totalBudget = {
+      min: dailyBudget.min * duration * travelers,
+      max: dailyBudget.max * duration * travelers
+    };
 
     let responseMessage = `Budget estimate for ${duration} days in ${dest.name} for ${travelers} traveler(s):\n\n`;
     responseMessage += `**Daily Budget Per Person:** $${dailyBudget.min}-$${dailyBudget.max}\n\n`;
-    responseMessage += `**Estimated Total:** $${(totalBudget.min).toLocaleString()}-$${(totalBudget.max).toLocaleString()}\n\n`;
+    responseMessage += `**Estimated Total:** $${totalBudget.min.toLocaleString()}-$${totalBudget.max.toLocaleString()}\n\n`;
     responseMessage += `**Breakdown:**\n`;
     responseMessage += `- Accommodation: $${Math.round(totalBudget.min * 0.4)}-$新${Math.round(totalBudget.max * 0.4)}\n`;
     responseMessage += `- Food & Dining: $${Math.round(totalBudget.min * 0.25)}-$新${Math.round(totalBudget.max * 0.25)}\n`;
@@ -652,7 +663,7 @@ export class TravelExpert {
     };
   }
 
-  private generateItinerary(destination: Destination, days: number): ItineraryDay[] {
+  public generateItinerary(destination: Destination, days: number): ItineraryDay[] {
     const itinerary: ItineraryDay[] = [];
     const activityTemplates = this.getActivityTemplates(destination);
 

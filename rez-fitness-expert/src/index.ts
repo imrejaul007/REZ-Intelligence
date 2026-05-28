@@ -8,16 +8,16 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
-import { configSchema } from './config/index.js';
-import { logger } from './services/fitnessExpert.js';
-import { fitnessRouter } from './routes/fitness.routes.js';
+import { configSchema } from './config/index';
+import { logger } from './services/fitnessExpert';
+import { fitnessRouter } from './routes/fitness.routes';
 import {
   errorHandler,
   notFoundHandler,
   requestLogger,
   asyncHandler
-} from './middleware/validation.js';
-import { ServiceConfig, ServiceError } from './types/index.js';
+} from './middleware/validation';
+import { ServiceConfig, ServiceError } from './types/index';
 
 // ============================================
 // CONFIGURATION VALIDATION

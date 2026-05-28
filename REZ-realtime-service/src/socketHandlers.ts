@@ -1,10 +1,10 @@
-import logger from './utils/logger.js';
+import { logger } from './utils/logger.js';
 
 import { Server, Socket } from 'socket.io';
 import { LiveActivityStore } from './stores/liveActivityStore.js';
 import { config } from './config.js';
 
-interface AuthenticatedSocket extends Socket {
+export interface AuthenticatedSocket extends Socket {
   userId?: string;
   channels?: Set<string>;
 }

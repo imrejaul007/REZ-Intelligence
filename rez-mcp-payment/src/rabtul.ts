@@ -28,8 +28,9 @@ export async function createPayment(params: {
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true, paymentId: res.data.paymentId };
-  } catch (error) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: message };
   }
 }
 
@@ -42,8 +43,9 @@ export async function verifyPayment(paymentId: string): Promise<{ success: boole
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true, status: res.data.status };
-  } catch (error) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: message };
   }
 }
 
@@ -56,8 +58,9 @@ export async function refundPayment(paymentId: string, amount?: number): Promise
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true, refundId: res.data.refundId };
-  } catch (error) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: message };
   }
 }
 
@@ -71,8 +74,9 @@ export async function getPaymentHistory(userId: string, limit = 20): Promise<{ p
       params: { limit },
     });
     return { payments: res.data.payments || [] };
-  } catch (error) {
-    return { payments: [], error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { payments: [], error: message };
   }
 }
 

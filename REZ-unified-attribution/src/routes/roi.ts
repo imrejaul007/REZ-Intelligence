@@ -41,12 +41,12 @@ roiRouter.get('/summary', async (req: Request, res: Response) => {
   try {
     const { merchantId, startDate, endDate } = req.query;
 
-    const match: unknown = {};
+    const match: Record<string, unknown> = {};
     if (merchantId) match.merchantId = merchantId;
     if (startDate || endDate) {
       match.date = {};
-      if (startDate) match.date.$gte = new Date(startDate as string);
-      if (endDate) match.date.$lte = new Date(endDate as string);
+      if (startDate) (match.date as Record<string, unknown>).$gte = new Date(startDate as string);
+      if (endDate) (match.date as Record<string, unknown>).$lte = new Date(endDate as string);
     }
 
     const spendSummary = await Spend.aggregate([

@@ -219,16 +219,16 @@ router.put(
 
     if (updates.capabilities) {
       agent.capabilities = {
-        ...agent.capabilities.toObject(),
+        ...agent.capabilities,
         ...updates.capabilities,
-      };
+      } as typeof agent.capabilities;
     }
 
     if (updates.loadMetrics) {
       agent.loadMetrics = {
-        ...agent.loadMetrics.toObject(),
+        ...agent.loadMetrics,
         ...updates.loadMetrics,
-      };
+      } as typeof agent.loadMetrics;
     }
 
     await agent.save();
@@ -332,7 +332,7 @@ router.post(
       success: true,
       data: {
         agentId,
-        loadMetrics: agent.loadMetrics.toObject(),
+        loadMetrics: agent.loadMetrics,
       },
     });
   })

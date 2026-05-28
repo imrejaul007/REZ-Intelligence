@@ -1,0 +1,96 @@
+# Cosmic OS - Docker Compose
+
+version: '3.8'
+
+services:
+  # MongoDB
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - cosmic_mongo_data:/data/db
+    networks:
+      - cosmic-network
+
+  # REZ Emotional Intelligence
+  emotional-intelligence:
+    build:
+      context: ../REZ-emotional-intelligence
+    ports:
+      - "4160:4160"
+    environment:
+      - PORT=4160
+      - MONGODB_URI=mongodb://mongodb:27017/rez_emotional
+      - LOG_LEVEL=info
+    depends_on:
+      - mongodb
+    networks:
+      - cosmic-network
+
+  # REZ Life Pattern Engine
+  life-pattern-engine:
+    build:
+      context: ../REZ-life-pattern-engine
+    ports:
+      - "4161:4161"
+    environment:
+      - PORT=4161
+      - MONGODB_URI=mongodb://mongodb:27017/rez_life_pattern
+      - LOG_LEVEL=info
+    depends_on:
+      - mongodb
+    networks:
+      - cosmic-network
+
+  # REZ Human Context Graph
+  human-context-graph:
+    build:
+      context: ../REZ-human-context-graph
+    ports:
+      - "4162:4162"
+    environment:
+      - PORT=4162
+      - MONGODB_URI=mongodb://mongodb:27017/rez_human_context
+      - EMOTIONAL_SERVICE_URL=http://emotional-intelligence:4160
+      - LIFE_PATTERN_SERVICE_URL=http://life-pattern-engine:4161
+      - LOG_LEVEL=info
+    depends_on:
+      - mongodb
+      - emotional-intelligence
+      - life-pattern-engine
+    networks:
+      - cosmic-network
+
+  # Cosmic OS
+  cosmic-os:
+    build:
+      context: .
+    ports:
+      - "4163:4163"
+    environment:
+      - PORT=4163
+      - MONGODB_URI=mongodb://mongodb:27017/cosmic_os
+      - RABTUL_AUTH_URL=https://rez-auth-service.onrender.com
+      - RABTUL_WALLET_URL=https://rez-wallet-service-36vo.onrender.com
+      - RABTUL_NOTIFICATION_URL=https://rez-notifications-service.onrender.com
+      - RABTUL_PROFILE_URL=https://rez-profile-service.onrender.com
+      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-cosmic-dev-token}
+      - EMOTIONAL_SERVICE_URL=http://emotional-intelligence:4160
+      - LIFE_PATTERN_SERVICE_URL=http://life-pattern-engine:4161
+      - HUMAN_CONTEXT_URL=http://human-context-graph:4162
+      - LOG_LEVEL=info
+    depends_on:
+      - mongodb
+      - emotional-intelligence
+      - life-pattern-engine
+      - human-context-graph
+    networks:
+      - cosmic-network
+
+networks:
+  cosmic-network:
+    driver: bridge
+
+volumes:
+  cosmic_mongo_data:

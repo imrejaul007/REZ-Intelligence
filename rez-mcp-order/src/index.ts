@@ -1,12 +1,12 @@
-import logger from './utils/logger.js';
+import { logger } from './utils/logger.js';
 
-import { Server } from "@modelcontextprotocol/sdk/server";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio";
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
   type CallToolRequest,
-} from "@modelcontextprotocol/sdk/dist/types";
+} from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 
 // Environment configuration

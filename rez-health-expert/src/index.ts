@@ -8,16 +8,16 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import compression from 'compression';
-import { configSchema } from './config/index.js';
-import { logger } from './services/healthExpert.js';
-import { healthRouter } from './routes/health.routes.js';
+import { configSchema } from './config/index';
+import { logger } from './services/healthExpert';
+import { healthRouter } from './routes/health.routes';
 import {
   errorHandler,
   notFoundHandler,
   requestLogger,
   asyncHandler
-} from './middleware/validation.js';
-import { ServiceConfig, ServiceError } from './types/index.js';
+} from './middleware/validation';
+import { ServiceConfig, ServiceError } from './types/index';
 
 // ============================================
 // CONFIGURATION VALIDATION

@@ -61,3 +61,9 @@ export function createRateLimiter(config: RateLimitConfig = {}) {
     next();
   };
 }
+
+// Default rate limiter instance
+export const rateLimitMiddleware = createRateLimiter({
+  windowMs: 60000,
+  max: 100,
+});

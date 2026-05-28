@@ -3,7 +3,7 @@
  * Provides integration with the central Core Brain service for context, memory, and personalization
  */
 
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger';
 
 // ============================================
 // TYPES

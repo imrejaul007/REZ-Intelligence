@@ -4,7 +4,7 @@
  */
 import { MongoClient } from 'mongodb';
 import Redis from 'ioredis';
-import { DIETARY_TAGS, MAJOR_ALLERGENS, FLAVOR_PROFILES, PAIRING_GUIDE, type Cuisine, type FlavorProfile } from '../config/knowledge.js';
+import { DIETARY_TAGS, MAJOR_ALLERGENS, FLAVOR_PROFILES, PAIRING_GUIDE, type Cuisine, type FlavorProfile } from '../config/knowledge';
 export interface FoodExpertise {
     cuisines: string[];
     dietarySpecialties: string[];

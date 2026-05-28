@@ -91,6 +91,53 @@ export type MomentTrigger =
   | 'retention';
 
 // ============================================================================
+// Moment Rules Engine Types
+// ============================================================================
+
+interface MomentRule {
+  id: string;
+  trigger: MomentTrigger;
+  condition: (ctx: MomentContext) => boolean;
+  priority: number;
+  generate: (ctx: MomentContext) => {
+    title: string;
+    description: string;
+    cta: string;
+    targeting: {
+      trigger: MomentTrigger;
+      reason: string;
+      confidence: number;
+    };
+  };
+}
+
+interface UserProfile {
+  wallet?: {
+    coinBalance: number;
+    expiringCoins?: number;
+    expiringDate?: string;
+  };
+}
+
+interface UserSignals {
+  searches: string[];
+  merchantsVisited: string[];
+  categories: string[];
+}
+
+interface GeneratedAdContent {
+  title: string;
+  description: string;
+  cta: string;
+  targeting: {
+    trigger: MomentTrigger;
+    reason: string;
+    confidence: number;
+    priority?: number;
+  };
+}
+
+// ============================================================================
 // Moment Rules Engine
 // ============================================================================
 
@@ -230,7 +277,7 @@ class MomentRulesEngine {
     });
   }
 
-  evaluate(context: MomentContext): { rule: MomentRule; ad: unknown } | null {
+  evaluate(context: MomentContext): { rule: MomentRule; ad: GeneratedAdContent } | null {
     const matchingRules = this.rules
       .filter(rule => rule.condition(context))
       .sort((a, b) => b.priority - a.priority);
@@ -275,16 +322,16 @@ class MomentAdEngine {
    */
   async getMomentAd(context: MomentContext): Promise<MomentAd | null> {
     // 1. Get user profile for enrichment
-    const userProfile = await this.getUserProfile(context.userId);
+    const userProfile = await this.getUserProfile(context.userId) as UserProfile | null;
 
     // 2. Get behavioral signals
-    const signals = await this.getUserSignals(context.userId);
+    const signals = (await this.getUserSignals(context.userId)) as UserSignals;
 
     // 3. Enrich context
     const enrichedContext: MomentContext = {
       ...context,
       wallet: userProfile?.wallet,
-      recentSignals: signals
+      recentSignals: signals ?? { searches: [], merchantsVisited: [], categories: [] }
     };
 
     // 4. Evaluate moment rules
@@ -293,8 +340,12 @@ class MomentAdEngine {
     if (!momentResult) return null;
 
     // 5. Get relevant ad based on moment
+    const momentAd = momentResult.ad;
     const ad = await this.selectAd({
-      ...momentResult.ad,
+      title: momentAd.title,
+      description: momentAd.description,
+      cta: momentAd.cta,
+      targeting: momentAd.targeting,
       context: enrichedContext
     });
 
@@ -304,7 +355,7 @@ class MomentAdEngine {
       ...ad,
       targeting: {
         ...ad.targeting,
-        confidence: momentResult.ad.targeting.confidence
+        confidence: momentAd.targeting.confidence
       }
     };
   }
@@ -335,9 +386,10 @@ class MomentAdEngine {
     momentType: MomentTrigger,
     metadata?: Record<string, unknown>
   ): Promise<MomentAd | null> {
+    const location = metadata?.location as { lat: number; lng: number; address?: string } | undefined;
     const context: MomentContext = {
       userId,
-      location: metadata?.location || { lat: 0, lng: 0 },
+      location: location ?? { lat: 0, lng: 0 },
       time: {
         hour: new Date().getHours(),
         dayOfWeek: new Date().getDay(),

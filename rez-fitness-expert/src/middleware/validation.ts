@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { z, ZodSchema, ZodError } from 'zod';
-import { ValidationError } from '../types/index.js';
+import { ValidationError } from '../types/index';
 
 // ============================================
 // SCHEMA VALIDATION MIDDLEWARE

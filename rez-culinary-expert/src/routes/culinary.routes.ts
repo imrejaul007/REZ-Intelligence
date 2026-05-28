@@ -6,7 +6,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { Anthropic } from '@anthropic-ai/sdk';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger';
 import {
   CulinaryIntent,
   classifyIntent,
@@ -21,12 +21,12 @@ import {
   CheckAllergensSchema,
   UpdateAllergyProfileSchema,
   PlaceOrderSchema,
-} from '../intents/culinaryIntents.js';
-import { getMenuService, MenuItem } from '../services/menuService.js';
-import { getDietaryService } from '../services/dietaryService.js';
-import { getRecommendationsService } from '../services/recommendations.js';
-import { getOrderFlowHandler } from '../intents/orderFlow.js';
-import { getCulinaryExpertiseService } from '../services/expertise.js';
+} from '../intents/culinaryIntents';
+import { getMenuService, MenuItem } from '../services/menuService';
+import { getDietaryService } from '../services/dietaryService';
+import { getRecommendationsService } from '../services/recommendations';
+import { getOrderFlowHandler } from '../intents/orderFlow';
+import { getCulinaryExpertiseService } from '../services/expertise';
 import {
   formatMenuItemText,
   formatRecommendationResponse,
@@ -40,10 +40,10 @@ import {
   formatHelpResponse,
   formatErrorResponse,
   formatCuisineInfoResponse,
-} from '../responses/templates.js';
-import { TonePreset, TONE_PRESETS } from '../config/tone.js';
-import { CULINARY_EXPERT_SYSTEM_PROMPT } from '../config/systemPrompt.js';
-import { getCoreBrainClient } from '../services/coreBrainIntegration.js';
+} from '../responses/templates';
+import { TonePreset, TONE_PRESETS } from '../config/tone';
+import { CULINARY_EXPERT_SYSTEM_PROMPT } from '../config/systemPrompt';
+import { getCoreBrainClient } from '../services/coreBrainIntegration';
 
 const router = Router();
 

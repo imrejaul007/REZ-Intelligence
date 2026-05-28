@@ -5,11 +5,11 @@
 
 import axios from 'axios';
 
-const AUTH_URL = process.env.AUTH_SERVICE_URL || 'https://rez-auth-service.onrender.com';
-const WALLET_URL = process.env.WALLET_SERVICE_URL || 'https://rez-wallet-service.onrender.com';
-const NOTIFICATION_URL = process.env.NOTIFICATION_SERVICE_URL || 'https://rez-notifications-service.onrender.com';
-const EVENT_BUS_URL = process.env.EVENT_BUS_URL || 'https://rez-event-bus.onrender.com';
-const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
+const AUTH_URL = process.env['AUTH_SERVICE_URL'] || 'https://rez-auth-service.onrender.com';
+const WALLET_URL = process.env['WALLET_SERVICE_URL'] || 'https://rez-wallet-service.onrender.com';
+const NOTIFICATION_URL = process.env['NOTIFICATION_SERVICE_URL'] || 'https://rez-notifications-service.onrender.com';
+const EVENT_BUS_URL = process.env['EVENT_BUS_URL'] || 'https://rez-event-bus.onrender.com';
+const INTERNAL_TOKEN = process.env['INTERNAL_SERVICE_TOKEN'] || '';
 const TIMEOUT = 5000;
 
 export async function verifyToken(token: string): Promise<{ valid: boolean; error?: string }> {

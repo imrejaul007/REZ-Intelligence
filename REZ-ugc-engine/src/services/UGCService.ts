@@ -1,4 +1,4 @@
-import logger from './utils/logger.js';
+import { logger } from '../utils/logger';
 
 /**
  * REZ UGC Engine - Content Service

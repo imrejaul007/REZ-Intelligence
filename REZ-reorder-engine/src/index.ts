@@ -17,6 +17,8 @@ import {
   COMMERCE_CATEGORIES,
   UrgencyLevel,
   NUDGE_TYPES,
+  NUDGE_CHANNELS,
+  NUDGE_STATUS,
   OrderItem,
   OrderSummary,
   ProfileMetrics,
@@ -25,7 +27,8 @@ import {
   INudgeQueue,
   ReorderRecommendation,
   HomepageRecommendations,
-  ReorderAnalytics
+  ReorderAnalytics,
+  CommerceCategory
 } from './types.js';
 import {
   createProfileSchema,
@@ -246,9 +249,9 @@ function determineUrgency(score: number): UrgencyLevel {
 }
 
 /**
- * Generate personalized nudge content
+ * Generate personalized nudge content (exported for nudge queue processing)
  */
-function generateNudgeContent(profile: IReorderProfile, merchantName: string): { title: string; body: string; actionText: string } {
+export function generateNudgeContent(profile: IReorderProfile, merchantName: string): { title: string; body: string; actionText: string } {
   const daysSince = Math.floor(
     (Date.now() - profile.lastOrderDate.getTime()) / (1000 * 60 * 60 * 24)
   );
@@ -290,7 +293,7 @@ function generateNudgeContent(profile: IReorderProfile, merchantName: string): {
     }
   };
 
-  return templates[category] || templates.restaurant;
+  return templates[category] || templates['restaurant'];
 }
 
 /**
@@ -305,7 +308,7 @@ function getReorderTitle(category: CommerceCategory): string {
     services: 'Need service again?',
     fintech: 'Manage your account?'
   };
-  return titles[category] || titles.restaurant;
+  return titles[category] || titles['restaurant'];
 }
 
 /**
@@ -445,7 +448,9 @@ app.get('/health', (_req: Request, res: Response) => {
 // Readiness check
 app.get('/ready', async (_req: Request, res: Response) => {
   try {
-    await mongoose.connection.db.admin().ping();
+    if (mongoose.connection.db) {
+      await mongoose.connection.db.admin().ping();
+    }
     res.json({ status: 'ready', mongodb: 'connected' });
   } catch (err) {
     const error = err as Error;
@@ -488,8 +493,8 @@ app.post('/api/reorder/profile', asyncHandler(async (req: Request, res: Response
     const mappedItems: OrderItem[] = items?.map(i => ({
       itemId: i.itemId || i.productId || uuidv4(),
       name: i.name,
-      quantity: i.quantity,
-      price: i.price,
+      quantity: i.quantity ?? 1,
+      price: i.price ?? 0,
       category: i.category
     })) || [];
 
@@ -516,8 +521,8 @@ app.post('/api/reorder/profile', asyncHandler(async (req: Request, res: Response
     const mappedItems: OrderItem[] = items?.map(i => ({
       itemId: i.itemId || i.productId || uuidv4(),
       name: i.name,
-      quantity: i.quantity,
-      price: i.price,
+      quantity: i.quantity ?? 1,
+      price: i.price ?? 0,
       category: i.category
     })) || [];
 
@@ -539,7 +544,7 @@ app.post('/api/reorder/profile', asyncHandler(async (req: Request, res: Response
       metrics: {
         totalOrders: 1,
         avgOrderValue: orderValue || 0,
-        avgQuantity: items?.reduce((s, i) => s + i.quantity, 0) || 0,
+        avgQuantity: items?.reduce((s, i) => s + (i.quantity ?? 0), 0) || 0,
         lastInteraction: 'order_placed',
         favoriteItemId: items?.[0]?.itemId,
         favoriteItemName: items?.[0]?.name
@@ -580,7 +585,7 @@ app.get('/api/reorder/user/:userId', asyncHandler(async (req: Request, res: Resp
     reorderScore: { $gte: parseFloat(threshold as string) },
     nudgeSent: false
   };
-  if (category) query.category = category;
+  if (category) query['category'] = category;
 
   const profiles = await ReorderProfile.find(query)
     .sort({ reorderScore: -1, predictedReorderDate: 1 })
@@ -716,12 +721,12 @@ app.get('/api/reorder/analytics', asyncHandler(async (req: Request, res: Respons
   const { merchantId, category, startDate, endDate } = req.query;
 
   const match: Record<string, unknown> = {};
-  if (merchantId) match.merchantId = merchantId;
-  if (category) match.category = category;
+  if (merchantId) match['merchantId'] = merchantId;
+  if (category) match['category'] = category;
   if (startDate || endDate) {
-    match.createdAt = {};
-    if (startDate) (match.createdAt as Record<string, Date>).$gte = new Date(startDate as string);
-    if (endDate) (match.createdAt as Record<string, Date>).$lte = new Date(endDate as string);
+    match['createdAt'] = {};
+    if (startDate) (match['createdAt'] as Record<string, Date>)['$gte'] = new Date(startDate as string);
+    if (endDate) (match['createdAt'] as Record<string, Date>)['$lte'] = new Date(endDate as string);
   }
 
   const [profiles, nudges, conversions] = await Promise.all([
@@ -793,11 +798,11 @@ app.use(errorHandler);
 // SERVER STARTUP
 // ============================================
 
-const PORT = parseInt(process.env.PORT || '4156', 10);
+const PORT = parseInt(process.env['PORT'] || '4156', 10);
 
 async function start(): Promise<void> {
   try {
-    await mongoose.connect(process.env.MONGODB_URI!);
+    await mongoose.connect(process.env['MONGODB_URI']!);
     logger.info('Connected to MongoDB');
 
     app.listen(PORT, () => {

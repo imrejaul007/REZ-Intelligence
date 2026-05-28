@@ -326,14 +326,14 @@ export class RealTimeFraudBlocker {
         averageAmount: 100,
       },
       deviceFingerprint: {
-        deviceId: request.metadata?.deviceId || 'unknown',
+        deviceId: (request.metadata?.deviceId as string) || 'unknown',
         isKnown: true,
         isTrusted: true,
         firstSeen: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
         riskScore: 0.1,
       },
       locationData: {
-        ip: request.metadata?.ip || '127.0.0.1',
+        ip: (request.metadata?.ip as string) || '127.0.0.1',
         country: 'US',
         city: 'New York',
         isProxy: false,

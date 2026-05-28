@@ -163,7 +163,7 @@ export class HealthMonitor {
 
       // Update registry with successful heartbeat
       await this.registry.updateHeartbeat(expert.id, {
-        responseTimeMs: result.responseTimeMs,
+        avgResponseTimeMs: result.responseTimeMs,
       });
 
       // Reset consecutive failures

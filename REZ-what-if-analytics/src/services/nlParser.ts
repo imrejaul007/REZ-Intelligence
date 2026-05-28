@@ -24,7 +24,7 @@ export class NLParser {
   }
 
   private detectScenarioType(query: string): ScenarioType {
-    const patterns: Record<string, ScenarioType> = {
+    const patterns: Record<string, string[]> = {
       pricing: ['price', 'pricing', 'cost', 'fee', 'charge', 'discount', 'markup'],
       demand: ['demand', 'traffic', 'visitors', 'footfall', 'customers', 'demand spike', 'demand drop'],
       promotion: ['promotion', 'offer', 'deal', 'campaign', 'discount', 'coupon', 'sale', 'advertising'],
@@ -36,8 +36,8 @@ export class NLParser {
     };
 
     for (const [type, keywords] of Object.entries(patterns)) {
-      if (keywords.some(keyword => query.includes(keyword))) {
-        return type;
+      if (keywords.some((keyword: string) => query.includes(keyword))) {
+        return type as ScenarioType;
       }
     }
 
@@ -45,7 +45,7 @@ export class NLParser {
   }
 
   private detectMetric(query: string): MetricType | null {
-    const patterns: Record<string, MetricType> = {
+    const patterns: Record<string, string[]> = {
       revenue: ['revenue', 'sales', 'income'],
       margin: ['margin', 'profit margin', 'gross margin'],
       units_sold: ['units', 'quantity', 'products sold', 'orders'],
@@ -59,8 +59,8 @@ export class NLParser {
     };
 
     for (const [metric, keywords] of Object.entries(patterns)) {
-      if (keywords.some(keyword => query.includes(keyword))) {
-        return metric;
+      if (keywords.some((keyword: string) => query.includes(keyword))) {
+        return metric as MetricType;
       }
     }
 

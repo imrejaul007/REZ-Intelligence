@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { reasoningEngine } from '../services/reasoningCore.js';
 import { ReasoningRequestSchema } from '../types/index.js';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 
@@ -13,7 +13,7 @@ router.post('/reason', async (req: Request, res: Response) => {
     res.json({ success: true, data: result });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ success: false, errors: error.errors });
+      res.status(400).json({ success: false, errors: error.issues });
     } else {
       logger.error('Reasoning error:', error);
       res.status(500).json({ success: false, error: 'Reasoning failed' });
@@ -24,9 +24,13 @@ router.post('/reason', async (req: Request, res: Response) => {
 router.post('/analyze', async (req: Request, res: Response) => {
   try {
     const { text } = req.body;
+    if (!text || typeof text !== 'string') {
+      return res.status(400).json({ success: false, error: 'text is required and must be a string' });
+    }
     const result = await reasoningEngine.reason({
       problem: text,
-      method: 'chain_of_thought'
+      method: 'chain_of_thought',
+      maxSteps: 10
     });
     res.json({ success: true, data: result });
   } catch (error) {
@@ -38,9 +42,13 @@ router.post('/analyze', async (req: Request, res: Response) => {
 router.post('/deduce', async (req: Request, res: Response) => {
   try {
     const { premises } = req.body;
+    if (!Array.isArray(premises) || premises.length === 0) {
+      return res.status(400).json({ success: false, error: 'premises array is required' });
+    }
     const result = await reasoningEngine.reason({
       problem: premises.join(' && '),
-      method: 'deductive'
+      method: 'deductive',
+      maxSteps: 10
     });
     res.json({ success: true, data: result });
   } catch (error) {
@@ -52,9 +60,13 @@ router.post('/deduce', async (req: Request, res: Response) => {
 router.post('/explain', async (req: Request, res: Response) => {
   try {
     const { observation } = req.body;
+    if (!observation || typeof observation !== 'string') {
+      return res.status(400).json({ success: false, error: 'observation is required and must be a string' });
+    }
     const result = await reasoningEngine.reason({
       problem: observation,
-      method: 'abductive'
+      method: 'abductive',
+      maxSteps: 10
     });
     res.json({ success: true, data: result });
   } catch (error) {

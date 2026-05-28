@@ -15,7 +15,8 @@ const formats = {
         const metaStr = Object.keys(meta).length ? JSON.stringify(meta, null, 2) : '';
         return `${ts} [${level}]: ${message} ${metaStr}`;
     })),
-    detailed: winston_1.default.format.combine(winston_1.default.format.timestamp(), winston_1.default.format.colorize(), winston_1.default.format.errors({ stack: true }), winston_1.default.format.printf(({ level, message, timestamp, ...meta }) => {
+    detailed: winston_1.default.format.combine(winston_1.default.format.timestamp(), winston_1.default.format.colorize(), winston_1.default.format.errors({ stack: true }), winston_1.default.format.printf((info) => {
+        const { level, message, timestamp: ts, ...meta } = info;
         const metaStr = Object.keys(meta).length ? `\n${JSON.stringify(meta, null, 2)}` : '';
         const stack = meta.stack ? `\n${meta.stack}` : '';
         return `${ts} [${level}]: ${message}${metaStr}${stack}`;

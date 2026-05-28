@@ -4,10 +4,10 @@
  */
 import axios from 'axios';
 
-const AUTH = process.env.AUTH_SERVICE_URL || 'https://rez-auth-service.onrender.com';
-const WALLET = process.env.WALLET_SERVICE_URL || 'https://rez-wallet-service.onrender.com';
-const NOTIFY = process.env.NOTIFICATION_SERVICE_URL || 'https://rez-notifications-service.onrender.com';
-const TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
+const AUTH = process.env['AUTH_SERVICE_URL'] || 'https://rez-auth-service.onrender.com';
+const WALLET = process.env['WALLET_SERVICE_URL'] || 'https://rez-wallet-service.onrender.com';
+const NOTIFY = process.env['NOTIFICATION_SERVICE_URL'] || 'https://rez-notifications-service.onrender.com';
+const TOKEN = process.env['INTERNAL_SERVICE_TOKEN'] || '';
 
 const REQUEST_TIMEOUT = 10000;
 

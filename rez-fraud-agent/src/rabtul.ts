@@ -20,7 +20,8 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; user
     });
     return { valid: true, userId: res.data.user?.id };
   } catch (error) {
-    return { valid: false, error: error.message };
+    const err = error as Error;
+    return { valid: false, error: err.message };
   }
 }
 
@@ -34,7 +35,8 @@ export async function freezeUserWallet(userId: string, reason: string): Promise<
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    const err = error as Error;
+    return { success: false, error: err.message };
   }
 }
 
@@ -48,7 +50,8 @@ export async function unfreezeUserWallet(userId: string): Promise<{ success: boo
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    const err = error as Error;
+    return { success: false, error: err.message };
   }
 }
 
@@ -67,7 +70,8 @@ export async function notifySecurityTeam(fraudType: string, userId: string, deta
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    const err = error as Error;
+    return { success: false, error: err.message };
   }
 }
 
@@ -86,7 +90,8 @@ export async function publishFraudEvent(eventType: string, data: Record<string, 
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    const err = error as Error;
+    return { success: false, error: err.message };
   }
 }
 
@@ -100,7 +105,8 @@ export async function getWalletBalance(userId: string): Promise<{ balance: numbe
     });
     return { balance: res.data.balance || 0, frozen: res.data.frozen || false };
   } catch (error) {
-    return { balance: 0, frozen: false, error: error.message };
+    const err = error as Error;
+    return { balance: 0, frozen: false, error: err.message };
   }
 }
 

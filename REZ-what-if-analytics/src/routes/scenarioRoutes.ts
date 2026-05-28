@@ -4,8 +4,8 @@ import { z } from 'zod';
 import { ScenarioModel } from '../models/scenarioModel.js';
 import { simulationEngine } from '../services/simulationEngine.js';
 import { nlParser } from '../services/nlParser.js';
-import { ScenarioSchema, WhatIfQuerySchema, MonteCarloParamsSchema, SensitivityAnalysisSchema } from '../types/index.js';
-import { logger } from './utils/logger.js';
+import { ScenarioSchema, WhatIfQuerySchema, MonteCarloParamsSchema, SensitivityAnalysisSchema, Scenario } from '../types/index.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 
@@ -37,7 +37,7 @@ router.post('/scenarios', async (req: Request, res: Response) => {
     res.status(201).json({ success: true, data: scenarioDoc });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ success: false, errors: error.errors });
+      res.status(400).json({ success: false, errors: error.issues });
     } else {
       logger.error('Create scenario error:', error);
       res.status(500).json({ success: false, error: 'Failed to create scenario' });
@@ -84,14 +84,14 @@ router.post('/scenarios/:id/run', async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, error: 'Scenario not found' });
     }
 
-    const scenarioData = {
+    const scenarioData: Scenario = {
       id: scenario._id.toString(),
       name: scenario.name,
       description: scenario.description,
-      type: scenario.type as unknown,
+      type: scenario.type as Scenario['type'],
       baselineId: scenario.baselineId,
       assumptions: scenario.assumptions,
-      parameters: scenario.parameters as unknown
+      parameters: scenario.parameters as Scenario['parameters']
     };
 
     const result = await simulationEngine.runScenario(scenarioData);
@@ -110,7 +110,7 @@ router.post('/simulate', async (req: Request, res: Response) => {
     res.json({ success: true, data: result });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ success: false, errors: error.errors });
+      res.status(400).json({ success: false, errors: error.issues });
     } else {
       logger.error('Simulate error:', error);
       res.status(500).json({ success: false, error: 'Simulation failed' });
@@ -124,15 +124,19 @@ router.post('/what-if', async (req: Request, res: Response) => {
     const parsedScenario = nlParser.parseQuery(validated.whatIf);
 
     if (validated.context?.currentMetrics) {
-      await simulationEngine.initializeBaseline('query', validated.context.currentMetrics as unknown);
+      const metrics: Record<string, number> = {};
+      for (const [key, value] of Object.entries(validated.context.currentMetrics)) {
+        metrics[key] = value;
+      }
+      await simulationEngine.initializeBaseline('query', metrics);
     }
 
-    const scenarioData = {
+    const scenarioData: Scenario = {
       ...parsedScenario,
       baselineId: validated.context?.currentMetrics ? 'query' : undefined
-    };
+    } as Scenario;
 
-    const result = await simulationEngine.runScenario(scenarioData as unknown);
+    const result = await simulationEngine.runScenario(scenarioData);
 
     const naturalLanguage = nlParser.generateNaturalLanguageResult({
       scenarioName: parsedScenario.name || validated.whatIf,
@@ -151,7 +155,7 @@ router.post('/what-if', async (req: Request, res: Response) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ success: false, errors: error.errors });
+      res.status(400).json({ success: false, errors: error.issues });
     } else {
       logger.error('What-if error:', error);
       res.status(500).json({ success: false, error: 'What-if analysis failed' });
@@ -166,7 +170,7 @@ router.post('/monte-carlo', async (req: Request, res: Response) => {
     res.json({ success: true, data: result });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ success: false, errors: error.errors });
+      res.status(400).json({ success: false, errors: error.issues });
     } else {
       logger.error('Monte Carlo error:', error);
       res.status(500).json({ success: false, error: 'Monte Carlo simulation failed' });
@@ -177,7 +181,14 @@ router.post('/monte-carlo', async (req: Request, res: Response) => {
 router.post('/sensitivity', async (req: Request, res: Response) => {
   try {
     const validated = SensitivityAnalysisSchema.parse(req.body);
-    const sensitivityResults: unknown[] = [];
+    interface SensitivityResult {
+      inputVariable: string;
+      outputMetric: string;
+      range: { min: number; max: number };
+      impact: number;
+      sensitivity: number;
+    }
+    const sensitivityResults: SensitivityResult[] = [];
 
     for (const variable of validated.inputVariables) {
       const range = validated.ranges[variable];
@@ -191,7 +202,9 @@ router.post('/sensitivity', async (req: Request, res: Response) => {
       for (let i = 0; i <= steps; i++) {
         const value = range.min + i * range.step;
         for (const metric of validated.outputMetrics) {
-          impacts[metric].push(value * (Number(randomBytes(4).toString('hex'), 16) / 0xFFFFFFFF * 0.5 + 0.5));
+          const hexStr = randomBytes(4).toString('hex');
+          const randomFactor = parseInt(hexStr, 16) / 0xFFFFFFFF * 0.5 + 0.5;
+          impacts[metric].push(value * randomFactor);
         }
       }
 
@@ -222,7 +235,7 @@ router.post('/sensitivity', async (req: Request, res: Response) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ success: false, errors: error.errors });
+      res.status(400).json({ success: false, errors: error.issues });
     } else {
       logger.error('Sensitivity analysis error:', error);
       res.status(500).json({ success: false, error: 'Sensitivity analysis failed' });

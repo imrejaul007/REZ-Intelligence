@@ -46,7 +46,7 @@ export const ScenarioSchema = z.object({
     metric: MetricType,
     changePercent: z.number().min(-100).max(1000),
     timeHorizon: TimeHorizon,
-    confidenceLevel: z.number().min(0).max(1).default(0.95)
+    confidenceLevel: z.number().min(0).max(1).default(0.95).optional()
   }),
   constraints: z.array(z.object({
     type: z.enum(['min', 'max', 'equal']),
@@ -60,13 +60,13 @@ export type Scenario = z.infer<typeof ScenarioSchema>;
 
 export const ScenarioResultSchema = z.object({
   scenarioId: z.string(),
-  baselineMetrics: z.record(z.number()),
-  projectedMetrics: z.record(z.number()),
-  deltas: z.record(z.number()),
-  percentChanges: z.record(z.number()),
+  baselineMetrics: z.record(z.string(), z.number()),
+  projectedMetrics: z.record(z.string(), z.number()),
+  deltas: z.record(z.string(), z.number()),
+  percentChanges: z.record(z.string(), z.number()),
   confidenceInterval: z.object({
-    lower: z.record(z.number()),
-    upper: z.record(z.number())
+    lower: z.record(z.string(), z.number()),
+    upper: z.record(z.string(), z.number())
   }),
   riskScore: z.number().min(0).max(100),
   recommendations: z.array(z.object({
@@ -81,7 +81,7 @@ export type ScenarioResult = z.infer<typeof ScenarioResultSchema>;
 export const WhatIfQuerySchema = z.object({
   whatIf: z.string().describe('Natural language what-if question'),
   context: z.object({
-    businessType: z.enum(['restaurant', 'retail', 'salon', 'hotel', 'fitness', 'ecommerce', 'marketplace']),
+    businessType: z.enum(['restaurant', 'retail', 'salon', 'hotel', 'fitness', 'ecommerce', 'marketplace']).optional(),
     currentMetrics: z.record(z.number()).optional(),
     timeHorizon: TimeHorizon.optional()
   }).optional()
@@ -131,7 +131,7 @@ export interface MonteCarloResult {
 
 export const MonteCarloParamsSchema = z.object({
   metric: MetricType,
-  simulations: z.number().min(100).max(100000).default(10000),
+  simulations: z.number().min(100).max(100000).default(10000).optional(),
   inputDistributions: z.record(z.object({
     type: z.enum(['normal', 'uniform', 'triangular', 'poisson', 'exponential']),
     params: z.record(z.number())

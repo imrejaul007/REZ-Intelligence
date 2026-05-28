@@ -1,16 +1,18 @@
 import winston from 'winston';
 import { v4 as uuidv4 } from 'uuid';
-import { Symptom, SYMPTOM_DATABASE, WELLNESS_TIPS, HEALTH_GLOSSARY } from '../config/knowledge.js';
+import { Symptom, SYMPTOM_DATABASE, WELLNESS_TIPS, HEALTH_GLOSSARY } from '../config/knowledge';
 
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
-const logFormat = printf(({ level, message, timestamp, ...metadata }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const logFormat = printf((info: any) => {
+  const { level, message, timestamp, stack, ...metadata } = info;
   let msg = `${timestamp} [${level}]: ${message}`;
-  if (Object.keys(metadata).length > 0 && metadata.stack === undefined) {
+  if (Object.keys(metadata).length > 0 && stack === undefined) {
     msg += ` ${JSON.stringify(metadata)}`;
   }
-  if (metadata.stack) {
-    msg += `\n${metadata.stack}`;
+  if (stack) {
+    msg += `\n${stack}`;
   }
   return msg;
 });

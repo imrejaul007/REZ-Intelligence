@@ -6,7 +6,7 @@
 
 import axios, { AxiosInstance } from 'axios';
 import { serviceUrls } from '../config/index.js';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 export interface ServiceHealth {
   service: string;
@@ -133,8 +133,8 @@ export class RezServicesConnector {
   }
 
   async getLinkedAccounts(userId: string): Promise<string[]> {
-    const identity = await this.getIdentityByUserId(userId);
-    return identity?.linkedAccounts || [];
+    const identity = await this.getIdentityByUserId(userId) as Record<string, unknown> | null;
+    return ((identity?.linkedAccounts as string[]) || []);
   }
 
   // ============================================
@@ -155,19 +155,19 @@ export class RezServicesConnector {
   }
 
   async getChurnRisk(userId: string): Promise<{ risk: string; probability: number }> {
-    const predictions = await this.getPredictions(userId);
+    const predictions = await this.getPredictions(userId) as Record<string, unknown>;
     return {
-      risk: predictions?.churnRisk || 'LOW',
-      probability: predictions?.churnProbability || 0.1,
+      risk: ((predictions?.churnRisk as string) || 'LOW'),
+      probability: ((predictions?.churnProbability as number) || 0.1),
     };
   }
 
   async getLTVPrediction(userId: string): Promise<{ predicted: number; confidence: number }> {
-    const predictions = await this.getPredictions(userId);
-    const ltv = predictions?.ltvPrediction;
+    const predictions = await this.getPredictions(userId) as Record<string, unknown>;
+    const ltv = predictions?.ltvPrediction as Record<string, unknown> | undefined;
     return {
-      predicted: ltv?.predicted || 0,
-      confidence: ltv?.confidence || 0,
+      predicted: ((ltv?.predicted as number) || 0),
+      confidence: ((ltv?.confidence as number) || 0),
     };
   }
 

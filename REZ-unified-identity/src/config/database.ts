@@ -5,11 +5,11 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez_un
 
 export interface DatabaseConfig {
   uri: string;
-  options: mongoose.ConnectionOptions;
+  options: mongoose.ConnectOptions;
 }
 
-const getConnectionOptions = (): mongoose.ConnectionOptions => {
-  const options: mongoose.ConnectionOptions = {
+const getConnectionOptions = (): mongoose.ConnectOptions => {
+  const options: mongoose.ConnectOptions = {
     maxPoolSize: 10,
     minPoolSize: 2,
     socketTimeoutMS: 45000,
@@ -37,7 +37,7 @@ export const connectDatabase = async (): Promise<typeof mongoose> => {
       name: connection.connection.name,
     });
 
-    mongoose.connection.on('error', (error) => {
+    mongoose.connection.on('error', (error: Error) => {
       logger.error('MongoDB connection error', { error: error.message });
     });
 

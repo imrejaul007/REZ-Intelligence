@@ -9,13 +9,6 @@ import { logger } from '../services/logger';
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 const DEDUP_WINDOW_SECONDS = 60; // Messages within 60s are duplicates
 
-interface WebhookRoutesConfig {
-  messageBridge: MessageBridge;
-  responseBridge: ResponseBridge;
-  verifyToken: string;
-  appSecret: string;
-}
-
 export interface WebhookRoutesConfig {
   messageBridge: MessageBridge;
   responseBridge: ResponseBridge;
@@ -211,8 +204,8 @@ export function createWebhookRoutes(config: WebhookRoutesConfig): Router {
   async function handleIncomingMessage(
     phoneNumberId: string,
     entry: WhatsAppWebhookEntry,
-    change: WhatsAppWebhookEntry['changes'][0],
-    message: WhatsAppWebhookEntry['changes'][0]['value']['messages'][0]
+    _change: WhatsAppWebhookEntry['changes'][0],
+    message: NonNullable<WhatsAppWebhookEntry['changes'][0]['value']['messages']>[0]
   ): Promise<void> {
     logger.info('Incoming WhatsApp message', {
       messageId: message.id,
@@ -222,7 +215,7 @@ export function createWebhookRoutes(config: WebhookRoutesConfig): Router {
     });
 
     // Get contact info
-    const contact = entry.changes[0].value.contacts?.[0];
+    const contact = entry.changes[0]?.value?.contacts?.[0];
     const profileName = contact?.profile?.name;
 
     // Build message content based on type
@@ -343,7 +336,7 @@ export function createWebhookRoutes(config: WebhookRoutesConfig): Router {
    * Handle status updates (delivered, read, etc.)
    */
   async function handleStatusUpdate(
-    status: WhatsAppWebhookEntry['changes'][0]['value']['status'][0]
+    status: NonNullable<WhatsAppWebhookEntry['changes'][0]['value']['status']>[0]
   ): Promise<void> {
     logger.debug('Status update received', {
       statusId: status.id,
@@ -353,7 +346,6 @@ export function createWebhookRoutes(config: WebhookRoutesConfig): Router {
     });
 
     // You can store these for analytics, retry logic, etc.
-    const statusKey = `wa:status:${status.id}`;
     // In a real implementation, you would store this in Redis or MongoDB
   }
 

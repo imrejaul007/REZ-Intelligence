@@ -7,7 +7,7 @@ const SERVICE_NAME = process.env.SERVICE_NAME || 'rez-whatsapp-bridge';
 const structuredFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DDTHH:mm:ss.SSSZ' }),
   winston.format.errors({ stack: true }),
-  winston.format((info) => {
+  winston.format((info: winston.Logform.TransformableInfo) => {
     info.service = SERVICE_NAME;
     return info;
   })(),

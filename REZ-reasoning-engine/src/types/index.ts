@@ -12,7 +12,7 @@ export type ReasoningMethod = z.infer<typeof ReasoningMethod>;
 
 export const ReasoningRequestSchema = z.object({
   problem: z.string().min(1),
-  context: z.record(z.unknown()).optional(),
+  context: z.record(z.string(), z.unknown()).optional(),
   method: ReasoningMethod.default('chain_of_thought'),
   maxSteps: z.number().min(1).max(20).default(10),
   constraints: z.array(z.string()).optional()
@@ -23,7 +23,7 @@ export interface ReasoningStep {
   step: number;
   thought: string;
   action: string;
-  intermediateResult?;
+  intermediateResult?: unknown;
   confidence: number;
 }
 

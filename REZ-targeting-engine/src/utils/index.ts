@@ -141,14 +141,14 @@ export const groupBy = <T, K extends string | number>(
  * Object utilities
  */
 
-export const pick = <T, K extends keyof T>(
+export const pick = <T extends object, K extends keyof T>(
   obj: T,
   keys: K[]
 ): Pick<T, K> => {
-  const result = {} as unknown;
+  const result = {} as Pick<T, K>;
   keys.forEach(key => {
-    if (key in (obj as unknown)) {
-      result[key] = (obj as unknown)[key];
+    if (key in obj) {
+      result[key] = obj[key];
     }
   });
   return result;
@@ -165,7 +165,7 @@ export const omit = <T, K extends keyof T>(
   return result;
 };
 
-export const deepMerge = <T extends object>(target: T, source: Partial<T>): T => {
+export const deepMerge = <T extends Record<string, unknown>>(target: T, source: Partial<T>): T => {
   const output = { ...target };
   for (const key in source) {
     if (source[key] !== undefined) {
@@ -175,11 +175,11 @@ export const deepMerge = <T extends object>(target: T, source: Partial<T>): T =>
         source[key] !== null
       ) {
         output[key] = deepMerge(
-          (target[key] as unknown) || {},
-          source[key] as unknown
-        );
+          (target[key] as Record<string, unknown>) || {},
+          source[key] as Partial<Record<string, unknown>>
+        ) as T[Extract<keyof T, string>];
       } else {
-        output[key] = source[key] as unknown;
+        output[key] = source[key] as T[Extract<keyof T, string>];
       }
     }
   }

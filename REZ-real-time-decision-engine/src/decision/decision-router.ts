@@ -25,7 +25,7 @@ export interface DecisionResult {
 export interface DecisionAction {
   type: string;
   target: string;
-  value?;
+  value?: unknown;
   priority: 'high' | 'medium' | 'low';
 }
 
@@ -51,7 +51,7 @@ export class DecisionRouter {
     this.decisionHandlers.set('personalization', this.handlePersonalizationDecision.bind(this));
   }
 
-  async route(body, headers: Headers): Promise<DecisionResult> {
+  async route(body: { userId?: string; sessionId?: string; requestType?: string; context?: Record<string, unknown>; offerId?: unknown; offerType?: unknown; criteria?: unknown; maxItems?: number; category?: unknown; strategy?: unknown; currentTier?: string; points?: number; contentType?: unknown; segments?: unknown; preferences?: unknown; transactionId?: string; transactionVelocity?: number; amount?: number; averageAmount?: number; locationMismatch?: boolean; newDevice?: boolean; vpnDetected?: boolean; weeklyActivity?: number; history?: unknown[]; lastActivity?: string }, headers: Headers): Promise<DecisionResult> {
     const startTime = Date.now();
     const decisionId = uuidv4();
 
@@ -61,10 +61,11 @@ export class DecisionRouter {
         throw new Error('Missing required fields: userId, requestType');
       }
 
+      const requestType = body.requestType as DecisionContext['requestType'];
       const context: DecisionContext = {
         userId: body.userId,
         sessionId: body.sessionId || headers['x-session-id'] || uuidv4(),
-        requestType: body.requestType,
+        requestType,
         context: body.context || {},
         timestamp: new Date().toISOString(),
         metadata: {
@@ -266,12 +267,13 @@ export class DecisionRouter {
     let score = 0.5;
 
     // User engagement factor
-    if (context.history?.length > 10) score += 0.2;
-    else if (context.history?.length > 5) score += 0.1;
+    const history = context.history as unknown[] | undefined;
+    if (history && history.length > 10) score += 0.2;
+    else if (history && history.length > 5) score += 0.1;
 
     // Recency factor
     if (context.lastActivity) {
-      const daysSinceActivity = (Date.now() - new Date(context.lastActivity).getTime()) / (1000 * 60 * 60 * 24);
+      const daysSinceActivity = (Date.now() - new Date(context.lastActivity as string).getTime()) / (1000 * 60 * 60 * 24);
       if (daysSinceActivity < 7) score += 0.15;
       else if (daysSinceActivity > 30) score -= 0.1;
     }
@@ -285,12 +287,16 @@ export class DecisionRouter {
   private calculateFraudScore(context: Record<string, unknown>): number {
     let score = 0.1; // Low base fraud score
 
+    const transactionVelocity = context.transactionVelocity as number | undefined;
+    const amount = context.amount as number | undefined;
+    const averageAmount = context.averageAmount as number | undefined;
+
     // Velocity check
-    if (context.transactionVelocity > 5) score += 0.3;
-    if (context.transactionVelocity > 10) score += 0.3;
+    if (transactionVelocity !== undefined && transactionVelocity > 5) score += 0.3;
+    if (transactionVelocity !== undefined && transactionVelocity > 10) score += 0.3;
 
     // Amount anomalies
-    if (context.amount > context.averageAmount * 3) score += 0.25;
+    if (amount !== undefined && averageAmount !== undefined && amount > averageAmount * 3) score += 0.25;
 
     // Location anomalies
     if (context.locationMismatch) score += 0.2;
@@ -305,13 +311,19 @@ export class DecisionRouter {
   private calculateLoyaltyScore(context: Record<string, unknown>): number {
     let score = 0.3;
 
+    const points = context.points as number | undefined;
+    const weeklyActivity = context.weeklyActivity as number | undefined;
+    const currentTier = context.currentTier as string | undefined;
+
     // Points factor
-    const pointsRatio = context.points / 10000;
-    score += Math.min(0.3, pointsRatio * 0.3);
+    if (points !== undefined) {
+      const pointsRatio = points / 10000;
+      score += Math.min(0.3, pointsRatio * 0.3);
+    }
 
     // Engagement frequency
-    if (context.weeklyActivity > 5) score += 0.2;
-    else if (context.weeklyActivity > 2) score += 0.1;
+    if (weeklyActivity !== undefined && weeklyActivity > 5) score += 0.2;
+    else if (weeklyActivity !== undefined && weeklyActivity > 2) score += 0.1;
 
     // Tier multiplier
     const tierMultipliers: Record<string, number> = {
@@ -320,7 +332,7 @@ export class DecisionRouter {
       gold: 1.4,
       platinum: 1.6,
     };
-    score *= tierMultipliers[context.currentTier] || 1;
+    score *= tierMultipliers[currentTier || ''] || 1;
 
     return Math.min(1, score);
   }
@@ -340,11 +352,15 @@ export class DecisionRouter {
   private generateFraudReasons(context: Record<string, unknown>, score: number): string[] {
     const reasons: string[] = [];
 
+    const transactionVelocity = context.transactionVelocity as number | undefined;
+    const amount = context.amount as number | undefined;
+    const averageAmount = context.averageAmount as number | undefined;
+
     if (score < 0.2) {
       reasons.push('Normal transaction pattern');
     } else {
-      if (context.transactionVelocity > 5) reasons.push('High transaction velocity detected');
-      if (context.amount > context.averageAmount * 3) reasons.push('Unusual transaction amount');
+      if (transactionVelocity !== undefined && transactionVelocity > 5) reasons.push('High transaction velocity detected');
+      if (amount !== undefined && averageAmount !== undefined && amount > averageAmount * 3) reasons.push('Unusual transaction amount');
       if (context.locationMismatch) reasons.push('Location mismatch with profile');
       if (context.vpnDetected) reasons.push('VPN/proxy detected');
       if (context.newDevice) reasons.push('First-time device usage');
@@ -356,21 +372,24 @@ export class DecisionRouter {
   private generateFraudActions(decision: string, context: Record<string, unknown>): DecisionAction[] {
     const actions: DecisionAction[] = [];
 
+    const transactionId = context.transactionId as string | undefined;
+    const userId = context.userId as string | undefined;
+
     if (decision === 'denied') {
       actions.push({
         type: 'block_transaction',
-        target: context.transactionId,
+        target: transactionId || '',
         priority: 'high',
       });
       actions.push({
         type: 'flag_account',
-        target: context.userId,
+        target: userId || '',
         priority: 'medium',
       });
     } else if (decision === 'review') {
       actions.push({
         type: 'queue_for_review',
-        target: context.transactionId,
+        target: transactionId || '',
         priority: 'medium',
       });
     }

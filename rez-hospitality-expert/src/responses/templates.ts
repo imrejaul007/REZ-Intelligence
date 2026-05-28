@@ -3,8 +3,8 @@
  * Pre-built response templates for common hospitality scenarios
  */
 
-import { HospitalityIntent, SuggestedAction } from '../types/index.js';
-import { ToneType, TONE_CONFIGS } from '../config/tone.js';
+import { HospitalityIntent, SuggestedAction } from '../types/index';
+import { ToneType, TONE_CONFIGS } from '../config/tone';
 
 // ============================================
 // RESPONSE TEMPLATES
@@ -269,6 +269,31 @@ export class ResponseGenerator {
   }
 
   /**
+   * Get quick replies for an intent
+   */
+  getQuickReplies(intent: HospitalityIntent): string[] {
+    const quickReplies: Record<HospitalityIntent, string[]> = {
+      [HospitalityIntent.CHECK_IN]: ['Start check-in', 'Early check-in', 'Arrival info'],
+      [HospitalityIntent.CHECK_OUT]: ['Express checkout', 'Late checkout', 'Store bags'],
+      [HospitalityIntent.ROOM_SERVICE]: ['Breakfast menu', 'Order food', 'Late night'],
+      [HospitalityIntent.HOUSEKEEPING]: ['Extra towels', 'Clean room', 'Turndown'],
+      [HospitalityIntent.CONCIERGE]: ['Restaurant', 'Tour booking', 'Local info'],
+      [HospitalityIntent.AMENITIES]: ['Pool hours', 'Spa info', 'Gym access'],
+      [HospitalityIntent.DINING]: ['Reserve table', 'View menu', 'Room service'],
+      [HospitalityIntent.SPA_WELLNESS]: ['Book treatment', 'View menu', 'Hours'],
+      [HospitalityIntent.TRANSPORTATION]: ['Airport transfer', 'Taxi', 'Directions'],
+      [HospitalityIntent.LOCAL_RECOMMENDATIONS]: ['Restaurants', 'Attractions', 'Shopping'],
+      [HospitalityIntent.ROOM_UPGRADE]: ['View suites', 'Upgrade options', 'Pricing'],
+      [HospitalityIntent.COMPLAINT]: ['Report issue', 'Speak to manager', 'Room change'],
+      [HospitalityIntent.GENERAL_INQUIRY]: ['WiFi password', 'Front desk', 'Hotel info'],
+      [HospitalityIntent.EMERGENCY]: ['Medical', 'Security', 'Stay on line'],
+      [HospitalityIntent.BILLING]: ['View bill', 'Dispute charge', 'Payment'],
+      [HospitalityIntent.WiFi_TECHNICAL]: ['Password', 'Connection help', 'Tech support'],
+    };
+    return quickReplies[intent] || ['Help', 'Start over'];
+  }
+
+  /**
    * Generate greeting based on time of day
    */
   generateGreeting(guestName?: string): string {
@@ -386,30 +411,6 @@ export function generateResponse(
     quickReplies,
   };
 }
-
-// Quick reply generator
-ResponseGenerator.prototype.getQuickReplies = function(intent: HospitalityIntent): string[] {
-  const quickReplies: Record<HospitalityIntent, string[]> = {
-    [HospitalityIntent.CHECK_IN]: ['Start check-in', 'Early check-in', 'Arrival info'],
-    [HospitalityIntent.CHECK_OUT]: ['Express checkout', 'Late checkout', 'Store bags'],
-    [HospitalityIntent.ROOM_SERVICE]: ['Breakfast menu', 'Order food', 'Late night'],
-    [HospitalityIntent.HOUSEKEEPING]: ['Extra towels', 'Clean room', 'Turndown'],
-    [HospitalityIntent.CONCIERGE]: ['Restaurant', 'Tour booking', 'Local info'],
-    [HospitalityIntent.AMENITIES]: ['Pool hours', 'Spa info', 'Gym access'],
-    [HospitalityIntent.DINING]: ['Reserve table', 'View menu', 'Room service'],
-    [HospitalityIntent.SPA_WELLNESS]: ['Book treatment', 'View menu', 'Hours'],
-    [HospitalityIntent.TRANSPORTATION]: ['Airport transfer', 'Taxi', 'Directions'],
-    [HospitalityIntent.LOCAL_RECOMMENDATIONS]: ['Restaurants', 'Attractions', 'Shopping'],
-    [HospitalityIntent.ROOM_UPGRADE]: ['View suites', 'Upgrade options', 'Pricing'],
-    [HospitalityIntent.COMPLAINT]: ['Report issue', 'Speak to manager', 'Room change'],
-    [HospitalityIntent.GENERAL_INQUIRY]: ['WiFi password', 'Front desk', 'Hotel info'],
-    [HospitalityIntent.EMERGENCY]: ['Medical', 'Security', 'Stay on line'],
-    [HospitalityIntent.BILLING]: ['View bill', 'Dispute charge', 'Payment'],
-    [HospitalityIntent.WiFi_TECHNICAL]: ['Password', 'Connection help', 'Tech support'],
-  };
-
-  return quickReplies[intent] || ['Help me', 'Contact front desk', 'Start over'];
-};
 
 // Export singleton
 export const responseGenerator = new ResponseGenerator();

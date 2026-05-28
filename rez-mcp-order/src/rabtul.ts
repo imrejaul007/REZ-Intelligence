@@ -21,22 +21,24 @@ export async function createOrder(params: {
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true, orderId: res.data.orderId };
-  } catch (error) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: message };
   }
 }
 
 /**
  * Get order
  */
-export async function getOrder(orderId: string): Promise<{ order; error?: string }> {
+export async function getOrder(orderId: string): Promise<{ order: unknown; error?: string }> {
   try {
     const res = await axios.get(`${ORDER_URL}/api/orders/${orderId}`, {
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { order: res.data };
-  } catch (error) {
-    return { order: null, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { order: null, error: message };
   }
 }
 
@@ -49,8 +51,9 @@ export async function updateOrderStatus(orderId: string, status: string): Promis
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: message };
   }
 }
 
@@ -64,8 +67,9 @@ export async function getUserOrders(userId: string, limit = 20): Promise<{ order
       params: { limit },
     });
     return { orders: res.data.orders || [] };
-  } catch (error) {
-    return { orders: [], error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { orders: [], error: message };
   }
 }
 
@@ -78,8 +82,9 @@ export async function cancelOrder(orderId: string, reason?: string): Promise<{ s
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: message };
   }
 }
 

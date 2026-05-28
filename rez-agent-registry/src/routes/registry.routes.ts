@@ -91,9 +91,9 @@ export function createRegistryRoutes(config: RegistryRoutesConfig): Router {
       const { type, status, category } = req.query;
 
       const experts = await registry.getAllExperts({
-        type: type as string,
-        status: status as ExpertInfo['status'],
-        category: category as string,
+        type: typeof type === 'string' ? type : undefined,
+        status: typeof status === 'string' ? status as ExpertInfo['status'] : undefined,
+        category: typeof category === 'string' ? category : undefined,
       });
 
       res.json({
@@ -112,7 +112,12 @@ export function createRegistryRoutes(config: RegistryRoutesConfig): Router {
    */
   router.get('/experts/:id', async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const expert = await registry.getExpert(req.params.id);
+      const expertId = req.params.id;
+      if (!expertId) {
+        res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Expert ID is required' } });
+        return;
+      }
+      const expert = await registry.getExpert(expertId);
 
       if (!expert) {
         res.status(404).json({
@@ -152,7 +157,15 @@ export function createRegistryRoutes(config: RegistryRoutesConfig): Router {
       }
 
       const expert = await registry.registerExpert({
-        ...validation.data,
+        id: validation.data.id,
+        name: validation.data.name,
+        type: validation.data.type,
+        description: validation.data.description,
+        version: validation.data.version,
+        capabilities: validation.data.capabilities,
+        endpoints: validation.data.endpoints,
+        metadata: validation.data.metadata || { author: undefined, tags: undefined, category: undefined, industries: undefined },
+        ttlSeconds: validation.data.ttlSeconds,
         status: 'active',
         health: {
           healthy: true,
@@ -184,7 +197,12 @@ export function createRegistryRoutes(config: RegistryRoutesConfig): Router {
    */
   router.delete('/experts/:id', async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const success = await registry.unregisterExpert(req.params.id);
+      const expertId = req.params.id;
+      if (!expertId) {
+        res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Expert ID is required' } });
+        return;
+      }
+      const success = await registry.unregisterExpert(expertId);
 
       if (!success) {
         res.status(404).json({
@@ -194,7 +212,7 @@ export function createRegistryRoutes(config: RegistryRoutesConfig): Router {
         return;
       }
 
-      logger.info('Expert unregistered via API', { expertId: req.params.id });
+      logger.info('Expert unregistered via API', { expertId });
 
       res.json({
         success: true,
@@ -225,8 +243,13 @@ export function createRegistryRoutes(config: RegistryRoutesConfig): Router {
         return;
       }
 
+      const expertId = req.params.id;
+      if (!expertId) {
+        res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Expert ID is required' } });
+        return;
+      }
       const success = await registry.updateHeartbeat(
-        req.params.id,
+        expertId,
         validation.data.metrics
       );
 
@@ -267,8 +290,13 @@ export function createRegistryRoutes(config: RegistryRoutesConfig): Router {
         return;
       }
 
+      const expertId = req.params.id;
+      if (!expertId) {
+        res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Expert ID is required' } });
+        return;
+      }
       const success = await registry.updateExpertStatus(
-        req.params.id,
+        expertId,
         validation.data.status,
         validation.data.error
       );
@@ -326,8 +354,8 @@ export function createRegistryRoutes(config: RegistryRoutesConfig): Router {
       }
 
       const expert = await registry.findBestExpert(capability, {
-        minSuccessRate,
-        maxResponseTimeMs,
+        minSuccessRate: typeof minSuccessRate === 'number' ? minSuccessRate : undefined,
+        maxResponseTimeMs: typeof maxResponseTimeMs === 'number' ? maxResponseTimeMs : undefined,
       });
 
       if (!expert) {

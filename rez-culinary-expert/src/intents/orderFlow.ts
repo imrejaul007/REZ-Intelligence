@@ -5,8 +5,8 @@
 
 import { MongoClient, Db, Collection } from 'mongodb';
 import Redis from 'ioredis';
-import { logger } from './utils/logger.js';
-import { MenuItem } from '../services/menuService.js';
+import { logger } from '../utils/logger';
+import { MenuItem } from '../services/menuService';
 
 export enum OrderStatus {
   PENDING = 'pending',
@@ -686,5 +686,3 @@ export function getOrderFlowHandler(): OrderFlowHandler {
   }
   return orderFlowHandler;
 }
-
-export type { OrderFlowHandler };

@@ -220,7 +220,7 @@ export class RecommendationsService {
     for (const progress of userProgress) {
       if (progress.status === 'completed') {
         const course = await courseService.getCourseById(progress.courseId);
-        if (course) {
+        if (course && course.skills) {
           currentSkills.push(...course.skills);
         }
       }
@@ -230,8 +230,8 @@ export class RecommendationsService {
     const skillGap: { skill: string; status: 'mastered' | 'in_progress' | 'missing' }[] = [];
 
     for (const skill of requiredSkills) {
-      const inProgress = userProgress.some(p => {
-        const course = courseService.getCourseById(p.courseId);
+      const inProgress = await userProgress.some(async (p) => {
+        const course = await courseService.getCourseById(p.courseId);
         return course && course.skills.includes(skill) && p.status === 'in_progress';
       });
 

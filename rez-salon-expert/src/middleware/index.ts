@@ -1,3 +1,3 @@
-export * from './auth.js';
-export * from './rateLimit.js';
-export * from './errorHandler.js';
+export * from './auth';
+export * from './rateLimit';
+export * from './errorHandler';

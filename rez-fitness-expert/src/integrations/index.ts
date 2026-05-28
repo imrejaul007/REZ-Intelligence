@@ -2,5 +2,5 @@
  * Integrations Index
  */
 
-export * from './rabtulPlatform.js';
-export * from './rezIntelligence.js';
+export * from './rabtulPlatform';
+export * from './rezIntelligence';

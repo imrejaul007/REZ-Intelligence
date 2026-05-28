@@ -73,7 +73,8 @@ class IdentityResolver {
             return { success: true, merged_merchant: validated };
         }
         catch (error) {
-            return { success: false, error: error.message || 'Merge failed' };
+            const err = error;
+            return { success: false, error: err.message || 'Merge failed' };
         }
     }
     /**
@@ -93,7 +94,8 @@ class IdentityResolver {
             return { success: true };
         }
         catch (error) {
-            return { success: false, error: error.message };
+            const err = error;
+            return { success: false, error: err.message };
         }
     }
     /**

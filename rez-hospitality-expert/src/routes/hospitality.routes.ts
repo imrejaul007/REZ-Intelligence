@@ -12,16 +12,19 @@ import {
   ConversationContext,
   HospitalityIntent,
   ChatMessage,
-} from '../types/index.js';
-import { hospitalityIntents } from '../intents/hospitalityIntents.js';
-import { expertiseService } from '../services/expertise.js';
-import { recommendationsService } from '../services/recommendations.js';
-import { workflowService } from '../services/workflows.js';
-import { checkInOutService } from '../intents/checkInOut.js';
-import { responseGenerator } from '../responses/templates.js';
-import { logger } from './utils/logger.js';
-import { validateRequest, asyncHandler } from '../middleware/validation.js';
-import { getCoreBrainClient } from '../services/coreBrainIntegration.js';
+  RoomType,
+  GuestTier,
+  AmenityCategory,
+} from '../types/index';
+import { hospitalityIntents } from '../intents/hospitalityIntents';
+import { expertiseService } from '../services/expertise';
+import { recommendationsService } from '../services/recommendations';
+import { workflowService } from '../services/workflows';
+import { checkInOutService } from '../intents/checkInOut';
+import { responseGenerator } from '../responses/templates';
+import { logger } from '../utils/logger';
+import { validateRequest, asyncHandler } from '../middleware/validation';
+import { getCoreBrainClient } from '../services/coreBrainIntegration';
 
 // ============================================
 // ROUTER SETUP
@@ -84,15 +87,16 @@ router.post(
 
     // Enhance context with Core Brain data
     if (userContext) {
+      const prefs = userContext.preferences as { tone?: string; language?: string } | null;
       context.preferences = {
         ...context.preferences,
-        tone: userContext.preferences?.tone || context.preferences?.tone,
-        language: userContext.preferences?.language || context.language,
+        tone: prefs?.tone || context.preferences?.tone,
+        language: prefs?.language || context.language,
       };
 
       // Store Core Brain session for later use
-      (context as unknown).coreBrainSession = userContext.session;
-      (context as unknown).loyaltyProfile = userContext.loyalty;
+      (context as any).coreBrainSession = userContext.session;
+      (context as any).loyaltyProfile = userContext.loyalty;
     }
 
     // Add user message to history
@@ -141,8 +145,8 @@ router.post(
       metadata: {
         ...response.metadata,
         sentiment: metadata?.sentiment || 'neutral',
-        loyaltyTier: userContext?.loyalty?.tier,
-        loyaltyPoints: userContext?.loyalty?.points,
+        loyaltyTier: (userContext?.loyalty as any)?.tier,
+        loyaltyPoints: (userContext?.loyalty as any)?.points,
         hasCoreBrainContext: !!userContext,
       },
     };
@@ -270,7 +274,7 @@ router.post(
       });
     }
 
-    let response: Record<string, unknown>;
+    let response: Record<string, unknown> = { error: 'Unknown workflow type' };
 
     switch (workflowType) {
       case 'checkin':
@@ -284,7 +288,7 @@ router.post(
           };
         } else if (action === 'step') {
           const result = await checkInOutService.processCheckInStep(
-            context,
+            context as any,
             data as Record<string, unknown>
           );
           response = {
@@ -308,7 +312,7 @@ router.post(
           };
         } else if (action === 'step') {
           const result = await checkInOutService.processCheckOutStep(
-            context,
+            context as any,
             data as Record<string, unknown>
           );
           response = {
@@ -343,7 +347,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const { category } = req.query;
     const amenities = expertiseService.getAmenityInfo(
-      category as string as unknown
+      category as AmenityCategory | undefined
     );
 
     res.json({
@@ -434,9 +438,9 @@ router.get('/intents', (req: Request, res: Response) => {
  * Load user context from Core Brain
  */
 async function loadCoreBrainContext(userId: string, sessionId?: string): Promise<{
-  session;
-  preferences;
-  loyalty;
+  session: unknown;
+  preferences: unknown;
+  loyalty: unknown;
   memories: unknown[];
   context: Record<string, unknown>;
 } | null> {
@@ -459,8 +463,8 @@ async function createSession(
   // In production, this would fetch guest and reservation data from database
   const context: ConversationContext = {
     sessionId,
-    guest: guestId ? { id: guestId, name: 'Guest' } : undefined,
-    reservation: reservationId ? { id: reservationId } as unknown : undefined,
+    guest: guestId ? { id: guestId, name: 'Guest', tier: GuestTier.STANDARD } : undefined,
+    reservation: reservationId ? { id: reservationId, status: 'confirmed' as const, guestId: guestId || '', roomType: RoomType.STANDARD, checkInDate: '', checkOutDate: '', adults: 1, children: 0 } : undefined,
     currentIntent: undefined,
     conversationHistory: [],
     recentRequests: [],

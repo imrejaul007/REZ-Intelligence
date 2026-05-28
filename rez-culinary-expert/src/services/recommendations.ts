@@ -5,9 +5,10 @@
 
 import { Db, Collection } from 'mongodb';
 import Redis from 'ioredis';
-import { logger } from './utils/logger.js';
-import { PAIRING_GUIDE, matchCuisine, type MenuItem } from './menuService.js';
-import { DietaryService, getDietaryService } from './dietaryService.js';
+import { logger } from '../utils/logger';
+import { type MenuItem } from './menuService';
+import { PAIRING_GUIDE } from '../config/knowledge';
+import { DietaryService, getDietaryService } from './dietaryService';
 
 export interface RecommendationContext {
   userId?: string;
@@ -619,5 +620,3 @@ export function getRecommendationsService(): RecommendationsService {
   }
   return recommendationsService;
 }
-
-export type { RecommendationsService };

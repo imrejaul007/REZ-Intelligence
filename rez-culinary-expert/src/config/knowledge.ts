@@ -70,7 +70,7 @@ export const CUISINES = {
     keyIngredients: ['olive oil', 'garlic', 'lemon', 'herbs', 'hummus', 'falafel', 'pita', 'feta'],
     signatureDishes: ['Hummus', 'Falafel', 'Greek Salad', 'Shawarma', 'Moussaka'],
     cookingStyles: ['grilled', 'fresh', 'marinated', 'roasted', 'mezze-style'],
-    commonAllergers: ['gluten', 'dairy', 'tree nuts'],
+    commonAllergens: ['gluten', 'dairy', 'tree nuts'],
   },
   AMERICAN: {
     name: 'American',

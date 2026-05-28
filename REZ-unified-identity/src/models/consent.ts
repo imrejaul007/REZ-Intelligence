@@ -247,7 +247,7 @@ ConsentSchema.index({ status: 1, 'consentData.expiresAt': 1 });
 ConsentSchema.index({ companyId: 1, purpose: 1 });
 
 // Pre-save hook
-ConsentSchema.pre('save', function (next) {
+ConsentSchema.pre('save', function (next: (err?: Error) => void) {
   if (!this.consentId) {
     const { v4: uuidv4 } = require('uuid');
     this.consentId = `CNS-${uuidv4()}`;
@@ -434,7 +434,7 @@ ConsentLogSchema.index({ unifiedCustomerId: 1, timestamp: -1 });
 ConsentLogSchema.index({ action: 1, timestamp: -1 });
 
 // Pre-save hook
-ConsentLogSchema.pre('save', function (next) {
+ConsentLogSchema.pre('save', function (next: (err?: Error) => void) {
   if (!this.logId) {
     const { v4: uuidv4 } = require('uuid');
     this.logId = `LOG-${uuidv4()}`;

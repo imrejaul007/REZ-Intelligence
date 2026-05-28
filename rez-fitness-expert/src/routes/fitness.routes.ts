@@ -8,12 +8,12 @@ import {
   WorkoutType,
   Equipment,
   FitnessResponse
-} from '../services/fitnessExpert.js';
-import { detectFitnessIntent, getResponseForIntent, FitnessIntent, FitnessContext } from '../intents/fitnessIntents.js';
-import { createWorkoutPlan, getExercisesByType, getExercisesByMuscle, calculateProgress } from '../services/expertise.js';
-import { getRecommendations, getRecoveryTips } from '../services/recommendations.js';
-import { logger } from '../services/fitnessExpert.js';
-import { EXERCISE_DATABASE } from '../config/knowledge.js';
+} from '../services/fitnessExpert';
+import { detectFitnessIntent, getResponseForIntent, FitnessIntent, FitnessContext } from '../intents/fitnessIntents';
+import { createWorkoutPlan, getExercisesByType, getExercisesByMuscle, calculateProgress } from '../services/expertise';
+import { getRecommendations, getRecoveryTips } from '../services/recommendations';
+import { logger } from '../services/fitnessExpert';
+import { EXERCISE_DATABASE } from '../config/knowledge';
 
 const router = Router();
 
@@ -119,7 +119,7 @@ router.post('/query', validateRequest(fitnessQuerySchema), async (req: Request, 
 
     const response: FitnessResponse = await fitnessExpert.processQuery(query, profile, sessionId);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         response: response.message,
@@ -135,10 +135,9 @@ router.post('/query', validateRequest(fitnessQuerySchema), async (req: Request, 
         timestamp: new Date().toISOString()
       }
     });
-
   } catch (error) {
     logger.error('Fitness query endpoint error', { error });
-    next(error);
+    return next(error);
   }
 });
 

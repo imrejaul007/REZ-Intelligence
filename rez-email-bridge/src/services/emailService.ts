@@ -59,8 +59,9 @@ class EmailService {
 
       return { success: true, messageId: info.messageId };
     } catch (error) {
+      const err = error as Error;
       logger.error('Failed to send email', {
-        error: error.message,
+        error: err.message,
         to: message.to
       });
 
@@ -105,8 +106,9 @@ class EmailService {
 
       return { success: true, messageId: info.messageId };
     } catch (error) {
-      logger.error('Failed to send email with attachment', { error: error.message });
-      return { success: false, error: error.message };
+      const err = error as Error;
+      logger.error('Failed to send email with attachment', { error: err.message });
+      return { success: false, error: err.message };
     }
   }
 
@@ -131,7 +133,8 @@ class EmailService {
 
       return { success: true, messageId: 'sendgrid' };
     } catch (error) {
-      return { success: false, error: error.message };
+      const err = error as Error;
+      return { success: false, error: err.message };
     }
   }
 
@@ -140,7 +143,7 @@ class EmailService {
   }
 
   private interpolate(template: string, data: Record<string, unknown>): string {
-    return template.replace(/\{\{(\w+)\}\}/g, (_, key) => data[key] || '');
+    return template.replace(/\{\{(\w+)\}\}/g, (_, key) => String(data[key] ?? ''));
   }
 
   async sendToOrchestrator(from: string, subject: string, body: string): Promise<void> {
@@ -161,7 +164,8 @@ class EmailService {
         timeout: 30000
       });
     } catch (error) {
-      logger.error('Failed to send to orchestrator', { error: error.message });
+      const err = error as Error;
+      logger.error('Failed to send to orchestrator', { error: err.message });
     }
   }
 }

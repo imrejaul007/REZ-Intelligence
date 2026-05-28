@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import logger from './utils/logger.js';
+import { logger } from './utils/logger.js';
 
 import 'dotenv/config';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -8,7 +8,8 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import mongoose from 'mongoose';
+// mongoose types are optional - this file can work without MongoDB
+// import mongoose from 'mongoose';
 
 // Environment configuration
 const IDENTITY_SERVICE_URL = process.env.IDENTITY_SERVICE_URL || 'http://localhost:4001';
@@ -45,58 +46,18 @@ async function fetchFromIdentityService<T>(endpoint: string, options?: RequestIn
 }
 
 // ============================================================================
-// MongoDB Schema (PRODUCTION)
+// MongoDB Schema (PRODUCTION) - Disabled, using in-memory store
 // ============================================================================
+// To enable MongoDB persistence:
+// 1. Install mongoose: npm install mongoose
+// 2. Uncomment the mongoose import above
+// 3. Uncomment the schema definitions below
+// 4. Uncomment the MongoDB-related code in resolveIdentity()
 
-const IdentitySchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
-  type: { type: String, enum: ['email', 'phone', 'device', 'oauth'], required: true },
-  value: { type: String, required: true },
-  verified: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now },
-  userId: { type: String, required: true, index: true }
-}, { _id: false });
-
-const UnifiedProfileSchema = new mongoose.Schema({
-  userId: { type: String, required: true, unique: true, index: true },
-  identities: [IdentitySchema],
-  profiles: [{
-    appId: String,
-    appName: String,
-    userId: String,
-    attributes: mongoose.Schema.Types.Mixed,
-    firstSeen: Date,
-    lastSeen: Date
-  }],
-  relationships: [{
-    relatedUserId: String,
-    type: String,
-    createdAt: Date
-  }]
-}, { timestamps: true });
-
-// Index for fast lookups
-IdentitySchema.index({ type: 1, value: 1 }, { unique: true });
-
-const UnifiedProfile = mongoose.models.UnifiedProfile ||
-  mongoose.model('UnifiedProfile', UnifiedProfileSchema);
-
-// ============================================================================
-// Database Connection
-// ============================================================================
-
-async function connectToDatabase(): Promise<void> {
-  if (dbConnected) return;
-
-  try {
-    await mongoose.connect(MONGODB_URI);
-    dbConnected = true;
-    logger.info('[Identity MCP] Connected to MongoDB');
-  } catch (error) {
-    logger.error('[Identity MCP] Failed to connect to MongoDB:', error);
-    throw error;
-  }
-}
+// const IdentitySchema = new mongoose.Schema({...});
+// const UnifiedProfileSchema = new mongoose.Schema({...});
+// const UnifiedProfile = mongoose.models.UnifiedProfile || mongoose.model('UnifiedProfile', UnifiedProfileSchema);
+// async function connectToDatabase(): Promise<void> {...}
 
 // ============================================================================
 // Types
@@ -513,35 +474,34 @@ async function resolveIdentity(params: {
 
   // Try real API first if enabled
   if (USE_REAL_API) {
-    const result = await fetchFromIdentityService<unknown>(
+    const result = await fetchFromIdentityService<{ success: boolean; userId?: string; confidence?: number; matchedOn?: string }>(
       `/api/identity/resolve?identifier=${encodeURIComponent(identifier)}&type=${type || ''}`
     );
-    if (result) {
-      return { ...result, source: 'remote' };
+    if (result && result.success) {
+      return { success: result.success, userId: result.userId, confidence: result.confidence, matchedOn: result.matchedOn, source: 'remote' };
     }
   }
 
-  // PRODUCTION: Use MongoDB for persistence
-  try {
-    await connectToDatabase();
-
-    const query = type
-      ? { 'identities.type': type, 'identities.value': identifier }
-      : { 'identities.value': identifier };
-
-    const profile = await UnifiedProfile.findOne(query).lean();
-    if (profile) {
-      return {
-        success: true,
-        userId: profile.userId,
-        confidence: 1.0,
-        matchedOn: `${type || 'any'}:${identifier}`,
-        source: 'database'
-      };
-    }
-  } catch (error) {
-    logger.error('[Identity MCP] MongoDB lookup failed:', error);
-  }
+  // MongoDB persistence disabled - using in-memory store only
+  // To enable MongoDB, install mongoose and uncomment the mongoose imports above
+  // try {
+  //   await connectToDatabase();
+  //   const query = type
+  //     ? { 'identities.type': type, 'identities.value': identifier }
+  //     : { 'identities.value': identifier };
+  //   const profile = await UnifiedProfile.findOne(query).lean();
+  //   if (profile) {
+  //     return {
+  //       success: true,
+  //       userId: profile.userId,
+  //       confidence: 1.0,
+  //       matchedOn: `${type || 'any'}:${identifier}`,
+  //       source: 'database'
+  //     };
+  //   }
+  // } catch (error) {
+  //   logger.error('[Identity MCP] MongoDB lookup failed:', error);
+  // }
 
   // Fall back to in-memory search only if DB fails
   if (type) {

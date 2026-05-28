@@ -210,10 +210,11 @@ export class StaffModule {
       );
       this.cache.delete(`staff:${merchantId}`);
       return { success: true, member_id: response.data.member_id };
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       return {
         success: false,
-        error: error.response?.data?.message || 'Invitation failed',
+        error: err.response?.data?.message || 'Invitation failed',
       };
     }
   }

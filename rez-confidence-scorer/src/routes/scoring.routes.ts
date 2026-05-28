@@ -77,7 +77,7 @@ router.post(
       );
     }
 
-    const { agentIds, intent, context, taskComplexity, requiredCapabilities } =
+    const { agentIds, intent, context } =
       validationResult.data;
 
     logger.info('Batch calculating confidence scores', {

@@ -1,4 +1,4 @@
-import logger from './utils/logger.js';
+import { logger } from './utils/logger.js';
 
 import 'dotenv/config';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -1367,18 +1367,18 @@ const tools = [
 ];
 
 // Tool handlers
-async function handleListServices(args): Promise<string> {
+async function handleListServices(args: Record<string, unknown>): Promise<string> {
   let services = Object.values(serviceRegistry);
 
-  if (args.category) {
+  if (args.category && typeof args.category === 'string') {
     services = services.filter(s => s.category === args.category);
   }
 
-  if (args.status) {
+  if (args.status && typeof args.status === 'string') {
     services = services.filter(s => s.status === args.status);
   }
 
-  if (args.tag) {
+  if (args.tag && typeof args.tag === 'string') {
     const tag = args.tag.toLowerCase();
     services = services.filter(s => s.tags?.some(t => t.toLowerCase().includes(tag)));
   }
@@ -1401,8 +1401,9 @@ async function handleListServices(args): Promise<string> {
   }, null, 2);
 }
 
-async function handleGetService(args): Promise<string> {
-  const service = serviceRegistry[args.name];
+async function handleGetService(args: Record<string, unknown>): Promise<string> {
+  const name = typeof args.name === 'string' ? args.name : String(args.name);
+  const service = serviceRegistry[name];
 
   if (!service) {
     return JSON.stringify({
@@ -1423,8 +1424,9 @@ async function handleGetService(args): Promise<string> {
   return JSON.stringify(service, null, 2);
 }
 
-async function handleGetServiceHealth(args): Promise<string> {
-  const service = serviceRegistry[args.name];
+async function handleGetServiceHealth(args: Record<string, unknown>): Promise<string> {
+  const name = typeof args.name === 'string' ? args.name : String(args.name);
+  const service = serviceRegistry[name];
 
   if (!service) {
     return JSON.stringify({ error: 'Service not found' });
@@ -1466,8 +1468,9 @@ async function handleGetServiceHealth(args): Promise<string> {
   }, null, 2);
 }
 
-async function handleGetServiceLogs(args): Promise<string> {
-  const service = serviceRegistry[args.name];
+async function handleGetServiceLogs(args: Record<string, unknown>): Promise<string> {
+  const name = typeof args.name === 'string' ? args.name : String(args.name);
+  const service = serviceRegistry[name];
 
   if (!service) {
     return JSON.stringify({ error: 'Service not found' });
@@ -1515,8 +1518,8 @@ async function handleGetServiceLogs(args): Promise<string> {
   }, null, 2);
 }
 
-async function handleFindServices(args): Promise<string> {
-  const query = args.query.toLowerCase();
+async function handleFindServices(args: Record<string, unknown>): Promise<string> {
+  const query = typeof args.query === 'string' ? args.query.toLowerCase() : String(args.query || '');
 
   const matches = Object.values(serviceRegistry).filter(s =>
     s.name.toLowerCase().includes(query) ||
@@ -1527,7 +1530,7 @@ async function handleFindServices(args): Promise<string> {
   );
 
   return JSON.stringify({
-    query: args.query,
+    query,
     count: matches.length,
     services: matches.map(s => ({
       name: s.name,
@@ -1555,7 +1558,7 @@ async function handleRefreshHealthChecks(): Promise<string> {
   }, null, 2);
 }
 
-async function handleGetServiceCount(args): Promise<string> {
+async function handleGetServiceCount(args: Record<string, unknown>): Promise<string> {
   const byCategory = Object.values(serviceRegistry).reduce((acc, s) => {
     acc[s.category] = (acc[s.category] || 0) + 1;
     return acc;
@@ -1593,32 +1596,32 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 });
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const { name, arguments: args } = request.params;
+  const { name, arguments: args = {} } = request.params;
 
   try {
     let result: string;
 
     switch (name) {
       case 'list_services':
-        result = await handleListServices(args || {});
+        result = await handleListServices(args as Record<string, unknown>);
         break;
       case 'get_service':
-        result = await handleGetService(args);
+        result = await handleGetService(args as Record<string, unknown>);
         break;
       case 'get_service_health':
-        result = await handleGetServiceHealth(args);
+        result = await handleGetServiceHealth(args as Record<string, unknown>);
         break;
       case 'get_service_logs':
-        result = await handleGetServiceLogs(args);
+        result = await handleGetServiceLogs(args as Record<string, unknown>);
         break;
       case 'find_services':
-        result = await handleFindServices(args);
+        result = await handleFindServices(args as Record<string, unknown>);
         break;
       case 'refresh_health_checks':
         result = await handleRefreshHealthChecks();
         break;
       case 'get_service_count':
-        result = await handleGetServiceCount(args || {});
+        result = await handleGetServiceCount(args as Record<string, unknown>);
         break;
       default:
         return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };

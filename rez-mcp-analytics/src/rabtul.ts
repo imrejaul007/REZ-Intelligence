@@ -20,8 +20,9 @@ export async function trackEvent(eventName: string, properties: Record<string, u
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: message };
   }
 }
 
@@ -49,43 +50,46 @@ export async function trackConversion(userId: string, conversionType: string, va
 /**
  * Get user analytics
  */
-export async function getUserAnalytics(userId: string): Promise<{ analytics; error?: string }> {
+export async function getUserAnalytics(userId: string): Promise<{ analytics: unknown; error?: string }> {
   try {
     const res = await axios.get(`${ANALYTICS_URL}/api/analytics/user/${userId}`, {
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { analytics: res.data };
-  } catch (error) {
-    return { analytics: null, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { analytics: null, error: message };
   }
 }
 
 /**
  * Get dashboard metrics
  */
-export async function getDashboardMetrics(startDate: string, endDate: string): Promise<{ metrics; error?: string }> {
+export async function getDashboardMetrics(startDate: string, endDate: string): Promise<{ metrics: unknown; error?: string }> {
   try {
     const res = await axios.get(`${ANALYTICS_URL}/api/analytics/dashboard`, {
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
       params: { startDate, endDate },
     });
     return { metrics: res.data };
-  } catch (error) {
-    return { metrics: null, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { metrics: null, error: message };
   }
 }
 
 /**
  * Get funnel analytics
  */
-export async function getFunnelAnalytics(funnelId: string): Promise<{ funnel; error?: string }> {
+export async function getFunnelAnalytics(funnelId: string): Promise<{ funnel: unknown; error?: string }> {
   try {
     const res = await axios.get(`${ANALYTICS_URL}/api/analytics/funnel/${funnelId}`, {
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { funnel: res.data };
-  } catch (error) {
-    return { funnel: null, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { funnel: null, error: message };
   }
 }
 

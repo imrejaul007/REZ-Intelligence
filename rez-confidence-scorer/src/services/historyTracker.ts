@@ -1,8 +1,24 @@
-import { ConfidenceScore, ConfidenceScoreDocument } from '../models/ConfidenceScore';
+import { ConfidenceScore } from '../models/ConfidenceScore';
 import { AgentMetrics } from '../models/AgentMetrics';
 import { HistoryAccuracyResult, HistoryEntry } from '../types';
 import logger from '../utils/logger.js';
 import config from '../config';
+
+// Lean document types for history tracking
+interface LeanScore {
+  overallScore: number;
+  createdAt: Date;
+  intent?: string;
+}
+
+interface LeanAgentMetrics {
+  agentId: string;
+  performance: {
+    totalTasks: number;
+    successfulTasks: number;
+    averageConfidenceScore?: number;
+  };
+}
 
 /**
  * History Tracker Service
@@ -31,11 +47,11 @@ export class HistoryTrackerService {
   async calculateHistoryAccuracy(
     agentId: string,
     intent: string,
-    domain?: string
+    _domain?: string
   ): Promise<HistoryAccuracyResult> {
     try {
       // Get agent metrics
-      const agent = await AgentMetrics.findOne({ agentId }).lean().exec();
+      const agent = await AgentMetrics.findOne({ agentId }).lean().exec() as LeanAgentMetrics | null;
 
       if (!agent) {
         logger.warn(`Agent not found for history tracking: ${agentId}`);
@@ -61,11 +77,10 @@ export class HistoryTrackerService {
         trend: 0.1,
       };
 
-      const score =
-        successRate * weights.successRate +
-        intentAccuracy * weights.intentAccuracy +
-        scoreConsistency * weights.consistency +
-        recentTrend * weights.trend;
+      const score = Number(successRate) * weights.successRate +
+        Number(intentAccuracy) * weights.intentAccuracy +
+        Number(scoreConsistency) * weights.consistency +
+        Number(recentTrend) * weights.trend;
 
       return {
         score: Math.min(1, Math.max(0, score)),
@@ -106,7 +121,7 @@ export class HistoryTrackerService {
           entry.confidenceScore,
           entry.responseTimeMs
         );
-        agent.updateIntentAccuracy(entry.intent, entry.success, entry.confidenceScore);
+        agent.updateIntentAccuracy(entry.intent, entry.success ? entry.confidenceScore : 0);
         await agent.save();
       }
 
@@ -127,7 +142,7 @@ export class HistoryTrackerService {
   /**
    * Get recent scores for an agent
    */
-  private async getRecentScores(agentId: string): Promise<ConfidenceScoreDocument[]> {
+  private async getRecentScores(agentId: string): Promise<LeanScore[]> {
     const since = new Date(Date.now() - this.recentWindowHours * 60 * 60 * 1000);
 
     return ConfidenceScore.find({
@@ -137,7 +152,7 @@ export class HistoryTrackerService {
       .sort({ createdAt: -1 })
       .limit(this.maxHistoryEntries)
       .lean()
-      .exec();
+      .exec() as unknown as LeanScore[];
   }
 
   /**
@@ -146,7 +161,7 @@ export class HistoryTrackerService {
   private async getIntentScores(
     agentId: string,
     intent: string
-  ): Promise<ConfidenceScoreDocument[]> {
+  ): Promise<LeanScore[]> {
     const since = new Date(Date.now() - this.trendWindowHours * 60 * 60 * 1000);
 
     return ConfidenceScore.find({
@@ -157,7 +172,24 @@ export class HistoryTrackerService {
       .sort({ createdAt: -1 })
       .limit(this.maxHistoryEntries)
       .lean()
-      .exec();
+      .exec() as unknown as LeanScore[];
+  }
+
+  /**
+   * Get recent scores with intent field included
+   */
+  private async getIntentScoresWithIntent(agentId: string): Promise<LeanScore[]> {
+    const since = new Date(Date.now() - this.recentWindowHours * 60 * 60 * 1000);
+
+    return ConfidenceScore.find({
+      agentId,
+      createdAt: { $gte: since },
+    })
+      .select('overallScore intent createdAt')
+      .sort({ createdAt: -1 })
+      .limit(this.maxHistoryEntries)
+      .lean()
+      .exec() as unknown as LeanScore[];
   }
 
   /**
@@ -174,38 +206,38 @@ export class HistoryTrackerService {
     const olderSince = new Date(now - this.trendWindowHours * 60 * 60 * 1000);
     const olderUntil = new Date(now - 72 * 60 * 60 * 1000);
 
-    const [recentScores, olderScores] = await Promise.all([
+    const [recentScoresResult, olderScoresResult]: [LeanScore[], LeanScore[]] = await Promise.all([
       ConfidenceScore.find({
         agentId,
         createdAt: { $gte: recentSince },
       })
         .select('overallScore')
         .lean()
-        .exec(),
+        .exec() as unknown as LeanScore[],
       ConfidenceScore.find({
         agentId,
         createdAt: { $gte: olderSince, $lte: olderUntil },
       })
         .select('overallScore')
         .lean()
-        .exec(),
+        .exec() as unknown as LeanScore[],
     ]);
 
     const recentAvg =
-      recentScores.length > 0
-        ? recentScores.reduce((sum, s) => sum + s.overallScore, 0) / recentScores.length
+      recentScoresResult.length > 0
+        ? recentScoresResult.reduce((sum, s) => sum + s.overallScore, 0) / recentScoresResult.length
         : 0;
 
     const olderAvg =
-      olderScores.length > 0
-        ? olderScores.reduce((sum, s) => sum + s.overallScore, 0) / olderScores.length
+      olderScoresResult.length > 0
+        ? olderScoresResult.reduce((sum, s) => sum + s.overallScore, 0) / olderScoresResult.length
         : 0;
 
     return {
       recentAvg,
       olderAvg,
-      recentCount: recentScores.length,
-      olderCount: olderScores.length,
+      recentCount: recentScoresResult.length,
+      olderCount: olderScoresResult.length,
     };
   }
 
@@ -228,14 +260,11 @@ export class HistoryTrackerService {
   /**
    * Calculate intent-specific accuracy
    */
-  private calculateIntentAccuracy(scores: ConfidenceScoreDocument[]): number {
+  private calculateIntentAccuracy(scores: LeanScore[]): number {
     if (scores.length === 0) {
       // No specific intent history - use baseline
       return 0.6;
     }
-
-    const avgScore =
-      scores.reduce((sum, s) => sum + s.overallScore, 0) / scores.length;
 
     // Weight recent scores more heavily
     let weightedSum = 0;
@@ -256,7 +285,7 @@ export class HistoryTrackerService {
   /**
    * Calculate score consistency (inverse of variance)
    */
-  private calculateScoreConsistency(scores: ConfidenceScoreDocument[]): number {
+  private calculateScoreConsistency(scores: LeanScore[]): number {
     if (scores.length < 2) {
       return 0.7; // Not enough data for consistency
     }
@@ -392,14 +421,14 @@ export class HistoryTrackerService {
     topIntents: Array<{ intent: string; successRate: number; avgScore: number }>;
   } | null> {
     try {
-      const agent = await AgentMetrics.findOne({ agentId }).lean().exec();
+      const agent = await AgentMetrics.findOne({ agentId }).lean().exec() as LeanAgentMetrics | null;
 
       if (!agent) {
         return null;
       }
 
       const trendData = await this.getTrendData(agentId);
-      const recentScores = await this.getRecentScores(agentId);
+      const recentScores = await this.getIntentScoresWithIntent(agentId);
 
       // Calculate top intents
       const intentMap = new Map<
@@ -408,14 +437,15 @@ export class HistoryTrackerService {
       >();
 
       for (const score of recentScores) {
-        const existing = intentMap.get(score.intent) || {
+        const intentKey = score.intent || 'unknown';
+        const existing = intentMap.get(intentKey) || {
           attempts: 0,
           successes: 0,
           scores: [],
         };
         existing.attempts += 1;
         existing.scores.push(score.overallScore);
-        intentMap.set(score.intent, existing);
+        intentMap.set(intentKey, existing);
       }
 
       const topIntents = Array.from(intentMap.entries())
@@ -432,8 +462,10 @@ export class HistoryTrackerService {
 
       return {
         totalTasks: agent.performance.totalTasks,
-        successRate: agent.performance.successfulTasks / agent.performance.totalTasks || 0,
-        averageScore: agent.performance.averageConfidenceScore,
+        successRate: agent.performance.totalTasks > 0
+          ? agent.performance.successfulTasks / agent.performance.totalTasks
+          : 0,
+        averageScore: agent.performance.averageConfidenceScore ?? 0,
         recentTrend: this.calculateRecentTrend(trendData),
         topIntents,
       };

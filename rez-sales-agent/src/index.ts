@@ -23,15 +23,13 @@ app.use(express.urlencoded({ extended: true }));
 const limiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 100, // 100 requests per minute
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
+  message: JSON.stringify({
     success: false,
     error: {
       code: 'RATE_LIMIT_EXCEEDED',
       message: 'Too many requests, please try again later.'
     }
-  }
+  })
 });
 app.use(limiter);
 

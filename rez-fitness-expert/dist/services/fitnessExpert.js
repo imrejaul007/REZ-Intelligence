@@ -1,38 +1,79 @@
-import winston from 'winston';
-import { v4 as uuidv4 } from 'uuid';
-import { EXERCISE_DATABASE } from '../config/knowledge.js';
-const { combine, timestamp, printf, colorize, errors } = winston.format;
-const logFormat = printf(({ level, message, timestamp, ...metadata }) => {
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.fitnessExpert = exports.Equipment = exports.MuscleGroup = exports.FitnessLevel = exports.WorkoutType = exports.logger = void 0;
+const winston_1 = __importDefault(require("winston"));
+const uuid_1 = require("uuid");
+const knowledge_1 = require("../config/knowledge");
+const { combine, timestamp, printf, colorize, errors } = winston_1.default.format;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const logFormat = printf((info) => {
+    const { level, message, timestamp, stack, ...metadata } = info;
     let msg = `${timestamp} [${level}]: ${message}`;
-    if (Object.keys(metadata).length > 0 && metadata.stack === undefined) {
+    if (Object.keys(metadata).length > 0 && stack === undefined) {
         msg += ` ${JSON.stringify(metadata)}`;
     }
-    if (metadata.stack) {
-        msg += `\n${metadata.stack}`;
+    if (stack) {
+        msg += `\n${stack}`;
     }
     return msg;
 });
-export const logger = winston.createLogger({
+exports.logger = winston_1.default.createLogger({
     level: process.env.LOG_LEVEL || 'info',
     format: combine(errors({ stack: true }), timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), logFormat),
     transports: [
-        new winston.transports.Console({
+        new winston_1.default.transports.Console({
             format: combine(colorize(), timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), logFormat)
         }),
-        new winston.transports.File({
+        new winston_1.default.transports.File({
             filename: 'logs/fitness-expert-error.log',
             level: 'error',
             maxsize: 5242880,
             maxFiles: 5
         }),
-        new winston.transports.File({
+        new winston_1.default.transports.File({
             filename: 'logs/fitness-expert.log',
             maxsize: 5242880,
             maxFiles: 5
         })
     ]
 });
-export var WorkoutType;
+var WorkoutType;
 (function (WorkoutType) {
     WorkoutType["STRENGTH"] = "strength";
     WorkoutType["CARDIO"] = "cardio";
@@ -46,14 +87,14 @@ export var WorkoutType;
     WorkoutType["PILATES"] = "pilates";
     WorkoutType["CIRCUIT"] = "circuit";
     WorkoutType["COMPOUND"] = "compound";
-})(WorkoutType || (WorkoutType = {}));
-export var FitnessLevel;
+})(WorkoutType || (exports.WorkoutType = WorkoutType = {}));
+var FitnessLevel;
 (function (FitnessLevel) {
     FitnessLevel["BEGINNER"] = "beginner";
     FitnessLevel["INTERMEDIATE"] = "intermediate";
     FitnessLevel["ADVANCED"] = "advanced";
-})(FitnessLevel || (FitnessLevel = {}));
-export var MuscleGroup;
+})(FitnessLevel || (exports.FitnessLevel = FitnessLevel = {}));
+var MuscleGroup;
 (function (MuscleGroup) {
     MuscleGroup["CHEST"] = "chest";
     MuscleGroup["BACK"] = "back";
@@ -67,8 +108,8 @@ export var MuscleGroup;
     MuscleGroup["GLUTES"] = "glutes";
     MuscleGroup["CALVES"] = "calves";
     MuscleGroup["FULL_BODY"] = "full_body";
-})(MuscleGroup || (MuscleGroup = {}));
-export var Equipment;
+})(MuscleGroup || (exports.MuscleGroup = MuscleGroup = {}));
+var Equipment;
 (function (Equipment) {
     Equipment["NONE"] = "none";
     Equipment["DUMBBELLS"] = "dumbbells";
@@ -82,20 +123,20 @@ export var Equipment;
     Equipment["TREADMILL"] = "treadmill";
     Equipment["BICYCLE"] = "bicycle";
     Equipment["SQUAT_RACK"] = "squat_rack";
-})(Equipment || (Equipment = {}));
+})(Equipment || (exports.Equipment = Equipment = {}));
 class FitnessExpertAgent {
     agentId;
     agentName;
     sessionHistory;
     constructor(agentId, agentName) {
-        this.agentId = agentId || uuidv4();
+        this.agentId = agentId || (0, uuid_1.v4)();
         this.agentName = agentName || 'Fitness Expert';
         this.sessionHistory = new Map();
-        logger.info('Fitness Expert Agent initialized', { agentId: this.agentId, agentName: this.agentName });
+        exports.logger.info('Fitness Expert Agent initialized', { agentId: this.agentId, agentName: this.agentName });
     }
     async processQuery(query, userProfile, sessionId) {
         const startTime = Date.now();
-        logger.info('Processing fitness query', { sessionId, queryLength: query.length });
+        exports.logger.info('Processing fitness query', { sessionId, queryLength: query.length });
         try {
             const intent = this.identifyIntent(query);
             let response;
@@ -123,7 +164,7 @@ class FitnessExpertAgent {
             return response;
         }
         catch (error) {
-            logger.error('Error processing fitness query', { error, sessionId });
+            exports.logger.error('Error processing fitness query', { error, sessionId });
             throw error;
         }
     }
@@ -150,7 +191,7 @@ class FitnessExpertAgent {
         return keywords.some(keyword => text.includes(keyword));
     }
     async handleWorkoutPlanRequest(query, userProfile) {
-        const { createWorkoutPlan } = await import('./expertise.js');
+        const { createWorkoutPlan } = await Promise.resolve().then(() => __importStar(require('./expertise')));
         const workoutPlan = createWorkoutPlan(userProfile);
         const exercises = this.getExercisesForPlan(workoutPlan);
         return {
@@ -161,7 +202,7 @@ class FitnessExpertAgent {
         };
     }
     async handleExerciseQuery(query, userProfile) {
-        const { getExercisesByType, getExercisesByMuscle } = await import('./expertise.js');
+        const { getExercisesByType, getExercisesByMuscle } = await Promise.resolve().then(() => __importStar(require('./expertise')));
         const exercises = this.findExercisesInQuery(query);
         if (exercises.length === 0) {
             return {
@@ -177,7 +218,7 @@ class FitnessExpertAgent {
         };
     }
     async handleProgressQuery(query, userProfile, sessionId) {
-        const { calculateProgress } = await import('./expertise.js');
+        const { calculateProgress } = await Promise.resolve().then(() => __importStar(require('./expertise')));
         const progress = calculateProgress(userProfile);
         return {
             success: true,
@@ -186,7 +227,7 @@ class FitnessExpertAgent {
         };
     }
     async handleRecommendationRequest(query, userProfile) {
-        const { getRecommendations } = await import('./recommendations.js');
+        const { getRecommendations } = await Promise.resolve().then(() => __importStar(require('./recommendations')));
         const recommendations = getRecommendations(userProfile);
         return {
             success: true,
@@ -195,7 +236,7 @@ class FitnessExpertAgent {
         };
     }
     async handleTerminologyQuery(query) {
-        const { getFitnessTerm } = await import('./expertise.js');
+        const { getFitnessTerm } = await Promise.resolve().then(() => __importStar(require('./expertise')));
         const terms = this.extractTermsFromQuery(query);
         if (terms.length === 0) {
             return {
@@ -230,7 +271,7 @@ class FitnessExpertAgent {
     }
     findExercisesInQuery(query) {
         const lowerQuery = query.toLowerCase();
-        let exercises = [...EXERCISE_DATABASE];
+        let exercises = [...knowledge_1.EXERCISE_DATABASE];
         if (lowerQuery.includes('chest')) {
             exercises = exercises.filter((e) => e.muscleGroups.includes(MuscleGroup.CHEST));
         }
@@ -255,7 +296,7 @@ class FitnessExpertAgent {
         return exercises.slice(0, 5);
     }
     getExercisesForPlan(plan) {
-        return EXERCISE_DATABASE.filter((e) => plan.exercises.some(p => p.exerciseId === e.id));
+        return knowledge_1.EXERCISE_DATABASE.filter((e) => plan.exercises.some(p => p.exerciseId === e.id));
     }
     formatWorkoutPlanMessage(plan) {
         let message = `## ${plan.name}\n\n`;
@@ -346,5 +387,5 @@ class FitnessExpertAgent {
         }
     }
 }
-export const fitnessExpert = new FitnessExpertAgent();
+exports.fitnessExpert = new FitnessExpertAgent();
 //# sourceMappingURL=fitnessExpert.js.map

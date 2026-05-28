@@ -1,6 +1,5 @@
-import { FrequencyCap } from '../models/FrequencyCap';
-import { randomInt } from 'crypto';
-import { BudgetPacing } from '../models/BudgetPacing';
+import { FrequencyCap, IFrequencyCap } from '../models/FrequencyCap';
+import { BudgetPacing, IBudgetPacing } from '../models/BudgetPacing';
 import { PREDEFINED_SEGMENTS, CHANNEL_CONFIG, FREQUENCY_CAPPING_DEFAULTS } from '../config/constants';
 import {
   UserContext,
@@ -11,6 +10,7 @@ import {
   SegmentCriteria,
   SegmentCondition
 } from '../types';
+import { randomInt } from 'crypto';
 
 export interface TargetingResult {
   eligible: boolean;
@@ -54,6 +54,25 @@ export interface CostEstimate {
   total_cost: number;
 }
 
+interface FrequencyCapStatic {
+  canImpress(userId: string, channel: string, campaignId?: string): Promise<{
+    allowed: boolean;
+    reason?: string;
+    current_counts: { daily: number; weekly: number; lifetime: number };
+  }>;
+  recordImpression(userId: string, channel: string, campaignId?: string): Promise<unknown>;
+}
+
+interface BudgetPacingStatic {
+  canSpend(campaignId: string, costPerImpression: number, dailyLimit: number, lifetimeLimit?: number): Promise<{
+    allowed: boolean;
+    reason?: string;
+    remaining_budget: { daily: number; lifetime: number };
+  }>;
+  recordSpend(campaignId: string, amount: number, dailyLimit: number, lifetimeLimit?: number): Promise<unknown>;
+  calculatePacingAmount(pacingMode: 'even' | 'accelerated' | 'front_loaded', dailyLimit: number, currentHour?: number): number;
+}
+
 class TargetingEngine {
   /**
    * Main method to evaluate if a user matches a campaign's targeting rules
@@ -83,7 +102,7 @@ class TargetingEngine {
 
       if (segmentMatch.matched.length === 0) {
         result.eligible = false;
-        result.exclusion_reasons.push('User does not match unknown required segments');
+        result.exclusion_reasons.push('User does not match any required segments');
         return result;
       }
     }
@@ -110,10 +129,10 @@ class TargetingEngine {
       const recencyCheck = this.checkRecency(userContext.attributes, targetingRules.recency_days);
       if (!recencyCheck.pass) {
         result.eligible = false;
-        result.exclusion_reasons.push(recencyCheck.reason);
+        result.exclusion_reasons.push(recencyCheck.reason || 'Recency check failed');
         return result;
       }
-      result.match_reasons.push(recencyCheck.reason);
+      result.match_reasons.push(recencyCheck.reason || '');
     }
 
     // Check minimum orders
@@ -121,10 +140,10 @@ class TargetingEngine {
       const ordersCheck = this.checkMinOrders(userContext.attributes, targetingRules.min_orders);
       if (!ordersCheck.pass) {
         result.eligible = false;
-        result.exclusion_reasons.push(ordersCheck.reason);
+        result.exclusion_reasons.push(ordersCheck.reason || 'Minimum orders check failed');
         return result;
       }
-      result.match_reasons.push(ordersCheck.reason);
+      result.match_reasons.push(ordersCheck.reason || '');
     }
 
     // Check custom conditions
@@ -132,7 +151,7 @@ class TargetingEngine {
       const customCheck = this.checkCustomConditions(userContext.attributes, targetingRules.custom_conditions);
       if (!customCheck.pass) {
         result.eligible = false;
-        result.exclusion_reasons.push(customCheck.reason);
+        result.exclusion_reasons.push(customCheck.reason || 'Custom conditions check failed');
         return result;
       }
       result.match_reasons.push(...customCheck.reasons);
@@ -151,7 +170,7 @@ class TargetingEngine {
   }
 
   /**
-   * Check if user belongs to unknown of the required segments
+   * Check if user belongs to any of the required segments
    */
   checkSegmentInclusion(userContext: UserContext, requiredSegments: string[]): {
     matched: string[];
@@ -172,10 +191,15 @@ class TargetingEngine {
         continue;
       }
 
-      // Evaluate predefined segment criteria
+      // Evaluate predefined segment criteria (convert readonly to mutable)
+      const criteria: SegmentCriteria = {
+        type: segmentDef.criteria.type,
+        conditions: [...segmentDef.criteria.conditions] as SegmentCondition[],
+        combinator: segmentDef.criteria.combinator
+      };
       const isMatch = this.evaluateSegmentCriteria(
         userContext.attributes,
-        segmentDef.criteria as unknown
+        criteria
       );
 
       if (isMatch) {
@@ -188,7 +212,7 @@ class TargetingEngine {
   }
 
   /**
-   * Check if user belongs to unknown excluded segments
+   * Check if user belongs to any excluded segments
    */
   checkExclusions(userContext: UserContext, excludedSegments: string[]): {
     excluded: string[];
@@ -206,10 +230,15 @@ class TargetingEngine {
         continue;
       }
 
-      // Evaluate predefined segment criteria
+      // Evaluate predefined segment criteria (convert readonly to mutable)
+      const criteria: SegmentCriteria = {
+        type: segmentDef.criteria.type,
+        conditions: [...segmentDef.criteria.conditions] as SegmentCondition[],
+        combinator: segmentDef.criteria.combinator
+      };
       const isMatch = this.evaluateSegmentCriteria(
         userContext.attributes,
-        segmentDef.criteria as unknown
+        criteria
       );
 
       if (isMatch) {
@@ -239,7 +268,7 @@ class TargetingEngine {
    * Evaluate a single condition
    */
   evaluateCondition(attributes: UserAttributes, condition: SegmentCondition): boolean {
-    const value = (attributes as unknown)[condition.field];
+    const value = (attributes as unknown as Record<string, unknown>)[condition.field];
 
     if (value === undefined || value === null) {
       return false;
@@ -251,20 +280,22 @@ class TargetingEngine {
       case 'ne':
         return value !== condition.value;
       case 'gt':
-        return value > condition.value;
+        return typeof value === 'number' && value > (condition.value as number);
       case 'gte':
-        return value >= condition.value;
+        return typeof value === 'number' && value >= (condition.value as number);
       case 'lt':
-        return value < condition.value;
+        return typeof value === 'number' && value < (condition.value as number);
       case 'lte':
-        return value <= condition.value;
+        return typeof value === 'number' && value <= (condition.value as number);
       case 'in':
-        return Array.isArray(condition.value) && condition.value.includes(value);
+        return Array.isArray(condition.value) && (condition.value as unknown[]).includes(value);
       case 'nin':
-        return Array.isArray(condition.value) && !condition.value.includes(value);
+        return Array.isArray(condition.value) && !(condition.value as unknown[]).includes(value);
       case 'between':
         if (Array.isArray(condition.value) && condition.value.length === 2) {
-          return value >= condition.value[0] && value <= condition.value[1];
+          return typeof value === 'number' &&
+            value >= (condition.value[0] as number) &&
+            value <= (condition.value[1] as number);
         }
         return false;
       case 'contains':
@@ -272,7 +303,7 @@ class TargetingEngine {
           return value.toLowerCase().includes(String(condition.value).toLowerCase());
         }
         if (Array.isArray(value)) {
-          return value.some(v => String(v).toLowerCase().includes(String(condition.value).toLowerCase()));
+          return (value as unknown[]).some(v => String(v).toLowerCase().includes(String(condition.value).toLowerCase()));
         }
         return false;
       default:
@@ -329,21 +360,29 @@ class TargetingEngine {
     const reasons: string[] = [];
 
     for (const [field, condition] of Object.entries(conditions)) {
-      const fieldValue = (attributes as unknown)[field];
+      const fieldValue = (attributes as unknown as Record<string, unknown>)[field];
       if (fieldValue === undefined) {
         return { pass: false, reason: `Unknown field: ${field}`, reasons: [] };
       }
 
-      if (typeof condition === 'object' && condition !== null) {
-        // Complex condition
-        if (!this.evaluateCondition(attributes, { field, ...condition } as SegmentCondition)) {
-          return {
-            pass: false,
-            reason: `Custom condition failed for ${field}`,
-            reasons: []
+      if (typeof condition === 'object' && condition !== null && !Array.isArray(condition)) {
+        // Complex condition - need operator and value
+        const condObj = condition as { operator?: string; value?: unknown };
+        if (condObj.operator && condObj.value !== undefined) {
+          const segCondition: SegmentCondition = {
+            field,
+            operator: condObj.operator as SegmentCondition['operator'],
+            value: condObj.value
           };
+          if (!this.evaluateCondition(attributes, segCondition)) {
+            return {
+              pass: false,
+              reason: `Custom condition failed for ${field}`,
+              reasons: []
+            };
+          }
+          reasons.push(`Custom condition satisfied: ${field}`);
         }
-        reasons.push(`Custom condition satisfied: ${field}`);
       } else {
         // Simple equality check
         if (fieldValue !== condition) {
@@ -403,14 +442,16 @@ class TargetingEngine {
     channel: string,
     campaignId?: string
   ): Promise<FrequencyCheckResult> {
-    const result = await (FrequencyCap as unknown).canImpress(userId, channel, campaignId);
+    const freqCap = FrequencyCap as unknown as FrequencyCapStatic;
+    const result = await freqCap.canImpress(userId, channel, campaignId);
+    const counts = result.current_counts;
     return {
       allowed: result.allowed,
       reason: result.reason,
       current_counts: {
-        daily: (result.current_counts as unknown).daily || 0,
-        weekly: (result.current_counts as unknown).weekly || 0,
-        lifetime: (result.current_counts as unknown).lifetime || 0
+        daily: counts.daily || 0,
+        weekly: counts.weekly || 0,
+        lifetime: counts.lifetime || 0
       }
     };
   }
@@ -423,7 +464,8 @@ class TargetingEngine {
     channel: string,
     campaignId?: string
   ): Promise<void> {
-    await (FrequencyCap as unknown).recordImpression(userId, channel, campaignId);
+    const freqCap = FrequencyCap as unknown as FrequencyCapStatic;
+    await freqCap.recordImpression(userId, channel, campaignId);
   }
 
   /**
@@ -435,10 +477,12 @@ class TargetingEngine {
     dailyLimit: number,
     lifetimeLimit?: number
   ): Promise<BudgetCheckResult> {
-    const result = await (BudgetPacing as unknown).canSpend(campaignId, costPerImpression, dailyLimit, lifetimeLimit);
+    const budgetModel = BudgetPacing as unknown as BudgetPacingStatic;
+    const result = await budgetModel.canSpend(campaignId, costPerImpression, dailyLimit, lifetimeLimit);
+    const remaining = result.remaining_budget;
 
-    const dailyRemaining = (result.remaining_budget as unknown).daily || 0;
-    const lifetimeRemaining = (result.remaining_budget as unknown).lifetime || Infinity;
+    const dailyRemaining = remaining.daily || 0;
+    const lifetimeRemaining = remaining.lifetime || Infinity;
 
     return {
       allowed: result.allowed,
@@ -458,7 +502,8 @@ class TargetingEngine {
     dailyLimit: number,
     lifetimeLimit?: number
   ): Promise<void> {
-    await (BudgetPacing as unknown).recordSpend(campaignId, amount, dailyLimit, lifetimeLimit);
+    const budgetModel = BudgetPacing as unknown as BudgetPacingStatic;
+    await budgetModel.recordSpend(campaignId, amount, dailyLimit, lifetimeLimit);
   }
 
   /**
@@ -469,7 +514,8 @@ class TargetingEngine {
     dailyLimit: number,
     currentHour?: number
   ): number {
-    return (BudgetPacing as unknown).calculatePacingAmount(pacingMode, dailyLimit, currentHour);
+    const budgetModel = BudgetPacing as unknown as BudgetPacingStatic;
+    return budgetModel.calculatePacingAmount(pacingMode, dailyLimit, currentHour);
   }
 
   /**

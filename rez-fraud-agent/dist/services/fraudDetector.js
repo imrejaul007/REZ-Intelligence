@@ -8,6 +8,7 @@ const velocityCheck_1 = require("./velocityCheck");
 const blacklistService_1 = require("./blacklistService");
 const FraudCase_1 = require("../models/FraudCase");
 const RiskProfile_1 = require("../models/RiskProfile");
+const Blacklist_1 = require("../models/Blacklist");
 const logger_js_1 = require("../utils/logger.js");
 const patterns_1 = require("../config/patterns");
 const tone_1 = require("../config/tone");
@@ -179,7 +180,8 @@ class FraudDetector {
             checks.push({ type: 'ACCOUNT', value: context.accountId });
         }
         for (const check of checks) {
-            const result = await this.blacklistService.check(check.type, check.value);
+            const blacklistType = check.type === 'USER' ? Blacklist_1.BlacklistType.USER : Blacklist_1.BlacklistType.ACCOUNT;
+            const result = await this.blacklistService.check(blacklistType, check.value);
             if (result.isBlacklisted) {
                 return {
                     isBlacklisted: true,
@@ -304,15 +306,16 @@ class FraudDetector {
     createResult(params) {
         const tone = (0, tone_1.getToneForRiskScore)(params.riskScore);
         const processingTimeMs = Date.now() - params.startTime;
+        const decision = params.decision;
         return {
-            decision: params.decision,
+            decision,
             riskScore: params.riskScore,
             riskLevel: this.riskScorer.getRiskLevel(params.riskScore),
             detectedPatterns: params.detectedPatterns,
             riskFactors: params.riskFactors,
             tone: tone.type,
             message: (0, tone_1.formatMessageWithTone)(`${params.decision} - Risk Score: ${params.riskScore}`, tone),
-            requiresAction: params.decision === 'DENY' || params.decision === 'REVIEW',
+            requiresAction: decision === 'DENY' || decision === 'REVIEW',
             processingTimeMs,
             metadata: params.metadata,
         };

@@ -1,4 +1,4 @@
-import logger from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Data Sanitizer Service
@@ -18,6 +18,9 @@ import type {
   InternalSegment,
   MerchantSegment,
   MerchantOrderSummary,
+  MerchantReview,
+  MessageChannel,
+  MessageStatus,
 } from '../types/index.js';
 
 // Internal order type for transformation
@@ -127,13 +130,13 @@ function toMerchantOrder(order: InternalOrder): MerchantOrderSummary {
 /**
  * Transform review to merchant-safe format
  */
-function toMerchantReview(review): unknown {
+function toMerchantReview(review: Record<string, unknown>): MerchantReview {
   return {
-    id: review.id,
-    rating: review.rating,
-    comment: review.comment,
-    storeName: review.storeName,
-    createdAt: new Date(review.createdAt),
+    id: review.id as string,
+    rating: review.rating as number,
+    comment: review.comment as string | undefined,
+    storeName: review.storeName as string,
+    createdAt: new Date(review.createdAt as string),
   };
 }
 
@@ -254,8 +257,8 @@ export function validateMerchantSafe(obj: Record<string, unknown>): void {
     }
 
     // Recursively check nested objects
-    if (typeof obj[key] === 'object' && obj[key] !== null) {
-      validateMerchantSafe(obj[key]);
+    if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+      validateMerchantSafe(obj[key] as Record<string, unknown>);
     }
   }
 }

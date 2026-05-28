@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger } from '../utils/logger.js';
+import logger from '../utils/logger.js';
 
 export interface AuthConfig {
   apiKeys?: string[];
@@ -62,3 +62,9 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
   });
   next();
 }
+
+// Default auth middleware for internal service-to-service calls
+export const authenticateInternalService = createAuthMiddleware({
+  internalTokens: process.env.INTERNAL_SERVICE_TOKENS ? JSON.parse(process.env.INTERNAL_SERVICE_TOKENS) : [],
+  bypassPaths: ['/health', '/ready'],
+});

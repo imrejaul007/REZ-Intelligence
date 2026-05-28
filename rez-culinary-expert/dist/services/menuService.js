@@ -6,8 +6,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MenuService = void 0;
 exports.getMenuService = getMenuService;
-const logger_js_1 = require("./utils/logger.js");
-const knowledge_js_1 = require("../config/knowledge.js");
+const logger_1 = require("../utils/logger");
+const knowledge_1 = require("../config/knowledge");
 class MenuService {
     db = null;
     redis = null;
@@ -27,7 +27,7 @@ class MenuService {
         await this.itemsCollection.createIndex({ allergens: 1 });
         await this.itemsCollection.createIndex({ name: 'text', description: 'text' });
         this.initialized = true;
-        logger_js_1.logger.info('MenuService initialized');
+        logger_1.logger.info('MenuService initialized');
     }
     /**
      * Get full menu for a restaurant
@@ -228,7 +228,7 @@ class MenuService {
      */
     generateSuggestions(items, filters) {
         if (items.length === 0 && filters.searchQuery) {
-            const matchedCuisine = (0, knowledge_js_1.matchCuisine)(filters.searchQuery);
+            const matchedCuisine = (0, knowledge_1.matchCuisine)(filters.searchQuery);
             if (matchedCuisine) {
                 return [
                     `Try browsing our ${matchedCuisine.name} specialties`,

@@ -5,8 +5,8 @@
 
 import { Db, Collection, ObjectId } from 'mongodb';
 import Redis from 'ioredis';
-import { logger } from './utils/logger.js';
-import { matchCuisine, CUISINES } from '../config/knowledge.js';
+import { logger } from '../utils/logger';
+import { matchCuisine, CUISINES } from '../config/knowledge';
 
 export interface MenuItem {
   _id?: ObjectId;
@@ -452,5 +452,3 @@ export function getMenuService(): MenuService {
   }
   return menuService;
 }
-
-export type { MenuService };

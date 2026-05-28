@@ -1,11 +1,15 @@
 import { v4 as uuidv4 } from 'uuid';
+import Redis from 'ioredis';
 import {
   IRoutingDecision,
   RoutingDecision,
   DecisionStatus,
+  DecisionStatusValue,
   RoutingStrategy,
   PriorityTier,
   PriorityTierNames,
+  PriorityTierValue,
+  IPriorityRule,
 } from '../models';
 import { intentClassifier, ClassifiedIntent } from './intentClassifier';
 import { ruleEngine, RuleEvaluationResult } from './ruleEngine';
@@ -74,14 +78,15 @@ export interface PriorityResolutionResult {
 }
 
 export interface RoutingDecisionWithRule extends RuleEvaluationResult {
-  finalTier: PriorityTier;
+  finalTier: PriorityTierValue;
   finalScore: number;
+  rule: IPriorityRule | null;
 }
 
 export class PriorityResolver {
-  private redis: import('ioredis') | null = null;
+  private redis: Redis | null = null;
 
-  setRedisClient(redis: import('ioredis')): void {
+  setRedisClient(redis: Redis): void {
     this.redis = redis;
   }
 
@@ -113,12 +118,12 @@ export class PriorityResolver {
       );
 
       const matchedRules = ruleResults
-        .filter(r => r.matched)
+        .filter(r => r.matched && r.rule)
         .slice(0, 5)
         .map(r => ({
-          name: r.rule.name,
+          name: r.rule!.name,
           score: r.score,
-          actions: r.rule.actions,
+          actions: r.rule!.actions,
         }));
 
       const processingTimeMs = Date.now() - startTime;
@@ -180,7 +185,7 @@ export class PriorityResolver {
     let bestRule: RuleEvaluationResult | null = null;
 
     for (const ruleResult of ruleResults) {
-      if (!ruleResult.matched) continue;
+      if (!ruleResult.matched || !ruleResult.rule) continue;
 
       if (ruleResult.rule.priorityTier < finalTier) {
         finalTier = ruleResult.rule.priorityTier;
@@ -219,8 +224,8 @@ export class PriorityResolver {
     };
   }
 
-  private getQueueForTier(tier: PriorityTier): string {
-    const queueMap: Record<PriorityTier, string> = {
+  private getQueueForTier(tier: PriorityTierValue): string {
+    const queueMap: Record<number, string> = {
       [PriorityTier.EMERGENCY]: 'emergency-response',
       [PriorityTier.PAYMENT_FRAUD]: 'payment-security',
       [PriorityTier.SUPPORT]: 'customer-support',
@@ -232,7 +237,7 @@ export class PriorityResolver {
     return queueMap[tier] || 'general';
   }
 
-  private calculateSLADeadline(tier: PriorityTier): Date {
+  private calculateSLADeadline(tier: PriorityTierValue): Date {
     const matrixEntry = getMatrixEntry(tier);
     if (!matrixEntry) {
       return new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -337,8 +342,8 @@ export class PriorityResolver {
   }
 
   async getDecisionsByTier(
-    tier: PriorityTier,
-    status?: DecisionStatus
+    tier: PriorityTierValue,
+    status?: DecisionStatusValue
   ): Promise<IRoutingDecision[]> {
     const query: Record<string, unknown> = { priorityTier: tier };
     if (status) {

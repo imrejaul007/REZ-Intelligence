@@ -26,7 +26,8 @@ export async function sendSMS(params: {
     });
     return { success: true, messageId: res.data.messageId };
   } catch (error) {
-    return { success: false, error: error.message };
+    const err = error as Error;
+    return { success: false, error: err.message };
   }
 }
 
@@ -56,7 +57,8 @@ export async function sendBulkSMS(messages: Array<{
     });
     return { success: true, sent: res.data.sent, failed: res.data.failed };
   } catch (error) {
-    return { success: false, sent: 0, failed: messages.length, error: error.message };
+    const err = error as Error;
+    return { success: false, sent: 0, failed: messages.length, error: err.message };
   }
 }
 
@@ -70,7 +72,8 @@ export async function getSMSStatus(messageId: string): Promise<{ status: string;
     });
     return { status: res.data.status };
   } catch (error) {
-    return { status: 'unknown', error: error.message };
+    const err = error as Error;
+    return { status: 'unknown', error: err.message };
   }
 }
 

@@ -10,7 +10,7 @@ import {
 import { OpportunityModel, IOpportunityDocument } from '../models/Opportunity.js';
 import { cacheGet, cacheSet, cacheDelete } from '../utils/redis.js';
 import { CACHE_TTL, THRESHOLDS } from '../constants/thresholds.js';
-import logger from './utils/logger.js';
+import logger from '../utils/logger.js';
 
 const log = logger.child({ context: 'OpportunityService' });
 
@@ -227,7 +227,7 @@ class OpportunityService {
   ): Recommendation[] {
     const recommendations: Recommendation[] = [];
     // Use deterministic seed based on opportunityType and targetSegment
-    const seed = opportunityType * 1000 + targetSegment.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    const seed = Number(opportunityType) * 1000 + targetSegment.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
 
     switch (opportunityType) {
       case OpportunityType.CAMPAIGN:

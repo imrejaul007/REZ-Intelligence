@@ -355,7 +355,7 @@ CustomerSchema.index({ createdAt: -1 });
 CustomerSchema.index({ 'activity.lastActivityAt': -1 });
 
 // Pre-save hook to generate unifiedCustomerId if not present
-CustomerSchema.pre('save', function (next) {
+CustomerSchema.pre('save', function (next: (err?: Error) => void) {
   if (!this.unifiedCustomerId) {
     const { v4: uuidv4 } = require('uuid');
     this.unifiedCustomerId = `UC-${uuidv4()}`;
@@ -364,7 +364,9 @@ CustomerSchema.pre('save', function (next) {
 });
 
 // Methods
-CustomerSchema.methods.findIdentifier = function (
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(CustomerSchema.methods as any).findIdentifier = function (
+  this: ICustomer,
   type: IdentifierType,
   value: string
 ): IIdentifier | undefined {
@@ -373,14 +375,19 @@ CustomerSchema.methods.findIdentifier = function (
   );
 };
 
-CustomerSchema.methods.hasIdentifier = function (
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(CustomerSchema.methods as any).hasIdentifier = function (
+  this: ICustomer,
   type: IdentifierType,
   value: string
 ): boolean {
-  return !!this.findIdentifier(type, value);
+  return this.identifiers.some(
+    (id) => id.type === type && id.value.toLowerCase() === value.toLowerCase()
+  );
 };
 
-CustomerSchema.methods.addIdentifier = function (identifier: IIdentifier): void {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(CustomerSchema.methods as any).addIdentifier = function (this: ICustomer, identifier: IIdentifier): void {
   const existingIndex = this.identifiers.findIndex(
     (id) => id.type === identifier.type && id.value.toLowerCase() === identifier.value.toLowerCase()
   );
@@ -401,7 +408,8 @@ CustomerSchema.methods.addIdentifier = function (identifier: IIdentifier): void 
   }
 };
 
-CustomerSchema.methods.linkAccount = function (account: ILinkedAccount): void {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(CustomerSchema.methods as any).linkAccount = function (this: ICustomer, account: ILinkedAccount): void {
   const existingIndex = this.linkedAccounts.findIndex(
     (acc) => acc.companyId === account.companyId && acc.externalCustomerId === account.externalCustomerId
   );

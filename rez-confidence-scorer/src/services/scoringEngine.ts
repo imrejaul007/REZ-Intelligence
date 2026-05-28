@@ -28,7 +28,7 @@ export class ScoringEngineService {
    */
   async calculateScore(request: ScoringRequest): Promise<ConfidenceScoreResult> {
     const startTime = Date.now();
-    const { agentId, intent, context, taskComplexity, requiredCapabilities } = request;
+    const { agentId, intent, context, requiredCapabilities } = request;
 
     try {
       // Check cache first

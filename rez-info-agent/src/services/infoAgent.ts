@@ -3,8 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
-const logFormat = printf(({ level, message, timestamp, ...metadata }: { level: string; message: string; timestamp?: string; [key: string]: unknown }) => {
-  let msg = `${timestamp} [${level}]: ${message}`;
+const logFormat = printf((info: winston.Logform.TransformableInfo) => {
+  const { level, message, timestamp: ts, ...metadata } = info;
+  let msg = `${ts} [${level}]: ${message}`;
   if (Object.keys(metadata).length > 0 && metadata.stack === undefined) {
     msg += ` ${JSON.stringify(metadata)}`;
   }

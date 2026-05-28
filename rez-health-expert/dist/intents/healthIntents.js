@@ -1,4 +1,13 @@
-export var HealthIntent;
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.HEALTH_INTENT_PATTERNS = exports.HealthIntent = void 0;
+exports.detectHealthIntent = detectHealthIntent;
+exports.getIntentUrgency = getIntentUrgency;
+exports.getResponseForIntent = getResponseForIntent;
+exports.getEmergencyMessage = getEmergencyMessage;
+exports.extractSymptomsFromQuery = extractSymptomsFromQuery;
+exports.isEmergencyQuery = isEmergencyQuery;
+var HealthIntent;
 (function (HealthIntent) {
     HealthIntent["SYMPTOM_INQUIRY"] = "symptom_inquiry";
     HealthIntent["APPOINTMENT_BOOKING"] = "appointment_booking";
@@ -14,8 +23,8 @@ export var HealthIntent;
     HealthIntent["REFERRAL_INFO"] = "referral_info";
     HealthIntent["INSURANCE_INFO"] = "insurance_info";
     HealthIntent["TELEMEDICINE"] = "telemedicine";
-})(HealthIntent || (HealthIntent = {}));
-export const HEALTH_INTENT_PATTERNS = [
+})(HealthIntent || (exports.HealthIntent = HealthIntent = {}));
+exports.HEALTH_INTENT_PATTERNS = [
     {
         intent: HealthIntent.SYMPTOM_INQUIRY,
         patterns: [
@@ -197,9 +206,9 @@ export const HEALTH_INTENT_PATTERNS = [
         requiresContext: true
     }
 ];
-export function detectHealthIntent(query) {
+function detectHealthIntent(query) {
     const lowerQuery = query.toLowerCase();
-    for (const pattern of HEALTH_INTENT_PATTERNS) {
+    for (const pattern of exports.HEALTH_INTENT_PATTERNS) {
         for (const keyword of pattern.keywords) {
             if (lowerQuery.includes(keyword)) {
                 return pattern.intent;
@@ -208,11 +217,11 @@ export function detectHealthIntent(query) {
     }
     return null;
 }
-export function getIntentUrgency(intent) {
-    const pattern = HEALTH_INTENT_PATTERNS.find(p => p.intent === intent);
+function getIntentUrgency(intent) {
+    const pattern = exports.HEALTH_INTENT_PATTERNS.find(p => p.intent === intent);
     return pattern?.urgencyLevel || null;
 }
-export function getResponseForIntent(intent) {
+function getResponseForIntent(intent) {
     switch (intent) {
         case HealthIntent.SYMPTOM_INQUIRY:
             return 'I understand you\'re experiencing some symptoms. To help you better, could you describe:\n\n' +
@@ -289,7 +298,7 @@ export function getResponseForIntent(intent) {
                 'How can I help you today?';
     }
 }
-export function getEmergencyMessage() {
+function getEmergencyMessage() {
     return '⚠️ **MEDICAL EMERGENCY**\n\n' +
         'If you are experiencing unknown of the following, please call 911 or go to the nearest emergency room immediately:\n\n' +
         '• Chest pain or pressure\n' +
@@ -300,7 +309,7 @@ export function getEmergencyMessage() {
         '• Severe allergic reaction\n\n' +
         'Do not delay seeking emergency care. Your safety is the top priority.';
 }
-export function extractSymptomsFromQuery(query) {
+function extractSymptomsFromQuery(query) {
     const commonSymptoms = [
         'headache', 'fever', 'cough', 'fatigue', 'nausea', 'dizziness',
         'stomach ache', 'back pain', 'chest pain', 'shortness of breath',
@@ -316,7 +325,7 @@ export function extractSymptomsFromQuery(query) {
     }
     return foundSymptoms;
 }
-export function isEmergencyQuery(query) {
+function isEmergencyQuery(query) {
     const emergencyKeywords = [
         'chest pain',
         'can\'t breathe',

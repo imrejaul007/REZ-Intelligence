@@ -6,7 +6,7 @@
 
 import express, { Request, Response } from 'express';
 import axios from 'axios';
-import logger from './utils/logger.js';
+import logger from '../utils/logger.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '4250', 10);

@@ -1,5 +1,12 @@
-import { UrgencyLevel, AppointmentType, SpecialtyType } from './healthExpert.js';
-export function getRecommendationsForSymptom(symptoms) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getRecommendationsForSymptom = getRecommendationsForSymptom;
+exports.getLifestyleRecommendations = getLifestyleRecommendations;
+exports.getFollowUpRecommendations = getFollowUpRecommendations;
+exports.getSpecialistRecommendation = getSpecialistRecommendation;
+exports.getPreAppointmentChecklist = getPreAppointmentChecklist;
+const healthExpert_1 = require("./healthExpert");
+function getRecommendationsForSymptom(symptoms) {
     const recommendations = [];
     const hasRedFlags = checkForRedFlags(symptoms);
     if (hasRedFlags) {
@@ -8,7 +15,7 @@ export function getRecommendationsForSymptom(symptoms) {
             title: 'Seek Emergency Care Immediately',
             description: 'Your symptoms may indicate a serious condition requiring immediate medical attention. Please call 911 or go to the nearest emergency room.',
             priority: 'high',
-            urgency: UrgencyLevel.EMERGENCY,
+            urgency: healthExpert_1.UrgencyLevel.EMERGENCY,
             actionRequired: 'Call 911 or go to emergency room'
         });
         return recommendations;
@@ -20,7 +27,7 @@ export function getRecommendationsForSymptom(symptoms) {
             title: 'Visit Urgent Care Today',
             description: 'Your symptoms warrant same-day medical evaluation. Please visit an urgent care center or your healthcare provider today.',
             priority: 'high',
-            urgency: UrgencyLevel.URGENT_CARE,
+            urgency: healthExpert_1.UrgencyLevel.URGENT_CARE,
             actionRequired: 'Visit urgent care or seek same-day appointment'
         });
     }
@@ -30,7 +37,7 @@ export function getRecommendationsForSymptom(symptoms) {
             title: 'Schedule a Doctor Visit',
             description: 'Consider making an appointment with your healthcare provider to discuss your symptoms further.',
             priority: 'medium',
-            urgency: UrgencyLevel.SCHEDULE_VISIT,
+            urgency: healthExpert_1.UrgencyLevel.SCHEDULE_VISIT,
             actionRequired: 'Schedule appointment within next few days'
         });
     }
@@ -96,7 +103,7 @@ function checkForUrgentSymptoms(symptoms) {
     }
     return false;
 }
-export function getLifestyleRecommendations() {
+function getLifestyleRecommendations() {
     return [
         {
             type: 'lifestyle',
@@ -130,9 +137,9 @@ export function getLifestyleRecommendations() {
         }
     ];
 }
-export function getFollowUpRecommendations(appointmentType, symptoms) {
+function getFollowUpRecommendations(appointmentType, symptoms) {
     const recommendations = [];
-    if (appointmentType === AppointmentType.FOLLOW_UP) {
+    if (appointmentType === healthExpert_1.AppointmentType.FOLLOW_UP) {
         recommendations.push({
             type: 'information',
             title: 'Before Your Follow-Up',
@@ -154,48 +161,48 @@ export function getFollowUpRecommendations(appointmentType, symptoms) {
     });
     return recommendations;
 }
-export function getSpecialistRecommendation(symptoms) {
+function getSpecialistRecommendation(symptoms) {
     if (symptoms.length === 0)
         return null;
     const symptomSpecialtyMap = [
         {
             keywords: ['chest pain', 'heart', 'palpitation', 'shortness of breath'],
-            specialty: SpecialtyType.CARDIOLOGY,
+            specialty: healthExpert_1.SpecialtyType.CARDIOLOGY,
             reason: 'Your symptoms may be related to heart health'
         },
         {
             keywords: ['skin', 'rash', 'acne', 'eczema', 'mole'],
-            specialty: SpecialtyType.DERMATOLOGY,
+            specialty: healthExpert_1.SpecialtyType.DERMATOLOGY,
             reason: 'Your symptoms may require dermatological evaluation'
         },
         {
             keywords: ['back pain', 'joint', 'bone', 'muscle', 'fracture'],
-            specialty: SpecialtyType.ORTHOPEDICS,
+            specialty: healthExpert_1.SpecialtyType.ORTHOPEDICS,
             reason: 'Your symptoms may be related to musculoskeletal health'
         },
         {
             keywords: ['headache', 'dizziness', 'numbness', 'tingling', 'seizure'],
-            specialty: SpecialtyType.NEUROLOGY,
+            specialty: healthExpert_1.SpecialtyType.NEUROLOGY,
             reason: 'Your symptoms may require neurological evaluation'
         },
         {
             keywords: ['stomach', 'nausea', 'vomiting', 'diarrhea', 'constipation'],
-            specialty: SpecialtyType.GASTROENTEROLOGY,
+            specialty: healthExpert_1.SpecialtyType.GASTROENTEROLOGY,
             reason: 'Your symptoms may be related to digestive health'
         },
         {
             keywords: ['cough', 'breathing', 'lung', 'asthma', 'shortness of breath'],
-            specialty: SpecialtyType.PULMONOLOGY,
+            specialty: healthExpert_1.SpecialtyType.PULMONOLOGY,
             reason: 'Your symptoms may require pulmonary evaluation'
         },
         {
             keywords: ['anxiety', 'depression', 'mood', 'stress', 'mental health'],
-            specialty: SpecialtyType.MENTAL_HEALTH,
+            specialty: healthExpert_1.SpecialtyType.MENTAL_HEALTH,
             reason: 'Your symptoms may benefit from mental health support'
         },
         {
             keywords: ['allergy', 'sneezing', 'itching', 'hives'],
-            specialty: SpecialtyType.ALLERGY_IMMUNOLOGY,
+            specialty: healthExpert_1.SpecialtyType.ALLERGY_IMMUNOLOGY,
             reason: 'Your symptoms may be allergy-related'
         }
     ];
@@ -209,11 +216,11 @@ export function getSpecialistRecommendation(symptoms) {
         }
     }
     return {
-        specialty: SpecialtyType.GENERAL_MEDICINE,
+        specialty: healthExpert_1.SpecialtyType.GENERAL_MEDICINE,
         reason: 'Your symptoms require general medical evaluation'
     };
 }
-export function getPreAppointmentChecklist(symptoms) {
+function getPreAppointmentChecklist(symptoms) {
     const checklist = [
         'List of current medications',
         'Known allergies',

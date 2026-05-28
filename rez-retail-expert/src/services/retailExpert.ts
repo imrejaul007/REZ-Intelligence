@@ -1,6 +1,6 @@
 import winston from 'winston';
 import { v4 as uuidv4 } from 'uuid';
-import { CATEGORIES, SIZE_GUIDES } from '../config/knowledge.js';
+import { CATEGORIES, SIZE_GUIDES } from '../config/knowledge';
 
 export interface Product {
   id: string;

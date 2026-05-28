@@ -1,4 +1,4 @@
-import logger from './utils/logger.js';
+import { logger } from '../utils/logger';
 
 /**
  * CrossPlatformSync.ts - Synchronization Across Platform Services
@@ -249,14 +249,15 @@ export class CrossPlatformSync {
           timestamp: new Date().toISOString(),
           data: { duration_ms: Date.now() - serviceStartTime },
         });
-      } catch (error) {
+      } catch (error: unknown) {
+        const err = error as Error;
         result.services.push({
           service: service.name,
           status: 'failed',
           duration_ms: Date.now() - serviceStartTime,
-          error: error.message,
+          error: err.message,
         });
-        result.errors.push(`${service.name}: ${error.message}`);
+        result.errors.push(`${service.name}: ${err.message}`);
 
         this.emitEvent({
           type: 'service_failed',
@@ -264,7 +265,7 @@ export class CrossPlatformSync {
           merchant_id: merchantId,
           service: service.name,
           timestamp: new Date().toISOString(),
-          data: { error: error.message },
+          data: { error: err.message },
         });
       }
     }
@@ -472,8 +473,9 @@ export class CrossPlatformSync {
       this.updateMerchantModule(merchant, service, data);
 
       return { success: true, data };
-    } catch (error) {
-      return { success: false, error: error.message };
+    } catch (error: unknown) {
+      const err = error as Error;
+      return { success: false, error: err.message };
     }
   }
 

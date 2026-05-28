@@ -9,14 +9,14 @@ import {
   UrgencyLevel,
   SymptomInfo,
   HealthResponse
-} from '../services/healthExpert.js';
+} from '../services/healthExpert';
 import {
   detectHealthIntent,
   getResponseForIntent,
   isEmergencyQuery,
   getEmergencyMessage,
   HealthIntent
-} from '../intents/healthIntents.js';
+} from '../intents/healthIntents';
 import {
   createAppointmentRequest,
   validateAppointmentRequest,
@@ -24,10 +24,10 @@ import {
   determineUrgencyFromSymptoms,
   formatAppointmentDetails,
   getAppointmentPreparationInstructions
-} from '../services/expertise.js';
-import { getRecommendationsForSymptom, getPreAppointmentChecklist } from '../services/recommendations.js';
-import { logger } from '../services/healthExpert.js';
-import { WELLNESS_TIPS } from '../config/knowledge.js';
+} from '../services/expertise';
+import { getRecommendationsForSymptom, getPreAppointmentChecklist } from '../services/recommendations';
+import { logger } from '../services/healthExpert';
+import { WELLNESS_TIPS } from '../config/knowledge';
 
 const router = Router();
 
@@ -134,7 +134,7 @@ router.post('/query', validateRequest(healthQuerySchema), async (req: Request, r
 
     if (detectedIntent) {
       const intentResponse = getResponseForIntent(detectedIntent);
-      const symptomInfos = symptoms?.map((s) => ({ ...s, category: 'general' as const })) || [];
+      const symptomInfos = symptoms?.map((s: { name: string; duration?: string; severity?: string; additionalSymptoms?: string[] }) => ({ ...s, category: 'general' as const })) || [];
 
       logger.info('Health intent detected', { sessionId, intent: detectedIntent });
 
@@ -159,7 +159,7 @@ router.post('/query', validateRequest(healthQuerySchema), async (req: Request, r
 
     let symptomInfos: SymptomInfo[] = [];
     if (symptoms && symptoms.length > 0) {
-      symptomInfos = symptoms.map((s) => ({
+      symptomInfos = symptoms.map((s: { name: string; duration?: string; severity?: string; additionalSymptoms?: string[] }) => ({
         name: s.name,
         duration: s.duration,
         severity: s.severity as unknown,
@@ -176,10 +176,10 @@ router.post('/query', validateRequest(healthQuerySchema), async (req: Request, r
     });
 
     if (symptomInfos.length > 0) {
-      response.recommendations = getRecommendationsForSymptom(symptomInfos) as unknown;
+      const _response = response as { recommendations?: unknown }; _response.recommendations = getRecommendationsForSymptom(symptomInfos);
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         response: response.message,
@@ -196,10 +196,9 @@ router.post('/query', validateRequest(healthQuerySchema), async (req: Request, r
         timestamp: new Date().toISOString()
       }
     });
-
   } catch (error) {
     logger.error('Health query endpoint error', { error });
-    next(error);
+    return next(error);
   }
 });
 
@@ -207,7 +206,7 @@ router.post('/symptoms', validateRequest(symptomQuerySchema), async (req: Reques
   try {
     const { symptoms } = req.body;
 
-    const symptomInfos: SymptomInfo[] = symptoms.map((s) => ({
+    const symptomInfos: SymptomInfo[] = symptoms.map((s: { name: string; duration?: string; severity?: string; additionalSymptoms?: string[] }) => ({
       name: s.name,
       duration: s.duration,
       severity: s.severity as unknown,
@@ -221,7 +220,7 @@ router.post('/symptoms', validateRequest(symptomQuerySchema), async (req: Reques
 
     const hasRedFlags = recommendations.some(r => r.urgency === UrgencyLevel.EMERGENCY || r.urgency === UrgencyLevel.URGENT_CARE);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         symptoms: symptomInfos,
@@ -237,7 +236,7 @@ router.post('/symptoms', validateRequest(symptomQuerySchema), async (req: Reques
 
   } catch (error) {
     logger.error('Symptom endpoint error', { error });
-    next(error);
+    return next(error);
   }
 });
 
@@ -273,7 +272,7 @@ router.post('/appointment', validateRequest(appointmentRequestSchema), async (re
 
     let symptomInfos: SymptomInfo[] = [];
     if (symptoms && symptoms.length > 0) {
-      symptomInfos = symptoms.map((s) => ({
+      symptomInfos = symptoms.map((s: { name: string; duration?: string; severity?: string; additionalSymptoms?: string[] }) => ({
         name: s.name,
         duration: s.duration,
         severity: s.severity as unknown,
@@ -333,11 +332,11 @@ router.post('/appointment', validateRequest(appointmentRequestSchema), async (re
 
   } catch (error) {
     logger.error('Appointment endpoint error', { error });
-    next(error);
+    return next(error);
   }
 });
 
-router.get('/appointment/:appointmentId', async (req: Request, res: Response) => {
+router.get('/appointment/:appointmentId', async (req: Request, res: Response, next: NextFunction) => {
   const { appointmentId } = req.params;
 
   const appointment = await healthExpert.getAppointmentById(appointmentId);
@@ -362,7 +361,7 @@ router.get('/appointment/:appointmentId', async (req: Request, res: Response) =>
   });
 });
 
-router.delete('/appointment/:appointmentId', async (req: Request, res: Response) => {
+router.delete('/appointment/:appointmentId', async (req: Request, res: Response, next: NextFunction) => {
   const { appointmentId } = req.params;
 
   logger.info('Appointment cancellation request received', { appointmentId });
@@ -516,7 +515,7 @@ router.post('/health/interpret', validateRequest(reportInterpretationSchema), as
     logger.info(`Report interpretation request for ${recordType}`, { sessionId });
 
     // Transform biomarkers to symptoms for Health Expert
-    const symptoms = extractedBiomarkers.map(b => ({
+    const symptoms = extractedBiomarkers.map((b: { name: string; status?: string }) => ({
       name: b.name,
       severity: b.status === 'critical' ? 'severe' : b.status === 'high' || b.status === 'low' ? 'moderate' : 'minor'
     }));
@@ -530,15 +529,20 @@ router.post('/health/interpret', validateRequest(reportInterpretationSchema), as
     } : undefined;
 
     // Call the main query endpoint
-    const queryResponse = await healthExpert.processQuery({
+    const queryResponse = await healthExpert.processQuery(
+      `Interpret health report: ${rawText || `${extractedBiomarkers.length} biomarkers`}`,
       sessionId,
-      query: `Interpret health report: ${rawText || `${extractedBiomarkers.length} biomarkers`}`,
-      symptoms,
-      patient: patientContext
-    });
+      {
+        appointmentRequest: patientContext ? {
+          patient: patientContext as PatientProfile,
+          appointmentType: AppointmentType.PRIMARY_CARE,
+          symptoms: symptoms as SymptomInfo[]
+        } : undefined
+      }
+    );
 
     // Transform to RisaCare format
-    const interpretations = extractedBiomarkers.map(b => ({
+    const interpretations = extractedBiomarkers.map((b: { name: string; value: unknown; unit?: string; status?: string; referenceRange?: { min?: number; max?: number } }) => ({
       biomarker: b.name,
       value: String(b.value),
       unit: b.unit,
@@ -550,19 +554,19 @@ router.post('/health/interpret', validateRequest(reportInterpretationSchema), as
     }));
 
     // Determine overall assessment
-    const abnormalCount = interpretations.filter(i => i.needsAttention).length;
-    const hasCritical = interpretations.some(i => i.status === 'critical');
+    const abnormalCount = interpretations.filter((i: { needsAttention: boolean }) => i.needsAttention).length;
+    const hasCritical = interpretations.some((i: { status: string }) => i.status === 'critical');
 
     res.json({
       success: true,
       data: {
         interpretations,
         overallAssessment: {
-          summary: queryResponse.response || `Analyzed ${extractedBiomarkers.length} biomarkers from ${recordType}`,
+          summary: queryResponse.message || `Analyzed ${extractedBiomarkers.length} biomarkers from ${recordType}`,
           needsDoctorConsult: abnormalCount > 0,
           urgency: hasCritical ? 'high' : abnormalCount > 2 ? 'medium' : 'low'
         },
-        riskSignals: interpretations.filter(i => i.needsAttention).map(i => ({
+        riskSignals: interpretations.filter((i: { needsAttention: boolean }) => i.needsAttention).map((i: { biomarker: string; status: string }) => ({
           indicator: `${i.biomarker} is ${i.status}`,
           action: 'Consult your doctor for personalized advice'
         })),

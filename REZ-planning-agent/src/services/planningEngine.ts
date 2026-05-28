@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Task, Plan, PlanRequest, PlanResponse, ExecutionContext } from '../types/index.js';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 interface TaskTemplate {
   pattern: RegExp;

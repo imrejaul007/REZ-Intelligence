@@ -99,9 +99,10 @@ class StaffModule {
             return { success: true, member_id: response.data.member_id };
         }
         catch (error) {
+            const err = error;
             return {
                 success: false,
-                error: error.response?.data?.message || 'Invitation failed',
+                error: err.response?.data?.message || 'Invitation failed',
             };
         }
     }

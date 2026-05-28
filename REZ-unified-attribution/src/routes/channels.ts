@@ -17,7 +17,7 @@ channelRouter.get('/', async (req: Request, res: Response) => {
   try {
     const { merchantId, type, active } = req.query;
 
-    const query: unknown = {};
+    const query: Record<string, unknown> = {};
     if (merchantId) query.merchantId = merchantId;
     if (type) query.type = type;
     if (active !== undefined) query.isActive = active === 'true';

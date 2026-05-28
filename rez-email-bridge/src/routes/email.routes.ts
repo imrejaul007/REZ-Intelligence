@@ -51,10 +51,11 @@ router.post('/email/send', async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    logger.error('Send email error', { error: error.message });
+    const err = error as Error;
+    logger.error('Send email error', { error: err.message });
     res.status(500).json({
       success: false,
-      error: error.message
+      error: err.message
     });
   }
 });
@@ -85,10 +86,11 @@ router.post('/email/send-template', async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    logger.error('Send template error', { error: error.message });
+    const err = error as Error;
+    logger.error('Send template error', { error: err.message });
     res.status(500).json({
       success: false,
-      error: error.message
+      error: err.message
     });
   }
 });
@@ -119,10 +121,11 @@ router.post('/email/send-attachment', async (req: Request, res: Response) => {
       error: result.error
     });
   } catch (error) {
-    logger.error('Send attachment error', { error: error.message });
+    const err = error as Error;
+    logger.error('Send attachment error', { error: err.message });
     res.status(500).json({
       success: false,
-      error: error.message
+      error: err.message
     });
   }
 });
@@ -167,10 +170,11 @@ router.post('/email/inbound', async (req: Request, res: Response) => {
 
     res.json({ success: true });
   } catch (error) {
-    logger.error('Inbound email error', { error: error.message });
+    const err = error as Error;
+    logger.error('Inbound email error', { error: err.message });
     res.status(500).json({
       success: false,
-      error: error.message
+      error: err.message
     });
   }
 });

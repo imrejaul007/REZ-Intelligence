@@ -3,7 +3,7 @@
  * Provides integration with the central Core Brain service for context, memory, and personalization
  */
 
-import { logger } from './fitnessExpert.js';
+import { logger } from './fitnessExpert';
 
 // ============================================
 // TYPES
@@ -196,7 +196,7 @@ export class CoreBrainClient {
         );
       }
 
-      const result: CoreBrainResponse<T> = await response.json();
+      const result = await response.json() as CoreBrainResponse<T>;
 
       if (!result.success) {
         throw new CoreBrainError(
@@ -511,7 +511,7 @@ export class CoreBrainClient {
     params.append('includePreferences', String(options?.includePreferences ?? false));
     params.append('includeRecentMemories', String(options?.includeRecentMemories ?? true));
 
-    return this.request<IntelligenceData>(`/internal/personalization/intelligence?${params.toString()}`);
+    return this.request<IntelligenceData>('GET', `/internal/personalization/intelligence?${params.toString()}`);
   }
 
   /**
@@ -564,15 +564,15 @@ export class CoreBrainClient {
     const [session, preferences, loyalty, memories, contextData, intelligence, workoutHistory] =
       await Promise.allSettled(promises);
 
-    if (session.status === 'fulfilled') results.session = session.value;
-    if (preferences.status === 'fulfilled') results.preferences = preferences.value;
-    if (loyalty.status === 'fulfilled') results.loyalty = loyalty.value;
-    if (memories.status === 'fulfilled') results.memories = memories.value;
-    if (contextData.status === 'fulfilled') results.context = contextData.value;
+    if (session.status === 'fulfilled' && session.value !== undefined) results.session = session.value as SessionContext | null;
+    if (preferences.status === 'fulfilled' && preferences.value !== undefined) results.preferences = preferences.value as UserPreferences | null;
+    if (loyalty.status === 'fulfilled' && loyalty.value !== undefined) results.loyalty = loyalty.value as LoyaltyProfile | null;
+    if (memories.status === 'fulfilled' && memories.value !== undefined) results.memories = memories.value as MemoryEntry[];
+    if (contextData.status === 'fulfilled' && contextData.value !== undefined) results.context = contextData.value as Record<string, unknown>;
     if (intelligence.status === 'fulfilled' && intelligence.value) {
-      results.context = { ...results.context, ...intelligence.value };
+      results.context = { ...results.context, ...(intelligence.value as Record<string, unknown>) };
     }
-    if (workoutHistory.status === 'fulfilled') results.workoutHistory = workoutHistory.value;
+    if (workoutHistory.status === 'fulfilled' && workoutHistory.value !== undefined) results.workoutHistory = workoutHistory.value as MemoryEntry[];
 
     return results;
   }

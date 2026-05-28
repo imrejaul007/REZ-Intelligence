@@ -1,4 +1,7 @@
-export var SymptomCategory;
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RED_FLAG_CHECKLIST = exports.HEALTH_GLOSSARY = exports.WELLNESS_TIPS = exports.SYMPTOM_DATABASE = exports.SpecialtyType = exports.AppointmentType = exports.UrgencyLevel = exports.SeverityLevel = exports.SymptomCategory = void 0;
+var SymptomCategory;
 (function (SymptomCategory) {
     SymptomCategory["RESPIRATORY"] = "respiratory";
     SymptomCategory["DIGESTIVE"] = "digestive";
@@ -10,23 +13,23 @@ export var SymptomCategory;
     SymptomCategory["PAIN"] = "pain";
     SymptomCategory["FATIGUE"] = "fatigue";
     SymptomCategory["GENERAL"] = "general";
-})(SymptomCategory || (SymptomCategory = {}));
-export var SeverityLevel;
+})(SymptomCategory || (exports.SymptomCategory = SymptomCategory = {}));
+var SeverityLevel;
 (function (SeverityLevel) {
     SeverityLevel["MINOR"] = "minor";
     SeverityLevel["MODERATE"] = "moderate";
     SeverityLevel["SEVERE"] = "severe";
     SeverityLevel["URGENT"] = "urgent";
-})(SeverityLevel || (SeverityLevel = {}));
-export var UrgencyLevel;
+})(SeverityLevel || (exports.SeverityLevel = SeverityLevel = {}));
+var UrgencyLevel;
 (function (UrgencyLevel) {
     UrgencyLevel["SELF_CARE"] = "self_care";
     UrgencyLevel["SCHEDULE_VISIT"] = "schedule_visit";
     UrgencyLevel["SAME_DAY_APPOINTMENT"] = "same_day_appointment";
     UrgencyLevel["URGENT_CARE"] = "urgent_care";
     UrgencyLevel["EMERGENCY"] = "emergency";
-})(UrgencyLevel || (UrgencyLevel = {}));
-export var AppointmentType;
+})(UrgencyLevel || (exports.UrgencyLevel = UrgencyLevel = {}));
+var AppointmentType;
 (function (AppointmentType) {
     AppointmentType["PRIMARY_CARE"] = "primary_care";
     AppointmentType["SPECIALIST"] = "specialist";
@@ -35,8 +38,8 @@ export var AppointmentType;
     AppointmentType["TELEMEDICINE"] = "telemedicine";
     AppointmentType["WELLNESS_CHECK"] = "wellness_check";
     AppointmentType["FOLLOW_UP"] = "follow_up";
-})(AppointmentType || (AppointmentType = {}));
-export var SpecialtyType;
+})(AppointmentType || (exports.AppointmentType = AppointmentType = {}));
+var SpecialtyType;
 (function (SpecialtyType) {
     SpecialtyType["GENERAL_MEDICINE"] = "general_medicine";
     SpecialtyType["INTERNAL_MEDICINE"] = "internal_medicine";
@@ -54,8 +57,8 @@ export var SpecialtyType;
     SpecialtyType["ENDOCRINOLOGY"] = "endocrinology";
     SpecialtyType["RHEUMATOLOGY"] = "rheumatology";
     SpecialtyType["ALLERGY_IMMUNOLOGY"] = "allergy_immunology";
-})(SpecialtyType || (SpecialtyType = {}));
-export const SYMPTOM_DATABASE = [
+})(SpecialtyType || (exports.SpecialtyType = SpecialtyType = {}));
+exports.SYMPTOM_DATABASE = [
     {
         name: 'Headache',
         description: 'Pain or discomfort in the head, scalp, or neck region',
@@ -205,7 +208,7 @@ export const SYMPTOM_DATABASE = [
         redFlags: ['Rash with breathing difficulty', 'Rash with fever', 'Rash that spreads rapidly', 'Rash with joint pain', 'Bullseye rash after tick bite']
     }
 ];
-export const WELLNESS_TIPS = [
+exports.WELLNESS_TIPS = [
     {
         id: 'sleep-1',
         category: 'Sleep',
@@ -267,7 +270,7 @@ export const WELLNESS_TIPS = [
         ]
     }
 ];
-export const HEALTH_GLOSSARY = [
+exports.HEALTH_GLOSSARY = [
     { term: 'Hypertension', definition: 'High blood pressure, typically defined as readings above 130/80 mmHg' },
     { term: 'Hypotension', definition: 'Low blood pressure, which may cause dizziness or fainting' },
     { term: 'BMI', definition: 'Body Mass Index - a measure of body fat based on height and weight' },
@@ -281,7 +284,7 @@ export const HEALTH_GLOSSARY = [
     { term: 'Metabolism', definition: 'The chemical processes that convert food into energy' },
     { term: 'Cardiovascular', definition: 'Relating to the heart and blood vessels' }
 ];
-export const RED_FLAG_CHECKLIST = [
+exports.RED_FLAG_CHECKLIST = [
     'Chest pain or pressure',
     'Difficulty breathing or shortness of breath',
     'Sudden severe headache',

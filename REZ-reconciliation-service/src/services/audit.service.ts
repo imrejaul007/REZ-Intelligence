@@ -110,8 +110,8 @@ export class AuditService {
       id: uuidv4(),
       reportId: `TXN-${format(startDate, 'yyyyMMdd')}-${format(endDate, 'yyyyMMdd')}-${uuidv4().slice(0, 6).toUpperCase()}`,
       type: 'transaction_summary',
-      periodStart,
-      periodEnd,
+      periodStart: startDate,
+      periodEnd: endDate,
       generatedAt: new Date(),
       generatedBy: 'system',
       summary,
@@ -170,8 +170,8 @@ export class AuditService {
       id: uuidv4(),
       reportId: `DSC-${format(startDate, 'yyyyMMdd')}-${format(endDate, 'yyyyMMdd')}-${uuidv4().slice(0, 6).toUpperCase()}`,
       type: 'discrepancy_analysis',
-      periodStart,
-      periodEnd,
+      periodStart: startDate,
+      periodEnd: endDate,
       generatedAt: new Date(),
       generatedBy: 'system',
       summary,
@@ -236,8 +236,8 @@ export class AuditService {
       id: uuidv4(),
       reportId: `DPT-${format(startDate, 'yyyyMMdd')}-${format(endDate, 'yyyyMMdd')}-${uuidv4().slice(0, 6).toUpperCase()}`,
       type: 'dispute_report',
-      periodStart,
-      periodEnd,
+      periodStart: startDate,
+      periodEnd: endDate,
       generatedAt: new Date(),
       generatedBy: 'system',
       summary,
@@ -294,8 +294,8 @@ export class AuditService {
       id: uuidv4(),
       reportId: `CMP-${format(startDate, 'yyyyMMdd')}-${format(endDate, 'yyyyMMdd')}-${uuidv4().slice(0, 6).toUpperCase()}`,
       type: 'compliance_report',
-      periodStart,
-      periodEnd,
+      periodStart: startDate,
+      periodEnd: endDate,
       generatedAt: new Date(),
       generatedBy: 'system',
       summary,
@@ -363,8 +363,8 @@ export class AuditService {
       LIMIT $${paramIndex++} OFFSET $${paramIndex}
     `;
 
-    const rows = await query(dataQuery, [...values, limit, offset]);
-    const data = rows.map(row => this.mapRowToReport(row));
+    const rows = await query<Record<string, unknown>>(dataQuery, [...values, limit, offset]);
+    const data = rows.map((row) => this.mapRowToReport(row));
 
     return {
       data,
@@ -381,7 +381,7 @@ export class AuditService {
    * Get report by ID
    */
   async getReport(reportId: string): Promise<AuditReport | null> {
-    const row = await queryOne(
+    const row = await queryOne<Record<string, unknown>>(
       'SELECT * FROM audit_reports WHERE id = $1 OR report_id = $1',
       [reportId]
     );
@@ -421,7 +421,7 @@ export class AuditService {
       values.push(accountId);
     }
 
-    const rows = await query(
+    const rows = await query<{ type: string; status: string; count: string; total: string | null }>(
       `SELECT type, status, COUNT(*) as count, SUM(amount) as total
        FROM transactions ${whereClause}
        GROUP BY type, status`,
@@ -455,7 +455,7 @@ export class AuditService {
       values.push(accountId);
     }
 
-    const rows = await query(
+    const rows = await query<{ balance: string; timestamp: Date }>(
       `SELECT balance, timestamp FROM balance_records ${whereClause} ORDER BY timestamp`,
       values
     );
@@ -471,7 +471,7 @@ export class AuditService {
     resolved: number;
     byType: Record<string, number>;
   }> {
-    const rows = await query(
+    const rows = await query<{ type: string; status: string; count: string }>(
       `SELECT type, status, COUNT(*) as count
        FROM discrepancies
        WHERE detected_at >= $1 AND detected_at <= $2
@@ -500,7 +500,7 @@ export class AuditService {
     resolved: number;
     byType: Record<string, number>;
   }> {
-    const rows = await query(
+    const rows = await query<{ type: string; status: string; count: string }>(
       `SELECT type, status, COUNT(*) as count
        FROM disputes
        WHERE filed_at >= $1 AND filed_at <= $2
@@ -537,7 +537,7 @@ export class AuditService {
       values.push(accountId);
     }
 
-    const rows = await query(
+    const rows = await query<{ hour: string; count: string; total: string | null }>(
       `SELECT EXTRACT(HOUR FROM timestamp) as hour, COUNT(*) as count, SUM(amount) as total
        FROM transactions ${whereClause}
        GROUP BY EXTRACT(HOUR FROM timestamp)
@@ -565,7 +565,7 @@ export class AuditService {
       values.push(accountId);
     }
 
-    const rows = await query(
+    const rows = await query<{ merchant_id: string; count: string; total: string | null }>(
       `SELECT merchant_id, COUNT(*) as count, SUM(amount) as total
        FROM transactions ${whereClause}
        GROUP BY merchant_id
@@ -582,29 +582,55 @@ export class AuditService {
   }
 
   private async getDiscrepanciesInRange(startDate: Date, endDate: Date): Promise<Discrepancy[]> {
-    const rows = await query(
+    const rows = await query<{
+      id: string;
+      type: string;
+      severity: string;
+      description: string;
+      transaction_id: string | null;
+      expected_value: unknown;
+      actual_value: unknown;
+      detected_at: Date;
+      resolved_at: Date | null;
+      resolved_by: string | null;
+      status: string;
+      notes: string | null;
+    }>(
       'SELECT * FROM discrepancies WHERE detected_at >= $1 AND detected_at <= $2',
       [startDate, endDate]
     );
 
     return rows.map(row => ({
       id: row.id,
-      type: row.type,
-      severity: row.severity,
+      type: row.type as Discrepancy['type'],
+      severity: row.severity as Discrepancy['severity'],
       description: row.description,
-      transactionId: row.transaction_id,
+      transactionId: row.transaction_id ?? undefined,
       expectedValue: row.expected_value,
       actualValue: row.actual_value,
       detectedAt: new Date(row.detected_at),
       resolvedAt: row.resolved_at ? new Date(row.resolved_at) : undefined,
-      resolvedBy: row.resolved_by,
-      status: row.status,
-      notes: row.notes,
+      resolvedBy: row.resolved_by ?? undefined,
+      status: row.status as Discrepancy['status'],
+      notes: row.notes ?? undefined,
     }));
   }
 
   private async getDisputesInRange(startDate: Date, endDate: Date): Promise<Dispute[]> {
-    const rows = await query(
+    const rows = await query<{
+      id: string;
+      transaction_id: string;
+      dispute_id: string;
+      type: string;
+      reason: string;
+      amount: string;
+      currency: string;
+      status: string;
+      filed_by: string;
+      filed_at: Date;
+      resolution_at: Date | null;
+      notes: string | null;
+    }>(
       'SELECT * FROM disputes WHERE filed_at >= $1 AND filed_at <= $2',
       [startDate, endDate]
     );
@@ -613,15 +639,15 @@ export class AuditService {
       id: row.id,
       transactionId: row.transaction_id,
       disputeId: row.dispute_id,
-      type: row.type,
+      type: row.type as Dispute['type'],
       reason: row.reason,
       amount: parseFloat(row.amount),
       currency: row.currency,
-      status: row.status,
+      status: row.status as Dispute['status'],
       filedBy: row.filed_by,
       filedAt: new Date(row.filed_at),
       resolutionAt: row.resolution_at ? new Date(row.resolution_at) : undefined,
-      notes: row.notes,
+      notes: row.notes ?? undefined,
     }));
   }
 

@@ -36,192 +36,351 @@ export declare const ViewMenuSchema: z.ZodObject<{
     category: z.ZodOptional<z.ZodString>;
     page: z.ZodDefault<z.ZodNumber>;
     pageSize: z.ZodDefault<z.ZodNumber>;
-}, z.core.$strip>;
+}, "strip", z.ZodTypeAny, {
+    restaurantId?: string;
+    category?: string;
+    page?: number;
+    pageSize?: number;
+}, {
+    restaurantId?: string;
+    category?: string;
+    page?: number;
+    pageSize?: number;
+}>;
 export declare const BrowseCategorySchema: z.ZodObject<{
     restaurantId: z.ZodString;
     category: z.ZodString;
     filters: z.ZodOptional<z.ZodObject<{
-        dietaryTags: z.ZodOptional<z.ZodArray<z.ZodString>>;
-        excludeAllergens: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        dietaryTags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+        excludeAllergens: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
         priceRange: z.ZodOptional<z.ZodObject<{
             min: z.ZodOptional<z.ZodNumber>;
             max: z.ZodOptional<z.ZodNumber>;
-        }, z.core.$strip>>;
-        sortBy: z.ZodOptional<z.ZodEnum<{
-            price: "price";
-            name: "name";
-            popularity: "popularity";
-            rating: "rating";
+        }, "strip", z.ZodTypeAny, {
+            min?: number;
+            max?: number;
+        }, {
+            min?: number;
+            max?: number;
         }>>;
-    }, z.core.$strip>>;
-}, z.core.$strip>;
+        sortBy: z.ZodOptional<z.ZodEnum<["price", "name", "popularity", "rating"]>>;
+    }, "strip", z.ZodTypeAny, {
+        dietaryTags?: string[];
+        excludeAllergens?: string[];
+        priceRange?: {
+            min?: number;
+            max?: number;
+        };
+        sortBy?: "price" | "name" | "popularity" | "rating";
+    }, {
+        dietaryTags?: string[];
+        excludeAllergens?: string[];
+        priceRange?: {
+            min?: number;
+            max?: number;
+        };
+        sortBy?: "price" | "name" | "popularity" | "rating";
+    }>>;
+}, "strip", z.ZodTypeAny, {
+    restaurantId?: string;
+    category?: string;
+    filters?: {
+        dietaryTags?: string[];
+        excludeAllergens?: string[];
+        priceRange?: {
+            min?: number;
+            max?: number;
+        };
+        sortBy?: "price" | "name" | "popularity" | "rating";
+    };
+}, {
+    restaurantId?: string;
+    category?: string;
+    filters?: {
+        dietaryTags?: string[];
+        excludeAllergens?: string[];
+        priceRange?: {
+            min?: number;
+            max?: number;
+        };
+        sortBy?: "price" | "name" | "popularity" | "rating";
+    };
+}>;
 export declare const SearchItemsSchema: z.ZodObject<{
     restaurantId: z.ZodString;
     query: z.ZodString;
     filters: z.ZodOptional<z.ZodOptional<z.ZodObject<{
-        dietaryTags: z.ZodOptional<z.ZodArray<z.ZodString>>;
-        excludeAllergens: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        dietaryTags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+        excludeAllergens: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
         priceRange: z.ZodOptional<z.ZodObject<{
             min: z.ZodOptional<z.ZodNumber>;
             max: z.ZodOptional<z.ZodNumber>;
-        }, z.core.$strip>>;
-        sortBy: z.ZodOptional<z.ZodEnum<{
-            price: "price";
-            name: "name";
-            popularity: "popularity";
-            rating: "rating";
+        }, "strip", z.ZodTypeAny, {
+            min?: number;
+            max?: number;
+        }, {
+            min?: number;
+            max?: number;
         }>>;
-    }, z.core.$strip>>>;
-}, z.core.$strip>;
+        sortBy: z.ZodOptional<z.ZodEnum<["price", "name", "popularity", "rating"]>>;
+    }, "strip", z.ZodTypeAny, {
+        dietaryTags?: string[];
+        excludeAllergens?: string[];
+        priceRange?: {
+            min?: number;
+            max?: number;
+        };
+        sortBy?: "price" | "name" | "popularity" | "rating";
+    }, {
+        dietaryTags?: string[];
+        excludeAllergens?: string[];
+        priceRange?: {
+            min?: number;
+            max?: number;
+        };
+        sortBy?: "price" | "name" | "popularity" | "rating";
+    }>>>;
+}, "strip", z.ZodTypeAny, {
+    restaurantId?: string;
+    filters?: {
+        dietaryTags?: string[];
+        excludeAllergens?: string[];
+        priceRange?: {
+            min?: number;
+            max?: number;
+        };
+        sortBy?: "price" | "name" | "popularity" | "rating";
+    };
+    query?: string;
+}, {
+    restaurantId?: string;
+    filters?: {
+        dietaryTags?: string[];
+        excludeAllergens?: string[];
+        priceRange?: {
+            min?: number;
+            max?: number;
+        };
+        sortBy?: "price" | "name" | "popularity" | "rating";
+    };
+    query?: string;
+}>;
 export declare const GetItemDetailsSchema: z.ZodObject<{
     restaurantId: z.ZodString;
     itemId: z.ZodString;
     includeNutrition: z.ZodDefault<z.ZodBoolean>;
     includePairings: z.ZodDefault<z.ZodBoolean>;
-}, z.core.$strip>;
+}, "strip", z.ZodTypeAny, {
+    restaurantId?: string;
+    itemId?: string;
+    includeNutrition?: boolean;
+    includePairings?: boolean;
+}, {
+    restaurantId?: string;
+    itemId?: string;
+    includeNutrition?: boolean;
+    includePairings?: boolean;
+}>;
 export declare const GetRecommendationSchema: z.ZodObject<{
     restaurantId: z.ZodString;
     userId: z.ZodString;
     context: z.ZodOptional<z.ZodObject<{
-        occasion: z.ZodOptional<z.ZodEnum<{
-            date: "date";
-            casual: "casual";
-            business: "business";
-            family: "family";
-            celebration: "celebration";
-            quick: "quick";
-        }>>;
-        timeOfDay: z.ZodOptional<z.ZodEnum<{
-            breakfast: "breakfast";
-            lunch: "lunch";
-            dinner: "dinner";
-            snack: "snack";
-            "late-night": "late-night";
-        }>>;
-        budget: z.ZodOptional<z.ZodEnum<{
-            budget: "budget";
-            moderate: "moderate";
-            premium: "premium";
-            luxury: "luxury";
-        }>>;
-        mood: z.ZodOptional<z.ZodEnum<{
-            adventurous: "adventurous";
-            comfort: "comfort";
-            healthy: "healthy";
-            indulgent: "indulgent";
-            light: "light";
-            hearty: "hearty";
-        }>>;
+        occasion: z.ZodOptional<z.ZodEnum<["casual", "date", "business", "family", "celebration", "quick"]>>;
+        timeOfDay: z.ZodOptional<z.ZodEnum<["breakfast", "lunch", "dinner", "snack", "late-night"]>>;
+        budget: z.ZodOptional<z.ZodEnum<["budget", "moderate", "premium", "luxury"]>>;
+        mood: z.ZodOptional<z.ZodEnum<["adventurous", "comfort", "healthy", "indulgent", "light", "hearty"]>>;
         cuisinePreference: z.ZodOptional<z.ZodString>;
         groupSize: z.ZodOptional<z.ZodNumber>;
-    }, z.core.$strip>>;
+    }, "strip", z.ZodTypeAny, {
+        occasion?: "casual" | "date" | "business" | "family" | "celebration" | "quick";
+        timeOfDay?: "breakfast" | "lunch" | "dinner" | "snack" | "late-night";
+        budget?: "budget" | "moderate" | "premium" | "luxury";
+        mood?: "adventurous" | "comfort" | "healthy" | "indulgent" | "light" | "hearty";
+        cuisinePreference?: string;
+        groupSize?: number;
+    }, {
+        occasion?: "casual" | "date" | "business" | "family" | "celebration" | "quick";
+        timeOfDay?: "breakfast" | "lunch" | "dinner" | "snack" | "late-night";
+        budget?: "budget" | "moderate" | "premium" | "luxury";
+        mood?: "adventurous" | "comfort" | "healthy" | "indulgent" | "light" | "hearty";
+        cuisinePreference?: string;
+        groupSize?: number;
+    }>>;
     limit: z.ZodDefault<z.ZodNumber>;
-}, z.core.$strip>;
+}, "strip", z.ZodTypeAny, {
+    restaurantId?: string;
+    userId?: string;
+    context?: {
+        occasion?: "casual" | "date" | "business" | "family" | "celebration" | "quick";
+        timeOfDay?: "breakfast" | "lunch" | "dinner" | "snack" | "late-night";
+        budget?: "budget" | "moderate" | "premium" | "luxury";
+        mood?: "adventurous" | "comfort" | "healthy" | "indulgent" | "light" | "hearty";
+        cuisinePreference?: string;
+        groupSize?: number;
+    };
+    limit?: number;
+}, {
+    restaurantId?: string;
+    userId?: string;
+    context?: {
+        occasion?: "casual" | "date" | "business" | "family" | "celebration" | "quick";
+        timeOfDay?: "breakfast" | "lunch" | "dinner" | "snack" | "late-night";
+        budget?: "budget" | "moderate" | "premium" | "luxury";
+        mood?: "adventurous" | "comfort" | "healthy" | "indulgent" | "light" | "hearty";
+        cuisinePreference?: string;
+        groupSize?: number;
+    };
+    limit?: number;
+}>;
 export declare const GetPairingSchema: z.ZodObject<{
     restaurantId: z.ZodString;
     itemId: z.ZodString;
-    pairingType: z.ZodOptional<z.ZodEnum<{
-        wine: "wine";
-        beer: "beer";
-        cocktail: "cocktail";
-        "non-alcoholic": "non-alcoholic";
-        side: "side";
-        dessert: "dessert";
-    }>>;
-}, z.core.$strip>;
+    pairingType: z.ZodOptional<z.ZodEnum<["wine", "beer", "cocktail", "non-alcoholic", "side", "dessert"]>>;
+}, "strip", z.ZodTypeAny, {
+    restaurantId?: string;
+    itemId?: string;
+    pairingType?: "wine" | "beer" | "cocktail" | "non-alcoholic" | "side" | "dessert";
+}, {
+    restaurantId?: string;
+    itemId?: string;
+    pairingType?: "wine" | "beer" | "cocktail" | "non-alcoholic" | "side" | "dessert";
+}>;
 export declare const GetMealPlanSchema: z.ZodObject<{
     restaurantId: z.ZodString;
     userId: z.ZodString;
     context: z.ZodOptional<z.ZodObject<{
-        occasion: z.ZodOptional<z.ZodEnum<{
-            date: "date";
-            casual: "casual";
-            business: "business";
-            family: "family";
-            celebration: "celebration";
-            quick: "quick";
-        }>>;
-        timeOfDay: z.ZodOptional<z.ZodEnum<{
-            breakfast: "breakfast";
-            lunch: "lunch";
-            dinner: "dinner";
-            snack: "snack";
-            "late-night": "late-night";
-        }>>;
-        budget: z.ZodOptional<z.ZodEnum<{
-            budget: "budget";
-            moderate: "moderate";
-            premium: "premium";
-            luxury: "luxury";
-        }>>;
-        mood: z.ZodOptional<z.ZodEnum<{
-            adventurous: "adventurous";
-            comfort: "comfort";
-            healthy: "healthy";
-            indulgent: "indulgent";
-            light: "light";
-            hearty: "hearty";
-        }>>;
+        occasion: z.ZodOptional<z.ZodEnum<["casual", "date", "business", "family", "celebration", "quick"]>>;
+        timeOfDay: z.ZodOptional<z.ZodEnum<["breakfast", "lunch", "dinner", "snack", "late-night"]>>;
+        budget: z.ZodOptional<z.ZodEnum<["budget", "moderate", "premium", "luxury"]>>;
+        mood: z.ZodOptional<z.ZodEnum<["adventurous", "comfort", "healthy", "indulgent", "light", "hearty"]>>;
         cuisinePreference: z.ZodOptional<z.ZodString>;
         groupSize: z.ZodOptional<z.ZodNumber>;
-    }, z.core.$strip>>;
-    dietaryTags: z.ZodOptional<z.ZodArray<z.ZodString>>;
-}, z.core.$strip>;
+    }, "strip", z.ZodTypeAny, {
+        occasion?: "casual" | "date" | "business" | "family" | "celebration" | "quick";
+        timeOfDay?: "breakfast" | "lunch" | "dinner" | "snack" | "late-night";
+        budget?: "budget" | "moderate" | "premium" | "luxury";
+        mood?: "adventurous" | "comfort" | "healthy" | "indulgent" | "light" | "hearty";
+        cuisinePreference?: string;
+        groupSize?: number;
+    }, {
+        occasion?: "casual" | "date" | "business" | "family" | "celebration" | "quick";
+        timeOfDay?: "breakfast" | "lunch" | "dinner" | "snack" | "late-night";
+        budget?: "budget" | "moderate" | "premium" | "luxury";
+        mood?: "adventurous" | "comfort" | "healthy" | "indulgent" | "light" | "hearty";
+        cuisinePreference?: string;
+        groupSize?: number;
+    }>>;
+    dietaryTags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+}, "strip", z.ZodTypeAny, {
+    restaurantId?: string;
+    dietaryTags?: string[];
+    userId?: string;
+    context?: {
+        occasion?: "casual" | "date" | "business" | "family" | "celebration" | "quick";
+        timeOfDay?: "breakfast" | "lunch" | "dinner" | "snack" | "late-night";
+        budget?: "budget" | "moderate" | "premium" | "luxury";
+        mood?: "adventurous" | "comfort" | "healthy" | "indulgent" | "light" | "hearty";
+        cuisinePreference?: string;
+        groupSize?: number;
+    };
+}, {
+    restaurantId?: string;
+    dietaryTags?: string[];
+    userId?: string;
+    context?: {
+        occasion?: "casual" | "date" | "business" | "family" | "celebration" | "quick";
+        timeOfDay?: "breakfast" | "lunch" | "dinner" | "snack" | "late-night";
+        budget?: "budget" | "moderate" | "premium" | "luxury";
+        mood?: "adventurous" | "comfort" | "healthy" | "indulgent" | "light" | "hearty";
+        cuisinePreference?: string;
+        groupSize?: number;
+    };
+}>;
 export declare const GetSimilarItemsSchema: z.ZodObject<{
     restaurantId: z.ZodString;
     itemId: z.ZodString;
     limit: z.ZodDefault<z.ZodNumber>;
-}, z.core.$strip>;
+}, "strip", z.ZodTypeAny, {
+    restaurantId?: string;
+    itemId?: string;
+    limit?: number;
+}, {
+    restaurantId?: string;
+    itemId?: string;
+    limit?: number;
+}>;
 export declare const SetDietaryRestrictionSchema: z.ZodObject<{
     userId: z.ZodString;
-    restriction: z.ZodEnum<{
-        vegetarian: "vegetarian";
-        vegan: "vegan";
-        "gluten-free": "gluten-free";
-        "dairy-free": "dairy-free";
-        "nut-free": "nut-free";
-        keto: "keto";
-        paleo: "paleo";
-        "low-carb": "low-carb";
-        whole30: "whole30";
-        halal: "halal";
-        kosher: "kosher";
-    }>;
+    restriction: z.ZodEnum<["vegetarian", "vegan", "gluten-free", "dairy-free", "nut-free", "keto", "paleo", "low-carb", "whole30", "halal", "kosher"]>;
     enabled: z.ZodDefault<z.ZodBoolean>;
-}, z.core.$strip>;
+}, "strip", z.ZodTypeAny, {
+    userId?: string;
+    restriction?: "vegetarian" | "vegan" | "gluten-free" | "dairy-free" | "nut-free" | "keto" | "paleo" | "low-carb" | "whole30" | "halal" | "kosher";
+    enabled?: boolean;
+}, {
+    userId?: string;
+    restriction?: "vegetarian" | "vegan" | "gluten-free" | "dairy-free" | "nut-free" | "keto" | "paleo" | "low-carb" | "whole30" | "halal" | "kosher";
+    enabled?: boolean;
+}>;
 export declare const CheckAllergensSchema: z.ZodObject<{
     userId: z.ZodString;
     itemId: z.ZodOptional<z.ZodString>;
     description: z.ZodOptional<z.ZodString>;
-}, z.core.$strip>;
+}, "strip", z.ZodTypeAny, {
+    itemId?: string;
+    userId?: string;
+    description?: string;
+}, {
+    itemId?: string;
+    userId?: string;
+    description?: string;
+}>;
 export declare const FilterByDietSchema: z.ZodObject<{
     restaurantId: z.ZodString;
     userId: z.ZodString;
-    dietaryTags: z.ZodArray<z.ZodString>;
+    dietaryTags: z.ZodArray<z.ZodString, "many">;
     includeUnavailable: z.ZodDefault<z.ZodBoolean>;
-}, z.core.$strip>;
+}, "strip", z.ZodTypeAny, {
+    restaurantId?: string;
+    dietaryTags?: string[];
+    userId?: string;
+    includeUnavailable?: boolean;
+}, {
+    restaurantId?: string;
+    dietaryTags?: string[];
+    userId?: string;
+    includeUnavailable?: boolean;
+}>;
 export declare const UpdateAllergyProfileSchema: z.ZodObject<{
     userId: z.ZodString;
     allergies: z.ZodArray<z.ZodObject<{
-        allergenId: z.ZodEnum<{
-            milk: "milk";
-            eggs: "eggs";
-            fish: "fish";
-            shellfish: "shellfish";
-            "tree-nuts": "tree-nuts";
-            peanuts: "peanuts";
-            wheat: "wheat";
-            soybeans: "soybeans";
-            sesame: "sesame";
-        }>;
-        severity: z.ZodEnum<{
-            moderate: "moderate";
-            mild: "mild";
-            severe: "severe";
-        }>;
+        allergenId: z.ZodEnum<["milk", "eggs", "fish", "shellfish", "tree-nuts", "peanuts", "wheat", "soybeans", "sesame"]>;
+        severity: z.ZodEnum<["mild", "moderate", "severe"]>;
         notes: z.ZodOptional<z.ZodString>;
-    }, z.core.$strip>>;
-}, z.core.$strip>;
+    }, "strip", z.ZodTypeAny, {
+        allergenId?: "milk" | "eggs" | "fish" | "shellfish" | "tree-nuts" | "peanuts" | "wheat" | "soybeans" | "sesame";
+        severity?: "moderate" | "mild" | "severe";
+        notes?: string;
+    }, {
+        allergenId?: "milk" | "eggs" | "fish" | "shellfish" | "tree-nuts" | "peanuts" | "wheat" | "soybeans" | "sesame";
+        severity?: "moderate" | "mild" | "severe";
+        notes?: string;
+    }>, "many">;
+}, "strip", z.ZodTypeAny, {
+    userId?: string;
+    allergies?: {
+        allergenId?: "milk" | "eggs" | "fish" | "shellfish" | "tree-nuts" | "peanuts" | "wheat" | "soybeans" | "sesame";
+        severity?: "moderate" | "mild" | "severe";
+        notes?: string;
+    }[];
+}, {
+    userId?: string;
+    allergies?: {
+        allergenId?: "milk" | "eggs" | "fish" | "shellfish" | "tree-nuts" | "peanuts" | "wheat" | "soybeans" | "sesame";
+        severity?: "moderate" | "mild" | "severe";
+        notes?: string;
+    }[];
+}>;
 export declare const AddToOrderSchema: z.ZodObject<{
     userId: z.ZodString;
     restaurantId: z.ZodString;
@@ -230,17 +389,63 @@ export declare const AddToOrderSchema: z.ZodObject<{
     customizations: z.ZodOptional<z.ZodArray<z.ZodObject<{
         customizationId: z.ZodString;
         optionId: z.ZodString;
-    }, z.core.$strip>>>;
+    }, "strip", z.ZodTypeAny, {
+        customizationId?: string;
+        optionId?: string;
+    }, {
+        customizationId?: string;
+        optionId?: string;
+    }>, "many">>;
     specialInstructions: z.ZodOptional<z.ZodString>;
-}, z.core.$strip>;
+}, "strip", z.ZodTypeAny, {
+    restaurantId?: string;
+    itemId?: string;
+    userId?: string;
+    quantity?: number;
+    customizations?: {
+        customizationId?: string;
+        optionId?: string;
+    }[];
+    specialInstructions?: string;
+}, {
+    restaurantId?: string;
+    itemId?: string;
+    userId?: string;
+    quantity?: number;
+    customizations?: {
+        customizationId?: string;
+        optionId?: string;
+    }[];
+    specialInstructions?: string;
+}>;
 export declare const CustomizeItemSchema: z.ZodObject<{
     restaurantId: z.ZodString;
     itemId: z.ZodString;
     customizations: z.ZodArray<z.ZodObject<{
         customizationId: z.ZodString;
-        selectedOptions: z.ZodArray<z.ZodString>;
-    }, z.core.$strip>>;
-}, z.core.$strip>;
+        selectedOptions: z.ZodArray<z.ZodString, "many">;
+    }, "strip", z.ZodTypeAny, {
+        customizationId?: string;
+        selectedOptions?: string[];
+    }, {
+        customizationId?: string;
+        selectedOptions?: string[];
+    }>, "many">;
+}, "strip", z.ZodTypeAny, {
+    restaurantId?: string;
+    itemId?: string;
+    customizations?: {
+        customizationId?: string;
+        selectedOptions?: string[];
+    }[];
+}, {
+    restaurantId?: string;
+    itemId?: string;
+    customizations?: {
+        customizationId?: string;
+        selectedOptions?: string[];
+    }[];
+}>;
 export declare const PlaceOrderSchema: z.ZodObject<{
     userId: z.ZodString;
     restaurantId: z.ZodString;
@@ -250,15 +455,49 @@ export declare const PlaceOrderSchema: z.ZodObject<{
         state: z.ZodString;
         zipCode: z.ZodString;
         instructions: z.ZodOptional<z.ZodString>;
-    }, z.core.$strip>>;
+    }, "strip", z.ZodTypeAny, {
+        street?: string;
+        city?: string;
+        state?: string;
+        zipCode?: string;
+        instructions?: string;
+    }, {
+        street?: string;
+        city?: string;
+        state?: string;
+        zipCode?: string;
+        instructions?: string;
+    }>>;
     pickup: z.ZodDefault<z.ZodBoolean>;
-    paymentMethod: z.ZodEnum<{
-        card: "card";
-        wallet: "wallet";
-        cash: "cash";
-    }>;
+    paymentMethod: z.ZodEnum<["card", "wallet", "cash"]>;
     tip: z.ZodOptional<z.ZodNumber>;
-}, z.core.$strip>;
+}, "strip", z.ZodTypeAny, {
+    restaurantId?: string;
+    userId?: string;
+    deliveryAddress?: {
+        street?: string;
+        city?: string;
+        state?: string;
+        zipCode?: string;
+        instructions?: string;
+    };
+    pickup?: boolean;
+    paymentMethod?: "card" | "wallet" | "cash";
+    tip?: number;
+}, {
+    restaurantId?: string;
+    userId?: string;
+    deliveryAddress?: {
+        street?: string;
+        city?: string;
+        state?: string;
+        zipCode?: string;
+        instructions?: string;
+    };
+    pickup?: boolean;
+    paymentMethod?: "card" | "wallet" | "cash";
+    tip?: number;
+}>;
 export declare const ModifyOrderSchema: z.ZodObject<{
     orderId: z.ZodString;
     userId: z.ZodString;
@@ -269,41 +508,175 @@ export declare const ModifyOrderSchema: z.ZodObject<{
             customizations: z.ZodOptional<z.ZodArray<z.ZodObject<{
                 customizationId: z.ZodString;
                 optionId: z.ZodString;
-            }, z.core.$strip>>>;
-        }, z.core.$strip>>>;
+            }, "strip", z.ZodTypeAny, {
+                customizationId?: string;
+                optionId?: string;
+            }, {
+                customizationId?: string;
+                optionId?: string;
+            }>, "many">>;
+        }, "strip", z.ZodTypeAny, {
+            itemId?: string;
+            quantity?: number;
+            customizations?: {
+                customizationId?: string;
+                optionId?: string;
+            }[];
+        }, {
+            itemId?: string;
+            quantity?: number;
+            customizations?: {
+                customizationId?: string;
+                optionId?: string;
+            }[];
+        }>, "many">>;
         deliveryAddress: z.ZodOptional<z.ZodOptional<z.ZodObject<{
             street: z.ZodString;
             city: z.ZodString;
             state: z.ZodString;
             zipCode: z.ZodString;
             instructions: z.ZodOptional<z.ZodString>;
-        }, z.core.$strip>>>;
+        }, "strip", z.ZodTypeAny, {
+            street?: string;
+            city?: string;
+            state?: string;
+            zipCode?: string;
+            instructions?: string;
+        }, {
+            street?: string;
+            city?: string;
+            state?: string;
+            zipCode?: string;
+            instructions?: string;
+        }>>>;
         specialInstructions: z.ZodOptional<z.ZodString>;
-    }, z.core.$strip>;
-}, z.core.$strip>;
+    }, "strip", z.ZodTypeAny, {
+        specialInstructions?: string;
+        deliveryAddress?: {
+            street?: string;
+            city?: string;
+            state?: string;
+            zipCode?: string;
+            instructions?: string;
+        };
+        items?: {
+            itemId?: string;
+            quantity?: number;
+            customizations?: {
+                customizationId?: string;
+                optionId?: string;
+            }[];
+        }[];
+    }, {
+        specialInstructions?: string;
+        deliveryAddress?: {
+            street?: string;
+            city?: string;
+            state?: string;
+            zipCode?: string;
+            instructions?: string;
+        };
+        items?: {
+            itemId?: string;
+            quantity?: number;
+            customizations?: {
+                customizationId?: string;
+                optionId?: string;
+            }[];
+        }[];
+    }>;
+}, "strip", z.ZodTypeAny, {
+    userId?: string;
+    orderId?: string;
+    modifications?: {
+        specialInstructions?: string;
+        deliveryAddress?: {
+            street?: string;
+            city?: string;
+            state?: string;
+            zipCode?: string;
+            instructions?: string;
+        };
+        items?: {
+            itemId?: string;
+            quantity?: number;
+            customizations?: {
+                customizationId?: string;
+                optionId?: string;
+            }[];
+        }[];
+    };
+}, {
+    userId?: string;
+    orderId?: string;
+    modifications?: {
+        specialInstructions?: string;
+        deliveryAddress?: {
+            street?: string;
+            city?: string;
+            state?: string;
+            zipCode?: string;
+            instructions?: string;
+        };
+        items?: {
+            itemId?: string;
+            quantity?: number;
+            customizations?: {
+                customizationId?: string;
+                optionId?: string;
+            }[];
+        }[];
+    };
+}>;
 export declare const GetNutritionSchema: z.ZodObject<{
     restaurantId: z.ZodString;
     itemId: z.ZodString;
-}, z.core.$strip>;
+}, "strip", z.ZodTypeAny, {
+    restaurantId?: string;
+    itemId?: string;
+}, {
+    restaurantId?: string;
+    itemId?: string;
+}>;
 export declare const GetIngredientsSchema: z.ZodObject<{
     restaurantId: z.ZodString;
     itemId: z.ZodString;
     includeAllergens: z.ZodDefault<z.ZodBoolean>;
-}, z.core.$strip>;
+}, "strip", z.ZodTypeAny, {
+    restaurantId?: string;
+    itemId?: string;
+    includeAllergens?: boolean;
+}, {
+    restaurantId?: string;
+    itemId?: string;
+    includeAllergens?: boolean;
+}>;
 export declare const ExplainDishSchema: z.ZodObject<{
     restaurantId: z.ZodString;
     itemId: z.ZodString;
-    detailLevel: z.ZodDefault<z.ZodEnum<{
-        moderate: "moderate";
-        brief: "brief";
-        detailed: "detailed";
-    }>>;
-}, z.core.$strip>;
+    detailLevel: z.ZodDefault<z.ZodEnum<["brief", "moderate", "detailed"]>>;
+}, "strip", z.ZodTypeAny, {
+    restaurantId?: string;
+    itemId?: string;
+    detailLevel?: "moderate" | "brief" | "detailed";
+}, {
+    restaurantId?: string;
+    itemId?: string;
+    detailLevel?: "moderate" | "brief" | "detailed";
+}>;
 export declare const GetCuisineInfoSchema: z.ZodObject<{
     cuisineName: z.ZodString;
     includeHistory: z.ZodDefault<z.ZodBoolean>;
     includeDishes: z.ZodDefault<z.ZodBoolean>;
-}, z.core.$strip>;
+}, "strip", z.ZodTypeAny, {
+    cuisineName?: string;
+    includeHistory?: boolean;
+    includeDishes?: boolean;
+}, {
+    cuisineName?: string;
+    includeHistory?: boolean;
+    includeDishes?: boolean;
+}>;
 export interface ClassifiedIntent {
     intent: CulinaryIntent;
     confidence: number;

@@ -144,5 +144,4 @@ export declare class MenuService {
     }>;
 }
 export declare function getMenuService(): MenuService;
-export type { MenuService };
 //# sourceMappingURL=menuService.d.ts.map

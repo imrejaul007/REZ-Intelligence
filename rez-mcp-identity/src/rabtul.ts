@@ -11,7 +11,7 @@ const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || '';
 /**
  * Verify token
  */
-export async function verifyToken(token: string): Promise<{ valid: boolean; user?; error?: string }> {
+export async function verifyToken(token: string): Promise<{ valid: boolean; user?: unknown; error?: string }> {
   try {
     const res = await axios.get(`${AUTH_URL}/api/auth/verify`, {
       headers: { 'Authorization': `Bearer ${token}`, 'X-Internal-Token': INTERNAL_TOKEN },
@@ -20,8 +20,9 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; user
       return { valid: true, user: res.data.user };
     }
     return { valid: false, error: 'Invalid token' };
-  } catch (error) {
-    return { valid: false, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { valid: false, error: message };
   }
 }
 
@@ -42,22 +43,24 @@ export async function registerUser(data: {
       return { success: true, userId: res.data.userId };
     }
     return { success: false, error: res.data.message };
-  } catch (error) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: message };
   }
 }
 
 /**
  * Get user profile
  */
-export async function getProfile(userId: string): Promise<{ profile; error?: string }> {
+export async function getProfile(userId: string): Promise<{ profile: unknown; error?: string }> {
   try {
     const res = await axios.get(`${PROFILE_URL}/api/profiles/${userId}`, {
       headers: { 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { profile: res.data };
-  } catch (error) {
-    return { profile: null, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { profile: null, error: message };
   }
 }
 
@@ -70,8 +73,9 @@ export async function updateProfile(userId: string, updates: Record<string, unkn
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: message };
   }
 }
 
@@ -84,8 +88,9 @@ export async function resolveIdentity(identifier: string, type: 'phone' | 'email
       headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
     });
     return { userId: res.data.userId };
-  } catch (error) {
-    return { error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { error: message };
   }
 }
 

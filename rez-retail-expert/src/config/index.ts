@@ -33,5 +33,5 @@ export const serviceConfig = {
 };
 
 // Re-export knowledge for convenience
-export * from './knowledge.js';
-export * from './systemPrompt.js';
+export * from './knowledge';
+export * from './systemPrompt';

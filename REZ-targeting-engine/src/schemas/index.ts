@@ -95,6 +95,7 @@ export const CreateCampaignSchema = z.object({
   ab_test_config: ABTestConfigSchema.optional(),
   start_date: z.string().datetime().optional(),
   end_date: z.string().datetime().optional(),
+  created_by: z.string().min(1),
   metadata: z.record(z.unknown()).optional(),
 });
 
@@ -183,7 +184,9 @@ export const CreateTemplateSchema = z.object({
   }).optional(),
 });
 
-export const UpdateTemplateSchema = CreateTemplateSchema.partial();
+export const UpdateTemplateSchema = CreateTemplateSchema.partial().extend({
+  is_active: z.boolean().optional(),
+});
 
 export const AdTemplateSchema = CreateTemplateSchema.extend({
   template_id: z.string(),

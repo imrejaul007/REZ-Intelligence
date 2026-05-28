@@ -372,7 +372,7 @@ export async function getChannelROI(
     getChannelAttributionSummary(merchantId, startDate, endDate)
   ]);
 
-  const spendMap = new Map(spendData.map(s => [s._id as ChannelType, s.totalSpend]));
+  const spendMap = new Map<ChannelType, number>(spendData.map(s => [s._id as ChannelType, s.totalSpend as number]));
 
   return attribution.map(a => {
     const spend = spendMap.get(a.channel) || 0;

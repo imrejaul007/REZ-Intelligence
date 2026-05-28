@@ -1,5 +1,5 @@
 import { SupportedLanguage, TranslationRequest, BatchTranslationRequest, DetectLanguage } from '../types/index.js';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 interface TranslationResult {
   original: string;

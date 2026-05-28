@@ -8,9 +8,8 @@ import {
   corsMiddleware,
   requestLogger,
   rateLimitHeaders,
-  errorHandler,
-  notFoundHandler
 } from './middleware/auth.js';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import profileRoutes from './routes/profileRoutes.js';
 import { checkSignalServicesHealth } from './services/signalAggregator.js';
 

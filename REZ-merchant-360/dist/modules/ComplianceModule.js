@@ -88,9 +88,10 @@ class ComplianceModule {
             return { success: true, verification_id: response.data.verification_id };
         }
         catch (error) {
+            const err = error;
             return {
                 success: false,
-                error: error.response?.data?.message || 'KYC submission failed',
+                error: err.response?.data?.message || 'KYC submission failed',
             };
         }
     }

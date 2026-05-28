@@ -417,7 +417,7 @@ export function getPolicyById(policyId: string): Policy | undefined {
 }
 
 export function getFaqById(faqId: string): FAQ | undefined {
-  return FAQ_DATABASE.find(f => f.id === faId);
+  return FAQ_DATABASE.find(f => f.id === faqId);
 }
 
 export function getArticleById(articleId: string): Article | undefined {

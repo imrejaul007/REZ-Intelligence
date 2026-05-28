@@ -1,22 +1,29 @@
+"use strict";
 /**
  * REZ Health Expert Agent
  * Main entry point with TypeScript, Zod validation, and proper error handling
  */
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-import compression from 'compression';
-import { configSchema } from './config/index.js';
-import { logger } from './services/healthExpert.js';
-import { healthRouter } from './routes/health.routes.js';
-import { errorHandler, notFoundHandler, requestLogger, asyncHandler } from './middleware/validation.js';
-import { ServiceError } from './types/index.js';
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.config = exports.app = void 0;
+exports.startServer = startServer;
+const express_1 = __importDefault(require("express"));
+const cors_1 = __importDefault(require("cors"));
+const helmet_1 = __importDefault(require("helmet"));
+const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
+const compression_1 = __importDefault(require("compression"));
+const index_1 = require("./config/index");
+const healthExpert_1 = require("./services/healthExpert");
+const health_routes_1 = require("./routes/health.routes");
+const validation_1 = require("./middleware/validation");
+const index_2 = require("./types/index");
 // ============================================
 // CONFIGURATION VALIDATION
 // ============================================
 function loadConfig() {
-    const result = configSchema.safeParse({
+    const result = index_1.configSchema.safeParse({
         port: process.env.PORT,
         nodeEnv: process.env.NODE_ENV,
         corsOrigins: process.env.ALLOWED_ORIGINS,
@@ -26,7 +33,7 @@ function loadConfig() {
     });
     if (!result.success) {
         console.error('Configuration validation failed:', result.error.format());
-        throw new ServiceError('Invalid configuration', 'CONFIG_ERROR', 1);
+        throw new index_2.ServiceError('Invalid configuration', 'CONFIG_ERROR', 1);
     }
     const data = result.data;
     return {
@@ -41,14 +48,16 @@ function loadConfig() {
     };
 }
 const config = loadConfig();
+exports.config = config;
 // ============================================
 // APP INITIALIZATION
 // ============================================
-const app = express();
+const app = (0, express_1.default)();
+exports.app = app;
 // ============================================
 // SECURITY MIDDLEWARE
 // ============================================
-app.use(helmet({
+app.use((0, helmet_1.default)({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
@@ -60,21 +69,21 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false,
 }));
 // CORS
-app.use(cors({
+app.use((0, cors_1.default)({
     origin: config.corsOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Internal-Token']
 }));
 // Body parsing
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(express_1.default.json({ limit: '1mb' }));
+app.use(express_1.default.urlencoded({ extended: true, limit: '1mb' }));
 // Compression
-app.use(compression());
+app.use((0, compression_1.default)());
 // Request logging
-app.use(requestLogger);
+app.use(validation_1.requestLogger);
 // Rate limiting
-const limiter = rateLimit({
+const limiter = (0, express_rate_limit_1.default)({
     windowMs: config.rateLimitWindowMs,
     max: config.rateLimitMaxRequests,
     message: {
@@ -103,7 +112,7 @@ app.get('/health', (req, res) => {
         uptime: process.uptime()
     });
 });
-app.get('/health/detailed', asyncHandler(async (req, res) => {
+app.get('/health/detailed', (0, validation_1.asyncHandler)(async (req, res) => {
     const memoryUsage = process.memoryUsage();
     const healthData = {
         status: 'healthy',
@@ -141,7 +150,7 @@ app.get('/health/ready', (req, res) => {
 // ============================================
 // API ROUTES
 // ============================================
-app.use('/api/v1/health', healthRouter);
+app.use('/api/v1/health', health_routes_1.healthRouter);
 // Root endpoint
 app.get('/', (req, res) => {
     res.json({
@@ -163,17 +172,17 @@ app.get('/', (req, res) => {
 // ============================================
 // ERROR HANDLING
 // ============================================
-app.use(notFoundHandler);
-app.use(errorHandler);
+app.use(validation_1.notFoundHandler);
+app.use(validation_1.errorHandler);
 // ============================================
 // GRACEFUL SHUTDOWN
 // ============================================
 let server = null;
 async function shutdown(signal) {
-    logger.info(`Received ${signal}. Starting graceful shutdown...`);
+    healthExpert_1.logger.info(`Received ${signal}. Starting graceful shutdown...`);
     if (server) {
         server.close(() => {
-            logger.info('HTTP server closed');
+            healthExpert_1.logger.info('HTTP server closed');
         });
     }
     process.exit(0);
@@ -184,7 +193,7 @@ async function shutdown(signal) {
 function startServer() {
     try {
         server = app.listen(config.port, () => {
-            logger.info(`
+            healthExpert_1.logger.info(`
 ╔═══════════════════════════════════════════════════════════════╗
 ║                   REZ Health Expert Agent                     ║
 ╠═══════════════════════════════════════════════════════════════╣
@@ -194,28 +203,28 @@ function startServer() {
 ║  Log Level:  ${config.logLevel.padEnd(47)}║
 ╚═══════════════════════════════════════════════════════════════╝
       `);
-            logger.info('API Endpoints:');
-            logger.info('  POST /api/v1/health/chat         - Chat with health expert');
-            logger.info('  POST /api/v1/health/symptom       - Get symptom guidance');
-            logger.info('  POST /api/v1/health/appointment  - Book appointment');
-            logger.info('  GET  /api/v1/health/wellness     - Get wellness tips');
-            logger.info('  GET  /health                     - Health check');
+            healthExpert_1.logger.info('API Endpoints:');
+            healthExpert_1.logger.info('  POST /api/v1/health/chat         - Chat with health expert');
+            healthExpert_1.logger.info('  POST /api/v1/health/symptom       - Get symptom guidance');
+            healthExpert_1.logger.info('  POST /api/v1/health/appointment  - Book appointment');
+            healthExpert_1.logger.info('  GET  /api/v1/health/wellness     - Get wellness tips');
+            healthExpert_1.logger.info('  GET  /health                     - Health check');
         });
         // Graceful shutdown
         process.on('SIGTERM', () => shutdown('SIGTERM'));
         process.on('SIGINT', () => shutdown('SIGINT'));
         // Unhandled rejection
         process.on('unhandledRejection', (reason) => {
-            logger.error('Unhandled Rejection:', { reason });
+            healthExpert_1.logger.error('Unhandled Rejection:', { reason });
         });
         // Uncaught exception
         process.on('uncaughtException', (error) => {
-            logger.error('Uncaught Exception:', error);
+            healthExpert_1.logger.error('Uncaught Exception:', error);
             process.exit(1);
         });
     }
     catch (error) {
-        logger.error('Failed to start server:', error);
+        healthExpert_1.logger.error('Failed to start server:', error);
         process.exit(1);
     }
 }
@@ -223,5 +232,4 @@ function startServer() {
 if (require.main === module || process.argv[1]?.endsWith('index.ts')) {
     startServer();
 }
-export { app, startServer, config };
 //# sourceMappingURL=index.js.map

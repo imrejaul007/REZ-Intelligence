@@ -1,6 +1,11 @@
-import { FitnessLevel } from './fitnessExpert.js';
-import { randomInt } from 'crypto';
-export function getRecommendations(profile) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getRecommendations = getRecommendations;
+exports.generateMotivationMessage = generateMotivationMessage;
+exports.getRecoveryTips = getRecoveryTips;
+const fitnessExpert_1 = require("./fitnessExpert");
+const crypto_1 = require("crypto");
+function getRecommendations(profile) {
     const recommendations = [];
     recommendations.push(...getLevelBasedRecommendations(profile.fitnessLevel));
     recommendations.push(...getGoalBasedRecommendations(profile.goals));
@@ -13,7 +18,7 @@ export function getRecommendations(profile) {
 }
 function getLevelBasedRecommendations(level) {
     switch (level) {
-        case FitnessLevel.BEGINNER:
+        case fitnessExpert_1.FitnessLevel.BEGINNER:
             return [
                 {
                     type: 'workout',
@@ -34,7 +39,7 @@ function getLevelBasedRecommendations(level) {
                     priority: 'medium'
                 }
             ];
-        case FitnessLevel.INTERMEDIATE:
+        case fitnessExpert_1.FitnessLevel.INTERMEDIATE:
             return [
                 {
                     type: 'workout',
@@ -55,7 +60,7 @@ function getLevelBasedRecommendations(level) {
                     priority: 'medium'
                 }
             ];
-        case FitnessLevel.ADVANCED:
+        case fitnessExpert_1.FitnessLevel.ADVANCED:
             return [
                 {
                     type: 'workout',
@@ -204,7 +209,7 @@ function getFrequencyBasedRecommendations(daysPerWeek) {
     }
     return [];
 }
-export function generateMotivationMessage(profile) {
+function generateMotivationMessage(profile) {
     const messages = [
         "Every workout counts! You're one rep closer to your goal!",
         "Your only limit is you! Let's push those boundaries!",
@@ -215,10 +220,10 @@ export function generateMotivationMessage(profile) {
         "The only bad workout is the one that didn't happen!",
         "You're stronger than you think. Trust the process!"
     ];
-    const randomIndex = randomInt(0, messages.length);
+    const randomIndex = (0, crypto_1.randomInt)(0, messages.length);
     return messages[randomIndex];
 }
-export function getRecoveryTips() {
+function getRecoveryTips() {
     return [
         {
             type: 'tip',

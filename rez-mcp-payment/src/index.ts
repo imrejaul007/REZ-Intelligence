@@ -1,4 +1,4 @@
-import logger from './utils/logger.js';
+import { logger } from './utils/logger.js';
 
 import 'dotenv/config';
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";

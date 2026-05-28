@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { v4 as uuidv4 } from 'uuid';
 import pino from 'pino';
+import { IncomingHttpHeaders } from 'http';
 
 import { DecisionRouter } from './decision/decision-router';
 import { checkOfferEligibility } from './offers/eligibility';
@@ -128,7 +129,7 @@ const bootstrap = async () => {
   // Decision endpoints
   app.post('/api/v1/decide', async (req: Request, res: Response) => {
     try {
-      const result = await services.decisionRouter.route(req.body, req.headers);
+      const result = await services.decisionRouter.route(req.body, req.headers as Record<string, string | undefined>);
       res.json({
         success: true,
         data: result,
@@ -260,7 +261,7 @@ const bootstrap = async () => {
       }
 
       const results = await Promise.all(
-        decisions.map((d) => services.decisionRouter.route(d, req.headers))
+        decisions.map((d) => services.decisionRouter.route(d, req.headers as Record<string, string | undefined>))
       );
 
       res.json({

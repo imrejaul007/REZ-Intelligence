@@ -2,7 +2,7 @@
  * TypeScript type definitions for REZ Taste Profile
  */
 
-import mongoose, { Types } from 'mongoose';
+import { Types } from 'mongoose';
 
 /**
  * Commerce categories

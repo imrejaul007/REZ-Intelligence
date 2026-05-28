@@ -3,7 +3,7 @@
  * Provides integration with the central Core Brain service for context, memory, and personalization
  */
 
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger';
 
 // ============================================
 // TYPES
@@ -185,7 +185,7 @@ export class CoreBrainClient {
         );
       }
 
-      const result: CoreBrainResponse<T> = await response.json();
+      const result = await response.json() as CoreBrainResponse<T>;
 
       if (!result.success) {
         throw new CoreBrainError(
@@ -429,7 +429,7 @@ export class CoreBrainClient {
     params.append('includePreferences', String(options?.includePreferences ?? false));
     params.append('includeRecentMemories', String(options?.includeRecentMemories ?? true));
 
-    return this.request<IntelligenceData>(`/internal/personalization/intelligence?${params.toString()}`);
+    return this.request<IntelligenceData>('GET', `/internal/personalization/intelligence?${params.toString()}`);
   }
 
   /**

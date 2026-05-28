@@ -1,4 +1,4 @@
-import logger from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 import { AdTemplate, IAdTemplate } from '../models';
 import { AdTemplate as AdTemplateType, TemplateContent, TemplateDesign } from '../types';
@@ -63,11 +63,12 @@ class AdTemplateService {
    * Update template
    */
   async updateTemplate(templateId: string, input: UpdateTemplateInput): Promise<IAdTemplate | null> {
-    const updateData: unknown = {};
+    const updateData: Record<string, unknown> = {};
 
     if (input.name) updateData.name = input.name;
     if (input.content) {
-      this.validateContentFields(input.content, (await this.getTemplate(templateId))?.channel || 'banner');
+      const existingTemplate = await this.getTemplate(templateId);
+      this.validateContentFields(input.content, existingTemplate?.channel || 'banner');
       updateData.content = input.content;
     }
     if (input.design) updateData.design = input.design;
@@ -101,7 +102,7 @@ class AdTemplateService {
     limit?: number;
     offset?: number;
   }): Promise<{ templates: IAdTemplate[]; total: number }> {
-    const filter: unknown = {};
+    const filter: Record<string, unknown> = {};
 
     if (options.channel) filter.channel = options.channel;
     if (options.is_active !== undefined) filter.is_active = options.is_active;
@@ -143,15 +144,7 @@ class AdTemplateService {
    */
   async personalizeContent(
     templateId: string,
-    userData: {
-      first_name?: string;
-      last_name?: string;
-      name?: string;
-      preferred_categories?: string[];
-      last_order_item?: string;
-      loyalty_tier?: string;
-      [key: string];
-    }
+    userData: Record<string, unknown>
   ): Promise<TemplateContent | null> {
     const template = await this.getTemplate(templateId);
     if (!template) return null;
@@ -184,7 +177,7 @@ class AdTemplateService {
     channel: AdTemplateType['channel']
   ): Promise<{
     success: boolean;
-    rendered;
+    rendered: Record<string, unknown> | null;
     errors?: string[];
   }> {
     const template = await this.getTemplate(templateId);
@@ -210,7 +203,7 @@ class AdTemplateService {
     }
 
     // Render based on channel
-    let rendered: unknown = {
+    const rendered: Record<string, unknown> = {
       template_id: template.template_id,
       channel,
       content: { ...template.content },
@@ -228,7 +221,6 @@ class AdTemplateService {
     // Channel-specific rendering
     switch (channel) {
       case 'sms':
-        // SMS has character limits
         rendered.sms_specific = {
           body_length: template.content.body.length,
           supports_unicode: true,

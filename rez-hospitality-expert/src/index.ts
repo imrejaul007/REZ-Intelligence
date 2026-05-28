@@ -8,27 +8,27 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
-import { config, serviceConfig } from './config/index.js';
-import { logger } from './utils/logger.js';
-import { errorHandler, notFoundHandler, requestLogger } from './middleware/validation.js';
-import hospitalityRoutes from './routes/hospitality.routes.js';
-import { getCoreBrainClient, CoreBrainClient } from './services/coreBrainIntegration.js';
-import { createRezCareIntegration } from '../rez-expert-base/src/services/rezCareIntegration.js';
+import { config, serviceConfig } from './config/index';
+import { logger } from './utils/logger';
+import { errorHandler, notFoundHandler, requestLogger } from './middleware/validation';
+import hospitalityRoutes from './routes/hospitality.routes';
+import { getCoreBrainClient, CoreBrainClient } from './services/coreBrainIntegration';
+// REZ Care integration disabled for now
+// import { createRezCareIntegration } from '../rez-expert-base/src/services/rezCareIntegration';
 
 // ============================================
-// REZ CARE INTEGRATION
+// REZ CARE INTEGRATION (disabled)
 // ============================================
 
-const rezCare = createRezCareIntegration();
-
-async function registerWithRezCare() {
-  const registered = await rezCare.register();
-  if (registered) {
-    logger.info('[REZ Care] Expert registered successfully');
-  } else {
-    logger.warn('[REZ Care] Expert registration failed - will retry on next startup');
-  }
-}
+// const rezCare = createRezCareIntegration();
+// async function registerWithRezCare() {
+//   const registered = await rezCare.register();
+//   if (registered) {
+//     logger.info('[REZ Care] Expert registered successfully');
+//   } else {
+//     logger.warn('[REZ Care] Expert registration failed - will retry on next startup');
+//   }
+// }
 
 // ============================================
 // APP INITIALIZATION
@@ -93,7 +93,7 @@ app.use('/api/', limiter);
 // ============================================
 
 // Health check (no rate limiting)
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', ( _req: Request, res: Response) => {
   res.json({
     status: 'healthy',
     service: 'rez-hospitality-expert',
@@ -105,7 +105,7 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 // Detailed health check with dependencies
-app.get('/health/detailed', async (req: Request, res: Response) => {
+app.get('/health/detailed', async ( _req: Request, res: Response) => {
   try {
     const coreBrainHealthy = await getCoreBrainClient().healthCheck().catch(() => false);
 
@@ -138,7 +138,7 @@ app.get('/health/detailed', async (req: Request, res: Response) => {
 });
 
 // Kubernetes readiness probe
-app.get('/health/ready', async (req: Request, res: Response) => {
+app.get('/health/ready', async ( _req: Request, res: Response) => {
   try {
     const coreBrainHealthy = await getCoreBrainClient().healthCheck().catch(() => false);
 
@@ -166,7 +166,7 @@ app.get('/health/ready', async (req: Request, res: Response) => {
 app.use('/api/v1/hospitality', hospitalityRoutes);
 
 // Root endpoint
-app.get('/', (req: Request, res: Response) => {
+app.get('/', ( _req: Request, res: Response) => {
   res.json({
     service: 'REZ Hospitality Expert Agent',
     version: '1.0.0',
@@ -206,8 +206,8 @@ async function startServer() {
     const port = serviceConfig.port;
     const host = '0.0.0.0';
 
-    // Register with REZ Care (non-blocking)
-    registerWithRezCare().catch(() => {});
+    // Register with REZ Care (disabled)
+    // registerWithRezCare().catch(() => {});
 
     // Initialize Core Brain client
     const coreBrain: CoreBrainClient = getCoreBrainClient();

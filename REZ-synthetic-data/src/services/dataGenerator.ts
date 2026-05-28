@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { Dataset, SchemaField, SyntheticDataRequest, GenerationResult, DataQualityReport } from '../types/index.js';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 export class DataGenerator {
   private seed: number = Date.now();

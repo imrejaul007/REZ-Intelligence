@@ -39,8 +39,11 @@ export async function disconnectDatabase(): Promise<void> {
 
 export async function pingDatabase(): Promise<boolean> {
   try {
-    await mongoose.connection.db.admin().ping();
-    return true;
+    if (mongoose.connection.db) {
+      await mongoose.connection.db.admin().ping();
+      return true;
+    }
+    return false;
   } catch {
     return false;
   }

@@ -1,9 +1,6 @@
 import mongoose, { Schema, Model } from 'mongoose';
 import {
   INotification,
-  NotificationType,
-  NotificationChannel,
-  ChannelStatus,
   ChannelInfo,
   NotificationContent,
 } from '../types/index.js';

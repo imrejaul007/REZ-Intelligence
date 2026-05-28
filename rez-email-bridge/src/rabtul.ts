@@ -32,7 +32,8 @@ export async function sendEmail(params: {
     });
     return { success: true, messageId: res.data.messageId };
   } catch (error) {
-    return { success: false, error: error.message };
+    const err = error as Error;
+    return { success: false, error: err.message };
   }
 }
 
@@ -54,7 +55,8 @@ export async function sendBulkEmail(emails: Array<{
     });
     return { success: true, sent: res.data.sent, failed: res.data.failed };
   } catch (error) {
-    return { success: false, sent: 0, failed: emails.length, error: error.message };
+    const err = error as Error;
+    return { success: false, sent: 0, failed: emails.length, error: err.message };
   }
 }
 
@@ -77,7 +79,8 @@ export async function sendTransactionalEmail(params: {
     });
     return { success: true, messageId: res.data.messageId };
   } catch (error) {
-    return { success: false, error: error.message };
+    const err = error as Error;
+    return { success: false, error: err.message };
   }
 }
 
@@ -91,7 +94,8 @@ export async function getEmailStatus(messageId: string): Promise<{ status: strin
     });
     return { status: res.data.status };
   } catch (error) {
-    return { status: 'unknown', error: error.message };
+    const err = error as Error;
+    return { status: 'unknown', error: err.message };
   }
 }
 

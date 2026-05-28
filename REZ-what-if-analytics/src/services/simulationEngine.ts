@@ -1,6 +1,6 @@
 import { randomUUID, randomBytes } from 'crypto';
 import { Scenario, ScenarioResult, MetricType, MonteCarloParams, MonteCarloResult } from '../types/index.js';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Generate a random number between 0 and 1 using crypto
@@ -32,7 +32,7 @@ export class SimulationEngine {
       projectedMetrics,
       deltas,
       percentChanges,
-      confidenceInterval: this.calculateConfidenceInterval(projectedMetrics, scenario.parameters.confidenceLevel),
+      confidenceInterval: this.calculateConfidenceInterval(projectedMetrics, scenario.parameters.confidenceLevel ?? 0.95),
       riskScore: this.calculateRiskScore(deltas, scenario.parameters.changePercent),
       recommendations: this.generateRecommendations(scenario, projectedMetrics, deltas),
       simulatedAt: new Date()
@@ -43,7 +43,7 @@ export class SimulationEngine {
   }
 
   async runMonteCarlo(params: MonteCarloParams): Promise<MonteCarloResult> {
-    const simulations = params.simulations;
+    const simulations = params.simulations ?? 10000;
     const results: number[] = [];
     const metric = params.metric;
 
@@ -105,14 +105,14 @@ export class SimulationEngine {
     return defaults;
   }
 
-  private projectMetrics(baseline: Record<MetricType, number>, scenario: Scenario): Record<MetricType, number> {
-    const projected: Record<MetricType, number> = { ...baseline };
+  private projectMetrics(baseline: Record<string, number>, scenario: Scenario): Record<string, number> {
+    const projected: Record<string, number> = { ...baseline };
     const changePercent = scenario.parameters.changePercent / 100;
     const metric = scenario.parameters.metric;
 
-    projected[metric] = baseline[metric] * (1 + changePercent);
+    projected[metric] = (baseline[metric] ?? 0) * (1 + changePercent);
 
-    const crossImpacts: Record<MetricType, Record<MetricType, number>> = {
+    const crossImpacts: Record<string, Record<string, number>> = {
       pricing: { revenue: 1.2, margin: 1.5, conversion_rate: -0.8, units_sold: -0.3 },
       demand: { revenue: 1.0, units_sold: 1.0, customers: 0.8 },
       promotion: { revenue: 0.9, units_sold: 1.3, customers: 1.2, margin: -0.2 },
@@ -123,7 +123,7 @@ export class SimulationEngine {
       financial: { margin: 1.0, revenue: 0.6, ltv: 0.4 }
     };
 
-    const impacts = crossImpacts[scenario.type];
+    const impacts = crossImpacts[scenario.type] as Record<MetricType, number> | undefined;
     if (impacts) {
       for (const [impactedMetric, factor] of Object.entries(impacts)) {
         if (impactedMetric !== metric) {
@@ -135,28 +135,28 @@ export class SimulationEngine {
     return projected;
   }
 
-  private calculateDeltas(baseline: Record<MetricType, number>, projected: Record<MetricType, number>): Record<MetricType, number> {
+  private calculateDeltas(baseline: Record<string, number>, projected: Record<string, number>): Record<string, number> {
     const deltas: Record<string, number> = {};
     for (const key of Object.keys(baseline)) {
-      deltas[key] = projected[key] - baseline[key];
+      deltas[key] = (projected[key] ?? 0) - (baseline[key] ?? 0);
     }
     return deltas;
   }
 
-  private calculatePercentChanges(baseline: Record<MetricType, number>, projected: Record<MetricType, number>): Record<MetricType, number> {
+  private calculatePercentChanges(baseline: Record<string, number>, projected: Record<string, number>): Record<string, number> {
     const changes: Record<string, number> = {};
     for (const key of Object.keys(baseline)) {
-      if (baseline[key] !== 0) {
-        changes[key] = ((projected[key] - baseline[key]) / baseline[key]) * 100;
+      if ((baseline[key] ?? 0) !== 0) {
+        changes[key] = (((projected[key] ?? 0) - (baseline[key] ?? 0)) / (baseline[key] ?? 1)) * 100;
       }
     }
     return changes;
   }
 
   private calculateConfidenceInterval(
-    projected: Record<MetricType, number>,
+    projected: Record<string, number>,
     confidenceLevel: number
-  ): { lower: Record<MetricType, number>; upper: Record<MetricType, number> } {
+  ): { lower: Record<string, number>; upper: Record<string, number> } {
     const zScore = this.getZScore(confidenceLevel);
     const lower: Record<string, number> = {};
     const upper: Record<string, number> = {};
@@ -167,7 +167,7 @@ export class SimulationEngine {
       upper[key] = value + margin;
     }
 
-    return { lower: lower as Record<MetricType, number>, upper: upper as Record<MetricType, number> };
+    return { lower, upper };
   }
 
   private getZScore(confidence: number): number {
@@ -179,7 +179,7 @@ export class SimulationEngine {
     return zScores[confidence] || 1.96;
   }
 
-  private calculateRiskScore(deltas: Record<MetricType, number>, expectedChange: number): number {
+  private calculateRiskScore(deltas: Record<string, number>, expectedChange: number): number {
     let riskScore = 0;
     const totalImpact = Object.values(deltas).reduce((sum, v) => sum + Math.abs(v), 0);
     const volatility = totalImpact / (Object.keys(deltas).length || 1);
@@ -189,21 +189,23 @@ export class SimulationEngine {
 
   private generateRecommendations(
     scenario: Scenario,
-    projected: Record<MetricType, number>,
-    deltas: Record<MetricType, number>
+    projected: Record<string, number>,
+    deltas: Record<string, number>
   ): Array<{ action: string; impact: 'high' | 'medium' | 'low'; confidence: number }> {
     const recommendations: Array<{ action: string; impact: 'high' | 'medium' | 'low'; confidence: number }> = [];
     const metric = scenario.parameters.metric;
+    const metricDelta = deltas[metric] ?? 0;
 
-    if (deltas[metric] > 0) {
+    if (metricDelta > 0) {
       recommendations.push({
-        action: `Positive impact of ${deltas[metric].toFixed(2)} on ${metric} - consider scaling this initiative`,
+        action: `Positive impact of ${metricDelta.toFixed(2)} on ${metric} - consider scaling this initiative`,
         impact: 'high',
         confidence: 0.85
       });
     }
 
-    if (scenario.type === 'promotion' && deltas.margin < 0) {
+    const marginDelta = deltas['margin'] ?? 0;
+    if (scenario.type === 'promotion' && marginDelta < 0) {
       recommendations.push({
         action: 'Margin erosion detected - optimize promotion efficiency or bundle with higher-margin products',
         impact: 'medium',
@@ -211,7 +213,8 @@ export class SimulationEngine {
       });
     }
 
-    if (scenario.type === 'pricing' && deltas.conversion_rate < -10) {
+    const conversionDelta = deltas['conversion_rate'] ?? 0;
+    if (scenario.type === 'pricing' && conversionDelta < -10) {
       recommendations.push({
         action: 'Significant conversion drop expected - consider tiered pricing or gradual increase',
         impact: 'high',

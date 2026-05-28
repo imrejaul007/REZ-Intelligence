@@ -7,7 +7,7 @@ import {
 import { AlertModel, IAlertDocument } from '../models/Alert.js';
 import { cacheGet, cacheSet, cacheDelete } from '../utils/redis.js';
 import { CACHE_TTL, THRESHOLDS } from '../constants/thresholds.js';
-import logger from './utils/logger.js';
+import logger from '../utils/logger.js';
 
 const log = logger.child({ context: 'AlertService' });
 

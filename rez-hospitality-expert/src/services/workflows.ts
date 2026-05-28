@@ -13,8 +13,8 @@ import {
   CheckOutWorkflow,
   ServiceRequest,
   ConversationContext,
-} from '../types/index.js';
-import { logger } from './utils/logger.js';
+} from '../types/index';
+import { logger } from '../utils/logger';
 
 // ============================================
 // WORKFLOW DEFINITIONS
