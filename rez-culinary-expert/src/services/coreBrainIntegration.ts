@@ -199,17 +199,18 @@ export class CoreBrainClient {
         );
       }
 
-      const result: CoreBrainResponse<T> = await response.json();
+      const jsonResult = await response.json();
+      const result = jsonResult as CoreBrainResponse<T> | {};
 
-      if (!result.success) {
+      if ('success' in result && !result.success) {
         throw new CoreBrainError(
-          result.error?.message || 'Core Brain returned error',
+          'error' in result && result.error ? (result.error as { message?: string }).message || 'Core Brain returned error' : 'Core Brain returned error',
           response.status,
-          result.error
+          'error' in result ? result.error : undefined
         );
       }
 
-      return result.data as T;
+      return (result as CoreBrainResponse<T>).data as T;
     } catch (error) {
       clearTimeout(timeoutId);
 
