@@ -476,7 +476,7 @@ export class WorkflowService {
    * Process check-out step
    */
   async processCheckOutStep(
-    context: ConversationContext,
+    _context: ConversationContext,
     stepNumber: number,
     data: Record<string, unknown>
   ): Promise<{
