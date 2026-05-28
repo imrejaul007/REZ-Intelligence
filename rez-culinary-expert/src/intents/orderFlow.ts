@@ -82,6 +82,7 @@ export interface OrderFlowState {
   userId: string;
   restaurantId: string;
   currentStep: OrderStep;
+  customizations?: OrderItem['customizations'];
   pendingItem?: {
     itemId: string;
     quantity: number;

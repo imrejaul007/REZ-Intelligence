@@ -531,7 +531,8 @@ function extractRecommendationEntities(query: string, context?: Record<string, u
 
   // Merge with context
   if (context) {
-    entities = { ...context, ...entities };
+    const merged = { ...context, ...entities };
+    return merged;
   }
 
   return entities;
@@ -567,7 +568,7 @@ export type GetMealPlanInput = z.infer<typeof GetMealPlanSchema>;
 export type GetSimilarItemsInput = z.infer<typeof GetSimilarItemsSchema>;
 export type SetDietaryRestrictionInput = z.infer<typeof SetDietaryRestrictionSchema>;
 export type CheckAllergensInput = z.infer<typeof CheckAllergensSchema>;
-export type FilterByDietInput = z.infer<typeof FilterByDietInput>;
+export type FilterByDietInput = z.infer<typeof FilterByDietSchema>;
 export type UpdateAllergyProfileInput = z.infer<typeof UpdateAllergyProfileSchema>;
 export type AddToOrderInput = z.infer<typeof AddToOrderSchema>;
 export type CustomizeItemInput = z.infer<typeof CustomizeItemSchema>;

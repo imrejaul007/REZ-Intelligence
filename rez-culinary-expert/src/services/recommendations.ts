@@ -7,7 +7,7 @@ import { Db, Collection } from 'mongodb';
 import Redis from 'ioredis';
 import { logger } from '../utils/logger';
 import { type MenuItem } from './menuService';
-import { PAIRING_GUIDE } from '../config/knowledge';
+import { PAIRING_GUIDE, matchCuisine } from '../config/knowledge';
 import { DietaryService, getDietaryService } from './dietaryService';
 
 export interface RecommendationContext {
