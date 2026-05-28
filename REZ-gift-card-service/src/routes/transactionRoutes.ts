@@ -1,10 +1,11 @@
 import { Router, Request, Response } from 'express';
-import { Transaction, GiftCard } from '../models/index.js';
+import { Transaction } from '../models/index.js';
 import {
   TransactionQuerySchema,
   ApiResponse,
   TransactionListResponse,
   TransactionSummary,
+  Transaction as TransactionType,
 } from '../types/index.js';
 import { asyncHandler } from '../middleware/index.js';
 import { logError } from '../services/logger.js';
@@ -60,10 +61,24 @@ router.get(
       const limit = validationResult.data.limit;
       const skip = (page - 1) * limit;
 
-      const [transactions, total] = await Promise.all([
+      const [transactionDocs, total] = await Promise.all([
         Transaction.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
         Transaction.countDocuments(query),
       ]);
+
+      const transactions: TransactionType[] = transactionDocs.map((doc) => ({
+        transactionId: doc.transactionId,
+        giftCardId: doc.giftCardId || '',
+        type: doc.type,
+        status: doc.status,
+        amount: doc.amount,
+        balanceBefore: doc.balanceBefore || 0,
+        balanceAfter: doc.balanceAfter || 0,
+        paymentMethod: doc.paymentMethod,
+        metadata: doc.metadata,
+        createdAt: doc.createdAt,
+        updatedAt: new Date(),
+      }));
 
       const response: ApiResponse<TransactionListResponse> = {
         success: true,

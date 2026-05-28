@@ -500,7 +500,7 @@ export class REZIntelligenceClient {
       clearTimeout(timeout);
 
       if (!response.ok) {
-        const errorBody = await response.json().catch(() => ({}));
+        const errorBody = await response.json().catch(() => ({})) as { error?: { message?: string; code?: string } };
         return {
           success: false,
           error: errorBody.error?.message || `HTTP ${response.status}: ${response.statusText}`,

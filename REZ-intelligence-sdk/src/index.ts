@@ -69,7 +69,7 @@ app.get('/health', (_req: Request, res: Response) => {
 app.get('/api/health', async (_req: Request, res: Response) => {
   try {
     const health = await client.healthCheck();
-    res.json({ success: true, ...health });
+    res.json(health);
   } catch (error) {
     logger.error('Health check failed', { error });
     res.status(503).json({ success: false, error: 'Service unavailable' });

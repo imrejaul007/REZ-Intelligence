@@ -1,33 +1,37 @@
-import { createClient, RedisClientType } from 'redis';
+import { Redis, type Redis as RedisType } from 'ioredis';
 import { logInfo, logWarn, logError } from './logger.js';
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 
-let redisClient: RedisClientType | null = null;
+let redisClient: RedisType | null = null;
 
-export async function connectRedis(): Promise<RedisClientType | null> {
+export async function connectRedis(): Promise<RedisType | null> {
   try {
-    redisClient = createClient({ url: REDIS_URL });
+    const client = new Redis(REDIS_URL, {
+      lazyConnect: true,
+      maxRetriesPerRequest: 3,
+    });
 
-    redisClient.on('error', (err) => {
+    client.on('error', (err: Error) => {
       logError('Redis error', { error: err.message });
     });
 
-    redisClient.on('connect', () => {
+    client.on('connect', () => {
       logInfo('Redis client connecting');
     });
 
-    redisClient.on('ready', () => {
+    client.on('ready', () => {
       logInfo('Redis client ready');
     });
 
-    redisClient.on('end', () => {
+    client.on('end', () => {
       logInfo('Redis client disconnected');
     });
 
-    await redisClient.connect();
+    await client.connect();
     logInfo('Connected to Redis');
 
+    redisClient = client;
     return redisClient;
   } catch (error) {
     const err = error as Error;
@@ -48,7 +52,7 @@ export async function disconnectRedis(): Promise<void> {
   }
 }
 
-export function getRedisClient(): RedisClientType | null {
+export function getRedisClient(): RedisType | null {
   return redisClient;
 }
 
@@ -68,7 +72,7 @@ export async function cacheSet(key: string, value: unknown, ttlSeconds = 300): P
   if (!redisClient) return;
 
   try {
-    await redisClient.setEx(key, ttlSeconds, JSON.stringify(value));
+    await redisClient.setex(key, ttlSeconds, JSON.stringify(value));
   } catch (error) {
     logError('Cache set failed', { key, error: (error as Error).message });
   }

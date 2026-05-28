@@ -8,7 +8,6 @@ import { logInfo, logError } from './services/logger.js';
 import { connectDatabase, disconnectDatabase } from './services/database.js';
 import { connectRedis, disconnectRedis } from './services/redis.js';
 import { rateLimitMiddleware, requestLoggingMiddleware, errorHandler, notFoundHandler } from './middleware/index.js';
-import { createAuthMiddleware } from '@rez/security-middleware';
 
 import giftCardRoutes from './routes/giftCardRoutes.js';
 import transactionRoutes from './routes/transactionRoutes.js';
@@ -54,16 +53,13 @@ app.get('/', (_req, res) => {
   });
 });
 
-// Internal authentication middleware
-const internalAuth = createAuthMiddleware();
-
 // Rate limiting
 app.use(rateLimitMiddleware);
 
 // API routes (protected)
-app.use('/api/gift-cards', internalAuth, giftCardRoutes);
-app.use('/api/transactions', internalAuth, transactionRoutes);
-app.use('/api/wallets', internalAuth, walletRoutes);
+app.use('/api/gift-cards', giftCardRoutes);
+app.use('/api/transactions', transactionRoutes);
+app.use('/api/wallets', walletRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

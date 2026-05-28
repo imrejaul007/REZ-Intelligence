@@ -6,6 +6,23 @@ import { z } from 'zod';
 // ============================================================================
 
 export const GiftCardStatus = z.enum(['active', 'redeemed', 'expired', 'cancelled', 'frozen']);
+
+// ============================================================================
+// Validation Helpers
+// ============================================================================
+
+export function validateGiftCardValue(value: number): { valid: boolean; error?: string } {
+  if (value <= 0) {
+    return { valid: false, error: 'Gift card value must be positive' };
+  }
+  if (value < 10) {
+    return { valid: false, error: 'Minimum gift card value is 10' };
+  }
+  if (value > 100000) {
+    return { valid: false, error: 'Maximum gift card value is 100000' };
+  }
+  return { valid: true };
+}
 export type GiftCardStatus = z.infer<typeof GiftCardStatus>;
 
 export const GiftCardType = z.enum(['physical', 'digital']);

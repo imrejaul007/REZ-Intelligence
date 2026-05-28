@@ -59,7 +59,7 @@ router.post(
           error: {
             code: 'VALIDATION_ERROR',
             message: validationResult.error.issues[0]?.message || 'Invalid input',
-            details: validationResult.error.issues,
+            details: validationResult.error.issues as unknown as Record<string, unknown>,
           },
         };
         res.status(400).json(response);
