@@ -229,7 +229,7 @@ function createApp(): Express {
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       services: {
-        mongodb: mongoClient?.topology?.isConnected() ? 'connected' : 'disconnected',
+        mongodb: mongoClient ? 'connected' : 'disconnected',
         redis: redis?.status === 'ready' ? 'connected' : 'disconnected',
       },
     };
@@ -252,7 +252,7 @@ function createApp(): Express {
       uptime: process.uptime(),
       environment: config.nodeEnv,
       dependencies: {
-        mongodb: mongoClient?.topology?.isConnected() ? 'connected' : 'disconnected',
+        mongodb: mongoClient ? 'connected' : 'disconnected',
         redis: redis?.status === 'ready' ? 'connected' : 'disconnected',
       },
       memory: {
@@ -278,8 +278,8 @@ function createApp(): Express {
   // Kubernetes readiness probe
   app.get('/health/ready', (req: Request, res: Response) => {
     const checks = {
-      mongodb: mongoClient?.topology?.isConnected() ?? false,
-      redis: redis?.status === 'ready' ?? false,
+      mongodb: mongoClient !== undefined,
+      redis: redis?.status === 'ready' || false,
     };
 
     const isReady = checks.mongodb && checks.redis;

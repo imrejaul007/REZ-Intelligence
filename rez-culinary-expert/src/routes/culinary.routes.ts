@@ -135,9 +135,9 @@ router.post('/chat', async (req: Request, res: Response) => {
       const userContext = await coreBrain.loadUserContext(userId, req.body.sessionId || '', restaurantId);
       if (userContext) {
         coreBrainContext = {
-          preferences: userContext.preferences,
-          loyalty: userContext.loyalty,
-          memories: userContext.memories,
+          preferences: userContext.preferences as Record<string, unknown>,
+          loyalty: userContext.loyalty as Record<string, unknown>,
+          memories: (userContext.memories || []) as Record<string, unknown>[],
           diningHistory: (userContext as Record<string, unknown>).diningHistory as Record<string, unknown>[] || [],
         };
         logger.info('Core Brain context loaded', {
