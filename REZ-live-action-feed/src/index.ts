@@ -61,7 +61,7 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => logger.info('socket_disconnected', { socketId: socket.id }));
 });
 
-app.use(helmet({ contentSecurityPolicy: { directives: { defaultSrc: ["'self'"] } }));
+app.use(helmet({ contentSecurityPolicy: { directives: { defaultSrc: ["'self'"] } } }));
 app.use(cors({ origin: CORS_ORIGIN, credentials: true }));
 app.use(rateLimit({ windowMs: 60000, max: 100, message: { success: false, error: { code: 'RATE_LIMIT' } } }));
 app.use(express.json({ limit: '10mb' }));

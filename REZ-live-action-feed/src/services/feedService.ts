@@ -1,7 +1,7 @@
 /**
  * REZ Live Action Feed Service
  */
-import { FeedItem, AgentStatus, IFeedItem } from '../models/index.js';
+import { FeedItem, AgentStatus, IFeedItem, IAgentStatus } from '../models/index.js';
 import { createLogger } from '../utils/logger.js';
 import { Server as SocketServer, Socket } from 'socket.io';
 

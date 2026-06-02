@@ -94,6 +94,7 @@ export class AutonomousLoopEngine {
 
     // Fetch from memory layer
     try {
+      if (!loop) return { observations: [], sources: [] };
       const memoryRes = await axios.get(`${MEMORY_LAYER}/api/timeline/latest`, {
         headers: { 'X-Tenant-Id': this.tenantId },
         params: { entity_id: loop.entity_id, entity_type: loop.entity_type, limit: 20 },
@@ -109,6 +110,7 @@ export class AutonomousLoopEngine {
 
     // Fetch from signal aggregator
     try {
+      if (!loop) return { observations: [], sources: [] };
       const signalsRes = await axios.get(`${SIGNAL_AGGREGATOR}/api/signals`, {
         headers: { 'X-Tenant-Id': this.tenantId },
         params: { entity_id: loop.entity_id, limit: 10 },

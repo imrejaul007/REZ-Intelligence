@@ -20,7 +20,7 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-au
 const logger = createLogger(SERVICE);
 
 const app = express();
-app.use(helmet({ contentSecurityPolicy: { directives: { defaultSrc: ["'self'"] } }));
+app.use(helmet({ contentSecurityPolicy: { directives: { defaultSrc: ["'self'"] } } }));
 app.use(cors());
 app.use(rateLimit({ windowMs: 60000, max: 100, message: { success: false, error: { code: 'RATE_LIMIT' } } }));
 app.use(express.json({ limit: '10mb' }));
