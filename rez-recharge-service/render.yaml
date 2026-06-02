@@ -1,0 +1,56 @@
+services:
+  - type: web
+    name: rez-recharge-service
+    runtime: node
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
+    # Mobile recharge service - handles prepaid/postpaid mobile, DTH, and data card recharges
+    memoryMB: 512
+    autoDeploy: false
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SERVICE_NAME
+        value: rez-recharge-service
+      - key: PORT
+        value: "4111"
+      - key: HEALTH_PORT
+        value: "4112"
+      - key: MONGODB_URI
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      # Internal service token map (JSON) for inter-service authentication
+      - key: INTERNAL_SERVICE_TOKENS_JSON
+        sync: false
+      # HMAC secret for internal service token verification
+      - key: INTERNAL_SERVICE_HMAC_SECRET
+        sync: false
+      # Recharge API credentials - obtained from recharge aggregator/provider
+      - key: RECHARGE_API_KEY
+        sync: false
+      - key: RECHARGE_API_SECRET
+        sync: false
+      - key: RECHARGE_MERCHANT_ID
+        sync: false
+      # Recharge provider endpoint
+      - key: RECHARGE_PROVIDER_URL
+        sync: false
+      # CORS configuration for allowed origins
+      - key: CORS_ORIGIN
+        sync: false
+      # Payment service URL for recharge payment processing
+      - key: PAYMENT_SERVICE_URL
+        sync: false
+      # Wallet service URL for wallet-based recharges
+      - key: WALLET_SERVICE_URL
+        sync: false
+      # Notification service URL for recharge confirmations
+      - key: NOTIFICATION_SERVICE_URL
+        sync: false
+      # Auth service URL for user validation
+      - key: REZ_AUTH_SERVICE_URL
+        sync: false
+      - key: SENTRY_DSN
+        sync: false

@@ -1,0 +1,16 @@
+# rez-utilities-platform - Deploys all utilities together
+services:
+  - type: web
+    name: rez-utilities-platform
+    env: node
+    region: singapore
+    buildCommand: npm install
+    startCommand: bash start.sh
+    healthCheckPath: health
+    autoDeploy: yes
+    branch: main
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        sync: false

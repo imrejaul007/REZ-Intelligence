@@ -1,0 +1,50 @@
+# render.yaml — Score Service
+# Deploy: render blueprint create (CLI) or push to GitHub + link on Render dashboard
+#
+# REQUIRED — set in Render dashboard > Service > Environment (not in this file):
+#   MONGODB_URI              — MongoDB Atlas cluster connection string
+#   REDIS_URL                — Redis connection string
+#   INTERNAL_SERVICE_TOKEN   — shared across all services (min 16 chars)
+
+services:
+  - type: web
+    name: rez-score-service
+    env: node
+    region: singapore
+    plan: starter
+    nodeVersion: '20'
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
+    healthCheckInterval: 30
+    healthCheckThreshold: 3
+    memoryMB: 512
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: '4028'
+      - key: TRUST_PROXY_HOPS
+        value: '1'
+      - key: MONGODB_URI
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: WALLET_SERVICE_URL
+        value: https://rez-wallet-service.onrender.com
+      - key: MERCHANT_SERVICE_URL
+        value: https://rez-merchant-service.onrender.com
+      - key: PROFILE_AGGREGATOR_URL
+        value: https://rez-profile-aggregator.onrender.com
+      - key: STREAK_SERVICE_URL
+        value: https://rez-streak-service.onrender.com
+      - key: CROSS_MERCHANT_SERVICE_URL
+        value: https://rez-cross-merchant-service.onrender.com
+      - key: INTERNAL_SERVICE_TOKEN
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: 'https://rez.money,https://app.rez.money'
+      - key: RATE_LIMIT_WINDOW_MS
+        value: '900000'
+      - key: RATE_LIMIT_MAX
+        value: '100'

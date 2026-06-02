@@ -1,0 +1,38 @@
+services:
+  - type: worker
+    name: rez-notification-events
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HEALTH_PORT
+        value: '3001'
+      - key: MONGODB_URI
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      # Notification provider credentials — at least one SMS and one push provider
+      # must be configured or all notifications will silently fail.
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: SENDGRID_FROM_EMAIL
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_WHATSAPP_FROM
+        sync: false
+      - key: WHATSAPP_API_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: MSG91_API_KEY
+        sync: false
+      - key: MSG91_FLOW_ID
+        sync: false
+      - key: SENTRY_DSN
+        sync: false

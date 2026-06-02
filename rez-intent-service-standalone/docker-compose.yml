@@ -1,0 +1,60 @@
+services:
+  intent-service:
+    build: .
+    ports:
+      - "4009:4009"
+    environment:
+      - PORT=4009
+      - REDIS_URL=redis://redis:6379
+      - MONGODB_URI=mongodb://mongo:27017/intent
+    depends_on:
+      - redis
+      - mongo
+    restart: unless-stopped
+
+  copilot:
+    build: ../rez-copilot
+    ports:
+      - "4026:4026"
+    environment:
+      - PORT=4026
+    depends_on:
+      - intent-service
+    restart: unless-stopped
+
+  decision-service:
+    build: ../rez-decision-service
+    ports:
+      - "4027:4027"
+    environment:
+      - PORT=4027
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  ad-platform:
+    build: ../rez-ad-platform
+    ports:
+      - "4028:4028"
+    environment:
+      - PORT=4028
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:

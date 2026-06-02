@@ -1,0 +1,44 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Deploy rez-uce: Unified Ad Platform - Campaigns + QR + Attribution
+# Repo: https://github.com/imrejaul007/rez-uce
+
+services:
+  - type: web
+    name: rez-uce
+    env: node
+    region: singapore
+    plan: starter
+    numInstances: 2
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      # Redis for caching and rate limiting
+      - key: REDIS_URL
+        sync: false
+      - key: REDIS_HOST
+        sync: false
+      - key: REDIS_PORT
+        value: '6379'
+      - key: REDIS_PASSWORD
+        sync: false
+      # Service URLs for internal communication
+      - key: MONOLITH_URL
+        sync: false
+      - key: MERCHANT_SERVICE_URL
+        sync: false
+      - key: AUTH_SERVICE_URL
+        sync: false
+      - key: ANALYTICS_SERVICE_URL
+        sync: false
+      # Internal API token
+      - key: INTERNAL_SERVICE_TOKEN
+        sync: false
+      # CORS
+      - key: ALLOWED_ORIGINS
+        sync: false

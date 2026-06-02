@@ -1,0 +1,19 @@
+{
+  "name": "@rez/training-data-service",
+  "version": "1.0.0",
+  "description": "Training data management service",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.0.0",
+    "ioredis": "^5.3.2",
+    "winston": "^3.11.0",
+    "zod": "^3.22.4",
+    "axios": "^1.6.0"
+  }
+}

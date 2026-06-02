@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: rez-push-service
+    env: node
+    region: singapore
+    buildCommand: npm install
+    startCommand: node src/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4013
+      - key: MONGODB_URI
+        sync: false

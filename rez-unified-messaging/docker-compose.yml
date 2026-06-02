@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  rez-unified-messaging:
+    build: .
+    ports:
+      - "4025:4025"
+    environment:
+      - NODE_ENV=production
+      - PORT=4025
+      - REZMIND_URL=http://rez-mind:4010
+      - WHATSAPP_PROVIDER=meta
+      - SMS_PROVIDER=twilio
+      - EMAIL_PROVIDER=sendgrid
+    depends_on:
+      - redis
+    networks:
+      - rez-network
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - rez-network
+
+networks:
+  rez-network:
+    driver: bridge

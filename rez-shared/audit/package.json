@@ -1,0 +1,19 @@
+{
+  "name": "@rez/audit",
+  "version": "1.0.0",
+  "description": "Audit log emitter for central audit sink",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test test"
+  },
+  "dependencies": {
+    "axios": "^1.11.0",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3"
+  }
+}

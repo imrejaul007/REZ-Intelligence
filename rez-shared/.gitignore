@@ -1,0 +1,14 @@
+node_modules/
+*.log
+
+# Build artifacts — dist/ is committed so npm installs ship compiled output
+*.js
+!*.config.js
+src/**/*.d.ts
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.*
+!.env.example
+.npmrc

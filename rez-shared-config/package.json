@@ -1,0 +1,38 @@
+{
+  "name": "@rez/shared-config",
+  "version": "1.0.0",
+  "description": "Shared configuration utilities for ReZ platform services",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./mongodb": {
+      "types": "./dist/mongodb.d.ts",
+      "default": "./dist/mongodb.js"
+    },
+    "./redis": {
+      "types": "./dist/redis.d.ts",
+      "default": "./dist/redis.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "mongoose": "^8.0.0",
+    "ioredis": "^5.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@types/node": "^20.0.0"
+  },
+  "peerDependencies": {
+    "mongoose": ">=8.0.0",
+    "ioredis": ">=5.3.0"
+  }
+}

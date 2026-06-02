@@ -1,0 +1,48 @@
+services:
+  - type: web
+    name: rez-unified-messaging
+    env: node
+    region: singapore
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4025
+      - key: REZMIND_URL
+        sync: false
+      - key: WHATSAPP_PROVIDER
+        value: meta
+      - key: WHATSAPP_ACCESS_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_ID
+        sync: false
+      - key: WHATSAPP_BUSINESS_ID
+        sync: false
+      - key: WHATSAPP_WEBHOOK_TOKEN
+        sync: false
+      - key: WHATSAPP_APP_SECRET
+        sync: false
+      - key: SMS_PROVIDER
+        value: twilio
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: SMS_SENDER_ID
+        value: REZAPP
+      - key: EMAIL_PROVIDER
+        value: sendgrid
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        value: noreply@rez.com
+      - key: EMAIL_FROM_NAME
+        value: ReZ
+      - key: FIREBASE_SERVER_KEY
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false

@@ -1,0 +1,46 @@
+# Render Blueprint for rez-socket-service
+# Socket.IO real-time communication server
+#
+# Key features:
+# - WebSocket support via Socket.io
+# - Redis for pub/sub (optional, for scaling)
+# - Health check endpoint
+
+services:
+  - type: web
+    name: rez-socket-service
+    env: node
+    region: oregon
+    plan: starter
+
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+
+    # Health check - essential for WebSocket services
+    healthCheckPath: /health
+
+    # Auto-suspend disabled for WebSocket services
+    autoDeploy: true
+
+    # Environment variables
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      # Redis for horizontal scaling (pub/sub)
+      # - key: REDIS_URL
+      #   sync: false
+      # Internal service authentication
+      - key: INTERNAL_SERVICE_TOKENS_JSON
+        sync: false
+
+    # Scaling for WebSocket services
+    scaling:
+      minInstances: 1
+      maxInstances: 3
+      targetMemory: 512Mi
+      targetCPU: 50
+
+# Health check is handled by the service itself
+# The service should expose /health endpoint returning 200

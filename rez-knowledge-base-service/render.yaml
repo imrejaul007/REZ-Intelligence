@@ -1,0 +1,19 @@
+# render.yaml for REZ Knowledge Base Service
+# Deploy at: https://dashboard.render.com
+
+services:
+  - type: web
+    name: rez-knowledge-base-service
+    env: node
+    region: singapore
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4025
+      - key: MONGODB_URI
+        sync: false

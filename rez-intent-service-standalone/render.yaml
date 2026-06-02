@@ -1,0 +1,57 @@
+# render.yaml — ReZ Intent Service
+# Unified Intelligence Platform - Signal → Intent → Decision → Action → Feedback
+#
+# Deploy: render blueprint create (CLI) or push to GitHub + link on Render dashboard
+#
+# REQUIRED — set in Render dashboard > Service > Environment:
+#   MONGODB_URI              — MongoDB Atlas cluster
+#   REDIS_URL                — Redis instance for agent coordination
+#   INTERNAL_SERVICE_TOKENS_JSON — JSON array of service tokens
+
+services:
+  - type: web
+    name: rez-intent-service
+    env: node
+    region: singapore
+    plan: free
+    nodeVersion: '20'
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
+    healthCheckInterval: 30
+    healthCheckThreshold: 3
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: '4009'
+      - key: MONGODB_URI
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: INTERNAL_SERVICE_TOKENS_JSON
+        sync: false
+      # AI Configuration (for AI agent processing)
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: CLAUDE_MODEL
+        value: claude-haiku-4-20250514
+      - key: CLAUDE_MAX_TOKENS
+        value: '512'
+      # AI Agent Intervals (milliseconds)
+      - key: DEMAND_SIGNAL_INTERVAL_MS
+        value: '300000'
+      - key: SCARCITY_INTERVAL_MS
+        value: '60000'
+      - key: PERSONALIZATION_INTERVAL_MS
+        value: '60000'
+      - key: ATTRIBUTION_INTERVAL_MS
+        value: '60000'
+      - key: ADAPTIVE_SCORING_INTERVAL_MS
+        value: '3600000'
+      - key: FEEDBACK_LOOP_INTERVAL_MS
+        value: '3600000'
+      - key: NETWORK_EFFECT_INTERVAL_MS
+        value: '86400000'
+      - key: REVENUE_ATTRIBUTION_INTERVAL_MS
+        value: '900000'

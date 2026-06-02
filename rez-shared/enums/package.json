@@ -1,0 +1,15 @@
+{
+  "name": "@rez/enums",
+  "version": "1.0.0",
+  "description": "Shared enum registry for order status, payment status, user role, etc.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test test"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3"
+  }
+}

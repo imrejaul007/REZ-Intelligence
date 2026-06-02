@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: rez-price-optimization-service
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3004"
+      # SECURITY
+      - key: INTERNAL_SERVICE_TOKENS_JSON
+        sync: false
+      # CORS
+      - key: CORS_ORIGIN
+        sync: false
+      # PRICING CONFIG
+      - key: MIN_PRICE_MULTIPLIER
+        value: "0.7"
+      - key: MAX_PRICE_MULTIPLIER
+        value: "1.5"
+      - key: DEFAULT_COMPETITOR_WEIGHT
+        value: "0.3"
+      - key: DEFAULT_DEMAND_WEIGHT
+        value: "0.4"
+      - key: DEFAULT_INVENTORY_WEIGHT
+        value: "0.3"
+      # OBSERVABILITY
+      - key: OTEL_SERVICE_NAME
+        value: rez-price-optimization-service
+      - key: OTEL_EXPORTER_OTLP_ENDPOINT
+        fromGroup: otlp-endpoint
+        sync: false
