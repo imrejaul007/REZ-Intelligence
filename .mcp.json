@@ -39,6 +39,30 @@
     "rez-logs": {
       "command": "node",
       "args": ["./rez-mcp-logs/dist/index.js"]
+    },
+    "rez-mcp-automl": {
+      "command": "node",
+      "args": ["./rez-mcp-automl/dist/index.js"]
+    },
+    "rez-mcp-invoice": {
+      "command": "node",
+      "args": ["./rez-mcp-invoice/dist/index.js"]
+    },
+    "rez-mcp-contracts": {
+      "command": "node",
+      "args": ["./rez-mcp-contracts/dist/index.js"]
+    },
+    "rez-mcp-legal": {
+      "command": "node",
+      "args": ["./rez-mcp-legal/dist/index.js"]
+    },
+    "rez-mcp-cosmic-twin": {
+      "command": "node",
+      "args": ["./rez-mcp-cosmic-twin/dist/index.js"]
+    },
+    "rez-mcp-ranking": {
+      "command": "node",
+      "args": ["./rez-mcp-ranking/dist/index.js"]
     }
   }
 }
