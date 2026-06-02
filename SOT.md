@@ -1,5 +1,7 @@
 # REZ Intelligence - SOT Reference
 
+**Version:** 3.1
+**Date:** June 2, 2026
 **Master SOT:** [RABTUL-Technologies/SOT.md](https://github.com/imrejaul007/RABTUL-Technologies/blob/main/SOT.md)
 
 ---
@@ -17,7 +19,7 @@
 
 ## Service Registry
 
-**Total Services:** 188 documented with SPEC.md (Updated: May 21, 2026)
+**Total Services:** 194 documented with SPEC.md (Updated: June 2, 2026)
 
 ### NEW Services (May 21, 2026)
 
@@ -44,6 +46,9 @@ See: [docs/PLATFORM-INFRASTRUCTURE-BUILD.md](../docs/PLATFORM-INFRASTRUCTURE-BUI
 | rez-travel-expert | 3003 | Expert Agents | ✅ |
 | rez-health-expert | 3011 | Expert Agents | ✅ |
 | rez-retail-expert | 3004 | Expert Agents | ✅ |
+| **REZ-real-estate-expert** | **3013** | **Expert Agents** | **✅ NEW** |
+| **REZ-finance-expert** | **3014** | **Expert Agents** | **✅ NEW** |
+| **REZ-logistics-expert** | **3015** | **Expert Agents** | **✅ NEW** |
 | rez-fraud-agent | - | Security Agents | ✅ |
 | rez-sales-agent | - | Sales Agents | ✅ |
 | REZ-research-opportunity-agent | - | Research Agents | ✅ |
@@ -52,6 +57,16 @@ See: [docs/PLATFORM-INFRASTRUCTURE-BUILD.md](../docs/PLATFORM-INFRASTRUCTURE-BUI
 | REZ-confidence-scorer | - | AI Scoring | ✅ |
 | REZ-conversation-intelligence | - | NLP | ✅ |
 | REZ-bootstrap-intelligence | 4065 | Cold Start | ✅ |
+
+### OADA Loop (Polsia Parity)
+
+| Service | Port | Category | Status |
+|---------|------|----------|--------|
+| **REZ-autonomous-loop** | **4800** | **OADA Loop** | **✅ NEW** |
+| **REZ-company-memory** | **4801** | **OADA Loop** | **✅ NEW** |
+| **REZ-live-action-feed** | **4802** | **OADA Loop** | **✅ NEW** |
+
+*OADA Loop: Observe → Think → Decide → Act → Learn → Repeat*
 
 ### Predictions & ML
 
