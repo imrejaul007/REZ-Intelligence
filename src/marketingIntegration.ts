@@ -13,7 +13,7 @@
  * - INTERNAL_SERVICE_TOKEN: Service authentication token
  */
 
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import { randomInt } from 'crypto';
 import { AgentTask, AgentType } from './AgentOrchestrator';
 
