@@ -1,6 +1,6 @@
 # REZ Intelligence Platform
 
-**AI-powered platform for local commerce with 3 client types, tenant isolation, and 170+ ML services.**
+**AI-powered platform for local commerce with 3 client types, tenant isolation, and 175+ ML services.**
 
 ---
 
@@ -86,6 +86,15 @@ docker compose down
 | `rez-predictive-engine` | 4141 | Churn, LTV, Revisit |
 | `rez-knowledge-graph` | 4060 | Knowledge relationships |
 | `rez-care-service` | 4058 | Customer support intelligence |
+
+### Analytics Services (Ports 4900-4904) - AdBazaar Integration
+| Service | Port | Description |
+|---------|------|-------------|
+| `REZ-churn-predictor` | 4900 | Dedicated churn prediction |
+| `REZ-ltv-calculator` | 4901 | Lifetime value scoring |
+| `REZ-next-best-action` | 4902 | Next action recommendations |
+| `REZ-sentiment-analyzer` | 4903 | Social sentiment analysis |
+| `REZ-competitor-monitor` | 4904 | Competitor tracking |
 
 ### Expert Agents (Ports 3003-3010)
 | Service | Port | Domain |
@@ -177,6 +186,24 @@ prediction = client.intent.predict(
     context={"location": {"lat": 12.97, "lng": 77.59}}
 )
 ```
+
+---
+
+## AdBazaar Integration
+
+The analytics services (4900-4904) are shared with AdBazaar (REZ Media) for unified advertising intelligence.
+
+```bash
+# Start AdBazaar Intelligence Suite
+cd ../AdBazaar && ./start-adbazaar-services.sh
+```
+
+**Shared Services:**
+- Churn Predictor (4900)
+- LTV Calculator (4901)
+- Next Best Action (4902)
+- Sentiment Analyzer (4903)
+- Competitor Monitor (4904)
 
 ---
 
