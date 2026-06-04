@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --canvas-bg: #0F172A;
+  --canvas-grid: #1E293B;
+  --border-color: #334155;
+  --trigger-color: #3B82F6;
+  --action-color: #10B981;
+  --logic-color: #F59E0B;
+  --flow-color: #8B5CF6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--canvas-bg);
+  color: #E2E8F0;
+}
+
+/* Canvas grid pattern */
+.canvas-grid {
+  background-image:
+    linear-gradient(var(--canvas-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--canvas-grid) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Node styles */
+.workflow-node {
+  @apply rounded-lg border-2 p-3 min-w-[200px] cursor-grab select-none;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.workflow-node:hover {
+  @apply shadow-lg;
+}
+
+.workflow-node.dragging {
+  @apply opacity-50 cursor-grabbing;
+}
+
+.workflow-node.trigger {
+  @apply bg-blue-500/20 border-blue-500;
+}
+
+.workflow-node.action {
+  @apply bg-emerald-500/20 border-emerald-500;
+}
+
+.workflow-node.logic {
+  @apply bg-amber-500/20 border-amber-500;
+}
+
+.workflow-node.flow {
+  @apply bg-purple-500/20 border-purple-500;
+}
+
+/* Node palette item */
+.palette-item {
+  @apply flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors;
+}
+
+.palette-item:hover {
+  @apply bg-slate-700;
+}
+
+/* Edge styles */
+.react-flow__edge-path {
+  stroke-width: 2;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke-width: 3;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1E293B;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748B;
+}
+
+/* Modal overlay */
+.modal-overlay {
+  @apply fixed inset-0 bg-black/50 flex items-center justify-center z-50;
+}
+
+/* Button styles */
+.btn {
+  @apply px-4 py-2 rounded-md font-medium transition-colors;
+}
+
+.btn-primary {
+  @apply bg-blue-600 text-white hover:bg-blue-700;
+}
+
+.btn-secondary {
+  @apply bg-slate-700 text-slate-200 hover:bg-slate-600;
+}
+
+.btn-danger {
+  @apply bg-red-600 text-white hover:bg-red-700;
+}
+
+.btn-ghost {
+  @apply text-slate-400 hover:text-slate-200 hover:bg-slate-700;
+}
+
+/* Input styles */
+.input {
+  @apply w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-md text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500;
+}
+
+.select {
+  @apply w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-md text-slate-200 focus:outline-none focus:border-blue-500;
+}
+
+/* Card styles */
+.card {
+  @apply bg-slate-800 border border-slate-700 rounded-lg p-4;
+}
