@@ -1,0 +1,82 @@
+{{/*
+ConfigMap for application configuration
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "rez.fullname" . }}-config
+  labels:
+    {{- include "rez.labels" . | nindent 4 }}
+data:
+  {{- if .Values.gateway.enabled }}
+  gateway.json: |
+    {
+      "server": {
+        "port": 8080,
+        "cors": {
+          "enabled": true,
+          "origins": {{ .Values.gateway.cors.origins | default (list "*") | toJson }},
+          "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+          "credentials": true
+        },
+        "timeout": {{ .Values.gateway.timeout | default 30000 }},
+        "bodyLimit": "50mb"
+      },
+      "rateLimit": {
+        "enabled": {{ .Values.gateway.rateLimit.enabled }},
+        "windowMs": 60000,
+        "max": {{ .Values.gateway.rateLimit.requestsPerMinute | default 1000 }}
+      },
+      "auth": {
+        "jwt": {
+          "expiration": {{ .Values.gateway.auth.jwt.expiration | default 3600 }},
+          "issuer": "rez-agent-os"
+        }
+      },
+      "services": {
+        "agents": {
+          "url": "http://{{ include "rez.fullname" . }}-agents:{{ .Values.agentRegistry.service.port }}",
+          "timeout": 10000
+        },
+        "automl": {
+          "url": "http://{{ include "rez.fullname" . }}-automl:{{ .Values.automl.service.port }}",
+          "timeout": 60000
+        },
+        "invoice": {
+          "url": "http://{{ include "rez.fullname" . }}-invoice:{{ .Values.invoice.service.port }}",
+          "timeout": 10000
+        },
+        "contracts": {
+          "url": "http://{{ include "rez.fullname" . }}-contracts:{{ .Values.contracts.service.port }}",
+          "timeout": 30000
+        },
+        "legal": {
+          "url": "http://{{ include "rez.fullname" . }}-legal:{{ .Values.legal.service.port }}",
+          "timeout": 30000
+        },
+        "twin": {
+          "url": "http://{{ include "rez.fullname" . }}-twin:{{ .Values.twin.service.port }}",
+          "timeout": 10000
+        },
+        "ranking": {
+          "url": "http://{{ include "rez.fullname" . }}-ranking:{{ .Values.ranking.service.port }}",
+          "timeout": 10000
+        }
+      },
+      "logging": {
+        "level": "{{ .Values.env.LOG_LEVEL | default "info" }}",
+        "format": "json"
+      }
+    }
+  {{- end }}
+
+  {{- if .Values.redis.enabled }}
+  redis.conf: |
+    maxmemory 256mb
+    maxmemory-policy allkeys-lru
+    save 900 1
+    save 300 10
+    save 60 10000
+    appendonly yes
+    appendfsync everysec
+  {{- end }}

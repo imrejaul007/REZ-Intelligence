@@ -1,0 +1,335 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly Monday scan
+
+env:
+  NODE_VERSION: '20'
+  GO_VERSION: '1.21'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # ============================================
+  # DEPENDENCY VULNERABILITY SCANNING
+  # ============================================
+  dependency-scan:
+    name: Dependency Vulnerabilities
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Node.js dependency scanning
+      - name: Run npm audit
+        run: |
+          for dir in */; do
+            if [ -f "${dir}package.json" ]; then
+              echo "Scanning ${dir}..."
+              cd "$dir"
+              npm audit --audit-level=moderate --json > npm-audit.json 2>/dev/null || true
+              cd ..
+            fi
+          done
+
+      - name: Upload npm audit results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: '**/npm-audit.json'
+          category: 'npm-audit'
+
+      # Python dependency scanning
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Run safety check
+        run: |
+          pip install safety || true
+          for dir in */; do
+            if [ -f "${dir}requirements.txt" ]; then
+              echo "Checking ${dir}..."
+              safety check -r "${dir}requirements.txt" --json | jq '.' > "${dir}safety-report.json" 2>/dev/null || true
+            fi
+          done
+
+      # OWASP Dependency Check
+      - name: OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@v3
+        with:
+          project: 'REZ Agent OS'
+          path: '.'
+          format: 'JSON,HTML'
+          args: '--scan ./ --enableExperimental -o ./reports/dependency-check'
+
+      - name: Upload dependency check report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: reports/dependency-check
+          retention-days: 30
+
+  # ============================================
+  # CODE SECURITY SCANNING (CodeQL)
+  # ============================================
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['typescript', 'python', 'go']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+        if: matrix.language == 'typescript'
+
+      - name: Perform analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  # ============================================
+  # SECRET SCANNING
+  # ============================================
+  secret-scan:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: '--filter entropy=5 --filter since_commit_days=30'
+
+      - name: Scan repository
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ============================================
+  # DOCKER IMAGE SCANNING
+  # ============================================
+  docker-scan:
+    name: Container Security
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    permissions:
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker images
+        run: |
+          # Find all Dockerfiles and build
+          find . -name "Dockerfile*" -type f | while read dockerfile; do
+            dir=$(dirname "$dockerfile")
+            name=$(basename "$dir" | tr '[:upper:]' '[:lower:]' | tr -d '-')
+            echo "Building $name from $dir"
+            docker build -f "$dockerfile" -t "rez-$name:test" "$dir" || true
+          done
+
+      - name: Run Trivy scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'rez-gateway:test'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Run Docker Scout
+        if: github.event_name == 'push'
+        uses: docker/scout-action@v1
+        with:
+          image-ref: 'rez-gateway:test'
+          to-latest: true
+          only-fixed: true
+
+  # ============================================
+  # INFRASTRUCTURE AS CODE SCANNING
+  # ============================================
+  tf-scan:
+    name: Terraform Security
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Terraform Init
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.6
+
+      - name: Terraform Format Check
+        run: |
+          find . -name "*.tf" -exec terraform fmt -check -recursive {} \; || true
+
+      - name: tfsec
+        uses: aquasecurity/tfsec-action@v1
+        with:
+          soft_fail: true
+          Sarit_File: tfsec-results.sarif
+
+      - name: Checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          output_format: sarif
+          output: checkov-results.sarif
+
+  # ============================================
+  # YAML/TEMPLATE SECURITY
+  # ============================================
+  yaml-security:
+    name: YAML & Config Security
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Scan YAML files
+        run: |
+          # Check for sensitive data in YAML
+          echo "=== Checking YAML files for secrets ==="
+          grep -r -E "(password|secret|api.?key|token).*[=:].*['\"]" --include="*.yaml" --include="*.yml" . || echo "No secrets found in YAML"
+
+      - name: Helm Security
+        if: always()
+        run: |
+          # Find and validate Helm charts
+          for chart in deploy/helm/*/Chart.yaml; do
+            if [ -f "$chart" ]; then
+              echo "Validating $(dirname "$chart")"
+              helm lint "$(dirname "$chart")" || true
+            fi
+          done
+
+      - name: Kubernetes Manifest Validation
+        if: always()
+        uses: daniellowoehrh/kubesec-action@v1
+        with:
+          files: 'deploy/kubernetes/*.yaml'
+
+  # ============================================
+  # LICENSES COMPLIANCE
+  # ============================================
+  license-check:
+    name: License Compliance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install license checker
+        run: pip install pip-licenses
+
+      - name: Check licenses
+        run: |
+          echo "=== License Report ==="
+          for dir in */; do
+            if [ -f "${dir}requirements.txt" ]; then
+              echo "Checking ${dir}..."
+              pip-licenses -r "${dir}requirements.txt" --format=json > "${dir}licenses.json" 2>/dev/null || true
+            fi
+          done
+
+      - name: License FOSS review
+        run: |
+          # Check for prohibited licenses
+          echo "Checking for prohibited licenses..."
+          for file in **/licenses.json; do
+            if [ -f "$file" ]; then
+              # Check for GPL, AGPL, etc.
+              grep -i "GPL\|AGPL\|Proprietary" "$file" && echo "Found potentially problematic license in $file" || true
+            fi
+          done
+
+  # ============================================
+  # NUCLEI VULNERABILITY SCANNER
+  # ============================================
+  nuclei-scan:
+    name: CVE & CVE Database Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Nuclei
+        uses: projectdiscovery/nuclei-action@main
+        with:
+          templates_url: 'https://cloud.projectdiscovery.io'
+          rate_limit: 150
+
+      - name: Run Nuclei
+        run: nuclei -u http://localhost:8080 -stats
+
+  # ============================================
+  # SECURITY SUMMARY
+  # ============================================
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [dependency-scan, codeql, secret-scan, docker-scan, tf-scan, yaml-security]
+    if: always()
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "## Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Scan | ${{ needs.dependency-scan.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| CodeQL Analysis | ${{ needs.codeql.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secret Detection | ${{ needs.secret-scan.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Container Scan | ${{ needs.docker-scan.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| IaC Security | ${{ needs.tf-scan.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Config Security | ${{ needs.yaml-security.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY

@@ -1,7 +1,8 @@
 {
-  "name": "@rez/event-bus",
+  "name": "@rez-ecosystem/REZ-event-bus",
   "version": "1.0.0",
-  "description": "Shared Event Bus Service for REZ Agent OS v3 - Central event routing with Redis pub/sub and Kafka",
+  "description": "DEPRECATED - Use @rez-ecosystem/rez-mcp-event-bus instead. Shared Event Bus Service for REZ Agent OS v3 - Central event routing with Redis pub/sub and Kafka",
+  "deprecated": "This package has been deprecated. Use @rez-ecosystem/rez-mcp-event-bus instead. This alias will be removed after September 4, 2026.",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

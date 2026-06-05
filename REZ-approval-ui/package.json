@@ -1,0 +1,23 @@
+{
+  "name": "@rez/approval-ui",
+  "version": "1.0.0",
+  "description": "Human-in-the-loop approval UI for AI-drafted campaigns and actions",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 4211",
+    "build": "next build",
+    "start": "next start -p 4211"
+  },
+  "dependencies": {
+    "next": "14.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "tailwindcss": "^3.4.0"
+  }
+}

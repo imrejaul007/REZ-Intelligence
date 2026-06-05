@@ -11,7 +11,7 @@
 export {
   FraudDetectionModel,
   createFraudDetectionModel,
-} from '../../rez-fraud-detection/src/models/fraudModel';
+} from './fraudModel';
 export type {
   FraudSignal,
   FraudPrediction,
@@ -19,26 +19,25 @@ export type {
   OrderItem,
   FraudDetectionConfig,
   FraudStats,
-} from '../../rez-fraud-detection/src/models/fraudModel';
+} from './fraudModel';
 
 // Price Optimization
 export {
   PriceOptimizationModel,
   createPriceOptimizationModel,
-} from '../../rez-price-optimization/src/models/priceOptimization';
+} from './priceOptimization';
 export type {
   PriceOptimization,
   PriceFactors,
   OptimizationConfig,
   PriceHistory,
   OptimizationResult,
-} from '../../rez-price-optimization/src/models/priceOptimization';
+} from './priceOptimization';
 
 // Recommendation Engine
 export {
   RecommendationEngine,
-  createRecommendationEngine,
-} from '../../rez-recommendation-engine/src/models/recommendationEngine';
+} from './recommendationEngine';
 export type {
   Recommendation,
   RecommendedItem,
@@ -49,7 +48,7 @@ export type {
   PopularItem,
   RecommendationConfig,
   RecommendationResult,
-} from '../../rez-recommendation-engine/src/models/recommendationEngine';
+} from './recommendationEngine';
 
 // ML Pipeline orchestration
 export { MLService } from './mlService';

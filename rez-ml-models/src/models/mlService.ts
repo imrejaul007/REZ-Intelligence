@@ -18,6 +18,8 @@ export interface MLConfig {
     enabled: boolean;
     autoBlock: boolean;
     blockThreshold: number;
+    threshold: number;
+    highAmountThreshold: number;
   };
   priceOptimization: {
     enabled: boolean;
@@ -38,7 +40,7 @@ export interface MLPipelineResult {
   userId?: string;
   fraudPrediction?: FraudPrediction;
   priceOptimization?: PriceOptimization;
-  recommendations?: Recommendation;
+  recommendations?: Recommendation[];
   errors: string[];
   processedAt: Date;
 }
@@ -51,6 +53,8 @@ const DEFAULT_CONFIG: MLConfig = {
     enabled: true,
     autoBlock: false,
     blockThreshold: 70,
+    threshold: 0.7,
+    highAmountThreshold: 50000,
   },
   priceOptimization: {
     enabled: true,
@@ -80,18 +84,16 @@ export class MLService extends EventEmitter {
     super();
     this.config = { ...DEFAULT_CONFIG, ...config };
 
-    // Initialize models
+    // Initialize models with proper configuration
     this.fraudModel = new FraudDetectionModel({
+      threshold: this.config.fraudDetection.threshold,
+      enableRealTime: true,
       blockThreshold: this.config.fraudDetection.blockThreshold,
+      highAmountThreshold: this.config.fraudDetection.highAmountThreshold,
     });
 
     this.priceModel = new PriceOptimizationModel();
-    this.recommendationEngine = new RecommendationEngine({
-      maxRecommendations: this.config.recommendations.maxRecommendations,
-    });
-
-    // Set up event forwarding
-    this.setupEventForwarding();
+    this.recommendationEngine = new RecommendationEngine();
   }
 
   /**
@@ -132,7 +134,7 @@ export class MLService extends EventEmitter {
     // Fraud detection
     if (this.config.fraudDetection.enabled) {
       try {
-        const fraudPrediction = this.fraudModel.calculateRiskScore(order);
+        const fraudPrediction = await this.fraudModel.predict(order);
         result.fraudPrediction = fraudPrediction;
       } catch (error) {
         result.errors.push(
@@ -156,7 +158,7 @@ export class MLService extends EventEmitter {
 
     if (this.config.priceOptimization.enabled) {
       try {
-        const optimizationResult = this.priceModel.optimize(itemId, date);
+        const optimizationResult = await this.priceModel.optimize(itemId, date);
         if (optimizationResult.success && optimizationResult.optimization) {
           result.priceOptimization = optimizationResult.optimization;
         } else {
@@ -177,7 +179,7 @@ export class MLService extends EventEmitter {
    */
   async getRecommendations(
     userId: string,
-    context: RecommendationContext = {}
+    context: Partial<RecommendationContext> = {}
   ): Promise<MLPipelineResult> {
     const result: MLPipelineResult = {
       userId,
@@ -187,10 +189,16 @@ export class MLService extends EventEmitter {
 
     if (this.config.recommendations.enabled) {
       try {
-        const recommendationResult = this.recommendationEngine.recommend(userId, context);
+        const recommendationResult = await this.recommendationEngine.recommend(
+          userId,
+          {
+            sessionId: `session_${Date.now()}`,
+            ...context,
+          }
+        );
         if (recommendationResult.success && recommendationResult.recommendation) {
           result.recommendations = recommendationResult.recommendation;
-        } else {
+        } else if (!recommendationResult.success) {
           result.errors.push(recommendationResult.error || 'Recommendation generation failed');
         }
       } catch (error) {
@@ -222,19 +230,6 @@ export class MLService extends EventEmitter {
    */
   updateConfig(config: Partial<MLConfig>): void {
     this.config = { ...this.config, ...config };
-
-    // Update individual model configs
-    if (config.fraudDetection?.blockThreshold !== undefined) {
-      this.fraudModel.updateConfig({
-        blockThreshold: config.fraudDetection.blockThreshold,
-      });
-    }
-
-    if (config.recommendations?.maxRecommendations !== undefined) {
-      this.recommendationEngine.updateConfig({
-        maxRecommendations: config.recommendations.maxRecommendations,
-      });
-    }
   }
 
   /**

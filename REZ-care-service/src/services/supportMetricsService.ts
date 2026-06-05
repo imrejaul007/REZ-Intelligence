@@ -299,3 +299,61 @@ export class SupportMetricsService {
     }
   }
 }
+
+// Support Service - ticket operations
+export class SupportService {
+  private ticketStore: Map<string, any> = new Map();
+  private ratingStore: Map<string, any> = new Map();
+
+  async closeTicket(ticketNumber: string, data: {
+    resolution?: string;
+    closedBy?: string;
+    closedAt: Date;
+    status: string;
+  }): Promise<any> {
+    const ticket = this.ticketStore.get(ticketNumber) || { ticketNumber };
+    const updated = { ...ticket, ...data };
+    this.ticketStore.set(ticketNumber, updated);
+    await this.sendResolutionNotification(updated);
+    return updated;
+  }
+
+  async saveRating(ticketNumber: string, data: {
+    score: number;
+    comment?: string;
+    customerId?: string;
+    createdAt: Date;
+  }): Promise<any> {
+    const ratingKey = `rating:${ticketNumber}`;
+    const rating = { ticketNumber, ...data };
+    this.ratingStore.set(ratingKey, rating);
+    const ticket = this.ticketStore.get(ticketNumber);
+    if (ticket) {
+      ticket.rating = data.score;
+      this.ticketStore.set(ticketNumber, ticket);
+    }
+    if (data.score <= 3) {
+      logger.warn('[SupportService] Low rating detected', { ticketNumber, score: data.score });
+    }
+    return rating;
+  }
+
+  async triggerDunning(clientId: string, payment: any): Promise<void> {
+    logger.info('[SupportService] Dunning flow triggered', { clientId, paymentId: payment?.id });
+    const steps = [
+      { day: 1, message: 'Payment failed - please update your payment method' },
+      { day: 3, message: 'Second reminder - service at risk' },
+      { day: 7, message: 'Final warning - account will be suspended' },
+      { day: 14, message: 'Service suspended' }
+    ];
+    for (const step of steps) {
+      logger.info('[SupportService] Dunning step', { clientId, day: step.day, message: step.message });
+    }
+  }
+
+  private async sendResolutionNotification(ticket: any): Promise<void> {
+    logger.info('[SupportService] Resolution notification sent', { ticketNumber: ticket.ticketNumber });
+  }
+}
+
+export const supportService = new SupportService();

@@ -1,7 +1,8 @@
 {
-  "name": "@rez/core-brain",
+  "name": "@rez-ecosystem/REZ-core-brain",
   "version": "1.0.0",
-  "description": "REZ Core Brain Service - Global Intelligence Layer for all agents",
+  "description": "DEPRECATED - Use @rez-ecosystem/rez-core-brain instead. REZ Core Brain Service - Global Intelligence Layer for all agents",
+  "deprecated": "This package has been deprecated. Use @rez-ecosystem/rez-core-brain instead. This alias will be removed after September 4, 2026.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

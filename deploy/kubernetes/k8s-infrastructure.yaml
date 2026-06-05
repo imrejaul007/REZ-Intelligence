@@ -1,0 +1,244 @@
+---
+# Redis for caching and event bus
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rez-redis
+  namespace: rez-ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rez-redis
+  template:
+    metadata:
+      labels:
+        app: rez-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+              name: redis
+          volumeMounts:
+            - name: redis-storage
+              mountPath: /data
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "200m"
+      volumes:
+        - name: redis-storage
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rez-redis
+  namespace: rez-ai
+spec:
+  selector:
+    app: rez-redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+  type: ClusterIP
+---
+# PostgreSQL for structured data
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rez-postgres
+  namespace: rez-ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rez-postgres
+  template:
+    metadata:
+      labels:
+        app: rez-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_USER
+              value: rez
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rez-secrets
+                  key: DATABASE_PASSWORD
+            - name: POSTGRES_DB
+              value: rez_main
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+      volumes:
+        - name: postgres-storage
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rez-postgres
+  namespace: rez-ai
+spec:
+  selector:
+    app: rez-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+  type: ClusterIP
+---
+# MongoDB for document storage
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rez-mongodb
+  namespace: rez-ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rez-mongodb
+  template:
+    metadata:
+      labels:
+        app: rez-mongodb
+    spec:
+      containers:
+        - name: mongodb
+          image: mongo:6
+          ports:
+            - containerPort: 27017
+              name: mongodb
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: rez
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rez-secrets
+                  key: DATABASE_PASSWORD
+          volumeMounts:
+            - name: mongo-storage
+              mountPath: /data/db
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+      volumes:
+        - name: mongo-storage
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rez-mongodb
+  namespace: rez-ai
+spec:
+  selector:
+    app: rez-mongodb
+  ports:
+    - name: mongodb
+      port: 27017
+      targetPort: 27017
+  type: ClusterIP
+---
+# Prometheus for metrics
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rez-prometheus
+  namespace: rez-ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rez-prometheus
+  template:
+    metadata:
+      labels:
+        app: rez-prometheus
+    spec:
+      containers:
+        - name: prometheus
+          image: prom/prometheus:latest
+          ports:
+            - containerPort: 9090
+              name: prometheus
+          volumeMounts:
+            - name: prometheus-config
+              mountPath: /etc/prometheus
+            - name: prometheus-storage
+              mountPath: /prometheus
+          args:
+            - '--config.file=/etc/prometheus/prometheus.yml'
+            - '--storage.tsdb.path=/prometheus'
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+      volumes:
+        - name: prometheus-config
+          configMap:
+            name: prometheus-config
+        - name: prometheus-storage
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rez-prometheus
+  namespace: rez-ai
+spec:
+  selector:
+    app: rez-prometheus
+  ports:
+    - name: prometheus
+      port: 9090
+      targetPort: 9090
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: rez-ai
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+    scrape_configs:
+      - job_name: 'rez-ai-services'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true

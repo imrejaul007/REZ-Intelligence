@@ -1,0 +1,316 @@
+---
+# REZ AI Agent Registry - K8s Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rez-agent-registry
+  namespace: rez-ai
+  labels:
+    app: rez-agent-registry
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: rez-agent-registry
+  template:
+    metadata:
+      labels:
+        app: rez-agent-registry
+        tier: backend
+    spec:
+      containers:
+        - name: rez-agent-registry
+          image: rez/agent-registry:latest
+          ports:
+            - containerPort: 5007
+              name: http
+          envFrom:
+            - configMapRef:
+                name: rez-config
+            - secretRef:
+                name: rez-secrets
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5007
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 5007
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rez-agent-registry
+  namespace: rez-ai
+spec:
+  selector:
+    app: rez-agent-registry
+  ports:
+    - name: http
+      port: 5007
+      targetPort: 5007
+  type: ClusterIP
+---
+# REZ AI Orchestrator - K8s Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rez-ai-orchestrator
+  namespace: rez-ai
+  labels:
+    app: rez-ai-orchestrator
+    tier: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: rez-ai-orchestrator
+  template:
+    metadata:
+      labels:
+        app: rez-ai-orchestrator
+        tier: backend
+    spec:
+      containers:
+        - name: rez-ai-orchestrator
+          image: rez/ai-orchestrator:latest
+          ports:
+            - containerPort: 5000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: rez-config
+            - secretRef:
+                name: rez-secrets
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rez-ai-orchestrator
+  namespace: rez-ai
+spec:
+  selector:
+    app: rez-ai-orchestrator
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000
+  type: ClusterIP
+---
+# REZ Fraud Agent - K8s Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rez-fraud-agent
+  namespace: rez-ai
+  labels:
+    app: rez-fraud-agent
+    tier: ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: rez-fraud-agent
+  template:
+    metadata:
+      labels:
+        app: rez-fraud-agent
+        tier: ai
+    spec:
+      containers:
+        - name: rez-fraud-agent
+          image: rez/fraud-agent:latest
+          ports:
+            - containerPort: 4001
+              name: http
+          envFrom:
+            - configMapRef:
+                name: rez-config
+            - secretRef:
+                name: rez-secrets
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rez-fraud-agent
+  namespace: rez-ai
+spec:
+  selector:
+    app: rez-fraud-agent
+  ports:
+    - name: http
+      port: 4001
+      targetPort: 4001
+  type: ClusterIP
+---
+# REZ Sales Agent - K8s Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rez-sales-agent
+  namespace: rez-ai
+  labels:
+    app: rez-sales-agent
+    tier: ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: rez-sales-agent
+  template:
+    metadata:
+      labels:
+        app: rez-sales-agent
+        tier: ai
+    spec:
+      containers:
+        - name: rez-sales-agent
+          image: rez/sales-agent:latest
+          ports:
+            - containerPort: 4002
+              name: http
+          envFrom:
+            - configMapRef:
+                name: rez-config
+            - secretRef:
+                name: rez-secrets
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rez-sales-agent
+  namespace: rez-ai
+spec:
+  selector:
+    app: rez-sales-agent
+  ports:
+    - name: http
+      port: 4002
+      targetPort: 4002
+  type: ClusterIP
+---
+# REZ Support Agent - K8s Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rez-support-agent
+  namespace: rez-ai
+  labels:
+    app: rez-support-agent
+    tier: ai
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: rez-support-agent
+  template:
+    metadata:
+      labels:
+        app: rez-support-agent
+        tier: ai
+    spec:
+      containers:
+        - name: rez-support-agent
+          image: rez/support-agent:latest
+          ports:
+            - containerPort: 4003
+              name: http
+          envFrom:
+            - configMapRef:
+                name: rez-config
+            - secretRef:
+                name: rez-secrets
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rez-support-agent
+  namespace: rez-ai
+spec:
+  selector:
+    app: rez-support-agent
+  ports:
+    - name: http
+      port: 4003
+      targetPort: 4003
+  type: ClusterIP
+---
+# Horizontal Pod Autoscaler for AI Orchestrator
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: rez-ai-orchestrator-hpa
+  namespace: rez-ai
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: rez-ai-orchestrator
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80

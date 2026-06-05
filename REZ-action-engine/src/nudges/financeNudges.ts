@@ -137,7 +137,7 @@ async function sendFinanceNudge(user, nudge: FinanceNudge): Promise<void> {
 function personalizeTemplate(template: any, user: any): unknown {
   const personalized = { ...template };
 
-  // Replace placeholders with user data
+  // Replace placeholders with actual user data
   for (const key of Object.keys(personalized)) {
     if (typeof personalized[key] === 'string') {
       personalized[key] = personalized[key]

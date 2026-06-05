@@ -1,7 +1,8 @@
 {
-  "name": "rez-rate-limit",
+  "name": "@rez-ecosystem/REZ-rate-limit",
   "version": "1.0.0",
-  "description": "Rate Limiting Service with Redis-backed sliding window counters",
+  "description": "DEPRECATED - Use @rez-ecosystem/rez-rate-limit instead. Rate Limiting Service with Redis-backed sliding window counters",
+  "deprecated": "This package has been deprecated. Use @rez-ecosystem/rez-rate-limit instead. This alias will be removed after September 4, 2026.",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

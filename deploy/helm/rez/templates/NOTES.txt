@@ -1,0 +1,67 @@
+{{/*
+REZ Agent OS - Helm Notes Template
+*/}}
+{{- range $_, $service := .Values.services }}
+{{- if $service.enabled }}
+{{ printf "Service: %s" $service.name | nindent 0 }}
+{{- end }}
+{{- end }}
+
+Thank you for installing REZ Agent OS!
+
+Your release is named {{ .Release.Name }}.
+
+To learn more about REZ, visit:
+- Documentation: https://docs.rez.io
+- GitHub: https://github.com/rez-io/rez
+
+=== Quick Start ===
+
+1. Get the API URL:
+{{- if contains "NodePort" .Values.gateway.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "rez.fullname" . }}-gateway)
+  export NODE_IP=$(kubectl get nodes -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "LoadBalancer" .Values.gateway.service.type }}
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+        You can watch the status by running 'kubectl get svc -w {{ include "rez.fullname" . }}-gateway'
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "rez.fullname" . }}-gateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  echo http://$SERVICE_IP:{{ .Values.gateway.service.port }}
+{{- else if contains "ClusterIP" .Values.gateway.service.type }}
+  kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "rez.fullname" . }}-gateway 8080:8080
+  echo "Visit http://127.0.0.1:8080"
+{{- end }}
+
+2. Get the admin password:
+  echo "Admin Password: $(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "rez.fullname" . }}-auth -o jsonpath='{.data.admin-password}' | base64 -d)"
+
+3. Access Grafana dashboards:
+{{- if .Values.grafana.enabled }}
+  kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "grafana.fullname" . }} 3000:80
+  echo "Visit http://127.0.0.1:3000"
+{{- end }}
+
+4. Check pod status:
+  kubectl get pods --namespace {{ .Release.Namespace }}
+
+5. View logs:
+  kubectl logs --namespace {{ .Release.Namespace }} -l app.kubernetes.io/name={{ .Chart.Name }}
+
+=== Configuration ===
+
+To update configuration, edit your values.yaml or use helm upgrade:
+
+  helm upgrade {{ .Release.Name }} ./rez -n {{ .Release.Namespace }} -f values.yaml
+
+=== Ingress ===
+
+{{- if .Values.ingress.enabled }}
+Ingress is enabled. Configure DNS to point to your ingress controller.
+{{- end }}
+
+=== Monitoring ===
+
+{{- if .Values.prometheus.enabled }}
+Prometheus is installed. Access it at:
+  kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "prometheus.fullname" . }}-server 9090:9090
+{{- end }}

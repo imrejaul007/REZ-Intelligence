@@ -141,12 +141,25 @@ router.delete('/:clientId', async (req: Request, res: Response) => {
   try {
     const { clientId } = req.params;
 
-    // Note: In real implementation, remove from registry
-    logger.info('[ClientRoutes] Delete requested', { clientId });
+    // Remove from registry
+    const removed = multiTenantEmail.removeClient(clientId);
+    if (!removed) {
+      res.status(404).json({ success: false, error: 'Client not found' });
+      return;
+    }
+
+    logger.info('[ClientRoutes] Deleted client', { clientId });
 
     res.json({
       success: true,
-      message: `Client ${clientId} deleted (stub)`,
+      message: `Client ${clientId} deleted`,
+    });
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('[ClientRoutes] Failed to delete client', error);
+    res.status(500).json({ success: false, error: errorMsg });
+  }
+});
     });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';

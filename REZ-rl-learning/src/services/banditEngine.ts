@@ -110,10 +110,10 @@ export class BanditEngine {
    * Get all bandits for a user
    */
   async getUserBandits(userId: string): Promise<BanditState[]> {
-    // Note: In production, you'd want to maintain a user -> bandits index
-    // For now, this is a placeholder that would need Redis SCAN or a separate index
-    const patterns = await this.banditModel.getBandit(`bandit:${userId}:*`);
-    return patterns ? [patterns] : [];
+    // Get all bandits by pattern matching user prefix
+    // In production, maintain a user -> bandits index
+    const allBandits = await this.banditModel.getAllBandits();
+    return allBandits.filter(b => b.userId === userId);
   }
 
   /**

@@ -1,0 +1,29 @@
+# Terraform Variables - Example
+# Copy this file to terraform.tfvars and customize
+
+# AWS Configuration
+aws_region = "us-east-1"
+
+# Environment
+environment = "production"
+
+# EKS Cluster
+cluster_name    = "rez-cluster"
+cluster_version = "1.28"
+
+# Node Group
+node_instance_type = "t3.large"
+desired_capacity  = 3
+min_size          = 2
+max_size          = 10
+
+# Database
+db_instance_class = "db.r6g.large"
+db_storage        = 100
+
+# Redis
+redis_node_type  = "cache.r6g.large"
+redis_num_nodes  = 2
+
+# Domain (optional)
+domain_name = "rez.io"

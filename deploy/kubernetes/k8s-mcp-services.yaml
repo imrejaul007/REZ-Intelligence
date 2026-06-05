@@ -1,0 +1,405 @@
+---
+# MCP Analytics Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rez-mcp-analytics
+  namespace: rez-ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: rez-mcp-analytics
+  template:
+    metadata:
+      labels:
+        app: rez-mcp-analytics
+    spec:
+      containers:
+        - name: rez-mcp-analytics
+          image: rez/mcp-analytics:latest
+          ports:
+            - containerPort: 4101
+          envFrom:
+            - configMapRef:
+                name: rez-config
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rez-mcp-analytics
+  namespace: rez-ai
+spec:
+  selector:
+    app: rez-mcp-analytics
+  ports:
+    - port: 4101
+      targetPort: 4101
+  type: ClusterIP
+---
+# MCP AutoML Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rez-mcp-automl
+  namespace: rez-ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: rez-mcp-automl
+  template:
+    metadata:
+      labels:
+        app: rez-mcp-automl
+    spec:
+      containers:
+        - name: rez-mcp-automl
+          image: rez/mcp-automl:latest
+          ports:
+            - containerPort: 4102
+          envFrom:
+            - configMapRef:
+                name: rez-config
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rez-mcp-automl
+  namespace: rez-ai
+spec:
+  selector:
+    app: rez-mcp-automl
+  ports:
+    - port: 4102
+      targetPort: 4102
+  type: ClusterIP
+---
+# MCP Contracts Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rez-mcp-contracts
+  namespace: rez-ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: rez-mcp-contracts
+  template:
+    metadata:
+      labels:
+        app: rez-mcp-contracts
+    spec:
+      containers:
+        - name: rez-mcp-contracts
+          image: rez/mcp-contracts:latest
+          ports:
+            - containerPort: 4103
+          envFrom:
+            - configMapRef:
+                name: rez-config
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rez-mcp-contracts
+  namespace: rez-ai
+spec:
+  selector:
+    app: rez-mcp-contracts
+  ports:
+    - port: 4103
+      targetPort: 4103
+  type: ClusterIP
+---
+# MCP Event Bus Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rez-mcp-event-bus
+  namespace: rez-ai
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: rez-mcp-event-bus
+  template:
+    metadata:
+      labels:
+        app: rez-mcp-event-bus
+    spec:
+      containers:
+        - name: rez-mcp-event-bus
+          image: rez/mcp-event-bus:latest
+          ports:
+            - containerPort: 4104
+          envFrom:
+            - configMapRef:
+                name: rez-config
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rez-mcp-event-bus
+  namespace: rez-ai
+spec:
+  selector:
+    app: rez-mcp-event-bus
+  ports:
+    - port: 4104
+      targetPort: 4104
+  type: ClusterIP
+---
+# MCP Identity Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rez-mcp-identity
+  namespace: rez-ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: rez-mcp-identity
+  template:
+    metadata:
+      labels:
+        app: rez-mcp-identity
+    spec:
+      containers:
+        - name: rez-mcp-identity
+          image: rez/mcp-identity:latest
+          ports:
+            - containerPort: 4105
+          envFrom:
+            - configMapRef:
+                name: rez-config
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rez-mcp-identity
+  namespace: rez-ai
+spec:
+  selector:
+    app: rez-mcp-identity
+  ports:
+    - port: 4105
+      targetPort: 4105
+  type: ClusterIP
+---
+# MCP Invoice Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rez-mcp-invoice
+  namespace: rez-ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: rez-mcp-invoice
+  template:
+    metadata:
+      labels:
+        app: rez-mcp-invoice
+    spec:
+      containers:
+        - name: rez-mcp-invoice
+          image: rez/mcp-invoice:latest
+          ports:
+            - containerPort: 4108
+          envFrom:
+            - configMapRef:
+                name: rez-config
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rez-mcp-invoice
+  namespace: rez-ai
+spec:
+  selector:
+    app: rez-mcp-invoice
+  ports:
+    - port: 4108
+      targetPort: 4108
+  type: ClusterIP
+---
+# MCP Legal Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rez-mcp-legal
+  namespace: rez-ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: rez-mcp-legal
+  template:
+    metadata:
+      labels:
+        app: rez-mcp-legal
+    spec:
+      containers:
+        - name: rez-mcp-legal
+          image: rez/mcp-legal:latest
+          ports:
+            - containerPort: 4107
+          envFrom:
+            - configMapRef:
+                name: rez-config
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rez-mcp-legal
+  namespace: rez-ai
+spec:
+  selector:
+    app: rez-mcp-legal
+  ports:
+    - port: 4107
+      targetPort: 4107
+  type: ClusterIP
+---
+# MCP Cosmic Twin Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rez-mcp-cosmic-twin
+  namespace: rez-ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: rez-mcp-cosmic-twin
+  template:
+    metadata:
+      labels:
+        app: rez-mcp-cosmic-twin
+    spec:
+      containers:
+        - name: rez-mcp-cosmic-twin
+          image: rez/mcp-cosmic-twin:latest
+          ports:
+            - containerPort: 4110
+          envFrom:
+            - configMapRef:
+                name: rez-config
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rez-mcp-cosmic-twin
+  namespace: rez-ai
+spec:
+  selector:
+    app: rez-mcp-cosmic-twin
+  ports:
+    - port: 4110
+      targetPort: 4110
+  type: ClusterIP
+---
+# MCP Ranking Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rez-mcp-ranking
+  namespace: rez-ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: rez-mcp-ranking
+  template:
+    metadata:
+      labels:
+        app: rez-mcp-ranking
+    spec:
+      containers:
+        - name: rez-mcp-ranking
+          image: rez/mcp-ranking:latest
+          ports:
+            - containerPort: 4109
+          envFrom:
+            - configMapRef:
+                name: rez-config
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rez-mcp-ranking
+  namespace: rez-ai
+spec:
+  selector:
+    app: rez-mcp-ranking
+  ports:
+    - port: 4109
+      targetPort: 4109
+  type: ClusterIP

@@ -28,8 +28,22 @@ class NotificationService {
   }
 
   private async getUserToken(userId: string): Promise<string | null> {
-    // TODO: Get from database
-    return null;
+    // Get FCM token from user_push_tokens table
+    try {
+      // const token = await prisma.userPushToken.findFirst({
+      //   where: { userId, platform: 'android' },
+      //   orderBy: { updatedAt: 'desc' },
+      // });
+      // return token?.token || null;
+
+      // TODO: Re-enable when Redis/DB is connected
+      // const token = await redis.get(`fcm:token:${userId}`);
+      // return token || null;
+      return null; // Redis/DB not configured yet
+    } catch (error) {
+      console.error('[Push] Failed to get FCM token', { userId, error });
+      return null;
+    }
   }
 }
 

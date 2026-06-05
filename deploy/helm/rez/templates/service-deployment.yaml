@@ -1,0 +1,131 @@
+{{/*
+Generic Service Deployment Template
+*/}}
+{{- define "rez.serviceDeployment" -}}
+{{- $ := .context }}
+{{- $serviceName := .serviceName }}
+{{- $service := .service }}
+{{- if $service.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "rez.fullname" $ }}-{{ $serviceName }}
+  labels:
+    {{- include "rez.labels" $ | nindent 4 }}
+    app: {{ $serviceName }}
+spec:
+  replicas: {{ $service.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      app: {{ $serviceName }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
+      labels:
+        app: {{ $serviceName }}
+        {{- include "rez.labels" $ | nindent 8 }}
+    spec:
+      {{- include "rez.imagePullSecrets" $ | nindent 6 }}
+      serviceAccountName: {{ include "rez.serviceAccountName" $ }}
+      securityContext:
+        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ $serviceName }}
+          image: {{ $service.image.repository }}:{{ $service.image.tag | default $.Chart.AppVersion }}
+          imagePullPolicy: {{ $service.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - name: http
+              containerPort: {{ $service.service.port }}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ $service.service.port | add 1000 }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml $service.resources | nindent 12 }}
+          env:
+            - name: PORT
+              value: {{ quote $service.service.port }}
+            - name: NODE_ENV
+              value: "production"
+            - name: SERVICE_NAME
+              value: {{ $serviceName }}
+          {{- if $.Values.redis.enabled }}
+            - name: REDIS_URL
+              value: "redis://{{ include "rez.redis.fullname" $ }}:6379"
+          {{- end }}
+          {{- if $.Values.postgresql.enabled }}
+            - name: DATABASE_URL
+              value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@{{ include "rez.postgres.fullname" $ }}:5432/{{ (index $.Values "postgresql" "auth" "database") }}"
+          {{- end }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: {{ $serviceName }}
+                topologyKey: kubernetes.io/hostname
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "rez.fullname" $ }}-{{ $serviceName }}
+  labels:
+    {{- include "rez.labels" $ | nindent 4 }}
+    app: {{ $serviceName }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ $service.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    - port: {{ $service.service.port | add 1000 }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+  selector:
+    app: {{ $serviceName }}
+{{- if $service.autoscaling.enabled }}
+{{- if $.Capabilities.APIVersions.Has "autoscaling/v2" }}
+---
+apiVersion: autoscaling/v2
+{{- else }}
+apiVersion: autoscaling/v2beta2
+{{- end }}
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "rez.fullname" $ }}-{{ $serviceName }}
+  labels:
+    {{- include "rez.labels" $ | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "rez.fullname" $ }}-{{ $serviceName }}
+  minReplicas: {{ $service.autoscaling.minReplicas | default 1 }}
+  maxReplicas: {{ $service.autoscaling.maxReplicas | default 5 }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $service.autoscaling.targetCPUUtilizationPercentage | default 70 }}
+{{- end }}
+{{- end }}
+{{- end }}

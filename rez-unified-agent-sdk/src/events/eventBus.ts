@@ -316,22 +316,33 @@ export class EventPublisher {
    * Publish to external system (Kafka/Redis/NATS)
    */
   private async publishExternal(
-    _eventType: string,
-    _payload: unknown,
-    _metadata: Record<string, unknown>,
+    eventType: string,
+    payload: unknown,
+    metadata: Record<string, unknown>,
   ): Promise<void> {
-    // This would integrate with external event systems
-    // For now, just log that external publishing would happen
-    this.logger.debug('External event publishing would occur here', {
-      kafka: !!this.externalEndpoints?.kafka,
-      redis: !!this.externalEndpoints?.redis,
-      nats: !!this.externalEndpoints?.nats,
-    });
+    const event = { eventType, payload, metadata, timestamp: Date.now() };
 
-    // TODO: Implement actual external event publishing
-    // await publishToKafka(eventType, payload, metadata);
-    // Or: await publishToRedis(eventType, payload, metadata);
-    // Or: await publishToNATS(eventType, payload, metadata);
+    try {
+      if (this.externalEndpoints?.kafka) {
+        const { kafka, topic } = this.externalEndpoints.kafka;
+        await kafka.send({ topic, messages: [{ key: eventType, value: JSON.stringify(event) }] });
+        this.logger.debug('[EventPublisher] Published to Kafka', { eventType, topic });
+      }
+
+      if (this.externalEndpoints?.redis) {
+        const { redis, channel } = this.externalEndpoints.redis;
+        await redis.publish(channel, JSON.stringify(event));
+        this.logger.debug('[EventPublisher] Published to Redis', { eventType, channel });
+      }
+
+      if (this.externalEndpoints?.nats) {
+        const { nats, subject } = this.externalEndpoints.nats;
+        await nats.publish(subject, JSON.stringify(event));
+        this.logger.debug('[EventPublisher] Published to NATS', { eventType, subject });
+      }
+    } catch (error) {
+      this.logger.error('[EventPublisher] External publish failed', { eventType, error });
+    }
   }
 }
 

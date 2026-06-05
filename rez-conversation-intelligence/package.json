@@ -1,7 +1,8 @@
 {
-  "name": "rez-conversation-intelligence",
+  "name": "@rez-ecosystem/REZ-conversation-intelligence",
   "version": "1.0.0",
-  "description": "REZ Conversation Intelligence service for learning from every conversation",
+  "description": "DEPRECATED - Use @rez-ecosystem/rez-conversation-intelligence instead. REZ Conversation Intelligence service for learning from every conversation",
+  "deprecated": "This package has been deprecated. Use @rez-ecosystem/rez-conversation-intelligence instead. This alias will be removed after September 4, 2026.",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

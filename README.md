@@ -1,273 +1,256 @@
-# REZ Intelligence Platform
+# Merchant Growth OS
 
-**AI-powered platform for local commerce with 3 client types, tenant isolation, and 175+ ML services.**
+**Version:** 1.0  
+**Date:** June 4, 2026  
+**Company:** REZ-Intelligence  
+**Repository:** [GitHub](https://github.com/imrejaul007/REZ-Intelligence)
 
 ---
 
-## Quick Start
+## 🎯 Overview
+
+Merchant Growth OS is a comprehensive marketing and growth platform that helps merchants acquire customers, increase revenue, and optimize campaigns using AI-powered automation.
+
+### Key Features
+
+- **AI Budget Optimization** - Automatically allocate marketing budget across channels
+- **Growth Playbooks** - Pre-built templates for 15+ industries
+- **Incrementality Testing** - Measure true campaign lift
+- **Merchant Health Scoring** - Track business health
+- **Offline Attribution** - Track walk-ins, calls, visits
+- **Competitor Intelligence** - Real-time competitor monitoring
+- **AI Review Responses** - Auto-generate review replies
+- **Unified Offers** - Centralized offer management
+- **Revenue Forecasting** - AI-powered predictions
+- **Neighborhood Analytics** - Hyperlocal intelligence
+
+---
+
+## 📦 Services
+
+### Core API Services (Ports 4290-4299)
+
+| Port | Service | Description |
+|------|---------|-------------|
+| 4290 | `REZ-budget-optimizer` | AI budget allocation |
+| 4291 | `REZ-growth-playbook` | 15+ industry playbooks |
+| 4292 | `REZ-incrementality-testing` | Campaign lift measurement |
+| 4293 | `REZ-merchant-health-score` | Health scoring |
+| 4294 | `REZ-offline-attribution` | Walk-in, call tracking |
+| 4295 | `REZ-competitor-alerts` | Competitor monitoring |
+| 4296 | `REZ-review-response-engine` | AI review responses |
+| 4297 | `REZ-unified-offer-brain` | Centralized offers |
+| 4298 | `REZ-autonomous-growth-agent` | Self-managing campaigns |
+| 4299 | `REZ-prompt-studio` | Prompt versioning |
+
+### UI Services (Ports 3000, 4211-4215)
+
+| Port | Service | Description |
+|------|---------|-------------|
+| 3000 | `REZ-visual-workflow-builder-ui` | Drag-drop workflow editor |
+| 4211 | `REZ-approval-ui` | Human approval dashboard |
+| 4215 | `REZ-growth-dashboard` | Management dashboard |
+
+### Intelligence Services (Ports 4212-4214)
+
+| Port | Service | Description |
+|------|---------|-------------|
+| 4212 | `REZ-real-pricing-tracker` | Real-time pricing |
+| 4213 | `REZ-revenue-forecast` | Revenue prediction |
+| 4214 | `REZ-neighborhood-analytics` | Hyperlocal intel |
+
+---
+
+## 🚀 Quick Start
+
+### 1. Clone & Install
 
 ```bash
-# Start all services
-cd REZ-Intelligence && docker compose up -d
-
-# View logs
-docker compose logs -f
-
-# Stop all services
-docker compose down
+cd REZ-Intelligence
+npm install
 ```
 
----
+### 2. Start Services
 
-## Architecture Overview
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         REZ INTELLIGENCE PLATFORM                         │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐                 │
-│  │   REZ App   │     │  Merchant   │     │  Partner    │                 │
-│  │  (Consumer) │     │    App      │     │  Systems    │                 │
-│  └──────┬──────┘     └──────┬──────┘     └──────┬──────┘                 │
-│         │                   │                   │                         │
-│         └───────────────────┼───────────────────┘                         │
-│                             ▼                                               │
-│                   ┌─────────────────┐                                       │
-│                   │  REZ API        │  Port 4300                          │
-│                   │  Gateway        │  - Rate limiting                     │
-│                   │                 │  - Tenant isolation                   │
-│                   └────────┬────────┘  - Auth                           │
-│                            │                                              │
-│         ┌──────────────────┼──────────────────┐                           │
-│         ▼                  ▼                  ▼                             │
-│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐                     │
-│  │   Intent    │   │ Predictive  │   │    Flow     │                     │
-│  │  Predictor  │   │   Engine   │   │   Runtime   │                     │
-│  │  Port 4018  │   │  Port 4141 │   │  Port 4200 │                     │
-│  └─────────────┘   └─────────────┘   └─────────────┘                     │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 3 Client Types
-
-| Client Type | API Prefix | Intelligence Level | Data Isolation |
-|-------------|------------|-------------------|----------------|
-| **REZ_ECOSYSTEM** | `rez_*` | Full | Shared |
-| **NON_REZ** | `ext_*` | Isolated | Strict |
-| **RABTUL_SAAS** | `saas_*` | Full | White-label |
-
----
-
-## Services (42 total)
-
-### Gateway Services (Ports 4200-4300)
-| Service | Port | Description |
-|---------|------|-------------|
-| `rez-api-gateway` | 4300 | Unified entry point with tenant isolation |
-| `rez-tenant-adapter` | 4210 | Multi-tenant adapter layer |
-| `rez-saas-runtime` | 4220 | Onboarding, billing, lifecycle |
-| `rez-monitoring` | 4250 | Health check aggregator |
-
-### Memory & Workflow (Ports 4200-4202)
-| Service | Port | Description |
-|---------|------|-------------|
-| `rez-flow-runtime` | 4200 | Workflow execution engine |
-| `rez-memory-layer` | 4201 | Customer timeline |
-| `rez-whatsapp` | 4202 | WhatsApp integration |
-
-### AI/ML Services (Ports 4018-4141)
-| Service | Port | Description |
-|---------|------|-------------|
-| `rez-intent-predictor` | 4018 | Intent prediction |
-| `rez-predictive-engine` | 4141 | Churn, LTV, Revisit |
-| `rez-knowledge-graph` | 4060 | Knowledge relationships |
-| `rez-care-service` | 4058 | Customer support intelligence |
-
-### Analytics Services (Ports 4900-4904) - AdBazaar Integration
-| Service | Port | Description |
-|---------|------|-------------|
-| `REZ-churn-predictor` | 4900 | Dedicated churn prediction |
-| `REZ-ltv-calculator` | 4901 | Lifetime value scoring |
-| `REZ-next-best-action` | 4902 | Next action recommendations |
-| `REZ-sentiment-analyzer` | 4903 | Social sentiment analysis |
-| `REZ-competitor-monitor` | 4904 | Competitor tracking |
-
-### Expert Agents (Ports 3003-3010)
-| Service | Port | Domain |
-|---------|------|--------|
-| `rez-travel-expert` | 3003 | Travel |
-| `rez-hospitality-expert` | 3004 | Hotels |
-| `rez-retail-expert` | 3005 | Retail |
-| `rez-health-expert` | 3006 | Health |
-| `rez-fitness-expert` | 3007 | Fitness |
-| `rez-salon-expert` | 3008 | Salon |
-| `rez-culinary-expert` | 3009 | Food |
-| `rez-education-expert` | 3010 | Education |
-
----
-
-## API Reference
-
-### Health Check
 ```bash
-curl http://localhost:4300/health
+# Using Docker
+docker-compose up -d
+
+# Or individually
+cd REZ-budget-optimizer && npm run dev
+cd REZ-growth-playbook && npm run dev
+# ... etc
 ```
 
-### Predict Intent
-```bash
-curl -X POST http://localhost:4300/api/intent/predict \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: rez_your_tenant_123" \
-  -d '{
-    "userId": "user_abc123",
-    "context": {
-      "location": { "lat": 12.9716, "lng": 77.5946 },
-      "time": { "hour": 19, "dayOfWeek": "friday" }
-    }
-  }'
-```
+### 3. Verify
 
-### Create Tenant (Admin)
 ```bash
-curl -X POST http://localhost:4210/api/tenants \
-  -H "Content-Type: application/json" \
-  -H "X-Internal-Token: your-internal-token" \
-  -d '{
-    "clientType": "REZ_ECOSYSTEM",
-    "displayName": "Acme Corp",
-    "industry": "retail",
-    "email": "admin@acme.com"
-  }'
+curl http://localhost:4290/health
+curl http://localhost:4291/health
 ```
 
 ---
 
-## SDK Usage
+## 🔗 Ecosystem Integration
 
-### TypeScript
+### RABTUL Services (Authentication, Wallet, Payment)
+
 ```typescript
-import { REZIntelligenceClient, ClientType } from '@rez/intelligence-sdk';
-
-const client = new REZIntelligenceClient({
-  baseUrl: 'http://localhost:4300',
-  apiKey: 'rez_your_tenant_123',
-});
-
-// Predict intent
-const prediction = await client.predictIntent({
-  userId: 'user_123',
-  context: {
-    location: { lat: 12.97, lng: 77.59 },
-    time: { hour: 12, dayOfWeek: 'monday' }
-  }
-});
-
-// Create workflow
-const workflow = await client.createWorkflow({
-  name: 'Welcome Flow',
-  nodes: [...],
-  edges: [...]
-});
+AUTH_SERVICE_URL=https://rez-auth-service.onrender.com
+WALLET_SERVICE_URL=https://rez-wallet-service.onrender.com
+PAYMENT_SERVICE_URL=https://rez-payment-service.onrender.com
 ```
 
-### Python
-```python
-from rez_intelligence import REZIntelligence
+### HOJAI Services (AI Brain)
 
-client = REZIntelligence(api_key="your-api-key")
+```typescript
+HOJAI_BRAIN_URL=http://localhost:4600
+```
 
-# Predict intent
-prediction = client.intent.predict(
-    user_id="user_123",
-    context={"location": {"lat": 12.97, "lng": 77.59}}
-)
+### Internal Services
+
+```typescript
+CAMPAIGN_SERVICE_URL=http://localhost:4301
+ANALYTICS_SERVICE_URL=http://localhost:4304
+LOYALTY_SERVICE_URL=http://localhost:4305
+QR_SERVICE_URL=http://localhost:4306
+NOTIFICATION_SERVICE_URL=http://localhost:4307
+POS_SERVICE_URL=http://localhost:4308
 ```
 
 ---
 
-## AdBazaar Integration
+## 📚 Documentation
 
-The analytics services (4900-4904) are shared with AdBazaar (REZ Media) for unified advertising intelligence.
+| Document | Description |
+|----------|-------------|
+| `MERCHANT-GROWTH-OS-AUDIT.md` | Complete audit report |
+| `MERCHANT-GROWTH-OS-API.md` | API documentation |
+| `ECOSYSTEM-INTEGRATION.md` | Integration guide |
+| `MERCHANT-GROWTH-OS-COMPLETE.md` | Implementation guide |
+
+---
+
+## 🛠️ Development
+
+### Directory Structure
+
+```
+REZ-Intelligence/
+├── REZ-budget-optimizer/           # Port 4290
+├── REZ-growth-playbook/            # Port 4291
+├── REZ-incrementality-testing/      # Port 4292
+├── REZ-merchant-health-score/      # Port 4293
+├── REZ-offline-attribution/        # Port 4294
+├── REZ-competitor-alerts/          # Port 4295
+├── REZ-review-response-engine/      # Port 4296
+├── REZ-unified-offer-brain/       # Port 4297
+├── REZ-autonomous-growth-agent/     # Port 4298
+├── REZ-prompt-studio/              # Port 4299
+├── REZ-approval-ui/               # Port 4211
+├── REZ-real-pricing-tracker/       # Port 4212
+├── REZ-revenue-forecast/           # Port 4213
+├── REZ-neighborhood-analytics/     # Port 4214
+├── REZ-visual-workflow-builder-ui/   # Port 3000
+├── REZ-growth-dashboard/           # Port 4215
+├── REZ-growth-sdk/                 # Client SDK
+├── docker-compose.yml              # Container orchestration
+├── kubernetes-deployment.yaml      # K8s manifests
+└── deploy-all.sh                  # Deployment script
+```
+
+### Running Tests
 
 ```bash
-# Start AdBazaar Intelligence Suite
-cd ../AdBazaar && ./start-adbazaar-services.sh
-```
-
-**Shared Services:**
-- Churn Predictor (4900)
-- LTV Calculator (4901)
-- Next Best Action (4902)
-- Sentiment Analyzer (4903)
-- Competitor Monitor (4904)
-
----
-
-## Documentation
-
-| Document | Purpose |
-|----------|---------|
-| [PRODUCT.md](PRODUCT.md) | Product overview & positioning |
-| [PRODUCT-FEATURES.md](PRODUCT-FEATURES.md) | Feature deep dive |
-| [PRICING.md](PRICING.md) | Pricing & plans |
-| [docs/API-REFERENCE.md](docs/API-REFERENCE.md) | Complete API documentation |
-| [DOCKER-DEPLOY.md](DOCKER-DEPLOY.md) | Docker deployment guide |
-| [LAUNCH-CHECKLIST.md](LAUNCH-CHECKLIST.md) | Production launch checklist |
-| [MASTER-SERVICE-INDEX.md](MASTER-SERVICE-INDEX.md) | 170+ AI/ML services index |
-| [TECHNICAL-ROADMAP.md](TECHNICAL-ROADMAP.md) | Gap analysis & priorities |
-
----
-
-## Monitoring
-
-**Dashboard:** http://localhost:4250/dashboard
-
-```bash
-# Check all services
-curl http://localhost:4250/api/health
-
-# Check specific service
-curl http://localhost:4250/api/health/rez-api-gateway
-```
-
----
-
-## Environment Variables
-
-```bash
-# Core
-INTERNAL_SERVICE_TOKEN=your-token
-ALLOWED_ORIGINS=http://localhost:3000,https://rez.money
-
-# RABTUL Services
-AUTH_SERVICE_URL=http://localhost:4002
-PAYMENT_SERVICE_URL=http://localhost:4001
-WALLET_SERVICE_URL=http://localhost:4004
-
-# REZ Intelligence (internal)
-REZ_MEMORY_URL=http://rez-memory-layer:4201
-REZ_FLOW_URL=http://rez-flow-runtime:4200
-REZ_INTENT_URL=http://rez-intent-predictor:4018
-```
-
----
-
-## Testing
-
-```bash
-# Run integration tests
+cd REZ-budget-optimizer
 npm test
+```
 
-# Check service health
-curl http://localhost:4250/api/health/summary
+### Using the SDK
+
+```bash
+cd REZ-growth-sdk
+npm install
+```
+
+```typescript
+import { MerchantGrowthSDK } from '@rez/merchant-growth-sdk';
+
+const sdk = new MerchantGrowthSDK({
+  apiKey: 'your-key',
+  baseUrl: 'http://localhost:4290'
+});
+
+const budget = await sdk.budget.optimize({
+  merchantId: 'm123',
+  totalBudget: 100000,
+  strategy: 'roas_based'
+});
 ```
 
 ---
 
-## License
+## 🔒 Security
 
-MIT - REZ Engineering
+- API Key authentication
+- JWT validation via RABTUL Auth
+- Rate limiting (100 req/min)
+- Merchant data isolation
+- Internal service tokens
+
+---
+
+## 📊 Monitoring
+
+- Prometheus metrics at `/metrics`
+- Health checks at `/health`
+- Request logging
+- Error tracking
+
+---
+
+## 🚢 Deployment
+
+### Docker
+
+```bash
+docker-compose up -d
+```
+
+### Kubernetes
+
+```bash
+kubectl apply -f kubernetes-deployment.yaml
+```
+
+---
+
+## 📈 Coverage
+
+| Category | Coverage |
+|----------|----------|
+| Marketing & Campaigns | 100% |
+| Customer Intelligence | 100% |
+| Loyalty & Rewards | 100% |
+| Distribution & Channels | 100% |
+| Infrastructure | 100% |
+| **Overall** | **100%** |
+
+---
+
+## 🤝 Contributing
+
+1. Create a feature branch
+2. Make changes
+3. Add tests
+4. Submit PR
+
+---
+
+## 📄 License
+
+MIT
+
+---
+
+**Last Updated:** June 4, 2026

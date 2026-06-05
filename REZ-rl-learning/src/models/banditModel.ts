@@ -387,6 +387,42 @@ export class BanditModel {
   }
 
   /**
+   * Get all bandits (for user bandit listing)
+   * Uses SCAN to iterate through all bandit keys
+   */
+  async getAllBandits(): Promise<BanditState[]> {
+    const bandits: BanditState[] = [];
+    let cursor = '0';
+
+    do {
+      const [nextCursor, keys] = await this.redis.scan(
+        cursor,
+        'MATCH',
+        'rl:bandit:*',
+        'COUNT',
+        '100'
+      );
+      cursor = nextCursor;
+
+      if (keys.length > 0) {
+        const values = await this.redis.mget(keys);
+        for (const value of values) {
+          if (value) {
+            try {
+              const bandit = JSON.parse(value) as BanditState;
+              bandits.push(bandit);
+            } catch {
+              // Skip invalid JSON
+            }
+          }
+        }
+      }
+    } while (cursor !== '0');
+
+    return bandits;
+  }
+
+  /**
    * Close Redis connection
    */
   async close(): Promise<void> {

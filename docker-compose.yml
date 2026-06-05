@@ -37,7 +37,7 @@ services:
       retries: 5
 
   # ============================================
-  # NEW: Agent Registry Service
+  # Agent Registry
   # ============================================
   rez-agent-registry:
     build:
@@ -50,1092 +50,299 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4011
-      - LOG_LEVEL=info
       - MONGODB_URI=mongodb://mongodb:27017/rez_registry
       - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - HEARTBEAT_INTERVAL_MS=30000
-      - HEARTBEAT_TTL_SECONDS=300
-      - STALE_THRESHOLD_MS=120000
-      - HEALTH_CHECK_INTERVAL_SECONDS=60
-      - HEALTH_CHECK_TIMEOUT_MS=5000
-      - MAX_CONSECUTIVE_FAILURES=3
-      - ENABLE_CRON_SCHEDULE=false
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,https://rez.money}
     depends_on:
-      redis:
-        condition: service_healthy
-      mongodb:
-        condition: service_healthy
-    networks:
-      - rez-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4011/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-  # ============================================
-  # NEW: WhatsApp Orchestrator Bridge
-  # ============================================
-  rez-whatsapp-orchestrator-bridge:
-    build:
-      context: ./rez-whatsapp-orchestrator-bridge
-      dockerfile: Dockerfile
-    container_name: rez-whatsapp-orchestrator-bridge
-    restart: unless-stopped
-    ports:
-      - "4010:4010"
-    environment:
-      - NODE_ENV=production
-      - PORT=4010
-      - LOG_LEVEL=info
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - ORCHESTRATOR_URL=http://rez-orchestrator-v2:4015
-      - WHATSAPP_API_URL=${WHATSAPP_API_URL:-https://graph.facebook.com/v18.0}
-      - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN:-}
-      - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID:-}
-      - WHATSAPP_WEBHOOK_VERIFY_TOKEN=${WHATSAPP_WEBHOOK_VERIFY_TOKEN:-}
-      - WHATSAPP_APP_SECRET=${WHATSAPP_APP_SECRET:-}
-      - SESSION_TTL_SECONDS=86400
-      - MAX_RETRIES=3
-      - RETRY_DELAY_MS=1000
-      - PROCESSING_INTERVAL_MS=500
-      - MAX_QUEUE_SIZE=1000
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,https://rez.money}
-    depends_on:
-      redis:
-        condition: service_healthy
-      rez-orchestrator-v2:
-        condition: service_started
-    networks:
-      - rez-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4010/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-  # ============================================
-  # Phase 1: Wedge Services
-  # ============================================
-  rez-reorder-engine:
-    build:
-      context: ./REZ-reorder-engine
-      dockerfile: Dockerfile
-    container_name: rez-reorder-engine
-    restart: unless-stopped
-    ports:
-      - "4040:4040"
-    environment:
-      - NODE_ENV=production
-      - PORT=4040
-      - MONGODB_URI=mongodb://mongodb:27017/rez_reorder
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rez-network
-
-  rez-taste-profile:
-    build:
-      context: ./REZ-taste-profile
-      dockerfile: Dockerfile
-    container_name: rez-taste-profile
-    restart: unless-stopped
-    ports:
-      - "4041:4041"
-    environment:
-      - NODE_ENV=production
-      - PORT=4041
-      - MONGODB_URI=mongodb://mongodb:27017/rez_taste
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rez-network
-
-  rez-demand-forecast:
-    build:
-      context: ./REZ-demand-forecast
-      dockerfile: Dockerfile
-    container_name: rez-demand-forecast
-    restart: unless-stopped
-    ports:
-      - "4042:4042"
-    environment:
-      - NODE_ENV=production
-      - PORT=4042
-      - MONGODB_URI=mongodb://mongodb:27017/rez_demand
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rez-network
-
-  rez-price-predictor:
-    build:
-      context: ./REZ-price-predictor
-      dockerfile: Dockerfile
-    container_name: rez-price-predictor
-    restart: unless-stopped
-    ports:
-      - "4043:4043"
-    environment:
-      - NODE_ENV=production
-      - PORT=4043
-      - MONGODB_URI=mongodb://mongodb:27017/rez_pricing
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-    depends_on:
-      mongodb:
-        condition: service_healthy
       redis:
         condition: service_healthy
     networks:
       - rez-network
 
   # ============================================
-  # Phase 2: Data Network
-  # ============================================
-  rez-identity-graph:
-    build:
-      context: ./REZ-identity-graph
-      dockerfile: Dockerfile
-    container_name: rez-identity-graph
-    restart: unless-stopped
-    ports:
-      - "4050:4050"
-    environment:
-      - NODE_ENV=production
-      - PORT=4050
-      - MONGODB_URI=mongodb://mongodb:27017/rez_identity
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rez-network
-
-  rez-memory-engine:
-    build:
-      context: ./REZ-memory-engine
-      dockerfile: Dockerfile
-    container_name: rez-memory-engine
-    restart: unless-stopped
-    ports:
-      - "4051:4051"
-    environment:
-      - NODE_ENV=production
-      - PORT=4051
-      - MONGODB_URI=mongodb://mongodb:27017/rez_memory
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rez-network
-
-  rez-ai-router:
-    build:
-      context: ./REZ-ai-router
-      dockerfile: Dockerfile
-    container_name: rez-ai-router
-    restart: unless-stopped
-    ports:
-      - "4052:4052"
-    environment:
-      - NODE_ENV=production
-      - PORT=4052
-      - MONGODB_URI=mongodb://mongodb:27017/rez_ai_router
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
-      - ANTHROPIC_API_KEYS=${ANTHROPIC_API_KEYS:-}
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - OPENAI_API_KEYS=${OPENAI_API_KEYS:-}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rez-network
-
-  # ============================================
-  # Phase 3: Intelligence Moat
+  # NEW: MERCHANT GROWTH OS SERVICES (Ports 4290-4299, 4211-4214)
   # ============================================
 
-  rez-merchant-brain:
+  # Port 4290 - Budget Optimizer
+  rez-budget-optimizer:
     build:
-      context: ./REZ-merchant-brain
+      context: ./REZ-budget-optimizer
       dockerfile: Dockerfile
-    container_name: rez-merchant-brain
+    container_name: rez-budget-optimizer
     restart: unless-stopped
     ports:
-      - "4061:4061"
+      - "4290:4290"
     environment:
       - NODE_ENV=production
-      - PORT=4061
-      - MONGODB_URI=mongodb://mongodb:27017/rez_merchant_brain
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rez-network
-
-  rez-autonomous-agents:
-    build:
-      context: ./REZ-autonomous-agents
-      dockerfile: Dockerfile
-    container_name: rez-autonomous-agents
-    restart: unless-stopped
-    ports:
-      - "4062:4062"
-    environment:
-      - NODE_ENV=production
-      - PORT=4062
-      - MONGODB_URI=mongodb://mongodb:27017/rez_agents
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rez-network
-
-  # ============================================
-  # NEW: Orchestrator v2
-  # ============================================
-  rez-orchestrator-v2:
-    build:
-      context: ./rez-orchestrator-v2
-      dockerfile: Dockerfile
-    container_name: rez-orchestrator-v2
-    restart: unless-stopped
-    ports:
-      - "4015:4015"
-    environment:
-      - NODE_ENV=production
-      - PORT=4015
-      - LOG_LEVEL=info
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - AGENT_REGISTRY_URL=http://rez-agent-registry:4011
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,https://rez.money}
-    depends_on:
-      redis:
-        condition: service_healthy
-      rez-agent-registry:
-        condition: service_started
-    networks:
-      - rez-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4015/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
-
-  # ============================================
-  # Phase 4: Ecosystem
-  # ============================================
-  rez-payments-brain:
-    build:
-      context: ./REZ-payments-brain
-      dockerfile: Dockerfile
-    container_name: rez-payments-brain
-    restart: unless-stopped
-    ports:
-      - "4070:4070"
-    environment:
-      - NODE_ENV=production
-      - PORT=4070
-      - MONGODB_URI=mongodb://mongodb:27017/rez_payments_brain
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rez-network
-
-  rez-inventory-sync:
-    build:
-      context: ./REZ-inventory-sync
-      dockerfile: Dockerfile
-    container_name: rez-inventory-sync
-    restart: unless-stopped
-    ports:
-      - "4071:4071"
-    environment:
-      - NODE_ENV=production
-      - PORT=4071
-      - MONGODB_URI=mongodb://mongodb:27017/rez_inventory
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rez-network
-
-  rez-creator-network:
-    build:
-      context: ./REZ-creator-network
-      dockerfile: Dockerfile
-    container_name: rez-creator-network
-    restart: unless-stopped
-    ports:
-      - "4072:4072"
-    environment:
-      - NODE_ENV=production
-      - PORT=4072
-      - MONGODB_URI=mongodb://mongodb:27017/rez_creator
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rez-network
-
-  rez-merchant-os:
-    build:
-      context: ./REZ-merchant-os
-      dockerfile: Dockerfile
-    container_name: rez-merchant-os
-    restart: unless-stopped
-    ports:
-      - "4073:4073"
-    environment:
-      - NODE_ENV=production
-      - PORT=4073
-      - MONGODB_URI=mongodb://mongodb:27017/rez_merchant_os
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rez-network
-
-  # ============================================
-  # NEW: REZ API Gateway (Port 4300)
-  # ============================================
-  rez-api-gateway:
-    build:
-      context: ./REZ-api-gateway
-      dockerfile: Dockerfile
-    container_name: rez-api-gateway
-    restart: unless-stopped
-    ports:
-      - "4300:4200"
-    environment:
-      - NODE_ENV=production
-      - PORT=4200
-      - LOG_LEVEL=info
-      - CORS_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,https://rez.money}
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - REDIS_URL=redis://redis:6379
-      # REZ Intelligence Services
-      - REZ_MEMORY_URL=http://rez-memory-layer:4201
-      - REZ_FLOW_URL=http://rez-flow-runtime:4200
-      - REZ_INTENT_URL=http://rez-intent-predictor:4018
-      - REZ_CARE_URL=http://rez-care-service:4058
-      - REZ_PREDICTIVE_URL=http://rez-predictive-engine:4141
-      - REZ_WHATSAPP_URL=http://rez-whatsapp:4202
-      - REZ_KNOWLEDGE_URL=http://rez-knowledge-graph:4060
-      - REZ_TENANT_ADAPTER_URL=http://rez-tenant-adapter:4210
-    depends_on:
-      redis:
-        condition: service_healthy
-      mongodb:
-        condition: service_healthy
-    networks:
-      - rez-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4200/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
-
-  # ============================================
-  # NEW: REZ Tenant Adapter (Port 4210)
-  # ============================================
-  rez-tenant-adapter:
-    build:
-      context: ./REZ-tenant-adapter
-      dockerfile: Dockerfile
-    container_name: rez-tenant-adapter
-    restart: unless-stopped
-    ports:
-      - "4210:4210"
-    environment:
-      - NODE_ENV=production
-      - PORT=4210
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,https://rez.money}
+      - PORT=4290
+      - MONGODB_URI=mongodb://mongodb:27017/rez_budget_optimizer
     depends_on:
       mongodb:
         condition: service_healthy
     networks:
       - rez-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4210/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
 
-  # ============================================
-  # NEW: REZ WhatsApp Service (Port 4202)
-  # ============================================
-  rez-whatsapp:
+  # Port 4291 - Growth Playbook
+  rez-growth-playbook:
     build:
-      context: ./REZ-whatsapp
+      context: ./REZ-growth-playbook
       dockerfile: Dockerfile
-    container_name: rez-whatsapp
+    container_name: rez-growth-playbook
     restart: unless-stopped
     ports:
-      - "4202:4202"
+      - "4291:4291"
     environment:
       - NODE_ENV=production
-      - PORT=4202
-      - MONGODB_URI=mongodb://mongodb:27017/rez_whatsapp
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - WHATSAPP_API_URL=${WHATSAPP_API_URL:-https://graph.facebook.com/v18.0}
-      - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN:-}
-      - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID:-}
-      - WHATSAPP_WEBHOOK_VERIFY_TOKEN=${WHATSAPP_WEBHOOK_VERIFY_TOKEN:-}
-      - ORCHESTRATOR_URL=http://rez-orchestrator-v2:4015
+      - PORT=4291
+      - MONGODB_URI=mongodb://mongodb:27017/rez_growth_playbook
     depends_on:
       mongodb:
         condition: service_healthy
-      redis:
-        condition: service_healthy
-      rez-orchestrator-v2:
-        condition: service_started
     networks:
       - rez-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4202/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
 
-  # ============================================
-  # NEW: REZ Memory Layer (Port 4201)
-  # ============================================
-  rez-memory-layer:
+  # Port 4292 - Incrementality Testing
+  rez-incrementality-testing:
     build:
-      context: ./REZ-memory-layer
+      context: ./REZ-incrementality-testing
       dockerfile: Dockerfile
-    container_name: rez-memory-layer
+    container_name: rez-incrementality-testing
     restart: unless-stopped
     ports:
-      - "4201:4201"
+      - "4292:4292"
     environment:
       - NODE_ENV=production
-      - PORT=4201
-      - MONGODB_URI=mongodb://mongodb:27017/rez_memory_layer
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - LOG_LEVEL=info
+      - PORT=4292
+      - MONGODB_URI=mongodb://mongodb:27017/rez_incrementality
     depends_on:
       mongodb:
         condition: service_healthy
-      redis:
+    networks:
+      - rez-network
+
+  # Port 4293 - Merchant Health Score
+  rez-merchant-health-score:
+    build:
+      context: ./REZ-merchant-health-score
+      dockerfile: Dockerfile
+    container_name: rez-merchant-health-score
+    restart: unless-stopped
+    ports:
+      - "4293:4293"
+    environment:
+      - NODE_ENV=production
+      - PORT=4293
+      - MONGODB_URI=mongodb://mongodb:27017/rez_merchant_health
+    depends_on:
+      mongodb:
         condition: service_healthy
     networks:
       - rez-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4201/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
 
-  # ============================================
-  # NEW: REZ Care Service (Port 4058)
-  # ============================================
-  rez-care-service:
+  # Port 4294 - Offline Attribution
+  rez-offline-attribution:
     build:
-      context: ./REZ-care-service
+      context: ./REZ-offline-attribution
       dockerfile: Dockerfile
-    container_name: rez-care-service
+    container_name: rez-offline-attribution
     restart: unless-stopped
     ports:
-      - "4058:3000"
+      - "4294:4294"
+    environment:
+      - NODE_ENV=production
+      - PORT=4294
+      - MONGODB_URI=mongodb://mongodb:27017/rez_offline_attribution
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - rez-network
+
+  # Port 4295 - Competitor Alerts
+  rez-competitor-alerts:
+    build:
+      context: ./REZ-competitor-alerts
+      dockerfile: Dockerfile
+    container_name: rez-competitor-alerts
+    restart: unless-stopped
+    ports:
+      - "4295:4295"
+    environment:
+      - NODE_ENV=production
+      - PORT=4295
+      - MONGODB_URI=mongodb://mongodb:27017/rez_competitor_alerts
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - rez-network
+
+  # Port 4296 - Review Response Engine
+  rez-review-response-engine:
+    build:
+      context: ./REZ-review-response-engine
+      dockerfile: Dockerfile
+    container_name: rez-review-response-engine
+    restart: unless-stopped
+    ports:
+      - "4296:4296"
+    environment:
+      - NODE_ENV=production
+      - PORT=4296
+      - MONGODB_URI=mongodb://mongodb:27017/rez_review_engine
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - rez-network
+
+  # Port 4297 - Unified Offer Brain
+  rez-unified-offer-brain:
+    build:
+      context: ./REZ-unified-offer-brain
+      dockerfile: Dockerfile
+    container_name: rez-unified-offer-brain
+    restart: unless-stopped
+    ports:
+      - "4297:4297"
+    environment:
+      - NODE_ENV=production
+      - PORT=4297
+      - MONGODB_URI=mongodb://mongodb:27017/rez_offer_brain
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - rez-network
+
+  # Port 4298 - Autonomous Growth Agent
+  rez-autonomous-growth-agent:
+    build:
+      context: ./REZ-autonomous-growth-agent
+      dockerfile: Dockerfile
+    container_name: rez-autonomous-growth-agent
+    restart: unless-stopped
+    ports:
+      - "4298:4298"
+    environment:
+      - NODE_ENV=production
+      - PORT=4298
+      - MONGODB_URI=mongodb://mongodb:27017/rez_autonomous_growth
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - rez-network
+
+  # Port 4299 - Prompt Studio
+  rez-prompt-studio:
+    build:
+      context: ./REZ-prompt-studio
+      dockerfile: Dockerfile
+    container_name: rez-prompt-studio
+    restart: unless-stopped
+    ports:
+      - "4299:4299"
+    environment:
+      - NODE_ENV=production
+      - PORT=4299
+      - MONGODB_URI=mongodb://mongodb:27017/rez_prompt_studio
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - rez-network
+
+  # Port 4211 - Approval UI
+  rez-approval-ui:
+    build:
+      context: ./REZ-approval-ui
+      dockerfile: Dockerfile
+    container_name: rez-approval-ui
+    restart: unless-stopped
+    ports:
+      - "4211:4211"
+    environment:
+      - NODE_ENV=production
+      - PORT=4211
+    networks:
+      - rez-network
+
+  # Port 4212 - Real Pricing Tracker
+  rez-real-pricing-tracker:
+    build:
+      context: ./REZ-real-pricing-tracker
+      dockerfile: Dockerfile
+    container_name: rez-real-pricing-tracker
+    restart: unless-stopped
+    ports:
+      - "4212:4212"
+    environment:
+      - NODE_ENV=production
+      - PORT=4212
+      - MONGODB_URI=mongodb://mongodb:27017/rez_pricing_tracker
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - rez-network
+
+  # Port 4213 - Revenue Forecast
+  rez-revenue-forecast:
+    build:
+      context: ./REZ-revenue-forecast
+      dockerfile: Dockerfile
+    container_name: rez-revenue-forecast
+    restart: unless-stopped
+    ports:
+      - "4213:4213"
+    environment:
+      - NODE_ENV=production
+      - PORT=4213
+      - MONGODB_URI=mongodb://mongodb:27017/rez_revenue_forecast
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - rez-network
+
+  # Port 4214 - Neighborhood Analytics
+  rez-neighborhood-analytics:
+    build:
+      context: ./REZ-neighborhood-analytics
+      dockerfile: Dockerfile
+    container_name: rez-neighborhood-analytics
+    restart: unless-stopped
+    ports:
+      - "4214:4214"
+    environment:
+      - NODE_ENV=production
+      - PORT=4214
+      - MONGODB_URI=mongodb://mongodb:27017/rez_neighborhood_analytics
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - rez-network
+
+  # Port 3000 - Visual Workflow Builder UI
+  rez-visual-workflow-builder:
+    build:
+      context: ./REZ-visual-workflow-builder-ui
+      dockerfile: Dockerfile
+    container_name: rez-visual-workflow-builder
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - MONGODB_URI=mongodb://mongodb:27017/rez_care
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - LOG_LEVEL=info
-      # Service URLs
-      - REZ_INTENT_URL=http://rez-intent-predictor:4018
-      - REZ_PREDICTIVE_URL=http://rez-predictive-engine:4141
-      - REZ_PROFILE_URL=http://rez-profile-service:4120
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rez-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
-
-  # ============================================
-  # Expert Agents
-  # ============================================
-  rez-travel-expert:
-    build:
-      context: ./rez-travel-expert
-      dockerfile: Dockerfile
-    container_name: rez-travel-expert
-    restart: unless-stopped
-    ports:
-      - "3003:3003"
-    environment:
-      - NODE_ENV=production
-      - PORT=3003
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - AGENT_REGISTRY_URL=http://rez-agent-registry:4011
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
-    depends_on:
-      rez-agent-registry:
-        condition: service_started
     networks:
       - rez-network
 
-  rez-hospitality-expert:
-    build:
-      context: ./rez-hospitality-expert
-      dockerfile: Dockerfile
-    container_name: rez-hospitality-expert
-    restart: unless-stopped
-    ports:
-      - "3004:3004"
-    environment:
-      - NODE_ENV=production
-      - PORT=3004
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - AGENT_REGISTRY_URL=http://rez-agent-registry:4011
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
-    depends_on:
-      rez-agent-registry:
-        condition: service_started
-    networks:
-      - rez-network
-
-  rez-retail-expert:
-    build:
-      context: ./rez-retail-expert
-      dockerfile: Dockerfile
-    container_name: rez-retail-expert
-    restart: unless-stopped
-    ports:
-      - "3005:3005"
-    environment:
-      - NODE_ENV=production
-      - PORT=3005
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - AGENT_REGISTRY_URL=http://rez-agent-registry:4011
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
-    depends_on:
-      rez-agent-registry:
-        condition: service_started
-    networks:
-      - rez-network
-
-  rez-health-expert:
-    build:
-      context: ./rez-health-expert
-      dockerfile: Dockerfile
-    container_name: rez-health-expert
-    restart: unless-stopped
-    ports:
-      - "3006:3006"
-    environment:
-      - NODE_ENV=production
-      - PORT=3006
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - AGENT_REGISTRY_URL=http://rez-agent-registry:4011
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
-    depends_on:
-      rez-agent-registry:
-        condition: service_started
-    networks:
-      - rez-network
-
-  rez-fitness-expert:
-    build:
-      context: ./rez-fitness-expert
-      dockerfile: Dockerfile
-    container_name: rez-fitness-expert
-    restart: unless-stopped
-    ports:
-      - "3007:3007"
-    environment:
-      - NODE_ENV=production
-      - PORT=3007
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - AGENT_REGISTRY_URL=http://rez-agent-registry:4011
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
-    depends_on:
-      rez-agent-registry:
-        condition: service_started
-    networks:
-      - rez-network
-
-  rez-salon-expert:
-    build:
-      context: ./rez-salon-expert
-      dockerfile: Dockerfile
-    container_name: rez-salon-expert
-    restart: unless-stopped
-    ports:
-      - "3008:3008"
-    environment:
-      - NODE_ENV=production
-      - PORT=3008
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - AGENT_REGISTRY_URL=http://rez-agent-registry:4011
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
-    depends_on:
-      rez-agent-registry:
-        condition: service_started
-    networks:
-      - rez-network
-
-  rez-culinary-expert:
-    build:
-      context: ./rez-culinary-expert
-      dockerfile: Dockerfile
-    container_name: rez-culinary-expert
-    restart: unless-stopped
-    ports:
-      - "3009:3009"
-    environment:
-      - NODE_ENV=production
-      - PORT=3009
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - AGENT_REGISTRY_URL=http://rez-agent-registry:4011
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
-    depends_on:
-      rez-agent-registry:
-        condition: service_started
-    networks:
-      - rez-network
-
-  rez-education-expert:
-    build:
-      context: ./rez-education-expert
-      dockerfile: Dockerfile
-    container_name: rez-education-expert
-    restart: unless-stopped
-    ports:
-      - "3010:3010"
-    environment:
-      - NODE_ENV=production
-      - PORT=3010
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - AGENT_REGISTRY_URL=http://rez-agent-registry:4011
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
-    depends_on:
-      rez-agent-registry:
-        condition: service_started
-    networks:
-      - rez-network
-
-# ============================================
-# NEW: Channel Orchestrator
-# ============================================
-  rez-channel-orchestrator:
-    build:
-      context: ./rez-channel-orchestrator
-      dockerfile: Dockerfile
-    container_name: rez-channel-orchestrator
-    restart: unless-stopped
-    ports:
-      - "4070:4070"
-    environment:
-      - NODE_ENV=production
-      - PORT=4070
-      - ORCHESTRATOR_URL=http://rez-orchestrator-v2:4006
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-    depends_on:
-      - rez-orchestrator-v2
-    networks:
-      - rez-network
-
-  # ============================================
-  # NEW: Channel Bridges
-  # ============================================
-  rez-sms-bridge:
-    build:
-      context: ./rez-sms-bridge
-      dockerfile: Dockerfile
-    container_name: rez-sms-bridge
-    restart: unless-stopped
-    ports:
-      - "4085:4085"
-    environment:
-      - NODE_ENV=production
-      - PORT=4085
-      - ORCHESTRATOR_URL=http://rez-orchestrator-v2:4006
-      - REDIS_URL=redis://redis:6379
-    depends_on:
-      - redis
-      - rez-orchestrator-v2
-    networks:
-      - rez-network
-
-  rez-email-bridge:
-    build:
-      context: ./rez-email-bridge
-      dockerfile: Dockerfile
-    container_name: rez-email-bridge
-    restart: unless-stopped
-    ports:
-      - "4086:4086"
-    environment:
-      - NODE_ENV=production
-      - PORT=4086
-      - ORCHESTRATOR_URL=http://rez-orchestrator-v2:4006
-    depends_on:
-      - rez-orchestrator-v2
-    networks:
-      - rez-network
-
-  rez-rcs-bridge:
-    build:
-      context: ./rez-rcs-bridge
-      dockerfile: Dockerfile
-    container_name: rez-rcs-bridge
-    restart: unless-stopped
-    ports:
-      - "4087:4087"
-    environment:
-      - NODE_ENV=production
-      - PORT=4087
-      - ORCHESTRATOR_URL=http://rez-orchestrator-v2:4006
-      - REDIS_URL=redis://redis:6379
-    depends_on:
-      - redis
-      - rez-orchestrator-v2
-    networks:
-      - rez-network
-
-  rez-web-widget:
-    build:
-      context: ./rez-web-widget
-      dockerfile: Dockerfile
-    container_name: rez-web-widget
-    restart: unless-stopped
-    ports:
-      - "4088:4088"
-    environment:
-      - NODE_ENV=production
-      - PORT=4088
-      - ORCHESTRATOR_URL=http://rez-orchestrator-v2:4006
-    depends_on:
-      - rez-orchestrator-v2
-    networks:
-      - rez-network
-
-  rez-app-bridge:
-    build:
-      context: ./rez-app-bridge
-      dockerfile: Dockerfile
-    container_name: rez-app-bridge
-    restart: unless-stopped
-    ports:
-      - "4089:4089"
-    environment:
-      - NODE_ENV=production
-      - PORT=4089
-      - ORCHESTRATOR_URL=http://rez-orchestrator-v2:4006
-    depends_on:
-      - rez-orchestrator-v2
-    networks:
-      - rez-network
-
-  # ============================================
-  # NEW: REZ Flow Runtime (Port 4200)
-  # ============================================
-  rez-flow-runtime:
-    build:
-      context: ./REZ-flow-runtime
-      dockerfile: Dockerfile
-    container_name: rez-flow-runtime
-    restart: unless-stopped
-    ports:
-      - "4200:4200"
-    environment:
-      - NODE_ENV=production
-      - PORT=4200
-      - LOG_LEVEL=info
-      - MONGODB_URI=mongodb://mongodb:27017/rez_flow_runtime
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - WORKER_CONCURRENCY=5
-      - MAX_CONCURRENT_NODES=5
-      - DEFAULT_NODE_TIMEOUT=30000
-      - DLQ_MAX_RETRIES=5
-      - DLQ_RETRY_DELAY=60000
-      # Service URLs
-      - NOTIFY_SERVICE_URL=${NOTIFY_SERVICE_URL:-http://localhost:4011}
-      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://localhost:4002}
-      - WALLET_SERVICE_URL=${WALLET_SERVICE_URL:-http://localhost:4004}
-      - WHATSAPP_SERVICE_URL=http://rez-whatsapp:4202
-      - REZ_INTELLIGENCE_URL=${REZ_INTELLIGENCE_URL:-http://localhost:4018}
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,https://rez.money}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rez-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4200/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 20s
-
-  # ============================================
-  # NEW: REZ Intent Predictor (Port 4018)
-  # ============================================
-  rez-intent-predictor:
-    build:
-      context: ./rez-intent-predictor
-      dockerfile: Dockerfile
-    container_name: rez-intent-predictor
-    restart: unless-stopped
-    ports:
-      - "4018:3000"
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - SERVICE_NAME=rez_intent_predictor
-      - MONGODB_URI=mongodb://mongodb:27017/rez_intent
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - LOG_LEVEL=info
-      # RABTUL Services
-      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://localhost:4002}
-      - NOTIFICATION_SERVICE_URL=${NOTIFICATION_SERVICE_URL:-http://localhost:4011}
-      - PROFILE_SERVICE_URL=${PROFILE_SERVICE_URL:-http://localhost:4013}
-      # REZ Intelligence
-      - SIGNAL_AGGREGATOR_URL=http://rez-signal-aggregator:4121
-      - RECOMMENDATION_ENGINE_URL=${RECOMMENDATION_ENGINE_URL:-http://localhost:4125}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rez-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
-
-  # ============================================
-  # NEW: REZ Predictive Engine (Port 4141)
-  # ============================================
-  rez-predictive-engine:
-    build:
-      context: ./REZ-predictive-engine
-      dockerfile: Dockerfile
-    container_name: rez-predictive-engine
-    restart: unless-stopped
-    ports:
-      - "4141:3000"
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - SERVICE_NAME=rez_predictive_engine
-      - MONGODB_URI=mongodb://mongodb:27017/rez_predictive
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - LOG_LEVEL=info
-      # RABTUL Services
-      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://localhost:4002}
-      - NOTIFICATION_SERVICE_URL=${NOTIFICATION_SERVICE_URL:-http://localhost:4011}
-      - PROFILE_SERVICE_URL=${PROFILE_SERVICE_URL:-http://localhost:4013}
-      # REZ Intelligence
-      - INTENT_SERVICE_URL=http://rez-intent-predictor:3000
-      - SIGNAL_AGGREGATOR_URL=http://rez-signal-aggregator:4121
-      - EVENT_BUS_URL=${EVENT_BUS_URL:-http://localhost:4025}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rez-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
-
-  # ============================================
-  # NEW: REZ Knowledge Graph (Port 4060)
-  # ============================================
-  rez-knowledge-graph-service:
-    build:
-      context: ./REZ-knowledge-graph
-      dockerfile: Dockerfile
-    container_name: rez-knowledge-graph-service
-    restart: unless-stopped
-    ports:
-      - "4060:3000"
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - MONGODB_URI=mongodb://mongodb:27017/rez_knowledge
-      - REDIS_URL=redis://redis:6379
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - LOG_LEVEL=info
-      # RABTUL Services
-      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://localhost:4002}
-      - NOTIFICATION_SERVICE_URL=${NOTIFICATION_SERVICE_URL:-http://localhost:4011}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rez-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
-
-# ============================================
-# Networks
-# ============================================
 networks:
   rez-network:
     driver: bridge
 
-  # ============================================
-  # NEW: REZ Monitoring (Port 4250)
-  # ============================================
-  rez-monitoring:
-    build:
-      context: ./REZ-monitoring
-      dockerfile: Dockerfile
-    container_name: rez-monitoring
-    restart: unless-stopped
-    ports:
-      - "4250:4250"
-    environment:
-      - NODE_ENV=production
-      - PORT=4250
-      - LOG_LEVEL=info
-    depends_on:
-      - rez-api-gateway
-      - rez-tenant-adapter
-    networks:
-      - rez-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4250/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-  # ============================================
-  # NEW: REZ SaaS Runtime (Port 4220)
-  # ============================================
-  rez-saas-runtime:
-    build:
-      context: ./REZ-saas-runtime
-      dockerfile: Dockerfile
-    container_name: rez-saas-runtime
-    restart: unless-stopped
-    ports:
-      - "4220:4220"
-    environment:
-      - NODE_ENV=production
-      - PORT=4220
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-dev-token-change-in-prod}
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,https://rez.money}
-      - PAYMENT_SERVICE_URL=${PAYMENT_SERVICE_URL:-http://localhost:4001}
-      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://localhost:4002}
-      - TENANT_ADAPTER_URL=http://rez-tenant-adapter:4210
-      - API_GATEWAY_URL=http://rez-api-gateway:4200
-      - BILLING_ENABLED=true
-    depends_on:
-      - rez-tenant-adapter
-      - rez-api-gateway
-    networks:
-      - rez-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4220/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
-
-# ============================================
-# Volumes
-# ============================================
 volumes:
   mongodb_data:
   redis_data:

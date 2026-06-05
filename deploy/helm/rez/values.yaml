@@ -1,0 +1,583 @@
+# REZ Helm Chart - Default Values
+
+# Global settings
+global:
+  imagePullSecrets: []
+  storageClass: ""
+
+# Image configuration
+image:
+  repository: ghcr.io/rez-io/rez
+  pullPolicy: IfNotPresent
+  # Overrides when using local builds
+  tag: ""
+
+# REZ Gateway configuration
+gateway:
+  enabled: true
+  replicaCount: 2
+
+  image:
+    repository: ghcr.io/rez-io/rez-gateway
+    pullPolicy: IfNotPresent
+    tag: ""
+
+  service:
+    type: ClusterIP
+    port: 8080
+
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    hosts:
+      - host: api.rez.io
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: rez-tls
+        hosts:
+          - api.rez.io
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+  # Rate limiting
+  rateLimit:
+    enabled: true
+    requestsPerMinute: 1000
+    burstSize: 100
+
+  # JWT Authentication
+  auth:
+    enabled: true
+    jwt:
+      secret: ""
+      expiration: 3600
+    apiKeys:
+      enabled: true
+
+# Agent Registry Service
+agentRegistry:
+  enabled: true
+  replicaCount: 2
+
+  image:
+    repository: ghcr.io/rez-io/rez-agents
+    tag: ""
+
+  service:
+    type: ClusterIP
+    port: 3001
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 512Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+
+# AutoML Service
+automl:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: ghcr.io/rez-io/rez-automl
+    tag: ""
+
+  service:
+    type: ClusterIP
+    port: 3002
+
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 4Gi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 80
+
+  # GPU support (optional)
+  gpu:
+    enabled: false
+    limit: 1
+
+# Invoice Service
+invoice:
+  enabled: true
+  replicaCount: 2
+
+  image:
+    repository: ghcr.io/rez-io/rez-invoice
+    tag: ""
+
+  service:
+    type: ClusterIP
+    port: 3003
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 512Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 70
+
+# Contracts Service
+contracts:
+  enabled: true
+  replicaCount: 2
+
+  image:
+    repository: ghcr.io/rez-io/rez-contracts
+    tag: ""
+
+  service:
+    type: ClusterIP
+    port: 3004
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 512Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 70
+
+# Legal Service
+legal:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: ghcr.io/rez-io/rez-legal
+    tag: ""
+
+  service:
+    type: ClusterIP
+    port: 3005
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 2
+    targetCPUUtilizationPercentage: 70
+
+# Digital Twin Service
+twin:
+  enabled: true
+  replicaCount: 2
+
+  image:
+    repository: ghcr.io/rez-io/rez-twin
+    tag: ""
+
+  service:
+    type: ClusterIP
+    port: 3006
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 70
+
+# Ranking Service
+ranking:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: ghcr.io/rez-io/rez-ranking
+    tag: ""
+
+  service:
+    type: ClusterIP
+    port: 3007
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 70
+
+# MCP Server
+mcp:
+  enabled: true
+  replicaCount: 2
+
+  image:
+    repository: ghcr.io/rez-io/rez-mcp
+    tag: ""
+
+  service:
+    type: ClusterIP
+    port: 3010
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+# Event Bus
+eventBus:
+  enabled: true
+
+  image:
+    repository: ghcr.io/rez-io/rez-events
+    tag: ""
+
+  service:
+    type: ClusterIP
+    port: 3011
+
+  # Use Redis for event bus
+  useExternalRedis: true
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 512Mi
+
+# Database Configuration (PostgreSQL)
+postgresql:
+  enabled: true
+
+  auth:
+    postgresPassword: "rez-db-secret-change-me"
+    database: "rez"
+    username: "rez"
+
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: ""
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+  read:
+    replicaCount: 1
+    persistence:
+      enabled: true
+      size: 10Gi
+
+  backup:
+    enabled: true
+    schedule: "0 2 * * *"
+    retention: 7
+
+# Redis Configuration
+redis:
+  enabled: true
+
+  auth:
+    password: "rez-redis-secret-change-me"
+
+  master:
+    persistence:
+      enabled: true
+      size: 1Gi
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 512Mi
+
+  replica:
+    replicaCount: 2
+    persistence:
+      enabled: true
+      size: 1Gi
+
+  sentinel:
+    enabled: true
+    nodes: 3
+
+# Monitoring (Prometheus)
+prometheus:
+  enabled: true
+
+  server:
+    retention:
+      time: 15d
+      size: 10Gi
+
+    persistentVolume:
+      enabled: true
+      size: 20Gi
+
+  alertmanager:
+    enabled: true
+
+  pushgateway:
+    enabled: true
+
+# Grafana Dashboards
+grafana:
+  enabled: true
+
+  adminPassword: "grafana-secret-change-me"
+
+  dashboardProviders:
+    dashboardproviders:
+      - name: default
+        orgId: 1
+        folder: REZ
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default
+
+  dashboards:
+    default:
+      rez-overview:
+        url: https://raw.githubusercontent.com/rez-io/rez/main/monitoring/dashboards/overview.json
+        datasource: Prometheus
+      rez-services:
+        url: https://raw.githubusercontent.com/rez-io/rez/main/monitoring/dashboards/services.json
+        datasource: Prometheus
+      rez-agents:
+        url: https://raw.githubusercontent.com/rez-io/rez/main/monitoring/dashboards/agents.json
+        datasource: Prometheus
+      rez-mcp:
+        url: https://raw.githubusercontent.com/rez-io/rez/main/monitoring/dashboards/mcp.json
+        datasource: Prometheus
+
+# Ingress Configuration
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+
+# Service Account
+serviceAccount:
+  create: true
+  name: rez
+  annotations: {}
+
+# Security Context
+podSecurityContext:
+  enabled: true
+  fsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+
+securityContext:
+  enabled: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+  # maxUnavailable: 1  # Use minAvailable OR maxUnavailable
+
+# Network Policies
+networkPolicy:
+  enabled: true
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              name: redis
+        - podSelector:
+            matchLabels:
+              name: postgresql
+
+# Node Affinity
+nodeAffinity: {}
+
+# Pod Anti-Affinity
+podAntiAffinity:
+  preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+            - key: app
+              operator: In
+              values:
+                - rez-gateway
+        topologyKey: kubernetes.io/hostname
+
+# Tolerations
+tolerations: []
+
+# Topology Spread Constraints
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app: rez
+
+# Init containers
+initContainers: []
+
+# Sidecar containers
+sidecars: []
+
+# Pod Annotations
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/metrics"
+
+# Additional volumes
+extraVolumes: []
+
+# Extra volume mounts
+extraVolumeMounts: []
+
+# ConfigMap for additional configuration
+extraConfigMap: {}
+
+# Secret for sensitive configuration
+extraSecret: {}
+
+# Service monitoring
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  scrapeTimeout: 10s
+
+# Pod Monitor
+podMonitor:
+  enabled: false
+
+# Vertical Pod Autoscaler
+verticalPodAutoscaler:
+  enabled: false
+  # ControlledResourcePolicy:
+  #   cpu: "Off"
+  #   memory: "Off"
+
+# Persistence
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 5Gi
+
+# Job configurations
+jobs:
+  migrate:
+    enabled: true
+    image: ""
+    backoffLimit: 3
+
+  seed:
+    enabled: false
+    image: ""
+    backoffLimit: 3
+
+# Environment variables
+env:
+  - name: LOG_LEVEL
+    value: "info"
+  - name: NODE_ENV
+    value: "production"
+
+# Secrets for environment variables
+envFrom:
+  - secretRef:
+      name: rez-secrets
+
+# Labels
+labels: {}
+
+# Annotations
+annotations: {}

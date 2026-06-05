@@ -1,6 +1,6 @@
 /**
  * REZ Autonomous Loop Service - Main Entry Point
- * Port: 4800
+ * Port: 4951
  */
 import 'dotenv/config';
 import express, { Request, Response } from 'express';
@@ -15,7 +15,7 @@ import loopRoutes from './routes/loopRoutes.js';
 import { getLoopScheduler } from './services/scheduler.js';
 
 const SERVICE = 'REZ-autonomous-loop';
-const PORT = parseInt(process.env.PORT || '4800', 10);
+const PORT = parseInt(process.env.PORT || '4951', 10);
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rez-autonomous-loop';
 const logger = createLogger(SERVICE);
 

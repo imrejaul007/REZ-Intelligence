@@ -1,0 +1,57 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+}
+
+group = 'io.rez'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // HTTP client
+    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.16.0'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.0'
+
+    // Validation
+    implementation 'jakarta.validation:jakarta.validation-api:3.0.2'
+
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+
+    // Testing
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
+    testImplementation 'org.mockito:mockito-core:5.7.0'
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            pom {
+                name = 'REZ Java SDK'
+                description = 'Java SDK for REZ Agent OS'
+                url = 'https://github.com/rez-io/rez-java-sdk'
+            }
+        }
+    }
+    repositories {
+        maven {
+            url = version.endsWith('SNAPSHOT')
+                ? 'https://oss.sonatype.org/content/repositories/snapshots'
+                : 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
+        }
+    }
+}
+
+test {
+    useJUnitPlatform()
+}

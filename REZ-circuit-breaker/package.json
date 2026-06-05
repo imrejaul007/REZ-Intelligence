@@ -1,0 +1,31 @@
+{
+  "name": "@rez/circuit-breaker",
+  "version": "1.0.0",
+  "description": "REZ Circuit Breaker - Fault tolerance patterns for service resilience",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.0",
+    "eslint": "^8.0.0"
+  },
+  "keywords": [
+    "circuit-breaker",
+    "resilience",
+    "fault-tolerance",
+    "rez"
+  ],
+  "author": "REZ Team",
+  "license": "MIT"
+}

@@ -1,7 +1,8 @@
 {
-  "name": "rez-fraud-agent",
+  "name": "@rez-ecosystem/REZ-fraud-agent",
   "version": "1.0.0",
-  "description": "REZ Fraud Detection Agent - specialized in risk detection and security",
+  "description": "DEPRECATED - Use @rez-ecosystem/rez-fraud-agent instead. REZ Fraud Detection Agent - specialized in risk detection and security",
+  "deprecated": "This package has been deprecated. Use @rez-ecosystem/rez-fraud-agent instead. This alias will be removed after September 4, 2026.",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

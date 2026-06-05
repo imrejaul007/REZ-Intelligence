@@ -240,8 +240,34 @@ class SyntheticDemandService {
       west: location.lng - (radiusMeters / (111000 * Math.cos(location.lat * Math.PI / 180))),
     };
 
-    // TODO: Query zone hierarchy service for zones in bounds
-    // For now, compute for center point
+    // Query zone hierarchy service for zones in bounds
+    const zoneServiceUrl = process.env.ZONE_SERVICE_URL || 'http://localhost:8082';
+    try {
+      const zoneResponse = await fetch(`${zoneServiceUrl}/api/zones/in-bounds`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bounds, level }),
+      });
+
+      if (zoneResponse.ok) {
+        const zoneData = await zoneResponse.json() as { zones?: Array<{ id: string; lat: number; lng: number }> };
+        const zones = zoneData.zones || [];
+
+        for (const zone of zones) {
+          const zoneIndex = await this.computeDemandIndex(
+            `demand_${zone.lat.toFixed(4)}_${zone.lng.toFixed(4)}`,
+            level,
+            { lat: zone.lat, lng: zone.lng }
+          );
+          indices.push(zoneIndex.index);
+        }
+      }
+    } catch (error) {
+      // Fallback to center point if zone service unavailable
+      logger.warn('[GeoDemand] Zone service unavailable, using center point');
+    }
+
+    // Always include center point
     const centerIndex = await this.computeDemandIndex(
       `demand_${location.lat.toFixed(4)}_${location.lng.toFixed(4)}`,
       level,

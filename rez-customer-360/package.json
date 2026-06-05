@@ -1,7 +1,8 @@
 {
-  "name": "rez-customer-360",
+  "name": "@rez-ecosystem/REZ-customer-360",
   "version": "1.0.0",
-  "description": "Customer 360 view module with unified profiles, interaction history, lifetime value, and preferences",
+  "description": "DEPRECATED - Use @rez-ecosystem/rez-customer-360 instead. Customer 360 view module with unified profiles, interaction history, lifetime value, and preferences",
+  "deprecated": "This package has been deprecated. Use @rez-ecosystem/rez-customer-360 instead. This alias will be removed after September 4, 2026.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

@@ -1,8 +1,49 @@
 # REZ Intelligence - SOT Reference
 
-**Version:** 3.1
-**Date:** June 2, 2026
+**Version:** 4.0
+**Date:** June 4, 2026
+**Merchant Growth OS:** 16 New Services Added
 **Master SOT:** [RABTUL-Technologies/SOT.md](https://github.com/imrejaul007/RABTUL-Technologies/blob/main/SOT.md)
+
+---
+
+## MERCHANT GROWTH OS - NEW SERVICES (June 4, 2026)
+
+### Complete Marketing & Growth Suite
+
+| Service | Port | Category | Status |
+|---------|------|----------|--------|
+| **REZ-budget-optimizer** | 4290 | Budget Allocation | ✅ NEW |
+| **REZ-growth-playbook** | 4291 | Growth Templates | ✅ NEW |
+| **REZ-incrementality-testing** | 4292 | Campaign Testing | ✅ NEW |
+| **REZ-merchant-health-score** | 4293 | Merchant Health | ✅ NEW |
+| **REZ-offline-attribution** | 4294 | Attribution | ✅ NEW |
+| **REZ-competitor-alerts** | 4295 | Competition | ✅ NEW |
+| **REZ-review-response-engine** | 4296 | Reviews | ✅ NEW |
+| **REZ-unified-offer-brain** | 4297 | Offers | ✅ NEW |
+| **REZ-autonomous-growth-agent** | 4298 | Growth AI | ✅ NEW |
+| **REZ-prompt-studio** | 4299 | Prompt Versioning | ✅ NEW |
+| **REZ-approval-ui** | 4211 | Human Approval | ✅ NEW |
+| **REZ-real-pricing-tracker** | 4212 | Pricing | ✅ NEW |
+| **REZ-revenue-forecast** | 4213 | Forecasting | ✅ NEW |
+| **REZ-neighborhood-analytics** | 4214 | Hyperlocal | ✅ NEW |
+| **REZ-visual-workflow-builder-ui** | 3000 | Workflow UI | ✅ NEW |
+| **REZ-plugin-marketplace** | 4210 | Plugins | ✅ NEW (hojai-ai) |
+
+**Total:** 16 new services + ecosystem integration
+
+---
+
+## ECOSYSTEM INTEGRATION
+
+Each service connects to:
+
+| Integration | Service | Purpose |
+|-------------|---------|---------|
+| **RABTUL Auth** | `https://rez-auth-service.onrender.com` | Merchant verification |
+| **RABTUL Wallet** | `https://rez-wallet-service.onrender.com` | Cashback, payments |
+| **HOJAI Brain** | `http://localhost:4600` | AI recommendations |
+| **Campaign Service** | `http://localhost:4301` | Campaign execution |
 
 ---
 
@@ -11,347 +52,161 @@
 | Document | Location |
 |----------|----------|
 | **Master SOT** | `RABTUL-Technologies/SOT.md` |
-| RAP (Services) | `RABTUL-Technologies/RAP.md` |
-| Governance | `RABTUL-Technologies/SERVICE-GOVERNANCE.md` |
-| Migration Guide | `RABTUL-Technologies/MIGRATION-GUIDE.md` |
+| **API Documentation** | `MERCHANT-GROWTH-OS-API.md` |
+| **Integration Docs** | `ECOSYSTEM-INTEGRATION.md` |
+| **Docker Compose** | `docker-compose.yml` |
+| **K8s Manifests** | `kubernetes-deployment.yaml` |
+| **Deployment** | `deploy-all.sh` |
 
 ---
 
-## Service Registry
+## DEPLOYMENT
 
-**Total Services:** 194 documented with SPEC.md (Updated: June 2, 2026)
+```bash
+# Run deployment script
+cd REZ-Intelligence
+./deploy-all.sh
 
-### NEW Services (May 21, 2026)
+# Or manually
+docker-compose up -d
 
-| Service | Port | Category | Status |
-|---------|------|----------|--------|
-| **REZ Flow Runtime** | 4200 | Automation | ✅ NEW |
-| **REZ Memory Layer** | 4201 | Customer Intelligence | ✅ NEW |
-| **REZ WhatsApp** | 4202 | Messaging | ✅ NEW |
+# Verify
+curl http://localhost:4290/health
+curl http://localhost:4291/health
+```
 
-See: [docs/PLATFORM-INFRASTRUCTURE-BUILD.md](../docs/PLATFORM-INFRASTRUCTURE-BUILD.md)
+---
+
+## PREVIOUS SERVICES (Preserved)
 
 ### AI & Agents
 
-| Service | Port | Category | Status |
-|---------|------|----------|--------|
-| REZ-autonomous-agents | 4062 | AI Agents | ✅ |
-| REZ-ai-orchestrator | 4101 | AI Agents | ✅ |
-| REZ-ai-router | - | AI Agents | ✅ |
-| REZ-creative-engine | 4107 | AI Agents | ✅ |
-| rez-fitness-expert | 3010 | Expert Agents | ✅ |
-| rez-salon-expert | 3005 | Expert Agents | ✅ |
-| rez-hospitality-expert | 3000 | Expert Agents | ✅ |
-| rez-education-expert | 3006 | Expert Agents | ✅ |
-| rez-travel-expert | 3003 | Expert Agents | ✅ |
-| rez-health-expert | 3011 | Expert Agents | ✅ |
-| rez-retail-expert | 3004 | Expert Agents | ✅ |
-| **REZ-real-estate-expert** | **3013** | **Expert Agents** | **✅ NEW** |
-| **REZ-finance-expert** | **3014** | **Expert Agents** | **✅ NEW** |
-| **REZ-logistics-expert** | **3015** | **Expert Agents** | **✅ NEW** |
-| rez-fraud-agent | - | Security Agents | ✅ |
-| rez-sales-agent | - | Sales Agents | ✅ |
-| REZ-research-opportunity-agent | - | Research Agents | ✅ |
-| REZ-care-service | 4055 | Support | ✅ |
-| REZ-support-copilot | 4033 | Support | ✅ |
-| REZ-confidence-scorer | - | AI Scoring | ✅ |
-| REZ-conversation-intelligence | - | NLP | ✅ |
-| REZ-bootstrap-intelligence | 4065 | Cold Start | ✅ |
+| Service | Port | Status |
+|---------|------|--------|
+| REZ-autonomous-agents | 4062 | ✅ |
+| REZ-ai-orchestrator | 4101 | ✅ |
+| REZ-creative-engine | 4107 | ✅ |
+| REZ-support-copilot | 4033 | ✅ |
 
-### OADA Loop (Polsia Parity)
+### OADA Loop
 
-| Service | Port | Category | Status |
-|---------|------|----------|--------|
-| **REZ-autonomous-loop** | **4800** | **OADA Loop** | **✅ NEW** |
-| **REZ-company-memory** | **4801** | **OADA Loop** | **✅ NEW** |
-| **REZ-live-action-feed** | **4802** | **OADA Loop** | **✅ NEW** |
+| Service | Port | Status |
+|---------|------|--------|
+| REZ-autonomous-loop | 4800 | ✅ |
+| REZ-company-memory | 4801 | ✅ |
+| REZ-live-action-feed | 4802 | ✅ |
 
-*OADA Loop: Observe → Think → Decide → Act → Learn → Repeat*
+### MCP Servers
 
-### Predictions & ML
-
-| Service | Port | Category | Status |
-|---------|------|----------|--------|
-| REZ-predictive-engine | 4123 | Predictions | ✅ |
-| REZ-intent-predictor | 4018 | Intent | ✅ |
-| REZ-reorder-engine | 4156 | Reorder | ✅ |
-| REZ-price-predictor | - | Pricing | ✅ |
-| REZ-demand-forecast | - | Forecasting | ✅ |
-| REZ-visit-prediction | - | Predictions | ✅ |
-| REZ-eta-prediction | - | ETA | ✅ |
-| REZ-ml-production | - | ML Models | ✅ |
-| REZ-ml-studio | - | ML Studio | ✅ |
-| REZ-ml-observability | 4130 | ML Monitoring | ✅ |
-| REZ-flywheel-engine | 4110 | Growth | ✅ |
-
-### Signals & Analytics
-
-| Service | Port | Category | Status |
-|---------|------|----------|--------|
-| REZ-signal-aggregator | 4121 | Signals | ✅ |
-| REZ-realtime-segments | 4126 | Segmentation | ✅ |
-| REZ-ab-testing | - | Experimentation | ✅ |
-| REZ-ab-testing-service | - | Experimentation | ✅ |
-| REZ-experimentation-engine | - | Experiments | ✅ |
-| REZ-analytics-orchestrator | - | Analytics | ✅ |
-| REZ-insights-service | - | Insights | ✅ |
-| REZ-rfm-service | - | RFM | ✅ |
-| REZ-rfm-plus-service | - | RFM+ | ✅ |
-| rez-social-signals | - | Social | ✅ |
-
-### Customer Intelligence
-
-| Service | Port | Category | Status |
-|---------|------|----------|--------|
-| REZ-identity-graph | 4050 | Identity | ✅ |
-| REZ-unified-identity | - | Cross-Company | ✅ |
-| REZ-customer-intelligence-hub | - | Customer 360 | ✅ |
-| REZ-unified-profile | 4120 | Profiles | ✅ |
-| REZ-realtime-gateway | - | Real-time | ✅ |
-| REZ-realtime-service | - | Real-time | ✅ |
-| rez-consumer-copilot | - | Copilot | ✅ |
-| rez-context-engine | - | Context | ✅ |
-| REZ-taste-profile | - | Preferences | ✅ |
-| REZ-behavioral-psychology | - | Psychology | ✅ |
-| REZ-consumer-graph | - | Graph | ✅ |
-| REZ-universal-user-graph | - | User Graph | ✅ |
-
-### Commerce & Attribution
-
-| Service | Port | Category | Status |
-|---------|------|----------|--------|
-| REZ-attribution-system | - | Attribution | ✅ |
-| REZ-dooh-attribution | 4081 | DOOH | ✅ |
-| REZ-attribution-loyalty-bridge | 4155 | Attribution | ✅ |
-| rez-crosschannel-attribution | - | Attribution | ✅ |
-| REZ-ltv-attribution | - | LTV | ✅ |
-| REZ-event-bus | 4082 | Events | ✅ |
-| REZ-event-platform | - | Events | ✅ |
-| REZ-event-connector | 4158 | Events | ✅ |
-| REZ-stream-processing | - | Streaming | ✅ |
-| REZ-unified-commerce-graph | 4170 | Graph | ✅ |
+| Service | Status |
+|---------|--------|
+| rez-mcp-analytics | ✅ |
+| rez-mcp-identity | ✅ |
+| rez-mcp-notification | ✅ |
+| rez-mcp-event-bus | ✅ |
+| rez-mcp-agent-invoke | ✅ |
 
 ### Targeting & Personalization
 
-| Service | Port | Category | Status |
-|---------|------|----------|--------|
-| REZ-targeting-engine | - | Targeting | ✅ |
-| REZ-personalization-engine | - | Personalization | ✅ |
-| REZ-recommendation-engine | - | Recommendations | ✅ |
-| REZ-unified-recommendations | - | Recommendations | ✅ |
-| REZ-hyperlocal-targeting | - | Geo-targeting | ✅ |
-| REZ-moment-ads | 4111 | Moment Ads | ✅ |
-| REZ-dooh-intelligence | 4080 | DOOH | ✅ |
+| Service | Status |
+|---------|--------|
+| REZ-targeting-engine | ✅ |
+| REZ-personalization-engine | ✅ |
+| REZ-hyperlocal-targeting | ✅ |
+| REZ-recommendation-engine | ✅ |
 
 ### Merchant Intelligence
 
-| Service | Port | Category | Status |
-|---------|------|----------|--------|
-| REZ-merchant-intelligence | 4122 | Merchant | ✅ |
-| REZ-merchant-brain | - | Merchant | ✅ |
-| REZ-merchant-360 | - | Merchant | ✅ |
-| REZ-competitor-detection | - | Competition | ✅ |
-| REZ-supplier-marketplace | 4063 | B2B | ✅ |
-| REZ-inventory-intelligence | - | Inventory | ✅ |
-| REZ-inventory-alerts-service | 4064 | Alerts | ✅ |
-| REZ-inventory-sync | - | Sync | ✅ |
-| REZ-unified-inventory | - | Inventory | ✅ |
+| Service | Status |
+|---------|--------|
+| REZ-merchant-intelligence | ✅ |
+| REZ-merchant-brain | ✅ |
+| REZ-merchant-360 | ✅ |
+| REZ-competitor-detection | ✅ |
+
+### Attribution
+
+| Service | Status |
+|---------|--------|
+| REZ-attribution-system | ✅ |
+| REZ-crosschannel-attribution | ✅ |
+| REZ-dooh-attribution | ✅ |
+| REZ-ltv-attribution | ✅ |
 
 ### Loyalty & Rewards
 
-| Service | Port | Category | Status |
-|---------|------|----------|--------|
-| REZ-karma-loyalty-bridge | 4098 | Karma | ✅ |
-| REZ-cross-company-loyalty | - | Loyalty | ✅ |
-| REZ-gift-card-service | - | Gifts | ✅ |
-| REZ-feedback-collector | - | Feedback | ✅ |
+| Service | Status |
+|---------|--------|
+| REZ-karma-loyalty-bridge | ✅ |
+| REZ-cross-company-loyalty | ✅ |
+| REZ-gift-card-service | ✅ |
+| REZ-feedback-collector | ✅ |
+
+---
+
+## PORT REGISTRY
+
+| Port | Service | Category |
+|------|---------|----------|
+| 3000 | REZ-visual-workflow-builder-ui | Workflow UI |
+| 3005 | rez-hospitality-expert | Expert Agent |
+| 4018 | REZ-intent-predictor | Intent |
+| 4050 | REZ-identity-graph | Identity |
+| 4051 | REZ-memory-engine | Memory |
+| 4055 | REZ-care-service | Support |
+| 4062 | REZ-autonomous-agents | AI Agents |
+| 4063 | REZ-supplier-marketplace | B2B |
+| 4064 | REZ-inventory-alerts | Inventory |
+| 4065 | REZ-bootstrap-intelligence | Cold Start |
+| 4101 | REZ-ai-orchestrator | AI |
+| 4107 | REZ-creative-engine | Creative |
+| 4210 | REZ-plugin-marketplace | Plugins |
+| 4211 | REZ-approval-ui | Approval |
+| 4212 | REZ-real-pricing-tracker | Pricing |
+| 4213 | REZ-revenue-forecast | Forecasting |
+| 4214 | REZ-neighborhood-analytics | Hyperlocal |
+| 4290 | REZ-budget-optimizer | Budget |
+| 4291 | REZ-growth-playbook | Growth |
+| 4292 | REZ-incrementality-testing | Testing |
+| 4293 | REZ-merchant-health-score | Health |
+| 4294 | REZ-offline-attribution | Attribution |
+| 4295 | REZ-competitor-alerts | Competition |
+| 4296 | REZ-review-response-engine | Reviews |
+| 4297 | REZ-unified-offer-brain | Offers |
+| 4298 | REZ-autonomous-growth-agent | Growth AI |
+| 4299 | REZ-prompt-studio | Prompts |
+| 4600 | HOJAI Enterprise Brain | Brain |
+| 4601 | HOJAI Identity | Identity |
+| 4602 | HOJAI Dashboard | Dashboard |
+| 4603 | HOJAI Billing | Billing |
+| 4604 | HOJAI Analytics | Analytics |
+| 4605 | HOJAI API Gateway | Gateway |
+| 4800 | REZ-autonomous-loop | OADA Loop |
+| 4801 | REZ-company-memory | Memory |
+| 4802 | REZ-live-action-feed | Actions |
+
+---
+
+## FILES ADDED
+
+### Documentation
+- `MERCHANT-GROWTH-OS-AUDIT.md` - Complete audit
+- `MERCHANT-GROWTH-OS-API.md` - API docs
+- `ECOSYSTEM-INTEGRATION.md` - Integration guide
+- `MERCHANT-GROWTH-OS-COMPLETE.md` - Implementation guide
 
 ### Infrastructure
+- `docker-compose.yml` - Container orchestration
+- `kubernetes-deployment.yaml` - K8s manifests
+- `deploy-all.sh` - Deployment script
 
-| Service | Port | Category | Status |
-|---------|------|----------|--------|
-| REZ-feature-flags | 4030 | Flags | ✅ |
-| REZ-memory-engine | 4051 | Memory | ✅ |
-| REZ-api-gateway | - | Gateway | ✅ |
-| REZ-api-keys | - | API Keys | ✅ |
-| REZ-event-connector | 4158 | Connector | ✅ |
-| REZ-unified-event-schema | - | Schemas | ✅ |
-| REZ-data-governance | - | Governance | ✅ |
-| REZ-data-platform | - | Data | ✅ |
-| REZ-data-warehouse | - | Warehouse | ✅ |
-| REZ-feature-store | 4127 | Features | ✅ |
+### Integration Files
+- `*/src/integrations.ts` - Ecosystem connections
 
-### Observability
-
-| Service | Port | Category | Status |
-|---------|------|----------|--------|
-| REZ-health-monitor | - | Health | ✅ |
-| REZ-observability | - | Observability | ✅ |
-| REZ-observability-system | 4109 | Observability | ✅ |
-| REZ-error-intelligence | - | Errors | ✅ |
-| REZ-audit-logging | - | Audit | ✅ |
-| REZ-validation-dashboard | - | Validation | ✅ |
-
-### Communication
-
-| Service | Port | Category | Status |
-|---------|------|----------|--------|
-| REZ-unified-engine | - | Communication | ✅ |
-| REZ-whatsapp-orchestrator-bridge | - | WhatsApp | ✅ |
-| REZ-notification-router | - | Notifications | ✅ |
-| rez-email-bridge | - | Email | ✅ |
-| rez-sms-bridge | - | SMS | ✅ |
-| rez-rcs-bridge | - | RCS | ✅ |
-| rez-ai-voice | - | Voice | ✅ |
-
-### Integration Services
-
-| Service | Port | Category | Status |
-|---------|------|----------|--------|
-| REZ-integration-sdk | - | SDK | ✅ |
-| REZ-ecosystem-hub | - | Hub | ✅ |
-| REZ-corpperks-bridge | - | Bridge | ✅ |
-| REZ-enterprise-gateway | 4102 | Enterprise | ✅ |
-| REZ-commerce-signal-connector | - | Commerce | ✅ |
-| rez-service-connectors | - | Connectors | ✅ |
-| rez-app-bridge | - | App Bridge | ✅ |
-| REZ-commerce-agents | - | Commerce | ✅ |
-
-### Other Services
-
-| Service | Port | Category | Status |
-|---------|------|----------|--------|
-| REZ-creator-network | - | Creator | ✅ |
-| REZ-consumer-loop | - | Consumer | ✅ |
-| rez-fleet-management | - | Fleet | ✅ |
-| REZ-merchant-os | - | Merchant OS | ✅ |
-| REZ-reservation-service | - | Reservations | ✅ |
-| REZ-staff-scheduling-service | - | Scheduling | ✅ |
-| REZ-waitlist-service | - | Waitlist | ✅ |
-| REZ-multi-location-service | - | Multi-location | ✅ |
-| REZ-delivery-tracking-service | - | Delivery | ✅ |
-| REZ-delivery-intelligence | - | Delivery | ✅ |
-| REZ-offline-commerce-tracker | - | Offline | ✅ |
-| REZ-reconciliation-service | - | Reconciliation | ✅ |
-| REZ-ledger-service | - | Ledger | ✅ |
-| REZ-payments-brain | - | Payments | ✅ |
-| REZ-cdp-service | - | CDP | ✅ |
-| REZ-cohort-service | - | Cohorts | ✅ |
-| rez-priority-engine | - | Priority | ✅ |
-| rez-unified-agent-sdk | - | Agent SDK | ✅ |
-| rez-info-agent | - | Info Agent | ✅ |
-| rez-support-agent | - | Support Agent | ✅ |
-| rez-culinary-expert | - | Culinary | ✅ |
-| rez-consultant-agent | - | Consultant | ✅ |
-| rez-permission-system | - | Permissions | ✅ |
-| REZ-user-agents | 4030 | User Agents | ✅ |
-| REZ-qr-campaigns | - | QR Campaigns | ✅ |
-| REZ-knowledge-graph | - | Knowledge | ✅ |
-| REZ-memory-layer | 4201 | Memory | ✅ |
-| REZ-flow-runtime | 4200 | Workflow | ✅ |
-| REZ-flywheel-mvp | 4101 | Growth | ✅ |
-| REZ-ai-router | 4052 | AI Routing | ✅ |
-| REZ-ugc-engine | - | UGC | ✅ |
-| REZ-commerce-signal-connector | 4150 | Commerce | ✅ |
-| REZ-intelligence-hub | 4020 | Intelligence | ✅ |
-| REZ-orchestrator-v2 | - | Orchestration | ✅ |
-| REZ-aggregator-hub | - | Aggregators | ✅ |
-| rez-mcp-analytics | - | MCP Server | ✅ |
-| rez-mcp-identity | - | MCP Server | ✅ |
-| rez-mcp-notification | - | MCP Server | ✅ |
-| rez-mcp-event-bus | - | MCP Server | ✅ |
-| rez-mcp-logs | - | MCP Server | ✅ |
-| rez-mcp-inventory | - | MCP Server | ✅ |
-| rez-mcp-order | - | MCP Server | ✅ |
-| rez-mcp-agent-invoke | - | MCP Server | ✅ |
-| rez-ml-feature-store | 3005 | ML Features | ✅ |
-| rez-ml-model-registry | - | ML Registry | ✅ |
-| rez-ml-engine | - | ML Engine | ✅ |
-| rez-ml-models | - | ML Models | ✅ |
-| rez-core-brain | - | Core Brain | ✅ |
-| rez-behavioral-psychology | - | Psychology | ✅ |
-| rez-web-widget | - | Web Widget | ✅ |
-| rez-expert-base | - | Expert Base | ✅ |
-| rez-ai-plugins | - | AI Plugins | ✅ |
-| rez-migration-scripts | - | Migration | ✅ |
-| rez-integration-tests | - | Testing | ✅ |
-| rez-e2e-tests | - | E2E Testing | ✅ |
-| REZ-unified-crm-ui | 3000 | CRM Dashboard | ✅ |
-| rez-shared-types | - | Shared Types | ✅ |
+### Tests
+- `*/src/__tests__/api.test.ts` - Integration tests
 
 ---
 
-## Port Registry
-
-| Port | Service |
-|------|---------|
-| 3000 | rez-hospitality-expert |
-| 3003 | rez-travel-expert |
-| 3004 | rez-retail-expert |
-| 3005 | rez-salon-expert |
-| 3006 | rez-education-expert |
-| 3010 | rez-fitness-expert |
-| 3011 | rez-health-expert |
-| 4018 | REZ-intent-predictor |
-| 4050 | REZ-identity-graph |
-| 4051 | REZ-memory-engine |
-| 4055 | REZ-care-service |
-| 4062 | REZ-autonomous-agents |
-| 4063 | REZ-supplier-marketplace |
-| 4064 | REZ-inventory-alerts-service |
-| 4065 | REZ-bootstrap-intelligence |
-| 4080 | REZ-dooh-intelligence |
-| 4081 | REZ-dooh-attribution |
-| 4082 | REZ-event-bus |
-| 4098 | REZ-karma-loyalty-bridge |
-| 4101 | REZ-ai-orchestrator |
-| 4102 | REZ-enterprise-gateway |
-| 4107 | REZ-creative-engine |
-| 4109 | REZ-observability-system |
-| 4110 | REZ-flywheel-engine |
-| 4111 | REZ-moment-ads |
-| 4120 | REZ-unified-profile |
-| 4121 | REZ-signal-aggregator |
-| 4122 | REZ-merchant-intelligence |
-| 4123 | REZ-predictive-engine |
-| 4126 | REZ-realtime-segments |
-| 4127 | REZ-feature-store |
-| 4128 | REZ-decision-engine |
-| 4129 | REZ-graph-service |
-| 4130 | REZ-ml-observability |
-| 4131 | REZ-intelligence-hub |
-| 4155 | REZ-attribution-loyalty-bridge |
-| 4156 | REZ-reorder-engine |
-| 4158 | REZ-event-connector |
-| 4170 | REZ-unified-commerce-graph |
-| 4150 | REZ-commerce-signal-connector |
-| 4200 | REZ-flow-runtime |
-| 4201 | REZ-memory-layer |
-
----
-
-## Documentation
-
-- **SPEC.md files:** 185 services documented (All services with package.json)
-- **Categories:** 20+ service categories
-- **Integration Points:** Fully documented
-
-## Service Categories
-
-| Category | Count | Examples |
-|----------|--------|----------|
-| AI Expert Agents | 8 | Travel, Health, Retail, Education, Culinary, Support, Info, Consultant |
-| AI Infrastructure | 5 | Intent Graph, Core Brain, Orchestrator v2, Agent SDK, Expert Base |
-| MCP Servers | 9 | Analytics, Identity, Notification, Event Bus, Logs, Inventory, Order |
-| ML Services | 4 | Feature Store, Model Registry, ML Engine, ML Models |
-| Intelligence Hub | 3 | Intelligence Hub, Flywheel MVP, Consumer Graph |
-| Integration Bridges | 5 | WhatsApp, SMS, RCS, App Bridge, Commerce Signal |
-| Analytics | 2 | Memory Layer, Cohort Service |
-| Infrastructure | 4 | Flow Runtime, Priority Engine, Lakehouse, Permission System |
-| Behavioral/Social | 2 | UGC Engine, Behavioral Psychology |
-| Dashboards | 2 | CRM UI, Consumer Copilot |
-| Other | 3 | Bootstrap Intelligence, Service Connectors, Shared Types |
-
----
-
-**Last Updated:** May 21, 2026
+**Last Updated:** June 4, 2026
+**Version:** 4.0

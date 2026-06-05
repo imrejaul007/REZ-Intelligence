@@ -1,0 +1,198 @@
+# Kubernetes Deployment for Merchant Growth OS Services
+# Apply with: kubectl apply -f kubernetes-deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rez-merchant-growth
+  namespace: rez
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: rez-merchant-growth
+  template:
+    metadata:
+      labels:
+        app: rez-merchant-growth
+    spec:
+      containers:
+      - name: budget-optimizer
+        image: rez/budget-optimizer:latest
+        ports:
+        - containerPort: 4290
+        env:
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: rez-secrets
+              key: mongodb-uri
+        - name: INTERNAL_SERVICE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: rez-secrets
+              key: internal-token
+        - name: AUTH_SERVICE_URL
+          value: "http://rez-auth-service:3001"
+        - name: WALLET_SERVICE_URL
+          value: "http://rez-wallet-service:3002"
+        - name: HOJAI_BRAIN_URL
+          value: "http://hojai-enterprise-brain:4600"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+      - name: growth-playbook
+        image: rez/growth-playbook:latest
+        ports:
+        - containerPort: 4291
+        env:
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: rez-secrets
+              key: mongodb-uri
+
+      - name: incrementality-testing
+        image: rez/incrementality-testing:latest
+        ports:
+        - containerPort: 4292
+
+      - name: merchant-health-score
+        image: rez/merchant-health-score:latest
+        ports:
+        - containerPort: 4293
+
+      - name: offline-attribution
+        image: rez/offline-attribution:latest
+        ports:
+        - containerPort: 4294
+
+      - name: competitor-alerts
+        image: rez/competitor-alerts:latest
+        ports:
+        - containerPort: 4295
+
+      - name: review-response-engine
+        image: rez/review-response-engine:latest
+        ports:
+        - containerPort: 4296
+
+      - name: unified-offer-brain
+        image: rez/unified-offer-brain:latest
+        ports:
+        - containerPort: 4297
+
+      - name: autonomous-growth-agent
+        image: rez/autonomous-growth-agent:latest
+        ports:
+        - containerPort: 4298
+
+      - name: prompt-studio
+        image: rez/prompt-studio:latest
+        ports:
+        - containerPort: 4299
+
+      - name: revenue-forecast
+        image: rez/revenue-forecast:latest
+        ports:
+        - containerPort: 4213
+
+      - name: neighborhood-analytics
+        image: rez/neighborhood-analytics:latest
+        ports:
+        - containerPort: 4214
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rez-merchant-growth-service
+  namespace: rez
+spec:
+  type: ClusterIP
+  ports:
+  - port: 4290
+    targetPort: 4290
+    name: budget
+  - port: 4291
+    targetPort: 4291
+    name: playbook
+  - port: 4292
+    targetPort: 4292
+    name: incrementality
+  - port: 4293
+    targetPort: 4293
+    name: health
+  - port: 4294
+    targetPort: 4294
+    name: attribution
+  - port: 4295
+    targetPort: 4295
+    name: competitor
+  - port: 4296
+    targetPort: 4296
+    name: reviews
+  - port: 4297
+    targetPort: 4297
+    name: offers
+  - port: 4298
+    targetPort: 4298
+    name: growth-agent
+  - port: 4299
+    targetPort: 4299
+    name: prompts
+  - port: 4213
+    targetPort: 4213
+    name: forecast
+  - port: 4214
+    targetPort: 4214
+    name: neighborhood
+  selector:
+    app: rez-merchant-growth
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rez-merchant-growth-ingress
+  namespace: rez
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: api.rez.money
+    http:
+      paths:
+      - path: /budget
+        pathType: Prefix
+        backend:
+          service:
+            name: rez-merchant-growth-service
+            port:
+              number: 4290
+      - path: /growth
+        pathType: Prefix
+        backend:
+          service:
+            name: rez-merchant-growth-service
+            port:
+              number: 4291
+      - path: /health-score
+        pathType: Prefix
+        backend:
+          service:
+            name: rez-merchant-growth-service
+            port:
+              number: 4293
+      - path: /offers
+        pathType: Prefix
+        backend:
+          service:
+            name: rez-merchant-growth-service
+            port:
+              number: 4297

@@ -410,11 +410,17 @@ async function handleInboundMessage(
     carrier: inboundMessage.carrier,
   });
 
-  // TODO: Forward to orchestrator or process accordingly
-  // This could be used for two-way RCS conversations
-
-  // Notify orchestrator of inbound message
-  // await notifyOrchestrator(inboundMessage);
+  // Forward to orchestrator for two-way RCS conversations
+  try {
+    const orchestratorUrl = process.env.ORCHESTRATOR_URL || 'http://localhost:8080';
+    await fetch(`${orchestratorUrl}/api/rcs/inbound`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ inboundMessage }),
+    });
+  } catch (error) {
+    logger.error('[RCS] Failed to forward to orchestrator', { error });
+  }
 }
 
 export default router;

@@ -1,7 +1,8 @@
 {
-  "name": "rez-push-service",
+  "name": "@rez-ecosystem/REZ-push-service",
   "version": "1.0.0",
-  "description": "Multi-channel Push Notification Service for ReZ App",
+  "description": "DEPRECATED - Use @rez-ecosystem/rez-push-service instead. Multi-channel Push Notification Service for ReZ App",
+  "deprecated": "This package has been deprecated. Use @rez-ecosystem/rez-push-service instead. This alias will be removed after September 4, 2026.",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

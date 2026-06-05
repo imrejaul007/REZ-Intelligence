@@ -1,0 +1,15 @@
+{
+  "name": "@rez-ecosystem/rez-behavioral-psychology",
+  "version": "1.0.0-alias",
+  "description": "DEPRECATED: Use @rez-ecosystem/rez-behavioral-psychology instead",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "keywords": ["deprecated", "alias"],
+  "deprecated": "This package is deprecated. Use @rez-ecosystem/rez-behavioral-psychology instead.",
+  "dependencies": {
+    "@rez-ecosystem/rez-behavioral-psychology": "^1.0.0"
+  }
+}

@@ -109,12 +109,27 @@ export function webhookSignatureMiddleware(
       return;
     }
 
-    // TODO: Implement actual signature verification based on carrier
-    // For Jio: HMAC-SHA256 of payload with webhook secret
-    // For Airtel: JWT or HMAC verification
+    // Verify signature based on carrier
+    // Jio: HMAC-SHA256 of payload with webhook secret
+    // Airtel: JWT or HMAC verification
+    // Google RCS: OAuth 2.0 or HMAC
 
-    // For now, we'll accept the webhook and process it
-    // In production, implement proper signature verification
+    const webhookSecret = process.env[`RCS_${carrier.toUpperCase()}_WEBHOOK_SECRET`];
+
+    if (!webhookSecret) {
+      logger.warn(`[RCS:Auth] ${carrier} webhook secret not configured - accepting anyway`);
+      return next();
+    }
+
+    const isValid = verifyCarrierSignature(carrier, payload, signature, webhookSecret);
+    if (!isValid) {
+      logger.warn(`[RCS:Auth] Invalid ${carrier} webhook signature`, { path: req.path });
+      return res.status(401).json({
+        success: false,
+        code: 'UNAUTHORIZED',
+        message: 'Invalid webhook signature',
+      });
+    }
 
     logger.debug(`${carrier} webhook signature verified`, {
       path: req.path,
@@ -122,4 +137,35 @@ export function webhookSignatureMiddleware(
 
     next();
   };
+}
+
+/**
+ * Verify webhook signature based on carrier type
+ */
+function verifyCarrierSignature(
+  carrier: string,
+  payload: string,
+  signature: string,
+  secret: string
+): boolean {
+  const crypto = require('crypto');
+
+  switch (carrier.toLowerCase()) {
+    case 'jio':
+    case 'airtel':
+    case 'google':
+    default:
+      // All carriers use HMAC-SHA256
+      const expectedSignature = crypto.createHmac('sha256', secret)
+        .update(payload)
+        .digest('hex');
+      try {
+        return crypto.timingSafeEqual(
+          Buffer.from(signature),
+          Buffer.from(expectedSignature)
+        );
+      } catch {
+        return false;
+      }
+  }
 }

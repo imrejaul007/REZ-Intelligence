@@ -16,6 +16,7 @@ import { getAIIntegration } from '../services/aiIntegrationService';
 import { getExpertRouter } from '../services/expertRouter';
 import { validate, schemas, fallbackSentiment } from '../middleware/errorHandler';
 import { requireAuth, requireRole, optionalAuth, requireInternal } from '../middleware/auth';
+import { supportService } from '../services/supportMetricsService';
 
 const router = express.Router();
 const aiIntegration = getAIIntegration();
@@ -201,9 +202,15 @@ router.post('/tickets/:ticketNumber/close', requireAuth, async (req: Request, re
   try {
     const { ticketNumber } = req.params;
     const { resolution } = req.body;
+    const agentId = (req as any).user?.id;
 
-    // TODO: Actually update ticket status in database
-    // await ticketModel.updateOne({ ticketNumber }, { status: 'closed', resolution, closedAt: new Date() });
+    // Update ticket status in database
+    const ticket = await supportService.closeTicket(ticketNumber, {
+      resolution,
+      closedBy: agentId,
+      closedAt: new Date(),
+      status: 'closed'
+    });
 
     logger.info('Ticket closed', { ticketNumber, resolution });
 
@@ -228,13 +235,19 @@ router.post('/tickets/:ticketNumber/rate', optionalAuth, async (req: Request, re
   try {
     const { ticketNumber } = req.params;
     const { score, comment } = req.body;
+    const customerId = (req as any).user?.id;
 
     if (score === undefined || score < 1 || score > 5) {
       return res.status(400).json({ success: false, error: 'Score must be between 1 and 5' });
     }
 
-    // TODO: Actually save rating to database
-    // await ratingModel.create({ ticketNumber, score, comment, createdAt: new Date() });
+    // Save rating to database
+    await supportService.saveRating(ticketNumber, {
+      score,
+      comment,
+      customerId,
+      createdAt: new Date()
+    });
 
     logger.info('Ticket rated', { ticketNumber, score, hasComment: !!comment });
 

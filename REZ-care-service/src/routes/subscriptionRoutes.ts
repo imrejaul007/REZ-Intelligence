@@ -610,7 +610,10 @@ router.post('/webhook/razorpay', async (req: Request, res: Response) => {
           paymentId: payment?.id,
           status: payment?.status,
         });
-        // TODO: Trigger dunning flow here
+
+        // Trigger dunning flow - retry payment with escalating notifications
+        await subscriptionService.triggerDunning(clientId, payment);
+        logger.info('[SubscriptionRoutes] Dunning flow triggered', { clientId, paymentId: payment?.id });
         break;
       }
 

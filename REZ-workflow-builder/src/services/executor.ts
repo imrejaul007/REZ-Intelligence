@@ -487,8 +487,47 @@ class WorkflowExecutor {
   }
 
   private async callAI(prompt: string, model: string, action: string): Promise<any> {
-    // Placeholder - integrate with AI service
-    return { success: true, action };
+    // Integrate with AI service (OpenAI, Claude, etc.)
+    const aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8080';
+    const aiApiKey = process.env.AI_API_KEY;
+
+    try {
+      const response = await fetch(`${aiServiceUrl}/api/ai/complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(aiApiKey && { 'Authorization': `Bearer ${aiApiKey}` })
+        },
+        body: JSON.stringify({
+          prompt,
+          model: model || 'gpt-4',
+          max_tokens: 1000,
+          temperature: 0.7
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`AI service returned ${response.status}`);
+      }
+
+      const result = await response.json();
+      return {
+        success: true,
+        action,
+        text: result.text || result.completion,
+        model: result.model,
+        usage: result.usage
+      };
+    } catch (error) {
+      console.error('[WorkflowExecutor] AI service call failed:', error);
+      // Return a graceful fallback
+      return {
+        success: false,
+        action,
+        error: error instanceof Error ? error.message : 'AI service unavailable',
+        fallback: true
+      };
+    }
   }
 }
 

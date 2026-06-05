@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger } from './utils/logger.js';
+import { logger } from '../utils/logger';
 
 export class AppError extends Error {
   constructor(
@@ -18,7 +18,7 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ): void {
-  logger.error(`[${req.method}] ${req.path}:`, err.message);
+  logger.error(`[${req.method}] ${req.path}:`, { error: err.message });
 
   if (err instanceof AppError) {
     res.status(err.statusCode).json({

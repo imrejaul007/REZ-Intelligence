@@ -1,7 +1,8 @@
 {
-  "name": "@rez/identity-graph",
+  "name": "@rez-ecosystem/REZ-identity-graph",
   "version": "1.0.0",
-  "description": "REZ Identity Graph - Unified user identity across all REZ apps",
+  "description": "DEPRECATED - Use @rez-ecosystem/rez-identity-graph instead. REZ Identity Graph - Unified user identity across all REZ apps",
+  "deprecated": "This package has been deprecated. Use @rez-ecosystem/rez-identity-graph instead. This alias will be removed after September 4, 2026.",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {

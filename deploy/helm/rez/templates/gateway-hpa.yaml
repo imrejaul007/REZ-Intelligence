@@ -1,0 +1,45 @@
+{{/*
+Gateway Horizontal Pod Autoscaler
+*/}}
+{{- if and .Values.gateway.enabled .Values.gateway.autoscaling.enabled }}
+{{- if .Capabilities.APIVersions.Has "autoscaling/v2" }}
+apiVersion: autoscaling/v2
+{{- else }}
+apiVersion: autoscaling/v2beta2
+{{- end }}
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "rez.gateway.fullname" . }}
+  labels:
+    {{- include "rez.labels" . | nindent 4 }}
+    app: rez-gateway
+    component: gateway
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "rez.gateway.fullname" . }}
+  minReplicas: {{ .Values.gateway.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.gateway.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.gateway.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.gateway.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.gateway.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.gateway.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+  {{- if .Values.gateway.autoscaling.behavior }}
+  behavior:
+    {{- toYaml .Values.gateway.autoscaling.behavior | nindent 4 }}
+  {{- end }}
+{{- end }}

@@ -1,7 +1,8 @@
 {
-  "name": "@rez/permission-system",
+  "name": "@rez-ecosystem/REZ-permission-system",
   "version": "1.0.0",
-  "description": "REZ Permission System - Role-based access control",
+  "description": "DEPRECATED - Use @rez-ecosystem/rez-permission-system instead. REZ Permission System - Role-based access control",
+  "deprecated": "This package has been deprecated. Use @rez-ecosystem/rez-permission-system instead. This alias will be removed after September 4, 2026.",
   "main": "src/index.ts",
   "scripts": {
     "dev": "ts-node src/index.ts",

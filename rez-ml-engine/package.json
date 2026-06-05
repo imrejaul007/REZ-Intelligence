@@ -1,7 +1,8 @@
 {
-  "name": "@rez/ml-engine",
+  "name": "@rez-ecosystem/REZ-ml-engine",
   "version": "1.0.0",
-  "description": "REZ ML Engine - Machine learning inference engine",
+  "description": "DEPRECATED - Use @rez-ecosystem/rez-ml-engine instead. REZ ML Engine - Machine learning inference engine",
+  "deprecated": "This package has been deprecated. Use @rez-ecosystem/rez-ml-engine instead. This alias will be removed after September 4, 2026.",
   "main": "src/index.ts",
   "scripts": {
     "dev": "ts-node src/index.ts",
